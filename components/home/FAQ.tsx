@@ -1,0 +1,72 @@
+import { SectionHeader } from "@/components/ui/SectionHeader";
+import { FAQAccordion } from "@/components/home/FAQAccordion";
+import type { FAQItem } from "@/types";
+
+interface FAQProps {
+  items: FAQItem[];
+}
+
+export function FAQ({ items }: FAQProps) {
+  return (
+    <section
+      id="faq"
+      className="section-padding"
+      style={{
+        background: "linear-gradient(160deg, #fdfaf7 0%, #fdf2f4 100%)",
+      }}
+      aria-labelledby="faq-heading"
+    >
+      <div className="container-luxury">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-12 lg:gap-16">
+          {/* Left — header */}
+          <div className="lg:col-span-2">
+            <SectionHeader
+              id="faq-heading"
+              label="FAQ"
+              title="Everything you need to know"
+              highlightedWord="need to know"
+              description="Have more questions? Our team is happy to help you plan your perfect wedding experience."
+              align="left"
+            />
+
+            <div className="mt-8 flex flex-col gap-4">
+              <div className="flex items-start gap-3 p-4 rounded-xl bg-white border border-warm-200">
+                <span className="text-2xl flex-shrink-0" aria-hidden="true">💬</span>
+                <div>
+                  <div className="font-semibold text-charcoal-800 text-sm mb-0.5">
+                    Still have questions?
+                  </div>
+                  <a
+                    href="mailto:hello@weddingwithindia.com"
+                    className="text-[var(--color-brand-primary)] text-sm font-medium hover:underline"
+                  >
+                    hello@weddingwithindia.com
+                  </a>
+                </div>
+              </div>
+              <div className="flex items-start gap-3 p-4 rounded-xl bg-white border border-warm-200">
+                <span className="text-2xl flex-shrink-0" aria-hidden="true">📞</span>
+                <div>
+                  <div className="font-semibold text-charcoal-800 text-sm mb-0.5">
+                    Talk to our team
+                  </div>
+                  <a
+                    href="tel:+917001234567"
+                    className="text-[var(--color-brand-primary)] text-sm font-medium hover:underline"
+                  >
+                    +91 70 0123 4567
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right — accordion */}
+          <div className="lg:col-span-3">
+            <FAQAccordion items={items} />
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
