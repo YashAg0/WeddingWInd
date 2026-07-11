@@ -34,7 +34,7 @@ export function Categories({ categories }: CategoriesProps) {
             <Link
               key={category.id}
               href={`/weddings?category=${category.name.toLowerCase().replace(/\s+/g, "-")}`}
-              className="card group relative overflow-hidden aspect-[4/5] sm:aspect-[3/4]"
+              className="card group relative overflow-hidden aspect-[4/5] sm:aspect-[3/4] hover:shadow-[0_16px_48px_-12px_rgba(107,16,38,0.15)] transition-shadow duration-500 rounded-3xl"
               role="listitem"
               aria-label={`${category.name} weddings — ${category.weddingCount} listings`}
             >
@@ -44,19 +44,19 @@ export function Categories({ categories }: CategoriesProps) {
                 alt={`${category.name} wedding style`}
                 fill
                 sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                className="object-cover transition-transform duration-700 group-hover:scale-110"
+                className="object-cover transition-transform duration-1000 group-hover:scale-110"
                 loading={index < 2 ? "eager" : "lazy"}
               />
 
               {/* Dark gradient overlay */}
               <div
-                className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent transition-opacity duration-300 group-hover:opacity-90"
+                className="absolute inset-0 bg-gradient-to-t from-charcoal-950/95 via-charcoal-950/20 to-transparent transition-opacity duration-500 opacity-80 group-hover:opacity-100"
                 aria-hidden="true"
               />
 
               {/* Maroon hover tint */}
               <div
-                className="absolute inset-0 bg-[var(--color-brand-primary)]/0 group-hover:bg-[var(--color-brand-primary)]/15 transition-all duration-500"
+                className="absolute inset-0 bg-[var(--color-brand-primary)]/0 group-hover:bg-[var(--color-brand-primary)]/20 transition-all duration-700"
                 aria-hidden="true"
               />
 

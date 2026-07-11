@@ -1,7 +1,32 @@
+export interface Review {
+  id: string;
+  authorName: string;
+  authorAvatar: string;
+  rating: number;
+  date: string;
+  content: string;
+}
+
+export interface WeddingEvent {
+  title: string;
+  time: string;
+  date: string;
+  description: string;
+  icon?: string;
+}
+
+export interface WeddingTradition {
+  title: string;
+  description: string;
+}
+
 export interface Wedding {
   id: string;
+  slug: string;
   title: string;
   location: string;
+  city: string;
+  state: string;
   country: string;
   countryCode: string;
   category: WeddingCategory;
@@ -12,11 +37,33 @@ export interface Wedding {
   guestsAllowed: number;
   guestsBooked: number;
   imageUrl: string;
+  coupleImage: string;
+  coupleName: string;
   hostName: string;
   hostAvatar: string;
   featured: boolean;
   tags: string[];
   date: string;
+  religion: string;
+  luxuryLevel: "Premium" | "Luxury" | "Ultra-Luxury";
+  durationDays: number;
+  languages: string[];
+  isVerified: boolean;
+  
+  // Detailed fields for detail page
+  gallery: string[];
+  story: string;
+  coupleBio: string;
+  timeline: WeddingEvent[];
+  traditions: WeddingTradition[];
+  dressCode: string;
+  foodDescription: string;
+  venueDescription: string;
+  accommodation: string;
+  included: string[];
+  notIncluded: string[];
+  reviews: Review[];
+  faqs: FAQItem[];
 }
 
 export type WeddingCategory =

@@ -1,0 +1,1558 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum UserRole {
+  TRAVELER
+  COUPLE
+  AGENT
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  ONBOARDING
+  BANNED
+}
+
+enum WeddingStatus {
+  DRAFT
+  PUBLISHED
+  COMPLETED
+}
+
+enum BookingStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  AWAITING_PAYMENT
+  PAID
+  CONFIRMED
+  READY_FOR_EVENT
+  CHECKED_IN
+  ATTENDED
+  COMPLETED
+  CANCELLED
+  REFUNDED
+  NO_SHOW
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  REFUNDED
+  FAILED
+}
+
+enum CommissionStatus {
+  PENDING
+  LOCKED
+  APPROVED
+  PAYABLE
+  PAID
+  REVERSED
+  CANCELLED
+}
+
+enum ReferralStatus {
+  CLICKED
+  SIGNED_UP
+  ONBOARDED
+  QUALIFIED
+  CONVERTED
+  REJECTED
+  EXPIRED
+}
+
+enum ReferralType {
+  TRAVELER
+  COUPLE
+  BUSINESS
+  AGENT
+}
+
+enum VerificationStatus {
+  NOT_SUBMITTED
+  PENDING
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  EXPIRED
+}
+
+enum NotificationType {
+  INFO
+  SUCCESS
+  ALERT
+  REQUEST
+  NEW_MESSAGE
+  BOOKING_APPROVED
+  BOOKING_REJECTED
+  PAYMENT_REQUIRED
+  PAYMENT_RECEIVED
+  VERIFICATION_APPROVED
+  VERIFICATION_REJECTED
+  NEW_REVIEW
+  SYSTEM
+}
+
+enum ContactStatus {
+  NEW
+  READ
+  RESOLVED
+}
+
+model User {
+  id          String     @id @default(uuid())
+  email       String     @unique
+  clerkUserId String     @unique
+  name        String?
+  avatar      String?
+  role        UserRole   @default(TRAVELER)
+  status      UserStatus @default(ONBOARDING)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  // Profiles (One-to-One)
+  travelerProfile TravelerProfile?
+  coupleProfile   CoupleProfile?
+  agentProfile    AgentProfile?
+
+  // System logs
+  notifications     Notification[]
+  verification      Verification?
+  referralsReceived AgentReferral[]           @relation("ReferredUser")
+  conversations     ConversationParticipant[]
+  messages          Message[]
+  reactions         MessageReaction[]
+  savedSearches     SavedSearch[]
+  recentlyViewed    RecentlyViewed[]
+
+  // Trust & Safety Relations
+  cancellationsRequested CancellationRequest[] @relation("CancellationRequestedBy")
+  cancellationsReviewed  CancellationRequest[] @relation("CancellationReviewedBy")
+  reportedSafetyCases    SafetyCase[]          @relation("SafetyReportedBy")
+  subjectSafetyCases     SafetyCase[]          @relation("SafetySubjectUser")
+  assignedSafetyCases    SafetyCase[]          @relation("SafetyAssignedAdmin")
+  caseEvidence           CaseEvidence[]
+  timelineEvents         CaseTimelineEvent[]
+  submittedAppeals       CaseAppeal[]          @relation("AppealSubmittedBy")
+  reviewedAppeals        CaseAppeal[]          @relation("AppealReviewedBy")
+  restrictions           UserRestriction[]     @relation("UserRestrictions")
+  restrictionsCreated    UserRestriction[]     @relation("RestrictionsCreatedBy")
+  restrictionsRevoked    UserRestriction[]     @relation("RestrictionsRevokedBy")
+  caseParticipants       CaseParticipant[]
+
+  helpfulVotesSubmitted  ReviewHelpfulVote[]
+  repliesSubmitted       ReviewReply[]
+  reportsSubmitted       ReviewReport[]
+  moderatorActions       ReviewModerationAction[]
+  fraudSignalsResolved   ReviewFraudSignal[]
+  badges                 UserQualityBadge[]
+  reviewAppealsSubmitted ReviewAppeal[]           @relation("ReviewAppealSubmittedBy")
+  reviewAppealsReviewed  ReviewAppeal[]           @relation("ReviewAppealReviewedBy")
+
+  @@index([email])
+  @@index([clerkUserId])
+}
+
+model TravelerProfile {
+  id     String @id @default(uuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  fullName        String
+  country         String
+  language        String
+  interests       String? @db.Text
+  budget          String  @default("1000")
+  preferences     String  @default("Traditional")
+  foodPreferences String  @default("No Restrictions")
+  accessibility   String  @default("None")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  bookings  Booking[]
+  wishlists Wishlist[]
+  reviews   Review[]
+
+  @@index([userId])
+}
+
+model CoupleProfile {
+  id     String @id @default(uuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  weddingDate      DateTime?
+  weddingLocation  String?
+  expectedGuests   Int       @default(200)
+  traditions       String?
+  languagesSpoken  String?
+  photographyRules String    @default("Allowed")
+  familyBio        String?   @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  weddings Wedding[]
+
+  @@index([userId])
+}
+
+model AgentProfile {
+  id     String @id @default(uuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  organization    String
+  country         String
+  experienceYears Int     @default(2)
+  targetAudience  String?
+  verifiedChecks  Boolean @default(false)
+
+  referralCode String @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  referrals      AgentReferral[] @relation("Agent")
+  commissions    Commission[]
+  payoutRequests PayoutRequest[]
+
+  @@index([userId])
+}
+
+model Wedding {
+  id           String        @id @default(uuid())
+  hostCoupleId String
+  hostCouple   CoupleProfile @relation(fields: [hostCoupleId], references: [id], onDelete: Cascade)
+
+  slug                String        @unique
+  title               String
+  description         String        @db.Text
+  location            String
+  category            String
+  date                DateTime
+  pricePerGuest       Float
+  capacity            Int
+  mainImageUrl        String
+  status              WeddingStatus @default(DRAFT)
+  featured            Boolean       @default(false)
+  manualTrendingBoost Float         @default(0.0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  gallery        WeddingGallery[]
+  events         WeddingEvent[]
+  traditions     WeddingTradition[]
+  bookings       Booking[]
+  wishlists      Wishlist[]
+  recentlyViewed RecentlyViewed[]
+  itinerary      WeddingItineraryItem[]
+  announcements  WeddingAnnouncement[]
+  contacts       EventContact[]
+
+  // Trust & Safety Fields
+  suspended   Boolean               @default(false)
+  safetyCases SafetyCase[]
+  badges      WeddingQualityBadge[]
+
+  @@index([hostCoupleId])
+  @@index([slug])
+}
+
+model WeddingGallery {
+  id        String   @id @default(uuid())
+  weddingId String
+  wedding   Wedding  @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  imageUrl  String
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([weddingId])
+}
+
+model WeddingEvent {
+  id        String  @id @default(uuid())
+  weddingId String
+  wedding   Wedding @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+
+  name        String
+  description String?  @db.Text
+  date        DateTime
+  startTime   String
+  endTime     String
+  location    String
+  dressCode   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([weddingId])
+}
+
+model WeddingTradition {
+  id        String  @id @default(uuid())
+  weddingId String
+  wedding   Wedding @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+
+  name        String
+  description String @db.Text
+
+  createdAt DateTime @default(now())
+
+  @@index([weddingId])
+}
+
+model Booking {
+  id         String          @id @default(uuid())
+  travelerId String
+  traveler   TravelerProfile @relation(fields: [travelerId], references: [id], onDelete: Cascade)
+  weddingId  String
+  wedding    Wedding         @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+
+  date          DateTime
+  guestsCount   Int           @default(1)
+  pricePerGuest Float
+  totalAmount   Float
+  status        BookingStatus @default(PENDING)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  guests        BookingGuest[]
+  payments      Payment[]
+  reviews       Review[]
+  conversations Conversation[]
+  commissions   Commission[]
+  guestPasses   GuestPass[]
+  preparations  TravelerPreparation[]
+  emergencies   EmergencyContact[]
+  travelDetails TravelDetail[]
+
+  // Trust & Safety Relations
+  cancellationRequests CancellationRequest[]
+  safetyCases          SafetyCase[]
+
+  @@index([travelerId])
+  @@index([weddingId])
+}
+
+model BookingGuest {
+  id        String  @id @default(uuid())
+  bookingId String
+  booking   Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  fullName          String
+  email             String?
+  age               Int?
+  gender            String?
+  foodPreference    String  @default("No Restrictions")
+  accessibilityNeed String  @default("None")
+
+  createdAt DateTime @default(now())
+
+  @@index([bookingId])
+}
+
+model Wishlist {
+  id             String          @id @default(uuid())
+  travelerId     String
+  traveler       TravelerProfile @relation(fields: [travelerId], references: [id], onDelete: Cascade)
+  weddingId      String
+  wedding        Wedding         @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  folder         String          @default("Default")
+  collection     String          @default("Favorites")
+  notes          String?         @db.Text
+  shareableToken String?         @unique
+  isPublic       Boolean         @default(false)
+
+  createdAt DateTime @default(now())
+
+  @@unique([travelerId, weddingId])
+  @@index([travelerId])
+  @@index([weddingId])
+}
+
+model Review {
+  id         String          @id @default(uuid())
+  bookingId  String
+  booking    Booking         @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  travelerId String
+  traveler   TravelerProfile @relation(fields: [travelerId], references: [id], onDelete: Cascade)
+
+  rating              Int
+  comment             String     @db.Text
+  reply               String?    @db.Text
+  status              String     @default("PUBLISHED")
+  type                ReviewType @default(TRAVELER_TO_WEDDING)
+  images              String[]
+  helpfulVotes        Int        @default(0)
+  verifiedBooking     Boolean    @default(true)
+  ratingFood          Int        @default(5)
+  ratingHospitality   Int        @default(5)
+  ratingExperience    Int        @default(5)
+  ratingCulture       Int        @default(5)
+  ratingSafety        Int        @default(5)
+  ratingAccommodation Int        @default(5)
+
+  // Phase 14 category expansions
+  ratingOrganization  Int?
+  ratingValue         Int?
+  ratingCommunication Int?
+
+  editedAt  DateTime?
+  editCount Int       @default(0)
+  deletedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  helpfulVotesList  ReviewHelpfulVote[]
+  reports           ReviewReport[]
+  fraudSignals      ReviewFraudSignal[]
+  repliesList       ReviewReply[]
+  moderationActions ReviewModerationAction[]
+  appeals           ReviewAppeal[]
+
+  @@index([bookingId, type])
+  @@index([travelerId])
+}
+
+model Notification {
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  title   String
+  message String           @db.Text
+  type    NotificationType @default(INFO)
+  read    Boolean          @default(false)
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Payment {
+  id        String  @id @default(uuid())
+  bookingId String
+  booking   Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  amount                Float
+  currency              String        @default("USD")
+  stripePaymentIntentId String?       @unique
+  stripeChargeId        String?       @unique
+  status                PaymentStatus @default(PENDING)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  commissions    Commission[]
+  transactions   Transaction[]
+  refunds        Refund[]
+  payouts        Payout[]
+  paymentIntents PaymentIntent[]
+
+  @@index([bookingId])
+}
+
+model Transaction {
+  id          String   @id @default(uuid())
+  paymentId   String
+  payment     Payment  @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  type        String
+  amount      Float
+  status      String
+  referenceId String?
+  metadata    String?
+  createdAt   DateTime @default(now())
+
+  @@index([paymentId])
+}
+
+model Refund {
+  id             String   @id @default(uuid())
+  paymentId      String
+  payment        Payment  @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  amount         Float
+  reason         String?
+  stripeRefundId String?  @unique
+  status         String
+  createdAt      DateTime @default(now())
+
+  // Trust & Safety Relations
+  cancellationRequestId String?
+  cancellationRequest   CancellationRequest? @relation(fields: [cancellationRequestId], references: [id], onDelete: SetNull)
+
+  @@index([paymentId])
+  @@index([cancellationRequestId])
+}
+
+model Payout {
+  id               String   @id @default(uuid())
+  paymentId        String
+  payment          Payment  @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  amount           Float
+  stripeTransferId String?  @unique
+  status           String
+  createdAt        DateTime @default(now())
+
+  @@index([paymentId])
+}
+
+model PaymentIntent {
+  id           String   @id @default(uuid())
+  paymentId    String
+  payment      Payment  @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  stripeId     String   @unique
+  clientSecret String
+  amount       Float
+  status       String
+  createdAt    DateTime @default(now())
+
+  @@index([paymentId])
+}
+
+model Commission {
+  id               String          @id @default(uuid())
+  agentId          String
+  agent            AgentProfile    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  referralId       String?
+  referral         AgentReferral?  @relation(fields: [referralId], references: [id], onDelete: Cascade)
+  bookingId        String?
+  booking          Booking?        @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  paymentId        String?
+  payment          Payment?        @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  transactionId    String? // related transaction ledger item ID
+  commissionRuleId String?
+  commissionRule   CommissionRule? @relation(fields: [commissionRuleId], references: [id], onDelete: SetNull)
+
+  grossAmount      Float
+  commissionAmount Float
+  currency         String           @default("USD")
+  status           CommissionStatus @default(PENDING)
+  source           String // BOOKING_PAYMENT, HOST_ACQUISITION, MANUAL_ADJUSTMENT, REVERSAL
+
+  availableAt         DateTime?
+  paidAt              DateTime?
+  calculationSnapshot String?        @db.Text
+  idempotencyKey      String?        @unique
+  payoutRequestId     String?
+  payoutRequest       PayoutRequest? @relation(fields: [payoutRequestId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([agentId])
+  @@index([referralId])
+  @@index([bookingId])
+  @@index([paymentId])
+}
+
+model AgentReferral {
+  id             String       @id @default(uuid())
+  agentId        String
+  agent          AgentProfile @relation(name: "Agent", fields: [agentId], references: [id], onDelete: Cascade)
+  referredUserId String?
+  referredUser   User?        @relation(name: "ReferredUser", fields: [referredUserId], references: [id], onDelete: Cascade)
+
+  referralCode String
+  referralType ReferralType   @default(TRAVELER)
+  status       ReferralStatus @default(CLICKED)
+  points       Int            @default(0)
+
+  visitorId   String
+  sessionId   String?
+  source      String?
+  medium      String?
+  campaign    String?
+  landingPage String?
+
+  firstTouchAt DateTime  @default(now())
+  lastTouchAt  DateTime  @default(now())
+  signedUpAt   DateTime?
+  onboardedAt  DateTime?
+  convertedAt  DateTime?
+  expiresAt    DateTime?
+  metadata     String?   @db.Text
+
+  createdAt   DateTime            @default(now())
+  commissions Commission[]
+  fraudFlags  ReferralFraudFlag[]
+
+  @@index([agentId])
+  @@index([referredUserId])
+  @@index([visitorId])
+  @@index([referralCode])
+}
+
+model Verification {
+  id     String @id @default(uuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  status VerificationStatus @default(NOT_SUBMITTED)
+
+  // Traveler Verification Details
+  passportUrl   String?
+  govtIdUrl     String?
+  selfieUrl     String?
+  phoneVerified Boolean @default(false)
+  emailVerified Boolean @default(false)
+
+  // Couple Verification Details
+  invitationUrl   String?
+  venueConfirmUrl String?
+  socialLinks     String? @db.Text
+
+  // Agent Verification Details
+  orgDetails     String? @db.Text
+  businessRegUrl String?
+  linkedinUrl    String?
+
+  // Metadata for audit
+  submissionDate DateTime? @default(now())
+  notes          String?   @db.Text
+  expiryDate     DateTime?
+  reviewedBy     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model Country {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  code      String   @unique
+  createdAt DateTime @default(now())
+
+  states State[]
+}
+
+model State {
+  id        String   @id @default(uuid())
+  name      String
+  countryId String
+  country   Country  @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  cities City[]
+
+  @@unique([name, countryId])
+  @@index([countryId])
+}
+
+model City {
+  id        String   @id @default(uuid())
+  name      String
+  stateId   String
+  state     State    @relation(fields: [stateId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([name, stateId])
+  @@index([stateId])
+}
+
+model Language {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  code      String   @unique
+  createdAt DateTime @default(now())
+}
+
+model FAQ {
+  id        String   @id @default(uuid())
+  question  String
+  answer    String   @db.Text
+  category  String
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+}
+
+model ContactSubmission {
+  id        String        @id @default(uuid())
+  name      String
+  email     String
+  subject   String
+  message   String        @db.Text
+  status    ContactStatus @default(NEW)
+  createdAt DateTime      @default(now())
+}
+
+model NewsletterSubscriber {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+model BlogPost {
+  id         String   @id @default(uuid())
+  title      String
+  slug       String   @unique
+  content    String   @db.Text
+  excerpt    String?  @db.Text
+  coverImage String?
+  published  Boolean  @default(false)
+  authorId   String
+  authorName String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model HeroContent {
+  id              String   @id @default(uuid())
+  title           String
+  subtitle        String   @db.Text
+  buttonText      String?
+  buttonLink      String?
+  backgroundImage String?
+  active          Boolean  @default(false)
+  createdAt       DateTime @default(now())
+}
+
+model HomepageStat {
+  id        String   @id @default(uuid())
+  label     String
+  value     String
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+}
+
+model Testimonial {
+  id        String   @id @default(uuid())
+  name      String
+  role      String
+  avatar    String?
+  quote     String   @db.Text
+  rating    Int      @default(5)
+  featured  Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  action    String
+  entity    String
+  entityId  String?
+  userId    String
+  userName  String
+  details   String?  @db.Text
+  createdAt DateTime @default(now())
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  FILE
+  SYSTEM
+  BOOKING
+  PAYMENT
+  VERIFICATION
+}
+
+model Conversation {
+  id           String                    @id @default(uuid())
+  title        String?
+  createdAt    DateTime                  @default(now())
+  updatedAt    DateTime                  @updatedAt
+  bookingId    String?
+  booking      Booking?                  @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  archived     Boolean                   @default(false)
+  participants ConversationParticipant[]
+  messages     Message[]
+
+  @@index([bookingId])
+}
+
+model ConversationParticipant {
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lastReadAt     DateTime     @default(now())
+  muted          Boolean      @default(false)
+  pinned         Boolean      @default(false)
+
+  @@id([conversationId, userId])
+  @@index([userId])
+}
+
+model Message {
+  id             String            @id @default(uuid())
+  conversationId String
+  conversation   Conversation      @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String
+  sender         User              @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  type           MessageType       @default(TEXT)
+  text           String?           @db.Text
+  image          String?
+  attachment     String?
+  createdAt      DateTime          @default(now())
+  editedAt       DateTime?
+  deletedAt      DateTime?
+  reactions      MessageReaction[]
+
+  @@index([conversationId])
+  @@index([senderId])
+}
+
+model MessageReaction {
+  id        String  @id @default(uuid())
+  messageId String
+  message   Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  emoji     String
+
+  @@unique([messageId, userId, emoji])
+  @@index([userId])
+}
+
+model SavedSearch {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  filters   String   @db.Text
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model RecentlyViewed {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  weddingId String
+  wedding   Wedding  @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  viewedAt  DateTime @default(now()) @updatedAt
+
+  @@unique([userId, weddingId])
+  @@index([userId])
+  @@index([weddingId])
+}
+
+model SearchAnalytics {
+  id           String   @id @default(uuid())
+  query        String
+  filters      String?  @db.Text
+  resultsCount Int
+  ctr          Float    @default(0.0)
+  abandoned    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+}
+
+model CommissionRule {
+  id                       String       @id @default(uuid())
+  name                     String
+  referralType             ReferralType
+  calculationType          String // PERCENTAGE, FIXED, HYBRID
+  percentage               Float        @default(0.0)
+  fixedAmount              Float        @default(0.0)
+  minimumTransactionAmount Float        @default(0.0)
+  maximumCommission        Float        @default(0.0)
+  currency                 String       @default("USD")
+  recurring                Boolean      @default(false)
+  validFrom                DateTime     @default(now())
+  validUntil               DateTime?
+  active                   Boolean      @default(true)
+
+  createdAt   DateTime     @default(now())
+  commissions Commission[]
+}
+
+model PayoutRequest {
+  id      String       @id @default(uuid())
+  agentId String
+  agent   AgentProfile @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  amount  Float
+  method  String // BANK_TRANSFER, STRIPE_CONNECT, MANUAL
+  status  String       @default("REQUESTED") // REQUESTED, UNDER_REVIEW, APPROVED, PROCESSING, PAID, REJECTED, FAILED
+  notes   String?      @db.Text
+
+  commissions Commission[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([agentId])
+}
+
+model ReferralFraudFlag {
+  id         String        @id @default(uuid())
+  referralId String
+  referral   AgentReferral @relation(fields: [referralId], references: [id], onDelete: Cascade)
+  reason     String
+  severity   String // LOW, MEDIUM, HIGH, CRITICAL
+  status     String        @default("OPEN") // OPEN, REVIEWING, CLEARED, CONFIRMED
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([referralId])
+}
+
+model WeddingItineraryItem {
+  id                String   @id @default(uuid())
+  weddingId         String
+  wedding           Wedding  @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  title             String
+  description       String?  @db.Text
+  eventType         String // WELCOME, MEHENDI, HALDI, SANGEET, BARAAT, CEREMONY, RECEPTION, etc.
+  startAt           DateTime
+  endAt             DateTime
+  venueName         String
+  venueAddress      String
+  latitude          Float?
+  longitude         Float?
+  dressCode         String?
+  culturalNotes     String?  @db.Text
+  guestInstructions String?  @db.Text
+  sortOrder         Int      @default(0)
+  visibleToGuests   Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([weddingId])
+}
+
+model GuestPass {
+  id             String    @id @default(uuid())
+  bookingId      String
+  booking        Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  passCode       String    @unique // public readable pass identifier
+  qrTokenHash    String    @unique // SHA-256 hash of random secret
+  status         String    @default("ACTIVE") // ACTIVE, USED, REVOKED, EXPIRED
+  issuedAt       DateTime  @default(now())
+  expiresAt      DateTime?
+  firstScannedAt DateTime?
+  lastScannedAt  DateTime?
+  scanCount      Int       @default(0)
+  revokedAt      DateTime?
+  revokedReason  String?
+  encryptedToken String?
+
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  checkIns  GuestCheckIn[]
+
+  @@index([bookingId])
+}
+
+model GuestCheckIn {
+  id              String    @id @default(uuid())
+  guestPassId     String
+  guestPass       GuestPass @relation(fields: [guestPassId], references: [id], onDelete: Cascade)
+  bookingId       String
+  weddingId       String
+  scannedByUserId String
+  scanType        String // ENTRY, RE_ENTRY, MANUAL
+  result          String // SUCCESS, ALREADY_USED, REVOKED, EXPIRED, INVALID, WRONG_EVENT
+  deviceMetadata  String?   @db.Text
+  notes           String?   @db.Text
+  createdAt       DateTime  @default(now())
+
+  @@index([guestPassId])
+}
+
+model TravelerPreparation {
+  id                           String  @id @default(uuid())
+  bookingId                    String  @unique
+  booking                      Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  passportVerified             Boolean @default(false)
+  identityVerified             Boolean @default(false)
+  emergencyContactCompleted    Boolean @default(false)
+  culturalGuideViewed          Boolean @default(false)
+  dressCodeAcknowledged        Boolean @default(false)
+  itineraryViewed              Boolean @default(false)
+  venueInstructionsViewed      Boolean @default(false)
+  travelDetailsCompleted       Boolean @default(false)
+  specialRequirementsCompleted Boolean @default(false)
+
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model EmergencyContact {
+  id           String   @id @default(uuid())
+  bookingId    String   @unique
+  booking      Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  name         String
+  relationship String
+  phone        String
+  countryCode  String
+  email        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model TravelDetail {
+  id                        String   @id @default(uuid())
+  bookingId                 String   @unique
+  booking                   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  arrivalDate               DateTime
+  departureDate             DateTime
+  arrivalCity               String
+  flightNumber              String?
+  hotelName                 String?
+  transportRequired         Boolean  @default(false)
+  dietaryRequirements       String?  @db.Text
+  accessibilityRequirements String?  @db.Text
+  medicalNotes              String?  @db.Text // sensitive, handle with care
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+}
+
+model WeddingAnnouncement {
+  id          String    @id @default(uuid())
+  weddingId   String
+  wedding     Wedding   @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  authorId    String
+  title       String
+  message     String    @db.Text
+  priority    String    @default("NORMAL") // NORMAL, IMPORTANT, URGENT
+  publishedAt DateTime  @default(now())
+  expiresAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([weddingId])
+}
+
+model EventContact {
+  id              String   @id @default(uuid())
+  weddingId       String
+  wedding         Wedding  @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  name            String
+  role            String
+  phone           String
+  whatsapp        String?
+  email           String?
+  visibleToGuests Boolean  @default(true)
+  sortOrder       Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([weddingId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Trust, Safety, Disputes & Cancellations Models (Phase 13)
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum CancellationActor {
+  TRAVELER
+  HOST
+  ADMIN
+  SAFETY
+}
+
+enum CancellationStatus {
+  REQUESTED
+  AUTO_APPROVED
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  PROCESSING
+  COMPLETED
+  FAILED
+  WITHDRAWN
+}
+
+enum CancellationReasonCode {
+  CHANGE_OF_PLANS
+  TRAVEL_ISSUE
+  VISA_ISSUE
+  MEDICAL_EMERGENCY
+  HOST_CANCELLED
+  EVENT_CANCELLED
+  SAFETY_CONCERN
+  MISREPRESENTATION
+  PAYMENT_ISSUE
+  FORCE_MAJEURE
+  OTHER
+}
+
+enum CaseType {
+  SAFETY
+  HARASSMENT
+  MISREPRESENTATION
+  PAYMENT
+  REFUND
+  HOST_CONDUCT
+  TRAVELER_CONDUCT
+  AGENT_CONDUCT
+  DISCRIMINATION
+  PRIVACY
+  EVENT_ISSUE
+  FRAUD
+  OTHER
+}
+
+enum CaseSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum CaseStatus {
+  OPEN
+  TRIAGED
+  UNDER_INVESTIGATION
+  AWAITING_USER
+  AWAITING_ADMIN
+  ESCALATED
+  RESOLVED
+  CLOSED
+  APPEALED
+}
+
+enum AppealStatus {
+  SUBMITTED
+  UNDER_REVIEW
+  UPHELD
+  OVERTURNED
+  REJECTED
+}
+
+enum RestrictionType {
+  LOGIN_RESTRICTED
+  BOOKING_RESTRICTED
+  HOSTING_RESTRICTED
+  MESSAGING_RESTRICTED
+  PAYOUT_RESTRICTED
+  AGENT_REFERRAL_RESTRICTED
+  REVIEW_RESTRICTED
+}
+
+model CancellationRequest {
+  id                   String                 @id @default(uuid())
+  bookingId            String
+  booking              Booking                @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  requestedById        String
+  requestedBy          User                   @relation("CancellationRequestedBy", fields: [requestedById], references: [id], onDelete: Cascade)
+  actorRole            CancellationActor
+  reasonCode           CancellationReasonCode
+  reasonText           String?                @db.Text
+  status               CancellationStatus     @default(REQUESTED)
+  policySnapshot       String?                @db.Text // JSON snapshot of the policy details
+  originalAmount       Float
+  eligibleRefundAmount Float
+  approvedRefundAmount Float
+  currency             String                 @default("USD")
+  reviewedById         String?
+  reviewedBy           User?                  @relation("CancellationReviewedBy", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reviewNotes          String?                @db.Text
+  requestedAt          DateTime               @default(now())
+  reviewedAt           DateTime?
+  completedAt          DateTime?
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+  refunds              Refund[]
+
+  @@index([bookingId])
+  @@index([requestedById])
+  @@index([reviewedById])
+}
+
+model SafetyCase {
+  id              String       @id @default(uuid())
+  caseNumber      String       @unique // public WWI-CASE-<random>
+  type            CaseType
+  severity        CaseSeverity
+  status          CaseStatus   @default(OPEN)
+  bookingId       String?
+  booking         Booking?     @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  weddingId       String?
+  wedding         Wedding?     @relation(fields: [weddingId], references: [id], onDelete: SetNull)
+  reportedById    String
+  reportedBy      User         @relation("SafetyReportedBy", fields: [reportedById], references: [id], onDelete: Cascade)
+  subjectUserId   String?
+  subjectUser     User?        @relation("SafetySubjectUser", fields: [subjectUserId], references: [id], onDelete: SetNull)
+  assignedAdminId String?
+  assignedAdmin   User?        @relation("SafetyAssignedAdmin", fields: [assignedAdminId], references: [id], onDelete: SetNull)
+  title           String
+  description     String       @db.Text
+  resolutionCode  String?
+  resolutionNotes String?      @db.Text
+  financialHold   Boolean      @default(false)
+  resolvedAt      DateTime?
+  closedAt        DateTime?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  timelineEvents CaseTimelineEvent[]
+  evidence       CaseEvidence[]
+  appeals        CaseAppeal[]
+  participants   CaseParticipant[]
+
+  @@index([bookingId])
+  @@index([weddingId])
+  @@index([reportedById])
+  @@index([subjectUserId])
+  @@index([assignedAdminId])
+  @@index([status])
+  @@index([severity])
+  @@index([type])
+}
+
+model CaseParticipant {
+  caseId    String
+  case      SafetyCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      String // REPORTER, SUBJECT, WITNESS, ADMIN
+  createdAt DateTime   @default(now())
+
+  @@id([caseId, userId])
+  @@index([userId])
+}
+
+model CaseEvidence {
+  id           String     @id @default(uuid())
+  caseId       String
+  case         SafetyCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  fileUrl      String
+  fileKey      String?
+  mimeType     String
+  size         Int
+  uploadedById String
+  uploadedBy   User       @relation(fields: [uploadedById], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
+
+  @@index([caseId])
+  @@index([uploadedById])
+}
+
+model CaseTimelineEvent {
+  id          String     @id @default(uuid())
+  caseId      String
+  case        SafetyCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  actorId     String
+  actor       User       @relation(fields: [actorId], references: [id], onDelete: Cascade)
+  eventType   String // CASE_CREATED, TRIAGED, HOLD_ENABLED, etc.
+  safeSummary String
+  metadata    String?    @db.Text // JSON object
+  createdAt   DateTime   @default(now())
+
+  @@index([caseId])
+  @@index([actorId])
+  @@index([caseId, createdAt])
+}
+
+model CaseAppeal {
+  id            String       @id @default(uuid())
+  caseId        String
+  case          SafetyCase   @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  submittedById String
+  submittedBy   User         @relation("AppealSubmittedBy", fields: [submittedById], references: [id], onDelete: Cascade)
+  reason        String       @db.Text
+  status        AppealStatus @default(SUBMITTED)
+  reviewedById  String?
+  reviewedBy    User?        @relation("AppealReviewedBy", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reviewNotes   String?      @db.Text
+  createdAt     DateTime     @default(now())
+  reviewedAt    DateTime?
+
+  @@index([caseId])
+  @@index([submittedById])
+  @@index([reviewedById])
+}
+
+model UserRestriction {
+  id          String          @id @default(uuid())
+  userId      String
+  user        User            @relation("UserRestrictions", fields: [userId], references: [id], onDelete: Cascade)
+  type        RestrictionType
+  reasonCode  String
+  notes       String?         @db.Text
+  caseId      String?
+  startsAt    DateTime        @default(now())
+  expiresAt   DateTime?
+  createdById String
+  createdBy   User            @relation("RestrictionsCreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
+  revokedAt   DateTime?
+  revokedById String?
+  revokedBy   User?           @relation("RestrictionsRevokedBy", fields: [revokedById], references: [id], onDelete: SetNull)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([userId])
+  @@index([type])
+}
+
+model StripeWebhookEvent {
+  id            String    @id @default(uuid())
+  stripeEventId String    @unique
+  type          String
+  status        String // RECEIVED, PROCESSED, FAILED
+  processedAt   DateTime?
+  errorMessage  String?   @db.Text
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([stripeEventId])
+  @@index([status])
+}
+
+enum ReviewType {
+  TRAVELER_TO_WEDDING
+  HOST_TO_TRAVELER
+  TRAVELER_TO_AGENT
+  SYSTEM_FEEDBACK
+}
+
+enum ReviewStatus {
+  PENDING
+  PUBLISHED
+  UNDER_REVIEW
+  HIDDEN
+  REMOVED
+  APPEALED
+}
+
+enum ReviewReportReason {
+  SPAM
+  FAKE_REVIEW
+  HARASSMENT
+  HATEFUL_CONTENT
+  PERSONAL_INFORMATION
+  RETALIATION
+  CONFLICT_OF_INTEREST
+  INCORRECT_EXPERIENCE
+  OTHER
+}
+
+enum ReputationEntityType {
+  USER
+  WEDDING
+  AGENT
+  HOST
+  TRAVELER
+}
+
+enum ReputationEventType {
+  BOOKING_COMPLETED
+  HOST_CANCELLED
+  TRAVELER_CANCELLED
+  NO_SHOW
+  SUCCESSFUL_CHECK_IN
+  VERIFIED_REVIEW
+  REVIEW_REMOVED
+  SAFETY_CASE_OPENED
+  SAFETY_CASE_UPHELD
+  SAFETY_CASE_DISMISSED
+  REFUND_ISSUED
+  PAYOUT_COMPLETED
+  REFERRAL_CONVERTED
+  REFERRAL_FRAUD_CONFIRMED
+  VERIFICATION_APPROVED
+  MANUAL_ADMIN_ADJUSTMENT
+}
+
+enum FraudSignalType {
+  DUPLICATE_CONTENT
+  RAPID_REVIEW_BURST
+  ACCOUNT_LINK_SIGNAL
+  RETALIATION_PATTERN
+  RATING_OUTLIER
+  REPEATED_TEXT_PATTERN
+  UNVERIFIED_EXPERIENCE
+  SELF_REVIEW
+  CONFLICT_OF_INTEREST
+}
+
+model ReviewHelpfulVote {
+  id        String   @id @default(uuid())
+  reviewId  String
+  review    Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([reviewId, userId])
+  @@index([reviewId])
+  @@index([userId])
+}
+
+model ReviewReply {
+  id        String    @id @default(uuid())
+  reviewId  String
+  review    Review    @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content   String    @db.Text
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@index([reviewId])
+  @@index([userId])
+}
+
+model ReviewReport {
+  id         String             @id @default(uuid())
+  reviewId   String
+  review     Review             @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  reporterId String
+  reporter   User               @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+  reason     ReviewReportReason
+  details    String?            @db.Text
+  createdAt  DateTime           @default(now())
+
+  @@unique([reviewId, reporterId])
+  @@index([reviewId])
+  @@index([reporterId])
+}
+
+model ReviewModerationAction {
+  id          String   @id @default(uuid())
+  reviewId    String
+  review      Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  moderatorId String
+  moderator   User     @relation(fields: [moderatorId], references: [id], onDelete: Cascade)
+  action      String // HIDE, REMOVE, PUBLISH, DISMISS_REPORTS, RESTORE
+  reason      String   @db.Text
+  createdAt   DateTime @default(now())
+
+  @@index([reviewId])
+  @@index([moderatorId])
+}
+
+model ReviewFraudSignal {
+  id           String          @id @default(uuid())
+  reviewId     String
+  review       Review          @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  type         FraudSignalType
+  severity     String // LOW, MEDIUM, HIGH, CRITICAL
+  score        Float
+  metadata     String?         @db.Text // JSON metadata
+  createdAt    DateTime        @default(now())
+  resolvedAt   DateTime?
+  resolvedById String?
+  resolvedBy   User?           @relation(fields: [resolvedById], references: [id], onDelete: SetNull)
+
+  @@index([reviewId])
+  @@index([resolvedById])
+}
+
+model ReputationProfile {
+  id              String               @id @default(uuid())
+  entityType      ReputationEntityType
+  entityId        String
+  overallScore    Int                  @default(80)
+  confidenceScore Float                @default(1.0)
+  dimensionScores String               @db.Text // JSON dictionary
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+
+  @@unique([entityType, entityId])
+  @@index([entityType, entityId])
+}
+
+model ReputationEvent {
+  id             String               @id @default(uuid())
+  entityType     ReputationEntityType
+  entityId       String
+  type           ReputationEventType
+  scoreEffect    Float
+  referenceId    String?
+  idempotencyKey String               @unique
+  createdAt      DateTime             @default(now())
+
+  @@index([entityType, entityId])
+}
+
+model TrustScoreSnapshot {
+  id                 String               @id @default(uuid())
+  entityType         ReputationEntityType
+  entityId           String
+  overallScore       Int
+  dimensionScores    String               @db.Text
+  confidenceScore    Float
+  calculationVersion String               @default("v1")
+  eventCount         Int                  @default(0)
+  calculatedAt       DateTime             @default(now())
+
+  @@index([entityType, entityId])
+}
+
+model QualityBadge {
+  id          String               @id @default(uuid())
+  key         String               @unique
+  name        String
+  description String
+  entityType  ReputationEntityType
+  icon        String
+  active      Boolean              @default(true)
+  criteria    String               @db.Text
+  priority    Int                  @default(0)
+
+  userBadges    UserQualityBadge[]
+  weddingBadges WeddingQualityBadge[]
+}
+
+model UserQualityBadge {
+  id        String       @id @default(uuid())
+  badgeId   String
+  badge     QualityBadge @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  awardedAt DateTime     @default(now())
+  expiresAt DateTime?
+  revokedAt DateTime?
+  reason    String?      @db.Text
+
+  @@unique([userId, badgeId])
+  @@index([userId])
+  @@index([badgeId])
+}
+
+model WeddingQualityBadge {
+  id        String       @id @default(uuid())
+  badgeId   String
+  badge     QualityBadge @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+  weddingId String
+  wedding   Wedding      @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  awardedAt DateTime     @default(now())
+  expiresAt DateTime?
+  revokedAt DateTime?
+  reason    String?      @db.Text
+
+  @@unique([weddingId, badgeId])
+  @@index([weddingId])
+  @@index([badgeId])
+}
+
+model ReviewAppeal {
+  id            String       @id @default(uuid())
+  reviewId      String
+  review        Review       @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  submittedById String
+  submittedBy   User         @relation("ReviewAppealSubmittedBy", fields: [submittedById], references: [id], onDelete: Cascade)
+  reason        String       @db.Text
+  status        AppealStatus @default(SUBMITTED)
+  reviewedById  String?
+  reviewedBy    User?        @relation("ReviewAppealReviewedBy", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reviewNotes   String?      @db.Text
+  createdAt     DateTime     @default(now())
+  reviewedAt    DateTime?
+
+  @@index([reviewId])
+  @@index([submittedById])
+  @@index([reviewedById])
+}

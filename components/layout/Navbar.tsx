@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, X, ChevronDown, Heart, Globe } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 interface NavItem {
@@ -148,33 +149,36 @@ export default function Navbar() {
                     </button>
 
                     {/* Dropdown */}
-                    <div
-                      className={cn(
-                        "absolute top-full left-0 mt-2 w-56 rounded-2xl bg-white shadow-[0_8px_40px_0_rgba(0,0,0,0.14)] border border-warm-200/60 overflow-hidden transition-all duration-200 origin-top-left",
-                        activeDropdown === item.label
-                          ? "opacity-100 scale-100 pointer-events-auto"
-                          : "opacity-0 scale-95 pointer-events-none"
+                    <AnimatePresence>
+                      {activeDropdown === item.label && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                          transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                          className="absolute top-full left-0 mt-2 w-64 rounded-2xl bg-white/95 backdrop-blur-xl shadow-[0_16px_64px_-8px_rgba(0,0,0,0.16)] border border-warm-200/60 overflow-hidden origin-top-left"
+                          role="menu"
+                        >
+                          <div className="p-2">
+                            {item.children.map((child) => (
+                              <Link
+                                key={child.href}
+                                href={child.href}
+                                role="menuitem"
+                                className="flex flex-col px-4 py-3 rounded-xl hover:bg-maroon-50 transition-colors duration-150 group"
+                              >
+                                <span className="text-sm font-semibold text-charcoal-800 group-hover:text-[var(--color-brand-primary)] transition-colors">
+                                  {child.label}
+                                </span>
+                                <span className="text-xs text-charcoal-500 mt-0.5">
+                                  {child.description}
+                                </span>
+                              </Link>
+                            ))}
+                          </div>
+                        </motion.div>
                       )}
-                      role="menu"
-                    >
-                      <div className="p-2">
-                        {item.children.map((child) => (
-                          <Link
-                            key={child.href}
-                            href={child.href}
-                            role="menuitem"
-                            className="flex flex-col px-3 py-2.5 rounded-xl hover:bg-maroon-50 transition-colors duration-150 group"
-                          >
-                            <span className="text-sm font-semibold text-charcoal-800 group-hover:text-[var(--color-brand-primary)] transition-colors">
-                              {child.label}
-                            </span>
-                            <span className="text-xs text-charcoal-400 mt-0.5">
-                              {child.description}
-                            </span>
-                          </Link>
-                        ))}
-                      </div>
-                    </div>
+                    </AnimatePresence>
                   </div>
                 ) : (
                   <Link
@@ -250,104 +254,108 @@ export default function Navbar() {
       </header>
 
       {/* Mobile Menu Overlay */}
-      <div
-        id="mobile-menu"
-        role="dialog"
-        aria-modal="true"
-        aria-label="Navigation menu"
-        className={cn(
-          "fixed inset-0 z-40 lg:hidden transition-all duration-300",
-          isMobileOpen
-            ? "opacity-100 pointer-events-auto"
-            : "opacity-0 pointer-events-none"
-        )}
-      >
-        {/* Backdrop */}
-        <div
-          className="absolute inset-0 bg-charcoal-900/50 backdrop-blur-sm"
-          onClick={() => setIsMobileOpen(false)}
-          aria-hidden="true"
-        />
-
-        {/* Drawer */}
-        <div
-          className={cn(
-            "absolute top-0 right-0 bottom-0 w-80 max-w-[90vw] bg-white flex flex-col shadow-2xl transition-transform duration-300",
-            isMobileOpen ? "translate-x-0" : "translate-x-full"
-          )}
-        >
-          {/* Drawer header */}
-          <div className="flex items-center justify-between p-5 border-b border-warm-200">
-            <Link
-              href="/"
-              className="flex items-center gap-2.5"
+      <AnimatePresence>
+        {isMobileOpen && (
+          <motion.div
+            id="mobile-menu"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Navigation menu"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
+            className="fixed inset-0 z-40 lg:hidden"
+          >
+            {/* Backdrop */}
+            <div
+              className="absolute inset-0 bg-charcoal-950/40 backdrop-blur-md"
               onClick={() => setIsMobileOpen(false)}
-            >
-              <div className="w-8 h-8 rounded-lg bg-[var(--color-brand-primary)] flex items-center justify-center text-base">
-                🪔
-              </div>
-              <span className="font-display font-bold text-[var(--color-brand-primary)] text-sm">
-                Wedding With India
-              </span>
-            </Link>
-            <button
-              onClick={() => setIsMobileOpen(false)}
-              className="p-1.5 rounded-lg hover:bg-charcoal-100 transition-colors"
-              aria-label="Close menu"
-            >
-              <X size={20} aria-hidden="true" />
-            </button>
-          </div>
+              aria-hidden="true"
+            />
 
-          {/* Nav links */}
-          <nav className="flex-1 overflow-y-auto p-4 space-y-1">
-            {navItems.map((item) => (
-              <div key={item.label}>
+            {/* Drawer */}
+            <motion.div
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
+              className="absolute top-0 right-0 bottom-0 w-80 max-w-[90vw] bg-white flex flex-col shadow-2xl"
+            >
+              {/* Drawer header */}
+              <div className="flex items-center justify-between p-5 border-b border-warm-200">
                 <Link
-                  href={item.href}
+                  href="/"
+                  className="flex items-center gap-2.5"
                   onClick={() => setIsMobileOpen(false)}
-                  className="flex items-center gap-3 px-4 py-3.5 rounded-xl font-semibold text-charcoal-800 hover:bg-maroon-50 hover:text-[var(--color-brand-primary)] transition-colors"
                 >
-                  {item.label}
-                </Link>
-                {item.children && (
-                  <div className="ml-4 mt-1 space-y-0.5 border-l-2 border-warm-200 pl-4">
-                    {item.children.map((child) => (
-                      <Link
-                        key={child.href}
-                        href={child.href}
-                        onClick={() => setIsMobileOpen(false)}
-                        className="block px-3 py-2 rounded-lg text-sm text-charcoal-500 hover:text-[var(--color-brand-primary)] hover:bg-maroon-50 transition-colors"
-                      >
-                        {child.label}
-                      </Link>
-                    ))}
+                  <div className="w-8 h-8 rounded-lg bg-[var(--color-brand-primary)] flex items-center justify-center text-base">
+                    🪔
                   </div>
-                )}
+                  <span className="font-display font-bold text-[var(--color-brand-primary)] text-sm">
+                    Wedding With India
+                  </span>
+                </Link>
+                <button
+                  onClick={() => setIsMobileOpen(false)}
+                  className="p-1.5 rounded-lg hover:bg-charcoal-100 transition-colors"
+                  aria-label="Close menu"
+                >
+                  <X size={20} aria-hidden="true" />
+                </button>
               </div>
-            ))}
-          </nav>
 
-          {/* CTA area */}
-          <div className="p-5 border-t border-warm-200 space-y-3">
-            <Link
-              href="/weddings"
-              onClick={() => setIsMobileOpen(false)}
-              className="btn btn-primary w-full justify-center"
-            >
-              <Heart size={16} aria-hidden="true" />
-              Attend a Wedding
-            </Link>
-            <Link
-              href="/list-wedding"
-              onClick={() => setIsMobileOpen(false)}
-              className="btn btn-outline w-full justify-center"
-            >
-              List Your Wedding
-            </Link>
-          </div>
-        </div>
-      </div>
+              {/* Nav links */}
+              <nav className="flex-1 overflow-y-auto p-4 space-y-1">
+                {navItems.map((item) => (
+                  <div key={item.label}>
+                    <Link
+                      href={item.href}
+                      onClick={() => setIsMobileOpen(false)}
+                      className="flex items-center gap-3 px-4 py-3.5 rounded-xl font-semibold text-charcoal-800 hover:bg-maroon-50 hover:text-[var(--color-brand-primary)] transition-colors"
+                    >
+                      {item.label}
+                    </Link>
+                    {item.children && (
+                      <div className="ml-4 mt-1 space-y-0.5 border-l-2 border-warm-200 pl-4">
+                        {item.children.map((child) => (
+                          <Link
+                            key={child.href}
+                            href={child.href}
+                            onClick={() => setIsMobileOpen(false)}
+                            className="block px-3 py-2 rounded-lg text-sm text-charcoal-500 hover:text-[var(--color-brand-primary)] hover:bg-maroon-50 transition-colors"
+                          >
+                            {child.label}
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </nav>
+
+              {/* CTA area */}
+              <div className="p-5 border-t border-warm-200 space-y-3">
+                <Link
+                  href="/weddings"
+                  onClick={() => setIsMobileOpen(false)}
+                  className="btn btn-primary w-full justify-center"
+                >
+                  <Heart size={16} aria-hidden="true" />
+                  Attend a Wedding
+                </Link>
+                <Link
+                  href="/list-wedding"
+                  onClick={() => setIsMobileOpen(false)}
+                  className="btn btn-outline w-full justify-center"
+                >
+                  List Your Wedding
+                </Link>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 }

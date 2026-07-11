@@ -1,21 +1,13 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
-import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
+import { ClerkProvider } from "@clerk/nextjs";
+import { AuthProvider } from "@/context/AuthContext";
+import LayoutVisibilityWrapper from "@/components/layout/LayoutVisibilityWrapper";
+import CookieConsent from "@/components/ui/CookieConsent";
+import Script from "next/script";
 
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-  display: "swap",
-});
-
-const playfairDisplay = Playfair_Display({
-  subsets: ["latin"],
-  variable: "--font-playfair",
-  display: "swap",
-  weight: ["400", "500", "600", "700", "800", "900"],
-});
+const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
+const APP_URL = "https://weddingwithindia.com";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -24,7 +16,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://weddingwithindia.com"),
+  metadataBase: new URL(APP_URL),
   title: {
     default: "Wedding With India — Attend Real Indian Weddings",
     template: "%s | Wedding With India",
@@ -45,7 +37,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://weddingwithindia.com",
+    url: APP_URL,
     siteName: "Wedding With India",
     title: "Wedding With India — Attend Real Indian Weddings",
     description:
@@ -65,6 +57,7 @@ export const metadata: Metadata = {
     description:
       "Experience the magic of authentic Indian weddings. Browse verified listings across India.",
     images: ["/og-image.jpg"],
+    creator: "@weddingwithindia",
   },
   robots: {
     index: true,
@@ -78,7 +71,49 @@ export const metadata: Metadata = {
     },
   },
   alternates: {
-    canonical: "https://weddingwithindia.com",
+    canonical: APP_URL,
+  },
+  verification: {
+    // Add Google Search Console verification token when available
+    // google: "YOUR_VERIFICATION_TOKEN",
+  },
+};
+
+// JSON-LD: Organization structured data
+const organizationJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: "Wedding With India",
+  url: APP_URL,
+  logo: `${APP_URL}/logo.png`,
+  description:
+    "The world's first marketplace to attend authentic Indian weddings as an honoured guest.",
+  sameAs: [
+    "https://www.instagram.com/weddingwithindia",
+    "https://www.facebook.com/weddingwithindia",
+    "https://twitter.com/weddingwithindia",
+  ],
+  contactPoint: {
+    "@type": "ContactPoint",
+    contactType: "customer support",
+    email: "hello@weddingwithindia.com",
+    availableLanguage: ["English", "Hindi"],
+  },
+};
+
+// JSON-LD: WebSite structured data (enables Google Sitelinks Searchbox)
+const websiteJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: "Wedding With India",
+  url: APP_URL,
+  potentialAction: {
+    "@type": "SearchAction",
+    target: {
+      "@type": "EntryPoint",
+      urlTemplate: `${APP_URL}/weddings?q={search_term_string}`,
+    },
+    "query-input": "required name=search_term_string",
   },
 };
 
@@ -88,17 +123,74 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en"
-      className={`${inter.variable} ${playfairDisplay.variable} scroll-smooth`}
-    >
-      <body className="min-h-screen flex flex-col antialiased">
-        <Navbar />
-        <main id="main-content" className="flex-1" tabIndex={-1}>
-          {children}
-        </main>
-        <Footer />
-      </body>
-    </html>
+    <ClerkProvider>
+      <html lang="en" className="scroll-smooth">
+        <head>
+          {/* JSON-LD Structured Data */}
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{
+              __html: JSON.stringify(organizationJsonLd),
+            }}
+          />
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{
+              __html: JSON.stringify(websiteJsonLd),
+            }}
+          />
+        </head>
+        <body className="min-h-screen flex flex-col antialiased">
+          {/* No-JavaScript fallback */}
+          <noscript>
+            <div
+              style={{
+                background: "#6b1026",
+                color: "white",
+                textAlign: "center",
+                padding: "12px 16px",
+                fontSize: "14px",
+                position: "fixed",
+                top: 0,
+                left: 0,
+                right: 0,
+                zIndex: 9999,
+              }}
+            >
+              ⚠️ JavaScript is required for Wedding With India to function correctly. Please enable JavaScript in your browser.
+            </div>
+          </noscript>
+
+          <AuthProvider>
+            <LayoutVisibilityWrapper>{children}</LayoutVisibilityWrapper>
+          </AuthProvider>
+
+          {/* Cookie Consent — loads before analytics */}
+          <CookieConsent gaId={GA_ID} />
+
+          {/* Google Analytics 4 — only loads after cookie consent is granted */}
+          {GA_ID && (
+            <>
+              <Script
+                src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
+                strategy="afterInteractive"
+                id="ga-script"
+              />
+              <Script id="ga-init" strategy="afterInteractive">
+                {`
+                  window.dataLayer = window.dataLayer || [];
+                  function gtag(){dataLayer.push(arguments);}
+                  gtag('js', new Date());
+                  gtag('config', '${GA_ID}', {
+                    anonymize_ip: true,
+                    cookie_flags: 'SameSite=None;Secure'
+                  });
+                `}
+              </Script>
+            </>
+          )}
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }

@@ -10,7 +10,7 @@ interface TestimonialsProps {
 function TestimonialCard({ testimonial }: { testimonial: Testimonial }) {
   return (
     <article
-      className="card-luxury p-6 sm:p-8 flex flex-col gap-5"
+      className="bg-white rounded-3xl p-6 sm:p-8 flex flex-col gap-5 border border-warm-200/50 shadow-[0_8px_32px_-12px_rgba(0,0,0,0.06)] hover:shadow-[0_16px_48px_-12px_rgba(107,16,38,0.12)] transition-shadow duration-500"
       aria-label={`Testimonial from ${testimonial.name}`}
     >
       {/* Quote icon */}
