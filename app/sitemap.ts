@@ -1,5 +1,4 @@
 import { MetadataRoute } from "next";
-import { prisma } from "@/lib/prisma";
 
 const baseUrl = "https://weddingwithindia.com";
 
@@ -78,6 +77,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Dynamic wedding listing routes
   let weddingRoutes: MetadataRoute.Sitemap = [];
   try {
+    const { prisma } = await import("@/lib/prisma");
     const weddings = await prisma.wedding.findMany({
       where: { status: "PUBLISHED" },
       select: { slug: true, updatedAt: true },
@@ -90,9 +90,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "weekly" as const,
       priority: 0.8,
     }));
-  } catch {
+  } catch (err) {
     // DB offline at build time — skip dynamic routes
-    console.warn("[sitemap] Database unavailable — omitting dynamic wedding routes");
+    console.warn("[sitemap] Database unavailable — omitting dynamic wedding routes", err);
   }
 
   return [...staticRoutes, ...weddingRoutes];

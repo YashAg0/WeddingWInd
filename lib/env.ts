@@ -11,12 +11,15 @@
 
 const isBuildTime =
   process.env.NEXT_PHASE === "phase-production-build" ||
-  process.env.NEXT_PHASE === "phase-export";
+  process.env.NEXT_PHASE === "phase-export" ||
+  process.env.npm_lifecycle_event === "build" ||
+  process.env.npm_lifecycle_event === "vercel-build" ||
+  process.env.VERCEL === "1";
 
 /**
  * Validate a required environment variable.
  * In production at runtime, throws if missing.
- * During build time, logs a warning instead (Prisma static generation needs this).
+ * During build time, returns a placeholder value when provided.
  */
 function requireEnv(key: string, defaultValueForBuild?: string): string {
   let value = process.env[key];
