@@ -19,11 +19,13 @@ const isBuildTime =
  * During build time, logs a warning instead (Prisma static generation needs this).
  */
 function requireEnv(key: string, defaultValueForBuild?: string): string {
-  const value = process.env[key];
+  let value = process.env[key];
   if (!value) {
     if (isBuildTime && defaultValueForBuild !== undefined) {
       // Allow build to proceed with a placeholder — real value needed at runtime
-      return defaultValueForBuild;
+      value = defaultValueForBuild;
+      process.env[key] = value;
+      return value;
     }
     if (process.env.NODE_ENV === "production" && !isBuildTime) {
       throw new Error(
@@ -35,7 +37,9 @@ function requireEnv(key: string, defaultValueForBuild?: string): string {
     if (process.env.NODE_ENV === "development") {
       console.warn(`[env] Warning: Missing environment variable: ${key}`);
     }
-    return defaultValueForBuild ?? "";
+    value = defaultValueForBuild ?? "";
+    process.env[key] = value;
+    return value;
   }
   return value;
 }
