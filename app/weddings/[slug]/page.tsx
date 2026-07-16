@@ -184,6 +184,37 @@ export default async function WeddingDetailPage({ params }: PageProps) {
               </h2>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Theme */}
+                <div className="space-y-2">
+                  <h3 className="font-sans font-bold text-xs text-charcoal-400 uppercase tracking-widest flex items-center gap-1.5">
+                    🎨 Wedding Theme
+                  </h3>
+                  <p className="text-charcoal-600 text-sm leading-relaxed">
+                    {wedding.theme || "Traditional Indian Celebration"}
+                  </p>
+                </div>
+
+                {/* Ethnicity */}
+                <div className="space-y-2">
+                  <h3 className="font-sans font-bold text-xs text-charcoal-400 uppercase tracking-widest flex items-center gap-1.5">
+                    🌏 Culture & Ethnicity
+                  </h3>
+                  <p className="text-charcoal-600 text-sm leading-relaxed">
+                    {wedding.ethnicity || "Multicultural"}
+                  </p>
+                </div>
+
+                {/* Guests */}
+                <div className="space-y-2">
+                  <h3 className="font-sans font-bold text-xs text-charcoal-400 uppercase tracking-widest flex items-center gap-1.5">
+                    👥 Guest Capacity
+                  </h3>
+                  <p className="text-charcoal-600 text-sm leading-relaxed">
+                    Up to {wedding.guestsAllowed} guests
+                    {wedding.requiredGuests ? ` · Host expects at least ${wedding.requiredGuests} guests` : ""}
+                  </p>
+                </div>
+
                 {/* Dress code */}
                 <div className="space-y-2">
                   <h3 className="font-sans font-bold text-xs text-charcoal-400 uppercase tracking-widest flex items-center gap-1.5">

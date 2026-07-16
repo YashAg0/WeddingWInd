@@ -65,6 +65,12 @@ const navItems: NavItem[] = [
     roles: ["traveler"]
   },
   {
+    label: "My Weddings",
+    href: "/dashboard/listings",
+    icon: Heart,
+    roles: ["couple"]
+  },
+  {
     label: "Wedding Operations",
     href: "/dashboard/operations",
     icon: Calendar,
