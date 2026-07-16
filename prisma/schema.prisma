@@ -242,6 +242,10 @@ model Wedding {
   date                DateTime
   pricePerGuest       Float
   capacity            Int
+  requiredGuests      Int           @default(0)
+  theme               String?
+  dressCode           String?
+  ethnicity           String?
   mainImageUrl        String
   status              WeddingStatus @default(DRAFT)
   featured            Boolean       @default(false)

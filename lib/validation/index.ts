@@ -75,6 +75,10 @@ export const weddingSchema = z.object({
   date: z.coerce.date(),
   pricePerGuest: z.number().positive("Price must be greater than zero"),
   capacity: z.number().int().positive("Capacity must be positive"),
+  requiredGuests: z.number().int().nonnegative().default(0),
+  theme: z.string().nullable().optional(),
+  dressCode: z.string().nullable().optional(),
+  ethnicity: z.string().nullable().optional(),
   mainImageUrl: z.string().url("Invalid image URL"),
   status: WeddingStatusSchema.default("DRAFT")
 });

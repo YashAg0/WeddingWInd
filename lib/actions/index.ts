@@ -191,21 +191,44 @@ export async function updateProfileDetails(data: {
 /**
  * 4. Wedding Experience CRUD
  */
+function slugifyTitle(title: string) {
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)+/g, "");
+}
+
+async function generateUniqueWeddingSlug(title: string, excludeWeddingId?: string) {
+  const base = slugifyTitle(title) || "wedding";
+  let slug = base;
+  for (let attempt = 0; attempt < 20; attempt++) {
+    const existing = await prisma.wedding.findUnique({ where: { slug } });
+    if (!existing || existing.id === excludeWeddingId) return slug;
+    slug = `${base}-${Math.floor(Math.random() * 10000)}`;
+  }
+  return `${base}-${Date.now()}`;
+}
+
 export async function createWedding(data: any) {
   const user = await requireAuth();
   if (user.role !== UserRole.COUPLE) {
     throw new Error("Forbidden: Only host couples can create wedding experiences.");
   }
-  const coupleProfile = await prisma.coupleProfile.findUnique({
-    where: { userId: user.id }
+  const coupleProfile = await prisma.coupleProfile.upsert({
+    where: { userId: user.id },
+    create: { userId: user.id, familyBio: "Hosted Couple" },
+    update: {}
   });
-  if (!coupleProfile) throw new Error("Couple profile not found.");
+
+  const slug = await generateUniqueWeddingSlug(data.title || "wedding");
 
   const parsed = weddingSchema.parse({
     ...data,
+    slug,
     hostCoupleId: coupleProfile.id,
     pricePerGuest: parseFloat(data.pricePerGuest || "1000"),
     capacity: parseInt(data.capacity || "100"),
+    requiredGuests: parseInt(data.requiredGuests || "0"),
     date: new Date(data.date || Date.now())
   });
 
@@ -214,6 +237,7 @@ export async function createWedding(data: any) {
   });
 
   revalidatePath("/weddings");
+  revalidatePath("/dashboard/listings");
   return { success: true, wedding };
 }
 
@@ -223,10 +247,24 @@ export async function editWedding(weddingId: string, data: any) {
     throw new Error("Forbidden: Only host couples can edit wedding experiences.");
   }
 
+  const coupleProfile = await prisma.coupleProfile.findUnique({
+    where: { userId: user.id }
+  });
+  if (!coupleProfile) throw new Error("Couple profile not found.");
+
+  const existing = await prisma.wedding.findUnique({ where: { id: weddingId } });
+  if (!existing) throw new Error("Wedding experience not found.");
+  if (existing.hostCoupleId !== coupleProfile.id) {
+    throw new Error("Forbidden: You can only edit wedding experiences you host.");
+  }
+
   const parsed = weddingSchema.parse({
     ...data,
+    slug: existing.slug,
+    hostCoupleId: coupleProfile.id,
     pricePerGuest: parseFloat(data.pricePerGuest),
     capacity: parseInt(data.capacity),
+    requiredGuests: parseInt(data.requiredGuests || "0"),
     date: new Date(data.date)
   });
 
@@ -237,6 +275,7 @@ export async function editWedding(weddingId: string, data: any) {
 
   revalidatePath(`/weddings/${wedding.slug}`);
   revalidatePath("/weddings");
+  revalidatePath("/dashboard/listings");
   return { success: true, wedding };
 }
 
@@ -246,12 +285,77 @@ export async function deleteWedding(weddingId: string) {
     throw new Error("Forbidden: Only host couples can delete wedding experiences.");
   }
 
+  const coupleProfile = await prisma.coupleProfile.findUnique({
+    where: { userId: user.id }
+  });
+  if (!coupleProfile) throw new Error("Couple profile not found.");
+
+  const existing = await prisma.wedding.findUnique({ where: { id: weddingId } });
+  if (!existing) throw new Error("Wedding experience not found.");
+  if (existing.hostCoupleId !== coupleProfile.id) {
+    throw new Error("Forbidden: You can only delete wedding experiences you host.");
+  }
+
   await prisma.wedding.delete({
     where: { id: weddingId }
   });
 
   revalidatePath("/weddings");
+  revalidatePath("/dashboard/listings");
   return { success: true };
+}
+
+/**
+ * Returns all wedding listings hosted by the currently authenticated couple,
+ * including live booking counts so the couple can track guest registrations.
+ */
+export async function getMyWeddings() {
+  const user = await requireAuth();
+  if (user.role !== UserRole.COUPLE) {
+    throw new Error("Forbidden: Only host couples can view their wedding listings.");
+  }
+
+  const coupleProfile = await prisma.coupleProfile.findUnique({
+    where: { userId: user.id }
+  });
+  if (!coupleProfile) return [];
+
+  const weddings = await prisma.wedding.findMany({
+    where: { hostCoupleId: coupleProfile.id },
+    orderBy: { createdAt: "desc" },
+    include: {
+      _count: { select: { bookings: true } },
+      bookings: {
+        where: {
+          status: {
+            in: [BookingStatus.APPROVED, BookingStatus.PAID, BookingStatus.CONFIRMED, BookingStatus.COMPLETED]
+          }
+        },
+        select: { guestsCount: true }
+      }
+    }
+  });
+
+  return weddings.map((w) => ({
+    id: w.id,
+    slug: w.slug,
+    title: w.title,
+    description: w.description,
+    location: w.location,
+    category: w.category,
+    date: w.date.toISOString(),
+    pricePerGuest: w.pricePerGuest,
+    capacity: w.capacity,
+    requiredGuests: w.requiredGuests,
+    theme: w.theme,
+    dressCode: w.dressCode,
+    ethnicity: w.ethnicity,
+    mainImageUrl: w.mainImageUrl,
+    status: w.status,
+    featured: w.featured,
+    totalBookings: w._count.bookings,
+    confirmedGuests: w.bookings.reduce((sum, b) => sum + b.guestsCount, 0)
+  }));
 }
 
 /**
@@ -1381,7 +1485,10 @@ export async function getWeddingBySlug(slug: string) {
         title: t.name,
         description: t.description
       })),
-      dressCode: "Traditional Indian / Festive Smart Casual",
+      dressCode: w.dressCode || "Traditional Indian / Festive Smart Casual",
+      theme: w.theme || "Traditional Indian Celebration",
+      ethnicity: w.ethnicity || "Multicultural",
+      requiredGuests: w.requiredGuests || 0,
       foodDescription: "Authentic local cuisine with vegetarian and vegan options available.",
       venueDescription: "A gorgeous venue with complete safety check, clean sanitation, and parking.",
       accommodation: "5-star luxury accommodation available nearby (discount rates offered for our guests).",

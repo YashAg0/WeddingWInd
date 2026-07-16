@@ -57,6 +57,9 @@ export interface Wedding {
   timeline: WeddingEvent[];
   traditions: WeddingTradition[];
   dressCode: string;
+  theme?: string;
+  ethnicity?: string;
+  requiredGuests?: number;
   foodDescription: string;
   venueDescription: string;
   accommodation: string;
