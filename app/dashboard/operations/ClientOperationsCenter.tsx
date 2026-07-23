@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { toast } from "sonner";
 import {
   manualCheckInAction,
   markAttendanceAction,
@@ -110,9 +111,9 @@ export default function ClientOperationsCenter({ wedding, bookings: initialBooki
       setBookings((prev) =>
         prev.map((b) => (b.id === bookingId ? { ...b, status: "CHECKED_IN" } : b))
       );
-      alert("Traveler checked in successfully!");
+      toast.success("Traveler checked in successfully!");
     } catch (err: any) {
-      alert(err.message || "Bypass failed.");
+      toast.error(err.message || "Bypass failed.");
     }
   };
 
@@ -123,9 +124,9 @@ export default function ClientOperationsCenter({ wedding, bookings: initialBooki
       setBookings((prev) =>
         prev.map((b) => (b.id === bookingId ? { ...b, status } : b))
       );
-      alert(`Guest successfully marked as ${status}!`);
+      toast.success(`Guest successfully marked as ${status}!`);
     } catch (err: any) {
-      alert(err.message || "Failed to update attendance.");
+      toast.error(err.message || "Failed to update attendance.");
     }
   };
 
@@ -147,10 +148,10 @@ export default function ClientOperationsCenter({ wedding, bookings: initialBooki
         sortOrder: 0,
         visibleToGuests: true,
       });
-      alert("Itinerary item created successfully!");
+      toast.success("Itinerary item created successfully!");
       window.location.reload();
     } catch (err: any) {
-      alert(err.message || "Creation failed.");
+      toast.error(err.message || "Creation failed.");
     } finally {
       setLoading(false);
     }
@@ -160,10 +161,10 @@ export default function ClientOperationsCenter({ wedding, bookings: initialBooki
     if (!confirm("Are you sure you want to delete this itinerary event item?")) return;
     try {
       await deleteItineraryItemAction(itemId);
-      alert("Deleted successfully!");
+      toast.success("Deleted successfully!");
       window.location.reload();
     } catch (err: any) {
-      alert(err.message || "Deletion failed.");
+      toast.error(err.message || "Deletion failed.");
     }
   };
 
@@ -177,13 +178,13 @@ export default function ClientOperationsCenter({ wedding, bookings: initialBooki
         message: announcementMsg,
         priority,
       });
-      alert("Announcement published and notifications sent successfully!");
+      toast.success("Announcement published and notifications sent successfully!");
       setAnnouncementTitle("");
       setAnnouncementMsg("");
       setPriority("NORMAL");
       window.location.reload();
     } catch (err: any) {
-      alert(err.message || "Failed to publish.");
+      toast.error(err.message || "Failed to publish.");
     } finally {
       setLoading(false);
     }

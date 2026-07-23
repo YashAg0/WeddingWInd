@@ -389,7 +389,7 @@ export async function adminReviewVerificationAction(
 
   // Create Notification
   const notifyType = status === VerificationStatus.APPROVED ? "VERIFICATION_APPROVED" : "VERIFICATION_REJECTED";
-  const notifyTitle = status === VerificationStatus.APPROVED ? "Verification Approved! ✅" : "Verification Request Declined ❌";
+  const notifyTitle = status === VerificationStatus.APPROVED ? "Verification Approved!" : "Verification Request Declined";
   const notifyMessage = status === VerificationStatus.APPROVED 
     ? "Your identity verification checks passed! A trust badge has been linked to your profile." 
     : `Your trust verification request was declined. Notes: ${notes || "Invalid/blurred docs."}`;

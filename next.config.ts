@@ -40,23 +40,25 @@ const nextConfig: NextConfig = {
             value: "max-age=31536000; includeSubDomains; preload",
           },
           // Content Security Policy
-          // Adjust 'script-src' when adding third-party analytics
+          // Configured for Clerk, Stripe, UploadThing, and Google Analytics
           {
             key: "Content-Security-Policy",
             value: [
               "default-src 'self'",
-              // Next.js inline scripts + Clerk
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://clerk.weddingwithindia.com https://challenges.cloudflare.com https://www.googletagmanager.com",
+              // Next.js inline scripts + Clerk + Cloudflare CAPTCHA + Google Analytics
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.clerk.accounts.dev https://*.clerk.com https://clerk.com https://clerk.weddingwithindia.com https://challenges.cloudflare.com https://www.googletagmanager.com",
+              // Worker scripts for Clerk token management & UploadThing
+              "worker-src 'self' blob: https://*.clerk.accounts.dev https://*.clerk.com",
               // Styles: inline (Tailwind) + Google Fonts
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               // Fonts
               "font-src 'self' https://fonts.gstatic.com",
               // Images: self + Unsplash + Pravatar + Clerk avatars + UploadThing
-              "img-src 'self' data: blob: https://images.unsplash.com https://i.pravatar.cc https://img.clerk.com https://uploadthing.com https://utfs.io https://www.google-analytics.com",
+              "img-src 'self' data: blob: https://images.unsplash.com https://i.pravatar.cc https://img.clerk.com https://*.clerk.com https://uploadthing.com https://utfs.io https://www.google-analytics.com",
               // Connections: API + Clerk + Stripe + UploadThing
-              "connect-src 'self' https://api.clerk.com https://clerk.weddingwithindia.com https://api.stripe.com https://uploadthing.com https://www.google-analytics.com https://analytics.google.com",
-              // Frames: Stripe embedded elements
-              "frame-src https://js.stripe.com https://hooks.stripe.com",
+              "connect-src 'self' https://api.clerk.com https://*.clerk.accounts.dev https://*.clerk.com https://clerk.com https://clerk.weddingwithindia.com https://api.stripe.com https://uploadthing.com https://www.google-analytics.com https://analytics.google.com",
+              // Frames: Stripe embedded elements + Clerk
+              "frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://*.clerk.accounts.dev https://*.clerk.com https://challenges.cloudflare.com",
               // Scripts in frames
               "frame-ancestors 'none'",
               // Form submissions
@@ -64,16 +66,6 @@ const nextConfig: NextConfig = {
               // Upgrade all HTTP to HTTPS
               "upgrade-insecure-requests",
             ].join("; "),
-          },
-        ],
-      },
-      // Cache static assets aggressively
-      {
-        source: "/_next/static/(.*)",
-        headers: [
-          {
-            key: "Cache-Control",
-            value: "public, max-age=31536000, immutable",
           },
         ],
       },
@@ -93,13 +85,10 @@ const nextConfig: NextConfig = {
   // ─── Performance ─────────────────────────────────────────────────────────
   compress: true,
 
-  experimental: {
-    // Reduce bundle size by only importing used icons from lucide-react
-    optimizePackageImports: ["lucide-react", "framer-motion"],
-  },
-
   // ─── Images ──────────────────────────────────────────────────────────────
   images: {
+    unoptimized: true,
+    qualities: [75, 90],
     formats: ["image/avif", "image/webp"],
     remotePatterns: [
       {

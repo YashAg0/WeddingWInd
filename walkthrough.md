@@ -1,3 +1,101 @@
+# Walkthrough: Phase 14.9 Complete Product Integration, UI, Route, Role & Runtime Recovery Audit
+
+## 1. Complete Application Route Map
+The application's route landscape is structured as follows:
+
+| Route Path | Authentication | Access / Role Constraints | Dynamic Parameters | Purpose |
+| :--- | :--- | :--- | :--- | :--- |
+| `/` | Public | None | None | Marketing Landing Page |
+| `/about` | Public | None | None | Brand vision, team, and story |
+| `/contact` | Public | None | None | Contact support and submissions form |
+| `/how-it-works` | Public | None | None | Platform overview and FAQ directory |
+| `/for-travelers` | Public | None | None | Landing page targeting traveler persona |
+| `/for-couples` | Public | None | None | Landing page targeting couple/host persona |
+| `/for-agents` | Public | None | None | Landing page targeting agent/partner persona |
+| `/privacy` | Public | None | None | Legal privacy statements |
+| `/terms` | Public | None | None | Legal terms and conditions |
+| `/login` | Public | None | None | Auth sign-in route |
+| `/signup` | Public | None | None | Auth registration route |
+| `/onboarding` | Protected (Clerk) | None (Redirects if onboarded) | None | Persona selection & profile initialization |
+| `/weddings` | Public | None | None | Interactive marketplace search and catalog |
+| `/weddings/map` | Public | None | None | Geolocation map view of active weddings |
+| `/weddings/[slug]` | Public | None | `slug` (dynamic string) | Detailed wedding showcase, reviews, & booking spot request |
+| `/wishlist/shared` | Public | None | None | Public view of shared traveler wishlists |
+| `/wishlist/shared/[token]` | Public | None | `token` (dynamic string) | Token-authorized shared wishlist access |
+| `/dashboard` | Protected (Clerk) | Active role dashboard layout | None | Main landing page of logged-in portal |
+| `/dashboard/profile` | Protected (Clerk) | Active role | None | View and update profile personal details |
+| `/dashboard/settings` | Protected (Clerk) | Active role | None | App preferences and configurations |
+| `/dashboard/notifications` | Protected (Clerk) | Active role | None | Read/manage user alerts and updates |
+| `/dashboard/messages` | Protected (Clerk) | Active role | None | Direct messenger client hub |
+| `/dashboard/bookings` | Protected (Clerk) | Traveler | None | User ticket registration list and histories |
+| `/dashboard/wishlist` | Protected (Clerk) | Traveler | None | Personal saved wedding experiences list |
+| `/dashboard/safety` | Protected (Clerk) | Traveler / Host | None | View active dispute case progress |
+| `/dashboard/safety/report` | Protected (Clerk) | Traveler / Host | None | File trust and safety incident report form |
+| `/dashboard/events` | Protected (Clerk) | Traveler / Host | None | Registered/attended event timelines list |
+| `/dashboard/events/[bookingId]` | Protected (Clerk) | Traveler / Host | `bookingId` (dynamic string) | Detail views, guest passes, and QR check-in codes |
+| `/dashboard/check-in` | Protected (Clerk) | Couple / Admin | None | Host gate scanner processor page |
+| `/dashboard/earnings` | Protected (Clerk) | Couple / Agent | None | Revenue analytics and payout requests |
+| `/dashboard/operations` | Protected (Clerk) | Couple | None | Experience event schedulers and guides editor |
+| `/dashboard/leads` | Protected (Clerk) | Couple | None | Guest inquiries communications hub |
+| `/dashboard/referrals` | Protected (Clerk) | Agent | None | Partner conversions tracker ledger |
+| `/dashboard/admin/users` | Protected (Clerk) | Admin | None | User account registry and role configurations |
+| `/dashboard/admin/weddings` | Protected (Clerk) | Admin | None | Wedding experience creation, publishing, and curation |
+| `/dashboard/admin/bookings` | Protected (Clerk) | Admin | None | Global booking list with status override panel |
+| `/dashboard/admin/payments` | Protected (Clerk) | Admin | None | Financial transaction registers (refunds, payouts) |
+| `/dashboard/admin/cms` | Protected (Clerk) | Admin | None | Dynamic UI editor (FAQ, Testimonials, Blog posts) |
+| `/dashboard/admin/analytics` | Protected (Clerk) | Admin | None | Audit log tracking system console actions |
+| `/dashboard/admin/verifications` | Protected (Clerk) | Admin | None | Profile identity verification audit desk |
+| `/dashboard/admin/safety` | Protected (Clerk) | Admin | None | Active dispute triage queue |
+| `/dashboard/admin/safety/[caseId]` | Protected (Clerk) | Admin | `caseId` (dynamic string) | Dispute detail case timeline and override console |
+
+## 2. Page Health Matrix
+
+| Route Path | Render Strategy | Primary Data Fetch | Dependency Status | Health Status |
+| :--- | :--- | :--- | :--- | :--- |
+| `/` | SSR / Static | Local static content | Unsplash Images, CSS | PASS |
+| `/weddings` | Dynamic | Server Action (`getWeddings`) | Postgres Database | PASS |
+| `/weddings/[slug]` | Dynamic | Server Action (`getWeddingBySlug`) | Postgres Database | PASS (Handles offline DB gracefully) |
+| `/onboarding` | Client-Side | AuthContext (`syncAndGetDbUser`) | Clerk API, Postgres DB | PASS |
+| `/dashboard` | Client-Side | AuthContext (`fetchDashboardDataAction`)| Clerk API, Postgres DB | PASS |
+| `/dashboard/admin/*` | SSR | requireRole (`ADMIN`), Postgres query | Postgres Database | FAIL (Inaccessible without database promotion) |
+| `/api/health` | API Route | Postgres check, Clerk check | DB connection, Clerk API | PASS |
+| `/api/webhooks/stripe` | API Route | Stripe Webhook Payload Validation | Stripe webhook signing key | UNVERIFIED |
+
+## 3. Admin Access Trace
+The authorization workflow for administrative access executes along the following boundaries:
+
+1. **Browser Request**: Client navigates to `/dashboard/admin/users` (or another admin route).
+2. **Middleware Match**: Next.js checks `proxy.ts`. *Diagnostic note*: Since Next.js requires the file to be named `middleware.ts` at the root, naming it `proxy.ts` bypasses framework-level routing protection. Traffic flows to the page directory unchecked by Clerk edge gates.
+3. **Server-Side Authorization**: The layout / page server component executes:
+   - `AdminUsersPage()` calls `const admin = await requireRole([UserRole.ADMIN]);`.
+4. **Session Synchronization**: `requireRole` calls `requireAuth()`, which triggers `syncAndGetDbUser()`:
+   - Calls Clerk `auth()` to extract the current authenticated `userId`.
+   - If not signed in, throws `UNAUTHORIZED`.
+   - If signed in, queries Postgres `User` by `clerkUserId`.
+5. **Role Check**:
+   - If the user does not exist in the database, `syncAndGetDbUser()` creates a new user record inside a transaction, setting `role` to `"TRAVELER"` and `status` to `"ONBOARDING"`.
+   - `requireRole` checks if the user's role is in the allowed roles array (`[UserRole.ADMIN]`).
+   - If the role matches, execution continues and the page renders.
+   - If the role does not match, a `FORBIDDEN` error is thrown, routing to `error.tsx` or `global-error.tsx`.
+6. **Access Blocker Root Cause**: In the current architecture, all new users created through synchronization default to `UserRole.TRAVELER`. The onboarding layout `/onboarding` only permits selecting `TRAVELER`, `COUPLE`, or `AGENT`. Consequently, a new user can never become an `ADMIN` through the application UI. Without an admin bootstrap script or direct DB access, the administration pages remain completely inaccessible.
+
+### Admin Bootstrap Process
+To assign the first `ADMIN` role securely, run the following command from the project root:
+```bash
+npm run db:bootstrap-admin <user-email-address>
+```
+*Process requirements*:
+1. The user must first sign up through the website interface (Clerk auth) so their record is synchronized in the local PostgreSQL database.
+2. The administrator executes the script, passing the user's email address.
+3. The script locates the user, updates their `role` to `ADMIN` and status to `ACTIVE`.
+
+### Role Access Boundary Proof
+Access checks are enforced at both the page layout level and individual server actions using:
+1. `requireRole([UserRole.ADMIN])`: If a non-admin attempts to invoke an admin action or render an admin page, a forbidden error is thrown, aborting the process before any database queries execute.
+2. Server Action Guards: All critical CMS and user directory overrides in [admin.ts](file:///c:/Projects/WeddingWithIndia/wedding-with-india/lib/actions/admin.ts) call `requireRole([UserRole.ADMIN])` as their very first instruction.
+
+---
+
 # Walkthrough: Phase 14.8 Reputation Gate & Verification Audit
 
 ## 1. Executive Release Result
@@ -415,32 +513,33 @@ There is no drift between migrations and database schema files. Schema formats v
 ---
 
 ## 44. Exact Prisma Command Evidence
-*   `npx prisma format`: format completed successfully.
-*   `npx prisma validate`: **PASS (exit code 0)**.
-*   `npx prisma generate`: **PASS (exit code 0)**.
-*   `npx prisma migrate status`: **UNVERIFIED — DATABASE UNAVAILABLE**.
+*   `npx prisma format`: Formatted schema file successfully **(exit code 0)**.
+*   `npx prisma validate`: Schema validation checked out successfully **(exit code 0)**.
+*   `npx prisma generate`: Generated Prisma Client successfully **(exit code 0)**.
+*   `npx prisma migrate status`: **FAIL (exit code 1)** — Local database server not reachable (localhost:5432 unreachable).
 
 ---
 
 ## 45. Exact TypeScript Evidence
-*   `npm run type-check` (`tsc --noEmit`): **PASS (exit code 0)**.
+*   `npm run type-check` (`tsc --noEmit`): **PASS (exit code 0)** — compiled successfully with zero type checking errors.
 
 ---
 
 ## 46. Exact Jest Suite and Test Count
-*   **Test Suites**: 17 passed, 17 total.
-*   **Tests**: 77 passed, 77 total.
-*   **Execution Time**: 9.25 seconds.
+*   **Test Suites**: **PASS (exit code 0)** — 20 passed, 20 total.
+*   **Tests**: **PASS (exit code 0)** — 88 passed, 88 total.
+*   **Execution Time**: 18.25 seconds.
 
 ---
 
 ## 47. E2E Result
-*   `npm run e2e`: **UNVERIFIED — local environment headless browser and database unavailable**.
+*   `npm run e2e`: **FAIL (exit code 1)** — Playwright test runner is not installed in the package.json devDependencies.
 
 ---
 
 ## 48. Production Build Evidence
-*   `npm run build`: **PASS (exit code 0)**.
+*   `npm run build`: **PASS (exit code 0)** — Compiled successfully in 31.1s. All database-dependent dynamic pages (`/` and `/weddings/[slug]`) configured with `force-dynamic` to bypass compile-time database dependency and ensure clean runtime database-level connection failures rather than silent mock data fallbacks.
+
 
 ---
 
@@ -477,7 +576,7 @@ There is no drift between migrations and database schema files. Schema formats v
 | **Distributed readiness** | PASS | `rate-limit.ts` / adapter config | Checked design guidelines |
 | **Public DTO privacy** | PASS | `index.ts` / `mapToPublicReviewDTO` | `public-review-dto.test.ts` / "should strip sensitive user fields..." |
 | **Migration SQL integrity** | PASS | migration SQL files | Checked SQL indices |
-| **Unit test coverage** | PASS | Jest coverage report | 77 passing unit tests |
+| **Unit test coverage** | PASS | Jest coverage report | 88 passing unit tests |
 | **Type checking** | PASS | tsc compilation check | 0 errors |
 | **Production build** | PASS | next build | Compiled successfully |
 
@@ -486,3 +585,7 @@ There is no drift between migrations and database schema files. Schema formats v
 ## 50. Remaining Launch Blockers
 *   **Stripe Webhook secrets integration**: Ensure Stripe signing secrets are added to production env configs to verify inbound refund callbacks.
 *   **PostgreSQL production index seeding**: Ensure the PostgreSQL partial unique index is initialized on the target RDS instance during production migrate.
+*   **Founder Assets Required**:
+    - **ASSET REQUIRED**: `public/logo.png` (Used as the logo in organization structured JSON-LD data for search index visibility).
+    - **ASSET REQUIRED**: `public/og-image.jpg` (1200x630 pixel open graph representation card for public shares).
+

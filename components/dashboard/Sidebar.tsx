@@ -22,7 +22,11 @@ import {
   BarChart3,
   MessageSquare,
   Ticket,
-  ScanLine
+  ScanLine,
+  ShieldCheck,
+  CheckCircle2,
+  Sliders,
+  Sparkles
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -218,8 +222,8 @@ export default function Sidebar({ className, onCloseMobile }: SidebarProps) {
         {/* Brand Header */}
         <div className="flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 group">
-            <span className="w-8 h-8 rounded-lg bg-gradient-brand flex items-center justify-center font-display font-black text-sm text-white">
-              🪔
+            <span className="w-8 h-8 rounded-lg bg-gradient-brand flex items-center justify-center">
+              <Sparkles size={16} className="text-white" />
             </span>
             <span className="font-display font-bold text-sm tracking-wide text-white group-hover:text-[var(--color-brand-secondary)] transition-colors">
               Wedding With India

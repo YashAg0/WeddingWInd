@@ -20,37 +20,37 @@ const travelerSteps: Step[] = [
     stepNum: 1,
     title: "Browse Celebrations",
     description: "Explore verified, handpicked listings of weddings across India. Filter by date, style, budget, and location to find your match.",
-    icon: "🔍"
+    icon: "Search"
   },
   {
     stepNum: 2,
     title: "Apply to Join",
     description: "Submit a request indicating why you wish to join the family. This helps host families ensure mutual respect and alignment.",
-    icon: "📋"
+    icon: "ClipboardList"
   },
   {
     stepNum: 3,
     title: "Confirm Booking",
     description: "Once approved, secure your spot. Booking fees are held in a secure trust account until you arrive, ensuring 100% safety.",
-    icon: "💳"
+    icon: "CreditCard"
   },
   {
     stepNum: 4,
     title: "Pre-Travel Guidance",
     description: "Receive your customized cultural guide, dress code instructions, and contact details for your dedicated guest liaison.",
-    icon: "✈️"
+    icon: "Compass"
   },
   {
     stepNum: 5,
     title: "Attend & Celebrate",
     description: "Step inside the palace or temple. Dance, feast, and form life-long bonds with the couple and their extended family.",
-    icon: "🎊"
+    icon: "Sparkles"
   },
   {
     stepNum: 6,
     title: "Review & Reflect",
     description: "Share your experience with our global community to help other travelers discover authentic cultural immersion.",
-    icon: "⭐"
+    icon: "Star"
   }
 ];
 
@@ -59,37 +59,37 @@ const coupleSteps: Step[] = [
     stepNum: 1,
     title: "Register Your Wedding",
     description: "List your wedding date, venue, style, pricing, and the number of guest slots you wish to share with global travelers.",
-    icon: "✍️"
+    icon: "FileEdit"
   },
   {
     stepNum: 2,
     title: "Host Verification",
     description: "Our local compliance manager meets your family, verifies the venue, and confirms safety and hospitality standards.",
-    icon: "🛡️"
+    icon: "ShieldCheck"
   },
   {
     stepNum: 3,
     title: "Publish Listing",
     description: "Your wedding page goes live on our premium global marketplace, formatted beautifully by our listing designers.",
-    icon: "✨"
+    icon: "Sparkles"
   },
   {
     stepNum: 4,
     title: "Review Applications",
     description: "You have full control. Review guest applications, profiles, and reasons for joining. Accept only those who align with your family.",
-    icon: "👥"
+    icon: "Users"
   },
   {
     stepNum: 5,
     title: "Host & Share Heritage",
     description: "Welcome guests to your ceremonies as honored friends. Share your culinary traditions, folk dances, and sacred vows.",
-    icon: "🏡"
+    icon: "Home"
   },
   {
     stepNum: 6,
     title: "Receive Earnings",
     description: "After the wedding, funds are transferred directly to your bank account. Use it to support your honeymoon or wedding expenses.",
-    icon: "💰"
+    icon: "DollarSign"
   }
 ];
 
@@ -98,31 +98,31 @@ const agentSteps: Step[] = [
     stepNum: 1,
     title: "Apply as Partner",
     description: "Sign up for the Student Ambassador, Travel Agency, or Influencer partner programs. Vetting takes 2-3 business days.",
-    icon: "🤝"
+    icon: "Handshake"
   },
   {
     stepNum: 2,
     title: "Verification Approval",
     description: "Receive approval, sign the commission guidelines, and get onboarded onto the partner portal.",
-    icon: "✅"
+    icon: "CheckCircle2"
   },
   {
     stepNum: 3,
     title: "Generate Referral Link",
     description: "Access your customizable links and dashboard tracker tools to monitor visitors, leads, and conversions.",
-    icon: "🔗"
+    icon: "Link"
   },
   {
     stepNum: 4,
     title: "Invite Global Travelers",
     description: "Share your unique links on social media, blogs, travel agencies, or campus boards to invite travelers to join Indian weddings.",
-    icon: "🌍"
+    icon: "Globe"
   },
   {
     stepNum: 5,
     title: "Earn High Commissions",
     description: "Earn a dedicated percentage commission for every verified traveler booking. Payouts are made monthly directly to your wallet.",
-    icon: "💵"
+    icon: "Coins"
   }
 ];
 
@@ -215,7 +215,7 @@ export default function HowItWorksPage() {
                 
                 {/* Step circle indicator */}
                 <span className="absolute -left-[53px] top-0.5 w-10 h-10 rounded-full border border-warm-200 bg-white font-display font-bold text-sm text-[var(--color-brand-primary)] flex items-center justify-center shadow-md group-hover:border-[var(--color-brand-primary)] group-hover:scale-105 transition-all duration-300">
-                  {step.icon}
+                  {step.stepNum}
                 </span>
 
                 {/* Content Box */}

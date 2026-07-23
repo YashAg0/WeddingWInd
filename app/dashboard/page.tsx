@@ -23,11 +23,14 @@ import {
   Link as LinkIcon,
   TrendingUp,
   MapPin,
+  ArrowRight,
+  ShieldCheck,
   Check,
   X,
   Plus,
   RefreshCw,
-  Coins
+  Coins,
+  Sparkles
 } from "lucide-react";
 import Link from "next/link";
 
@@ -82,7 +85,8 @@ function VerificationWidget({ role, verification, submitVerification }: { role: 
     <div className="bg-white border border-warm-200/50 p-6 rounded-2xl shadow-sm space-y-6">
       <div className="flex justify-between items-center border-b border-warm-100 pb-3">
         <h3 className="font-display font-bold text-base text-charcoal-900 flex items-center gap-2">
-          🛡️ Profile Trust & Verification
+          <ShieldCheck size={18} className="text-maroon-800" />
+          <span>Profile Trust & Verification</span>
         </h3>
         <span className={cn("text-[0.625rem] font-bold uppercase tracking-wider px-2 py-0.5 rounded border", getStatusColor())}>
           {status.replace("_", " ")}
@@ -108,7 +112,10 @@ function VerificationWidget({ role, verification, submitVerification }: { role: 
           </p>
           <div className="space-y-2 text-[0.6875rem] text-charcoal-550 font-bold border-l-2 border-amber-200 pl-3">
             <div className="text-emerald-600">✓ Step 1: Documents Uploaded ({verification.submissionDate || "Just now"})</div>
-            <div className="text-amber-500 animate-pulse">→ Step 2: Undergoing Background Checks</div>
+            <div className="text-amber-500 animate-pulse flex items-center gap-1">
+              <ArrowRight size={11} />
+              <span>Step 2: Undergoing Background Checks</span>
+            </div>
             <div className="text-charcoal-400">Step 3: Verification Badge Issuance</div>
           </div>
         </div>
@@ -314,8 +321,9 @@ export default function DashboardOverviewPage() {
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <h3 className="font-display font-bold text-lg text-charcoal-900">Recommended for You</h3>
-                <Link href="/weddings" className="text-xs font-bold text-[var(--color-brand-primary)] hover:underline uppercase tracking-wider">
-                  Browse all →
+                <Link href="/weddings" className="text-xs font-bold text-[var(--color-brand-primary)] hover:underline uppercase tracking-wider inline-flex items-center gap-1">
+                  <span>Browse all</span>
+                  <ArrowRight size={12} />
                 </Link>
               </div>
 
@@ -336,8 +344,9 @@ export default function DashboardOverviewPage() {
                       </p>
                       <div className="flex justify-between items-center pt-2 border-t border-warm-50 text-xs">
                         <span className="font-bold text-charcoal-850">${wedding.pricePerGuest.toLocaleString()} <span className="font-normal text-charcoal-400">/ guest</span></span>
-                        <Link href={`/weddings/${wedding.slug}`} className="font-bold text-[var(--color-brand-primary)] hover:underline">
-                          Details →
+                        <Link href={`/weddings/${wedding.slug}`} className="font-bold text-[var(--color-brand-primary)] hover:underline inline-flex items-center gap-1">
+                          <span>Details</span>
+                          <ArrowRight size={12} />
                         </Link>
                       </div>
                     </div>
@@ -389,8 +398,9 @@ export default function DashboardOverviewPage() {
                         <h4 className="font-display font-bold text-xs text-charcoal-850 truncate">{rv.wedding.title}</h4>
                         <p className="text-[0.625rem] text-charcoal-400 mt-0.5 truncate">{rv.wedding.location}</p>
                       </div>
-                      <Link href={`/weddings/${rv.wedding.slug}`} className="text-xs text-[var(--color-brand-primary)] font-bold shrink-0">
-                        Continue →
+                      <Link href={`/weddings/${rv.wedding.slug}`} className="text-xs text-[var(--color-brand-primary)] font-bold shrink-0 inline-flex items-center gap-1">
+                        <span>Continue</span>
+                        <ArrowRight size={12} />
                       </Link>
                     </div>
                   ))}
@@ -433,7 +443,7 @@ export default function DashboardOverviewPage() {
             <div className="bg-white border border-warm-200/50 p-6 rounded-[2rem] shadow-sm space-y-4">
               <div className="border-b border-warm-100 pb-3">
                 <h3 className="font-display font-bold text-base text-charcoal-900 flex items-center gap-2">
-                  ✨ AI Heritage Match Advisor
+                  <Sparkles size={16} className="text-[var(--color-gold-500)]" /> AI Heritage Match Advisor
                 </h3>
                 <p className="text-charcoal-450 text-[10px] sm:text-xs mt-0.5">
                   Input your budget, size, and interests to find the ideal cultural experience.
@@ -490,9 +500,10 @@ export default function DashboardOverviewPage() {
                       </p>
                       <Link
                         href={`/weddings/${aiResult.match.slug}`}
-                        className="inline-block text-[10px] font-bold text-maroon-800 hover:underline uppercase tracking-wider"
+                        className="inline-flex items-center gap-1 text-[10px] font-bold text-maroon-800 hover:underline uppercase tracking-wider"
                       >
-                        Request Booking Spot →
+                        <span>Request Booking Spot</span>
+                        <ArrowRight size={12} />
                       </Link>
                     </>
                   ) : (
@@ -944,7 +955,18 @@ export default function DashboardOverviewPage() {
             {isAgentVerified ? (
               <div className="flex gap-2">
                 <input type="text" readOnly value={`https://weddingwithindia.com/?ref=${user?.name?.toLowerCase().replace(/\s/g, "_") || "agent"}`} className="input-luxury bg-warm-50 text-xs" />
-                <button className="btn btn-primary btn-sm cursor-pointer" onClick={() => alert("Copied referral link to clipboard!")}>Copy</button>
+                <button
+                  className="btn btn-primary btn-sm cursor-pointer"
+                  onClick={(e) => {
+                    const url = `https://weddingwithindia.com/?ref=${user?.name?.toLowerCase().replace(/\s/g, "_") || "agent"}`;
+                    navigator.clipboard.writeText(url);
+                    const btn = e.currentTarget;
+                    btn.textContent = "Copied!";
+                    setTimeout(() => { btn.textContent = "Copy"; }, 2000);
+                  }}
+                >
+                  Copy
+                </button>
               </div>
             ) : (
               <div className="p-4 bg-warm-50 rounded-xl border border-warm-100 text-xs text-charcoal-500 font-semibold leading-relaxed">

@@ -602,7 +602,7 @@ export async function generateBookingCommissionAction(
     await tx.notification.create({
       data: {
         userId: agent.userId,
-        title: "Commission Earned! 💸",
+        title: "Commission Earned!",
         message: `You earned a commission of $${commissionAmount} from a referred traveler booking!`,
         type: "SUCCESS",
       },
@@ -661,7 +661,7 @@ export async function reverseBookingCommissionAction(tx: any, paymentId: string,
       await tx.notification.create({
         data: {
           userId: agent.userId,
-          title: "Commission Reversal ⚠️",
+          title: "Commission Reversal",
           message: `Commission of $${c.commissionAmount} has been reversed due to traveler refund.`,
           type: "ALERT",
         },

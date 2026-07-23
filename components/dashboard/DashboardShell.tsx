@@ -1,27 +1,30 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, Suspense } from "react";
 import Sidebar from "./Sidebar";
 import DashboardHeader from "./DashboardHeader";
 import { useAuth } from "@/context/AuthContext";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 
-export default function DashboardShell({ children }: { children: React.ReactNode }) {
+function DashboardShellContent({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { user, loading } = useAuth();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   // Router guards wrapped in useEffect
   React.useEffect(() => {
     if (!loading) {
+      const fullUrl = searchParams.toString() ? `${pathname}?${searchParams.toString()}` : pathname;
       if (!user) {
-        router.push("/login");
+        router.replace(`/login?redirect_url=${encodeURIComponent(fullUrl)}`);
       } else if (!user.onboarded) {
-        router.push("/onboarding");
+        router.replace(`/onboarding?redirect_url=${encodeURIComponent(fullUrl)}`);
       }
     }
-  }, [user, loading, router]);
+  }, [user, loading, router, pathname, searchParams]);
 
   if (loading || !user || !user.onboarded) {
     return (
@@ -77,5 +80,18 @@ export default function DashboardShell({ children }: { children: React.ReactNode
       </div>
 
     </div>
+  );
+}
+
+export default function DashboardShell({ children }: { children: React.ReactNode }) {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-warm-50 flex items-center justify-center flex-col gap-3">
+        <div className="w-8 h-8 rounded-full border-4 border-maroon-100 border-t-maroon-800 animate-spin" />
+        <span className="text-xs font-bold text-charcoal-400 uppercase tracking-widest">Loading Workspace...</span>
+      </div>
+    }>
+      <DashboardShellContent>{children}</DashboardShellContent>
+    </Suspense>
   );
 }

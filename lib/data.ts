@@ -1,3 +1,4 @@
+import { BUSINESS_METRICS } from "@/lib/constants/business-metrics";
 import type {
   Wedding,
   Category,
@@ -67,7 +68,7 @@ export const featuredWeddings: Wedding[] = [
         time: "15:30 - 20:30",
         date: "Day 3 - Feb 16",
         description: "The groom's arrival on a decorated vintage car accompanied by drums and dancers, followed by the sacred Vedic wedding rituals and reception.",
-        icon: "👑"
+        icon: "Crown"
       }
     ],
     traditions: [
@@ -266,7 +267,7 @@ export const featuredWeddings: Wedding[] = [
         time: "09:00 - 14:00",
         date: "Day 3 - Mar 7",
         description: "The serene Sikh wedding ceremony at the Gurudwara, followed by the reception banquet.",
-        icon: "🪔"
+        icon: "Sparkles"
       }
     ],
     traditions: [
@@ -458,7 +459,7 @@ export const featuredWeddings: Wedding[] = [
         time: "15:00 - 23:00",
         date: "Day 2 - Dec 21",
         description: "A breathtaking wedding ceremony on a sand dune, followed by a gourmet dinner under the stars, bonfire, and guided stargazing.",
-        icon: "✨"
+        icon: "Sparkles"
       }
     ],
     traditions: [
@@ -604,7 +605,7 @@ export const weddingCategories: Category[] = [
     description: "Palace ceremonies with regal grandeur",
     imageUrl: "https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=600&q=85",
     weddingCount: 48,
-    icon: "👑",
+    icon: "Crown",
   },
   {
     id: "c2",
@@ -612,7 +613,7 @@ export const weddingCategories: Category[] = [
     description: "Vibrant celebrations full of joy & bhangra",
     imageUrl: "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=600&q=85",
     weddingCount: 112,
-    icon: "🎉",
+    icon: "Sparkles",
   },
   {
     id: "c3",
@@ -620,7 +621,7 @@ export const weddingCategories: Category[] = [
     description: "Sacred traditions with temple elegance",
     imageUrl: "https://images.unsplash.com/photo-1596484552834-6a58f850e0a1?w=600&q=85",
     weddingCount: 87,
-    icon: "🪷",
+    icon: "Flower2",
   },
   {
     id: "c4",
@@ -628,7 +629,7 @@ export const weddingCategories: Category[] = [
     description: "Ocean-side romance at sunset",
     imageUrl: "https://images.unsplash.com/photo-1519741497674-611481863552?w=600&q=85",
     weddingCount: 63,
-    icon: "🌊",
+    icon: "Waves",
   },
   {
     id: "c5",
@@ -636,7 +637,7 @@ export const weddingCategories: Category[] = [
     description: "Exotic locales for unforgettable vows",
     imageUrl: "https://images.unsplash.com/photo-1591604466107-ec97de577aff?w=600&q=85",
     weddingCount: 34,
-    icon: "✈️",
+    icon: "Compass",
   },
   {
     id: "c6",
@@ -644,7 +645,7 @@ export const weddingCategories: Category[] = [
     description: "Time-honoured rituals, timeless memories",
     imageUrl: "https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?w=600&q=85",
     weddingCount: 156,
-    icon: "🪔",
+    icon: "Flame",
   },
 ];
 
@@ -777,17 +778,17 @@ export const faqItems: FAQItem[] = [
 
 export const heroStats: Stat[] = [
   {
-    value: "1,400+",
+    value: BUSINESS_METRICS.WEDDINGS_HOSTED,
     label: "Weddings Listed",
     description: "Across 6 countries",
   },
   {
-    value: "12,000+",
+    value: BUSINESS_METRICS.GLOBAL_GUESTS,
     label: "Happy Guests",
-    description: "From 80 countries",
+    description: `From ${BUSINESS_METRICS.COUNTRIES_REPRESENTED_NUM} countries`,
   },
   {
-    value: "4.96",
+    value: BUSINESS_METRICS.AVERAGE_RATING,
     label: "Average Rating",
     description: "Out of 5.0 stars",
   },

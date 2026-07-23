@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Trash2, MapPin, Calendar, Heart } from "lucide-react";
+import { Trash2, MapPin, Calendar, Heart, ArrowRight } from "lucide-react";
 
 interface WishlistCardProps {
   wedding: {
@@ -62,9 +62,10 @@ export default function WishlistCard({ wedding, onRemove }: WishlistCardProps) {
           
           <Link
             href={`/weddings/${wedding.slug}`}
-            className="text-[0.6875rem] font-bold text-[var(--color-brand-primary)] hover:underline uppercase tracking-wider"
+            className="text-[0.6875rem] font-bold text-[var(--color-brand-primary)] hover:underline uppercase tracking-wider inline-flex items-center gap-1"
           >
-            View details →
+            <span>View details</span>
+            <ArrowRight size={11} />
           </Link>
         </div>
       </div>

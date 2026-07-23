@@ -9,11 +9,15 @@ import QRCode from "qrcode";
 import { Calendar, MapPin, Users, AlertTriangle, ShieldCheck, Heart, ArrowLeft, Ticket } from "lucide-react";
 import ClientEventHubForm from "./ClientEventHubForm";
 
-interface PageProps {
+interface EventHubPageProps {
   params: Promise<{ bookingId: string }>;
 }
 
-export default async function EventHubDetailPage({ params }: PageProps) {
+function calculateDaysToWedding(targetDate: string | Date): number {
+  return Math.ceil((new Date(targetDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+}
+
+export default async function EventHubDetailPage({ params }: EventHubPageProps) {
   const user = await requireAuth();
   const { bookingId } = await params;
 
@@ -74,9 +78,7 @@ export default async function EventHubDetailPage({ params }: PageProps) {
   const doneCount = tasks.filter((t) => t.done).length;
   const progressPercent = Math.round((doneCount / totalCount) * 100);
 
-  const daysToWedding = Math.ceil(
-    (new Date(booking.wedding.date).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
-  );
+  const daysToWedding = calculateDaysToWedding(booking.wedding.date);
 
   return (
     <div className="space-y-8 p-6 max-w-7xl mx-auto">

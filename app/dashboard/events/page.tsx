@@ -5,7 +5,7 @@ import Link from "next/link";
 import { requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { BookingStatus } from "@prisma/client";
-import { Calendar, MapPin, Users, Ticket } from "lucide-react";
+import { Calendar, MapPin, Users, Ticket, ArrowRight } from "lucide-react";
 
 export default async function EventsPage() {
   const user = await requireAuth();
@@ -119,7 +119,10 @@ export default async function EventsPage() {
                     href={`/dashboard/events/${b.id}`}
                     className="w-full text-center block bg-maroon-850 hover:bg-maroon-900 text-white font-bold text-xs py-2.5 rounded-xl transition-all"
                   >
-                    Enter Event Hub →
+                    <span className="inline-flex items-center justify-center gap-1.5">
+                      <span>Enter Event Hub</span>
+                      <ArrowRight size={13} />
+                    </span>
                   </Link>
                 </div>
               </div>

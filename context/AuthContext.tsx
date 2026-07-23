@@ -72,7 +72,7 @@ interface AuthContextType {
   signup: (email: string, name: string) => void;
   logout: () => void;
   updateRole: (role: UserRole) => void;
-  completeOnboarding: (onboardingData: any) => void;
+  completeOnboarding: (onboardingData: any, redirectUrl?: string) => void;
   updateProfile: (profileData: Partial<User>) => void;
   toggleWishlist: (weddingId: string) => void;
   addBooking: (booking: Omit<Booking, "id">) => void;
@@ -106,6 +106,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Function to refresh state data from Postgres
   const refreshData = useCallback(async () => {
+    setLoading(true);
     try {
       const dbUser = await syncAndGetDbUser();
       if (!dbUser) {
@@ -186,11 +187,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await refreshData();
   };
 
-  const completeOnboarding = async (onboardingData: any) => {
+  const completeOnboarding = async (onboardingData: any, redirectUrl?: string) => {
     setLoading(true);
     await completeOnboardingAction(onboardingData);
     await refreshData();
-    router.push("/dashboard");
+    router.push(redirectUrl || "/dashboard");
   };
 
   const updateProfile = async (profileData: Partial<User>) => {

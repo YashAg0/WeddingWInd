@@ -126,7 +126,7 @@ export async function issueGuestPassAction(bookingId: string) {
     await tx.notification.create({
       data: {
         userId: booking.traveler.user.id,
-        title: "Your Digital Pass is Ready! 🎟️",
+        title: "Your Digital Pass is Ready!",
         message: `Your digital entry code for ${booking.wedding.title} has been generated. View it in your Event Hub.`,
         type: "INFO",
       },
@@ -384,7 +384,7 @@ export async function manualCheckInAction(bookingId: string, notes?: string) {
     await tx.notification.create({
       data: {
         userId: booking.traveler.user.id,
-        title: "Checked In (Manual) ✅",
+        title: "Checked In (Manual)",
         message: "You have been marked as checked-in by the host.",
         type: "SUCCESS",
       },
@@ -731,7 +731,7 @@ export async function publishWeddingAnnouncementAction(data: z.infer<typeof anno
     await prisma.notification.create({
       data: {
         userId: b.traveler.user.id,
-        title: `Announcement: ${payload.title} 📢`,
+        title: `Announcement: ${payload.title}`,
         message: payload.message,
         type: payload.priority === "URGENT" ? "ALERT" : "INFO",
       },

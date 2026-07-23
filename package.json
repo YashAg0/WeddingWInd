@@ -10,7 +10,13 @@
     "lint": "eslint",
     "type-check": "tsc --noEmit",
     "test": "jest --passWithNoTests",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "audit:browser": "node scripts/browser-audit-production.cjs",
+    "db:bootstrap-admin": "node scripts/bootstrap-admin.js",
+    "db:seed": "node scripts/seed-db.js"
+  },
+  "prisma": {
+    "seed": "node scripts/seed-db.js"
   },
   "dependencies": {
     "@clerk/nextjs": "^7.5.16",
@@ -19,7 +25,7 @@
     "@uploadthing/react": "^7.3.3",
     "clsx": "^2.1.1",
     "framer-motion": "^12.42.2",
-    "lucide-react": "^1.24.0",
+    "lucide-react": "^0.475.0",
     "next": "16.2.10",
     "next-themes": "^0.4.6",
     "qrcode": "^1.5.4",
@@ -34,6 +40,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@playwright/test": "1.61.1",
     "@tailwindcss/postcss": "^4",
     "@types/jest": "^30.0.0",
     "@types/node": "^20",

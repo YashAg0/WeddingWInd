@@ -1,11 +1,21 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Crown, Sparkles, Flower2, Waves, Compass, Flame } from "lucide-react";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import type { Category } from "@/types";
 
 interface CategoriesProps {
   categories: Category[];
+}
+
+function getCategoryIcon(name: string) {
+  const lower = name.toLowerCase();
+  if (lower.includes("royal")) return <Crown size={18} className="text-[var(--color-gold-300)]" />;
+  if (lower.includes("punjabi")) return <Sparkles size={18} className="text-[var(--color-gold-300)]" />;
+  if (lower.includes("south")) return <Flower2 size={18} className="text-[var(--color-gold-300)]" />;
+  if (lower.includes("beach")) return <Waves size={18} className="text-[var(--color-gold-300)]" />;
+  if (lower.includes("destination")) return <Compass size={18} className="text-[var(--color-gold-300)]" />;
+  return <Flame size={18} className="text-[var(--color-gold-300)]" />;
 }
 
 export function Categories({ categories }: CategoriesProps) {
@@ -64,10 +74,10 @@ export function Categories({ categories }: CategoriesProps) {
               <div className="absolute inset-0 flex flex-col justify-end p-4 sm:p-5">
                 {/* Icon */}
                 <div
-                  className="w-10 h-10 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center text-xl mb-3 transition-transform duration-300 group-hover:scale-110"
+                  className="w-10 h-10 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center mb-3 transition-transform duration-300 group-hover:scale-110"
                   aria-hidden="true"
                 >
-                  {category.icon}
+                  {getCategoryIcon(category.name)}
                 </div>
 
                 <h3 className="font-display font-bold text-white text-lg sm:text-xl leading-tight mb-1">

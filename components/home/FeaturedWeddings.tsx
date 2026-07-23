@@ -3,6 +3,7 @@ import { ArrowRight } from "lucide-react";
 import { WeddingCard } from "@/components/wedding/WeddingCard";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import type { Wedding } from "@/types";
+import { BUSINESS_METRICS } from "@/lib/constants/business-metrics";
 
 interface FeaturedWeddingsProps {
   weddings: Wedding[];
@@ -66,7 +67,7 @@ export function FeaturedWeddings({ weddings }: FeaturedWeddingsProps) {
             />
           </Link>
           <p className="text-sm text-charcoal-400 mt-4">
-            1,400+ weddings across India and beyond
+            {BUSINESS_METRICS.WEDDINGS_HOSTED} weddings across India and beyond
           </p>
         </div>
       </div>

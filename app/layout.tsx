@@ -1,10 +1,25 @@
 import type { Metadata, Viewport } from "next";
+import { Playfair_Display, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import { AuthProvider } from "@/context/AuthContext";
 import LayoutVisibilityWrapper from "@/components/layout/LayoutVisibilityWrapper";
 import CookieConsent from "@/components/ui/CookieConsent";
 import Script from "next/script";
+import { Toaster } from "sonner";
+import { BUSINESS_METRICS } from "@/lib/constants/business-metrics";
+
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  variable: "--font-playfair",
+  display: "swap",
+});
+
+const plusJakarta = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  variable: "--font-plus-jakarta",
+  display: "swap",
+});
 
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
 const APP_URL = "https://weddingwithindia.com";
@@ -41,7 +56,7 @@ export const metadata: Metadata = {
     siteName: "Wedding With India",
     title: "Wedding With India — Attend Real Indian Weddings",
     description:
-      "Experience the magic of authentic Indian weddings as an honoured guest. Browse 1,400+ verified wedding listings across India.",
+      `Experience the magic of authentic Indian weddings as an honoured guest. Browse ${BUSINESS_METRICS.WEDDINGS_HOSTED} verified wedding listings across India.`,
     images: [
       {
         url: "/og-image.jpg",
@@ -123,8 +138,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider>
-      <html lang="en" className="scroll-smooth">
+    <ClerkProvider publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}>
+      <html lang="en" className={`${playfair.variable} ${plusJakarta.variable} scroll-smooth`}>
         <head>
           {/* JSON-LD Structured Data */}
           <script
@@ -157,7 +172,7 @@ export default function RootLayout({
                 zIndex: 9999,
               }}
             >
-              ⚠️ JavaScript is required for Wedding With India to function correctly. Please enable JavaScript in your browser.
+              JavaScript is required for Wedding With India to function correctly. Please enable JavaScript in your browser.
             </div>
           </noscript>
 
@@ -167,6 +182,7 @@ export default function RootLayout({
 
           {/* Cookie Consent — loads before analytics */}
           <CookieConsent gaId={GA_ID} />
+          <Toaster position="top-right" richColors closeButton />
 
           {/* Google Analytics 4 — only loads after cookie consent is granted */}
           {GA_ID && (

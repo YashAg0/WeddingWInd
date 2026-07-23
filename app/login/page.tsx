@@ -1,11 +1,45 @@
 "use client";
 
-import React from "react";
+import React, { Suspense } from "react";
 import Link from "next/link";
+import { useSearchParams, useRouter } from "next/navigation";
 import { SignIn } from "@clerk/nextjs";
 import { Compass } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
-export default function LoginPage() {
+function LoginContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { user, loading } = useAuth();
+
+  const redirectUrl = searchParams.get("redirect_url") || searchParams.get("returnTo") || null;
+
+  React.useEffect(() => {
+    if (!loading && user) {
+      if (!user.onboarded) {
+        const onboardingTarget = redirectUrl
+          ? `/onboarding?redirect_url=${encodeURIComponent(redirectUrl)}`
+          : "/onboarding";
+        router.replace(onboardingTarget);
+      } else {
+        router.replace(redirectUrl || "/dashboard");
+      }
+    }
+  }, [user, loading, router, redirectUrl]);
+
+  if (loading && user) {
+    return (
+      <div className="min-h-screen bg-warm-50 flex items-center justify-center flex-col gap-3">
+        <div className="w-8 h-8 rounded-full border-4 border-maroon-100 border-t-maroon-800 animate-spin" />
+        <span className="text-xs font-bold text-charcoal-400 uppercase tracking-widest">Restoring session...</span>
+      </div>
+    );
+  }
+
+  const clerkSignUpUrl = redirectUrl
+    ? `/signup?redirect_url=${encodeURIComponent(redirectUrl)}`
+    : "/signup";
+
   return (
     <div className="min-h-screen bg-warm-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md bg-white border border-warm-200/50 rounded-[2.5rem] p-6 sm:p-8 shadow-luxury space-y-6 flex flex-col items-center">
@@ -20,19 +54,32 @@ export default function LoginPage() {
             Welcome back
           </h1>
           <p className="text-charcoal-400 text-xs sm:text-sm">
-            Sign in to access your wedding discovery dashboard
+            Sign in to access your wedding discovery experience
           </p>
         </div>
 
         {/* Clerk Sign In component */}
         <div className="w-full flex justify-center">
           <SignIn 
-            signUpUrl="/signup"
-            fallbackRedirectUrl="/dashboard"
+            signUpUrl={clerkSignUpUrl}
+            fallbackRedirectUrl={redirectUrl || "/dashboard"}
+            forceRedirectUrl={redirectUrl || undefined}
           />
         </div>
 
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-warm-50 flex items-center justify-center flex-col gap-3">
+        <div className="w-8 h-8 rounded-full border-4 border-maroon-100 border-t-maroon-800 animate-spin" />
+      </div>
+    }>
+      <LoginContent />
+    </Suspense>
   );
 }

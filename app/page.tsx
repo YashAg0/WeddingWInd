@@ -8,9 +8,9 @@ import { Countries } from "@/components/home/Countries";
 import { FAQ } from "@/components/home/FAQ";
 import { CTASection } from "@/components/home/CTASection";
 import { getWeddings } from "@/lib/actions";
-import { prisma } from "@/lib/prisma";
-import { MapPin, Calendar, Compass, ShieldCheck } from "lucide-react";
+import { MapPin, Calendar, Compass, ShieldCheck, ArrowRight } from "lucide-react";
 import Link from "next/link";
+import { BUSINESS_METRICS } from "@/lib/constants/business-metrics";
 import {
   weddingCategories,
   testimonials,
@@ -20,10 +20,12 @@ import {
   howItWorksSteps,
 } from "@/lib/data";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Wedding With India — Attend Real Indian Weddings",
   description:
-    "The world's first marketplace to attend authentic Indian weddings. Join real celebrations in Rajasthan, Goa, Punjab, and Kerala as an honoured guest. Browse 1,400+ verified listings.",
+    `The world's first marketplace to attend authentic Indian weddings. Join real celebrations in Rajasthan, Goa, Punjab, and Kerala as an honoured guest. Browse ${BUSINESS_METRICS.WEDDINGS_HOSTED} verified listings.`,
   alternates: {
     canonical: "https://weddingwithindia.com",
   },
@@ -32,66 +34,18 @@ export const metadata: Metadata = {
 export default async function HomePage() {
   const weddings = await getWeddings();
 
-  // Query dynamic sections from database with safe fallback handling
-  let trending = [];
-  let popular = [];
-  let recentlyAdded = [];
-  let luxury = [];
-  let budgetFriendly = [];
-
-  try {
-    trending = await prisma.wedding.findMany({
-      where: { status: "PUBLISHED" },
-      orderBy: { manualTrendingBoost: "desc" },
-      take: 4,
-    });
-  } catch (err) {
-    trending = weddings.slice(0, 4) as any;
-  }
-
-  try {
-    popular = await prisma.wedding.findMany({
-      where: { status: "PUBLISHED" },
-      orderBy: { bookings: { _count: "desc" } },
-      take: 4,
-    });
-  } catch (err) {
-    popular = weddings.slice(0, 4) as any;
-  }
-
-  try {
-    recentlyAdded = await prisma.wedding.findMany({
-      where: { status: "PUBLISHED" },
-      orderBy: { createdAt: "desc" },
-      take: 4,
-    });
-  } catch (err) {
-    recentlyAdded = weddings.slice(0, 4) as any;
-  }
-
-  try {
-    luxury = await prisma.wedding.findMany({
-      where: {
-        status: "PUBLISHED",
-        pricePerGuest: { gte: 200 },
-      },
-      take: 4,
-    });
-  } catch (err) {
-    luxury = weddings.filter((w) => w.pricePerGuest >= 200) as any;
-  }
-
-  try {
-    budgetFriendly = await prisma.wedding.findMany({
-      where: {
-        status: "PUBLISHED",
-        pricePerGuest: { lte: 100 },
-      },
-      take: 4,
-    });
-  } catch (err) {
-    budgetFriendly = weddings.filter((w) => w.pricePerGuest <= 100) as any;
-  }
+  // Reuse the published listings fetched above. Re-querying the same database
+  // for each tray made the public fallback page wait on repeated connection
+  // timeouts when PostgreSQL is unavailable.
+  const trending = weddings.slice(0, 4);
+  const popular = [...weddings]
+    .sort((left, right) => right.guestsBooked - left.guestsBooked)
+    .slice(0, 4);
+  const recentlyAdded = [...weddings]
+    .sort((left, right) => new Date(right.date).getTime() - new Date(left.date).getTime())
+    .slice(0, 4);
+  const luxury = weddings.filter((w) => w.pricePerGuest >= 200).slice(0, 4);
+  const budgetFriendly = weddings.filter((w) => w.pricePerGuest <= 100).slice(0, 4);
 
   return (
     <>

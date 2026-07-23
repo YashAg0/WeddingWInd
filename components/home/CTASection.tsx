@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowRight, Heart, Sparkles } from "lucide-react";
+import { BUSINESS_METRICS } from "@/lib/constants/business-metrics";
 
 export function CTASection() {
   return (
@@ -89,8 +90,8 @@ export function CTASection() {
             aria-label="Social proof"
           >
             {[
-              { emoji: "🌍", text: "Guests from 80+ countries" },
-              { emoji: "⭐", text: "4.96 / 5 average rating" },
+              { emoji: "🌍", text: `Guests from ${BUSINESS_METRICS.COUNTRIES_REPRESENTED} countries` },
+              { emoji: "⭐", text: `${BUSINESS_METRICS.AVERAGE_RATING_LABEL} average rating` },
               { emoji: "🔒", text: "Fully vetted & secure" },
             ].map(({ emoji, text }) => (
               <div

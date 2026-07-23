@@ -6,11 +6,13 @@ import Link from "next/link";
 import { ShieldCheck, Compass, Heart, Users, MapPin, Star, Award } from "lucide-react";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 
+import { BUSINESS_METRICS } from "@/lib/constants/business-metrics";
+
 const stats = [
-  { value: "1,400+", label: "Weddings Hosted" },
-  { value: "12,000+", label: "Global Guests" },
-  { value: "80+", label: "Countries Represented" },
-  { value: "98%", label: "Satisfaction Rate" }
+  { value: BUSINESS_METRICS.WEDDINGS_HOSTED, label: "Weddings Hosted" },
+  { value: BUSINESS_METRICS.GLOBAL_GUESTS, label: "Global Guests" },
+  { value: BUSINESS_METRICS.COUNTRIES_REPRESENTED, label: "Countries Represented" },
+  { value: BUSINESS_METRICS.SATISFACTION_RATE, label: "Satisfaction Rate" }
 ];
 
 const milestones = [
@@ -32,7 +34,7 @@ const milestones = [
   {
     year: "2026",
     title: "Marketplace Expansion",
-    description: "Onboarded 1,400+ weddings and welcomed travelers from 80+ countries, establishing the gold standard of cultural immersion."
+    description: `Onboarded ${BUSINESS_METRICS.WEDDINGS_HOSTED} weddings and welcomed travelers from ${BUSINESS_METRICS.COUNTRIES_REPRESENTED} countries, establishing the gold standard of cultural immersion.`
   }
 ];
 

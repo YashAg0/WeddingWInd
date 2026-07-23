@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { toast } from "sonner";
 import {
   saveEmergencyContactAction,
   saveTravelDetailsAction,
@@ -110,10 +111,10 @@ export default function ClientEventHubForm({
         countryCode,
         email: email || null,
       });
-      setSuccessMsg("Emergency contact saved successfully!");
+      toast.success("Emergency contact saved successfully!");
       setTimeout(() => window.location.reload(), 1000);
     } catch (err: any) {
-      alert(err.message || "Failed to save.");
+      toast.error(err.message || "Failed to save.");
     } finally {
       setLoading(false);
     }
@@ -136,10 +137,10 @@ export default function ClientEventHubForm({
         accessibilityRequirements: accessibility || null,
         medicalNotes: null, // shield sensitive parameters
       });
-      setSuccessMsg("Travel details saved successfully!");
+      toast.success("Travel details saved successfully!");
       setTimeout(() => window.location.reload(), 1000);
     } catch (err: any) {
-      alert(err.message || "Failed to save.");
+      toast.error(err.message || "Failed to save.");
     } finally {
       setLoading(false);
     }

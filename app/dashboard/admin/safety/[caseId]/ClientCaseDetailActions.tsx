@@ -12,6 +12,7 @@ import {
 } from "@/lib/actions/safety";
 import { processApprovedRefund } from "@/lib/services/refunds";
 import { CaseSeverity, CaseStatus, RestrictionType } from "@prisma/client";
+import { Lock, Unlock, AlertTriangle, Ban } from "lucide-react";
 
 interface ClientCaseDetailActionsProps {
   caseId: string;
@@ -240,7 +241,11 @@ export default function ClientCaseDetailActions({
                 : "bg-warm-50/20 border-warm-200 text-charcoal-700 hover:bg-warm-100"
             }`}
           >
-            {hold ? "🔒 Escrow Hold Enabled" : "🔓 Place Escrow Hold"}
+            {hold ? (
+              <span className="inline-flex items-center gap-1"><Lock size={12} /> Escrow Hold Enabled</span>
+            ) : (
+              <span className="inline-flex items-center gap-1"><Unlock size={12} /> Place Escrow Hold</span>
+            )}
           </button>
 
           <button
@@ -252,7 +257,11 @@ export default function ClientCaseDetailActions({
                 : "bg-warm-50/20 border-warm-200 text-charcoal-700 hover:bg-warm-100"
             }`}
           >
-            {suspended ? "⚠️ Wedding Suspended" : "🚫 Suspend Wedding"}
+            {suspended ? (
+              <span className="inline-flex items-center gap-1"><AlertTriangle size={12} /> Wedding Suspended</span>
+            ) : (
+              <span className="inline-flex items-center gap-1"><Ban size={12} /> Suspend Wedding</span>
+            )}
           </button>
         </div>
       </div>

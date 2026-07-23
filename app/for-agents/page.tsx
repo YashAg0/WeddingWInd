@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Users, Award, ShieldCheck, DollarSign, ArrowRight, Eye, Sparkles } from "lucide-react";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import Image from "next/image";
+import Link from "next/link";
 
 const programs = [
   {
@@ -143,36 +144,34 @@ export default function ForAgentsPage() {
         </div>
       </section>
 
-      {/* Future dashboard preview (blurred mask overlay) */}
+      {/* Partner Portal Feature Section */}
       <section className="container-luxury max-w-4xl mb-20 space-y-8">
         <SectionHeader
           label="Partner Portal"
-          title="Sneak peek: Agent Dashboard"
-          highlightedWord="Dashboard"
+          title="Agent Dashboard Features"
+          highlightedWord="Features"
         />
 
-        <div className="relative rounded-[2.5rem] overflow-hidden border border-warm-300 shadow-xl bg-charcoal-900 p-6 sm:p-10 text-white min-h-[350px] flex flex-col justify-between">
-          
-          {/* Blurred overlay mask */}
-          <div className="absolute inset-0 bg-charcoal-950/70 backdrop-blur-md z-10 flex flex-col justify-center items-center text-center p-6 space-y-4">
-            <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center text-white border border-white/20">
-              <Eye size={20} className="animate-pulse" />
+        <div className="relative rounded-[2.5rem] overflow-hidden border border-warm-300 shadow-xl bg-charcoal-900 p-8 sm:p-12 text-white">
+          <div className="max-w-2xl space-y-6 relative z-10">
+            <div className="inline-flex items-center gap-2 bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-semibold px-3.5 py-1.5 rounded-full">
+              <Sparkles size={14} /> Live Partner Dashboard
             </div>
-            <h4 className="font-display font-bold text-xl text-white">
-              Phase 4 Beta Preview
-            </h4>
-            <p className="text-white/60 text-xs sm:text-sm max-w-md">
-              The full partner analytics tracker dashboard is launching in Fall 2026. Approved agents will receive beta portal invitations.
+            <h3 className="font-display font-bold text-2xl sm:text-3xl text-white">
+              Track conversions, referrals & payouts in real-time
+            </h3>
+            <p className="text-white/70 text-sm leading-relaxed">
+              Every certified agent receives a unique tracking code, dynamic referral links, automated 5.0% commission calculations, and instant monthly payout requests.
             </p>
+            <div className="pt-2">
+              <Link
+                href="/login?redirect_url=/dashboard/referrals"
+                className="btn btn-secondary btn-md inline-flex gap-2"
+              >
+                Access Partner Dashboard <ArrowRight size={16} />
+              </Link>
+            </div>
           </div>
-
-          {/* Fake Background elements (simulating a dashboard under the blur) */}
-          <div className="grid grid-cols-3 gap-4 opacity-20">
-            <div className="bg-white/10 p-5 rounded-2xl h-24" />
-            <div className="bg-white/10 p-5 rounded-2xl h-24" />
-            <div className="bg-white/10 p-5 rounded-2xl h-24" />
-          </div>
-          <div className="bg-white/10 p-5 rounded-2xl h-44 opacity-20" />
         </div>
       </section>
 
@@ -185,13 +184,13 @@ export default function ForAgentsPage() {
           <p className="text-charcoal-500 text-sm max-w-md mx-auto">
             Become a certified brand ambassador or travel agency partner. Monetize your invitations and cultural travel guides.
           </p>
-          <button
-            onClick={() => alert("Partner registration is launching in Phase 4.")}
+          <Link
+            href="/login?redirect_url=/dashboard/referrals"
             className="btn btn-primary btn-lg shadow-lg group inline-flex gap-2"
           >
             Become a Partner
             <ArrowRight size={16} className="group-hover:translate-x-0.5 transition-transform" />
-          </button>
+          </Link>
         </div>
       </section>
 

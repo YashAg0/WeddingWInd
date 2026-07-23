@@ -1,7 +1,8 @@
 import Image from "next/image";
-import { Star, Quote } from "lucide-react";
+import { Star, Quote, Sparkles } from "lucide-react";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import type { Testimonial } from "@/types";
+import { BUSINESS_METRICS } from "@/lib/constants/business-metrics";
 
 interface TestimonialsProps {
   testimonials: Testimonial[];
@@ -52,8 +53,8 @@ function TestimonialCard({ testimonial }: { testimonial: Testimonial }) {
 
       {/* Wedding type tag */}
       <div>
-        <span className="inline-flex items-center text-xs font-semibold text-[var(--color-brand-primary)] bg-maroon-50 px-3 py-1 rounded-full border border-maroon-100">
-          🪔 {testimonial.weddingType}
+        <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--color-brand-primary)] bg-maroon-50 px-3 py-1 rounded-full border border-maroon-100">
+          <Sparkles size={11} className="text-[var(--color-brand-secondary)]" /> {testimonial.weddingType}
         </span>
       </div>
 
@@ -123,10 +124,10 @@ export function Testimonials({ testimonials }: TestimonialsProps) {
           aria-label="Platform trust statistics"
         >
           {[
-            { value: "4.96/5", label: "Average Guest Rating" },
-            { value: "98%", label: "Would Recommend" },
-            { value: "12,000+", label: "Experiences Delivered" },
-            { value: "80+", label: "Countries Represented" },
+            { value: BUSINESS_METRICS.AVERAGE_RATING_LABEL, label: "Average Guest Rating" },
+            { value: BUSINESS_METRICS.SATISFACTION_RATE, label: "Would Recommend" },
+            { value: BUSINESS_METRICS.GLOBAL_GUESTS, label: "Experiences Delivered" },
+            { value: BUSINESS_METRICS.COUNTRIES_REPRESENTED, label: "Countries Represented" },
           ].map(({ value, label }) => (
             <div key={label}>
               <div

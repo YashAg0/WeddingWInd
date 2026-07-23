@@ -8,7 +8,7 @@ import {
   adminToggleWeddingStatusAction,
   adminToggleWeddingFeaturedAction,
 } from "@/lib/actions/admin";
-import { Calendar as CalendarIcon, MapPin, Tag, Users, Shield, Plus, Edit2, Trash2, CheckCircle, HelpCircle } from "lucide-react";
+import { Calendar as CalendarIcon, MapPin, Tag, Users, Shield, Plus, Edit2, Trash2, CheckCircle, HelpCircle, Star } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -330,8 +330,8 @@ export default async function AdminWeddingsPage({
                 <div className="relative h-44 w-full bg-warm-200">
                   <Image src={w.mainImageUrl} alt={w.title} fill className="object-cover" />
                   {w.featured && (
-                    <span className="absolute top-3 left-3 bg-amber-500 text-white font-bold text-[0.625rem] px-2 py-0.5 rounded uppercase tracking-wider">
-                      ★ Featured
+                    <span className="absolute top-3 left-3 bg-amber-500 text-white font-bold text-[0.625rem] px-2 py-0.5 rounded uppercase tracking-wider flex items-center gap-1">
+                      <Star size={10} className="fill-white" /> Featured
                     </span>
                   )}
                   <span className={`absolute top-3 right-3 text-[0.625rem] font-bold uppercase px-2 py-0.5 rounded ${
@@ -398,7 +398,7 @@ export default async function AdminWeddingsPage({
                             w.featured ? "bg-amber-50 border-amber-100 text-amber-600 hover:bg-amber-100" : "bg-warm-100 border-warm-200 text-charcoal-500 hover:bg-warm-200"
                           }`}
                         >
-                          ★
+                          <Star size={13} className={w.featured ? "fill-amber-500 text-amber-500" : ""} />
                         </button>
                       </form>
 

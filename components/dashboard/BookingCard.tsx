@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import React, { useState } from "react";
+import { toast } from "sonner";
 import { useAuth, Booking } from "@/context/AuthContext";
 import { MapPin, Calendar, Users, XCircle, Printer, CreditCard, Receipt, Star, ShieldAlert } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -38,11 +39,11 @@ export default function BookingCard({ booking, onCancel }: BookingCardProps) {
         comment,
         ...categoryRatings
       });
-      alert(`Review submitted! Status: ${res.status}`);
+      toast.success(`Review submitted successfully! Status: ${res.status}`);
       setShowReviewModal(false);
       setComment("");
     } catch (err: any) {
-      alert(err.message || "Failed to submit review.");
+      toast.error(err.message || "Failed to submit review.");
     } finally {
       setSubmittingReview(false);
     }
@@ -54,7 +55,7 @@ export default function BookingCard({ booking, onCancel }: BookingCardProps) {
     if (url) {
       window.location.href = url;
     } else {
-      alert("Failed to initiate payment checkouts. Please check Stripe connection.");
+      toast.error("Failed to initiate payment checkout. Please verify Stripe configuration.");
       setPaying(false);
     }
   };
@@ -172,7 +173,7 @@ export default function BookingCard({ booking, onCancel }: BookingCardProps) {
             )}
 
             <button
-              onClick={() => alert("Simulating document print request.")}
+              onClick={() => window.print()}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-warm-200 text-charcoal-600 hover:bg-warm-50 text-[0.6875rem] font-bold uppercase tracking-wider cursor-pointer"
             >
               <Printer size={12} />

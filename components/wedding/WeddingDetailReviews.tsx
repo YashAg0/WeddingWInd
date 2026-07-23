@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { toast } from "sonner";
 import { Star, ThumbsUp, Flag, MessageSquare, ShieldAlert, Award } from "lucide-react";
 import { voteReviewHelpfulAction, reportReviewAction } from "@/lib/actions/reviews";
 import { ReviewReportReason } from "@prisma/client";
@@ -101,7 +102,7 @@ export function WeddingDetailReviews({ weddingId, reviews, userId }: WeddingDeta
   // Actions
   const handleHelpfulVote = async (reviewId: string) => {
     if (!userId) {
-      alert("Authentication required. Please log in to upvote reviews.");
+      toast.error("Authentication required. Please log in to upvote reviews.");
       return;
     }
     try {
@@ -113,7 +114,7 @@ export function WeddingDetailReviews({ weddingId, reviews, userId }: WeddingDeta
       );
       setVotedMap((prev) => ({ ...prev, [reviewId]: res.voted }));
     } catch (err: any) {
-      alert(err.message || "Failed to submit helpful vote.");
+      toast.error(err.message || "Failed to submit helpful vote.");
     }
   };
 
@@ -125,11 +126,11 @@ export function WeddingDetailReviews({ weddingId, reviews, userId }: WeddingDeta
         reason: reportReason,
         details: reportDetails
       });
-      alert("Thank you. The safety desk has flagged this review for manual moderation.");
+      toast.success("Thank you. The safety desk has flagged this review for manual moderation.");
       setReportingReviewId(null);
       setReportDetails("");
     } catch (err: any) {
-      alert(err.message || "Failed to submit report.");
+      toast.error(err.message || "Failed to submit report.");
     }
   };
 
@@ -176,7 +177,9 @@ export function WeddingDetailReviews({ weddingId, reviews, userId }: WeddingDeta
                 <div key={c.label} className="space-y-1">
                   <div className="flex justify-between text-xs font-bold text-charcoal-700">
                     <span>{c.label}</span>
-                    <span className="text-charcoal-900">{avg} ★</span>
+                    <span className="text-charcoal-900 flex items-center gap-1">
+                      {avg} <Star size={11} className="text-[var(--color-brand-secondary)] fill-[var(--color-brand-secondary)]" />
+                    </span>
                   </div>
                   <div className="w-full h-1.5 bg-warm-100 rounded-full overflow-hidden">
                     <div
@@ -214,7 +217,7 @@ export function WeddingDetailReviews({ weddingId, reviews, userId }: WeddingDeta
                   : "bg-warm-100/60 text-charcoal-600 hover:bg-warm-100"
               }`}
             >
-              {star} ★ ({starCounts[star]})
+              {star} <Star size={11} className="fill-[var(--color-brand-secondary)] text-[var(--color-brand-secondary)]" /> ({starCounts[star]})
             </button>
           ))}
         </div>

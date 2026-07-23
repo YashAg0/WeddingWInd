@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { toast } from "sonner";
 import {
   adminReviewPayoutRequestAction,
   regenerateReferralCodeAction
@@ -88,9 +89,9 @@ export default function ClientAdminAgentsList({
       const notes = noteMap[requestId] || "";
       await adminReviewPayoutRequestAction({ requestId, approved, notes });
       setPayoutRequests((prev) => prev.filter((r) => r.id !== requestId));
-      alert(`Payout request successfully ${approved ? "approved" : "rejected"}!`);
+      toast.success(`Payout request successfully ${approved ? "approved" : "rejected"}!`);
     } catch (err: any) {
-      alert(err?.message || "Action failed.");
+      toast.error(err?.message || "Action failed.");
     } finally {
       setLoading((prev) => ({ ...prev, [requestId]: false }));
     }
@@ -103,9 +104,9 @@ export default function ClientAdminAgentsList({
       setAgents((prev) =>
         prev.map((a) => (a.id === agentId ? { ...a, referralCode: result.newCode } : a))
       );
-      alert(`Referral code regenerated successfully: ${result.newCode}`);
+      toast.success(`Referral code regenerated successfully: ${result.newCode}`);
     } catch (err: any) {
-      alert(err?.message || "Action failed.");
+      toast.error(err?.message || "Action failed.");
     } finally {
       setLoading((prev) => ({ ...prev, [agentId]: false }));
     }

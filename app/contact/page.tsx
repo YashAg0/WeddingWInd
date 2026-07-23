@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Mail, MapPin, Phone, HelpCircle, Send, Check, Compass, Users } from "lucide-react";
+import { Mail, MapPin, Phone, HelpCircle, Send, Check, Compass, Users, ArrowRight } from "lucide-react";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
@@ -267,9 +267,9 @@ export default function ContactPage() {
             <p className="text-charcoal-500 text-xs sm:text-sm leading-relaxed">
               If you have quick queries about what clothes to wear, how payouts work, or security, please check our FAQ listings first.
             </p>
-            <Link href="/for-travelers#faqs" className="inline-flex items-center gap-1 text-[var(--color-brand-primary)] text-xs font-bold uppercase tracking-wider hover:underline pt-1">
-              Read Travelers FAQs
-              <span>→</span>
+            <Link href="/for-travelers#faqs" className="inline-flex items-center gap-1.5 text-[var(--color-brand-primary)] text-xs font-bold uppercase tracking-wider hover:underline pt-1">
+              <span>Read Travelers FAQs</span>
+              <ArrowRight size={12} />
             </Link>
           </div>
 

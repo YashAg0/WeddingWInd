@@ -9,7 +9,7 @@ import {
   adminUpsertTestimonialAction,
   adminDeleteTestimonialAction,
 } from "@/lib/actions/admin";
-import { HelpCircle, FileText, Quote, Plus, Trash2, Edit2, Bookmark, CheckSquare } from "lucide-react";
+import { HelpCircle, FileText, Quote, Plus, Trash2, Edit2, Bookmark, CheckSquare, Star } from "lucide-react";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 
@@ -566,8 +566,13 @@ export default async function AdminCMSPage({
                   <div key={t.id} className="border border-warm-200 p-5 rounded-2xl bg-warm-50/10 flex flex-col justify-between gap-4 text-xs">
                     <div className="space-y-2">
                       <div className="flex gap-1 text-amber-500 font-bold">
-                        {"★".repeat(t.rating)}
-                        {"☆".repeat(5 - t.rating)}
+                        {Array.from({ length: 5 }).map((_, idx) => (
+                          <Star
+                            key={idx}
+                            size={14}
+                            className={idx < t.rating ? "fill-amber-500 text-amber-500" : "text-warm-300"}
+                          />
+                        ))}
                       </div>
                       <p className="text-charcoal-500 font-medium italic leading-relaxed">
                         &quot;{t.quote}&quot;

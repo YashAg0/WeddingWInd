@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import Link from "next/link";
 import { RefreshCw, AlertTriangle } from "lucide-react";
 
 /**
@@ -17,31 +18,31 @@ export default function AppError({
   reset: () => void;
 }) {
   useEffect(() => {
-    // Log to structured logger or monitoring service
-    console.error("[AppError]", error.message, error.digest);
+    // Log error to monitoring service in production
+    console.error("[AppError]", error);
   }, [error]);
 
   return (
-    <div className="min-h-[60vh] flex items-center justify-center px-4">
-      <div className="max-w-md w-full text-center space-y-6">
+    <div className="min-h-[70vh] flex items-center justify-center p-6 text-center bg-warm-50/50">
+      <div className="max-w-md space-y-6 bg-white border border-warm-200/60 p-8 rounded-3xl shadow-sm">
         {/* Icon */}
-        <div className="w-16 h-16 rounded-2xl bg-red-50 border border-red-100 flex items-center justify-center mx-auto">
-          <AlertTriangle className="w-7 h-7 text-red-500" />
+        <div className="w-14 h-14 mx-auto rounded-2xl bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-600">
+          <AlertTriangle size={28} />
         </div>
 
         {/* Heading */}
         <div className="space-y-2">
-          <h1 className="font-display font-bold text-2xl text-charcoal-900">
+          <h2 className="font-display font-bold text-2xl text-charcoal-900">
             Something went wrong
-          </h1>
-          <p className="text-sm text-charcoal-500 leading-relaxed">
-            We encountered an unexpected error. Our team has been notified.
-            {error.digest && (
-              <span className="block mt-1 font-mono text-xs text-charcoal-400">
-                Error ID: {error.digest}
-              </span>
-            )}
+          </h2>
+          <p className="text-charcoal-500 text-sm leading-relaxed">
+            We encountered an unexpected error while loading this page. Our team has been notified.
           </p>
+          {process.env.NODE_ENV === "development" && error.message && (
+            <p className="p-3 bg-warm-50 text-rose-600 text-xs font-mono rounded-xl border border-warm-200 break-all text-left">
+              {error.message}
+            </p>
+          )}
         </div>
 
         {/* Actions */}
@@ -53,12 +54,12 @@ export default function AppError({
             <RefreshCw size={15} />
             Try again
           </button>
-          <a
+          <Link
             href="/"
             className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl border border-warm-200 text-charcoal-600 text-sm font-bold hover:bg-warm-50 transition-colors"
           >
             Back to Home
-          </a>
+          </Link>
         </div>
       </div>
     </div>

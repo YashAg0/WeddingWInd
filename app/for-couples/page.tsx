@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { ArrowRight, Heart, ShieldCheck, DollarSign, Gift, Star, HelpCircle, Users } from "lucide-react";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import Link from "next/link";
+import { BUSINESS_METRICS } from "@/lib/constants/business-metrics";
 
 const hostFAQs = [
   {
@@ -224,15 +225,15 @@ export default function ForCouplesPage() {
             Ready to list your celebration?
           </h2>
           <p className="text-charcoal-500 text-sm max-w-md mx-auto">
-            Join 1,400+ verified host families across India sharing their special moments with travelers from all corners of the globe.
+            Join {BUSINESS_METRICS.WEDDINGS_HOSTED} verified host families across India sharing their special moments with travelers from all corners of the globe.
           </p>
-          <button
-            onClick={() => alert("Registration system is currently closed for Phase 3 updates.")}
+          <Link
+            href="/login?redirect_url=/dashboard/operations"
             className="btn btn-primary btn-lg shadow-lg group inline-flex gap-2"
           >
             Register Your Wedding
             <ArrowRight size={16} className="group-hover:translate-x-0.5 transition-transform" />
-          </button>
+          </Link>
         </div>
       </section>
 

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { toast } from "sonner";
 import { manualCheckInAction, markAttendanceAction } from "@/lib/actions/event-operations";
 import { Calendar, Users, ShieldAlert, History, UserCheck, CheckCircle, XCircle } from "lucide-react";
 
@@ -50,10 +51,10 @@ export default function ClientAdminEvents({ weddings, checkInLogs: initialLogs }
     if (!confirm("Confirm administrator bypass manual check-in?")) return;
     try {
       await manualCheckInAction(bookingId, "Manual override by Admin");
-      alert("Traveler marked as checked-in!");
+      toast.success("Traveler marked as checked-in!");
       window.location.reload();
     } catch (err: any) {
-      alert(err.message || "Override failed.");
+      toast.error(err.message || "Override failed.");
     }
   };
 
@@ -61,10 +62,10 @@ export default function ClientAdminEvents({ weddings, checkInLogs: initialLogs }
     if (!confirm(`Mark booking attendance as ${status}?`)) return;
     try {
       await markAttendanceAction(bookingId, status);
-      alert(`Attendance updated to ${status}!`);
+      toast.success(`Attendance updated to ${status}!`);
       window.location.reload();
     } catch (err: any) {
-      alert(err.message || "Override failed.");
+      toast.error(err.message || "Override failed.");
     }
   };
 

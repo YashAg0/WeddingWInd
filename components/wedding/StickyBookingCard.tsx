@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 import { ShieldCheck, Calendar, Users, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Wedding } from "@/types";
@@ -153,11 +154,12 @@ export function StickyBookingCard({ wedding }: StickyBookingCardProps) {
               <button
                 onClick={async () => {
                   if (!user) {
-                    router.push("/login");
+                    const currentPath = window.location.pathname + window.location.search;
+                    router.push(`/login?redirect_url=${encodeURIComponent(currentPath)}`);
                     return;
                   }
                   if (user.role !== "traveler") {
-                    alert("Only traveler accounts can request booking spots for wedding experiences.");
+                    toast.error("Only traveler accounts can request booking spots for wedding experiences.");
                     return;
                   }
                   setErrorMessage(null);

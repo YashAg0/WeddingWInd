@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { Star, MapPin, ShieldCheck, Heart, Share2, Compass, CheckCircle, XCircle } from "lucide-react";
+import { Star, MapPin, ShieldCheck, Heart, Share2, Compass, CheckCircle, XCircle, Sparkles, Shirt, Utensils, Landmark, Hotel } from "lucide-react";
 import { getWeddings, getWeddingBySlug } from "@/lib/actions";
 import { WeddingGallery } from "@/components/wedding/WeddingGallery";
 import { WeddingTimeline } from "@/components/wedding/WeddingTimeline";
@@ -11,13 +11,7 @@ import { WeddingCard } from "@/components/wedding/WeddingCard";
 import { WeddingDetailReviews } from "@/components/wedding/WeddingDetailReviews";
 import { getDbUser } from "@/lib/auth";
 
-// Generate paths for static pre-rendering
-export async function generateStaticParams() {
-  const weddings = await getWeddings();
-  return weddings.map((wedding) => ({
-    slug: wedding.slug,
-  }));
-}
+export const dynamic = "force-dynamic";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -44,8 +38,44 @@ export default async function WeddingDetailPage({ params }: PageProps) {
     .filter((w) => w.id !== wedding.id)
     .slice(0, 3);
 
+  const eventJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Event",
+    name: wedding.title,
+    description: wedding.story,
+    startDate: new Date().toISOString(),
+    eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
+    eventStatus: "https://schema.org/EventScheduled",
+    location: {
+      "@type": "Place",
+      name: wedding.location,
+      address: {
+        "@type": "PostalAddress",
+        addressLocality: wedding.city,
+        addressCountry: "IN",
+      },
+    },
+    image: wedding.coupleImage ? [wedding.coupleImage] : [],
+    offers: {
+      "@type": "Offer",
+      price: wedding.pricePerGuest,
+      priceCurrency: wedding.currency || "USD",
+      availability: (wedding.guestsAllowed - wedding.guestsBooked) > 0 ? "https://schema.org/InStock" : "https://schema.org/SoldOut",
+      url: `https://weddingwithindia.com/weddings/${wedding.slug}`,
+    },
+    organizer: {
+      "@type": "Organization",
+      name: "Wedding With India",
+      url: "https://weddingwithindia.com",
+    },
+  };
+
   return (
     <div className="min-h-screen bg-warm-50/50 pt-24 pb-20">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(eventJsonLd) }}
+      />
       
       {/* Header Container */}
       <header className="container-luxury mt-4 flex flex-col gap-4">
@@ -62,8 +92,8 @@ export default async function WeddingDetailPage({ params }: PageProps) {
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div className="space-y-2">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="bg-maroon-50 text-[var(--color-brand-primary)] text-[0.6875rem] font-bold uppercase tracking-wider px-3 py-1 rounded-full border border-maroon-100/50">
-                🪔 {wedding.category}
+              <span className="inline-flex items-center gap-1.5 bg-maroon-50 text-[var(--color-brand-primary)] text-[0.6875rem] font-bold uppercase tracking-wider px-3 py-1 rounded-full border border-maroon-100/50">
+                <Sparkles size={11} className="text-[var(--color-brand-secondary)]" /> {wedding.category}
               </span>
               {wedding.isVerified && (
                 <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-600 text-[0.625rem] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border border-emerald-100">
@@ -218,7 +248,7 @@ export default async function WeddingDetailPage({ params }: PageProps) {
                 {/* Dress code */}
                 <div className="space-y-2">
                   <h3 className="font-sans font-bold text-xs text-charcoal-400 uppercase tracking-widest flex items-center gap-1.5">
-                    👔 Dress Code
+                    <Shirt size={14} className="text-maroon-800" /> Dress Code
                   </h3>
                   <p className="text-charcoal-600 text-sm leading-relaxed">
                     {wedding.dressCode}
@@ -228,7 +258,7 @@ export default async function WeddingDetailPage({ params }: PageProps) {
                 {/* Culinary style */}
                 <div className="space-y-2">
                   <h3 className="font-sans font-bold text-xs text-charcoal-400 uppercase tracking-widest flex items-center gap-1.5">
-                    🍽️ Culinary Experience
+                    <Utensils size={14} className="text-maroon-800" /> Culinary Experience
                   </h3>
                   <p className="text-charcoal-600 text-sm leading-relaxed">
                     {wedding.foodDescription}
@@ -238,7 +268,7 @@ export default async function WeddingDetailPage({ params }: PageProps) {
                 {/* Venue Details */}
                 <div className="space-y-2">
                   <h3 className="font-sans font-bold text-xs text-charcoal-400 uppercase tracking-widest flex items-center gap-1.5">
-                    🏛️ The Venue
+                    <Landmark size={14} className="text-maroon-800" /> The Venue
                   </h3>
                   <p className="text-charcoal-600 text-sm leading-relaxed">
                     {wedding.venueDescription}
@@ -248,7 +278,7 @@ export default async function WeddingDetailPage({ params }: PageProps) {
                 {/* Accommodations */}
                 <div className="space-y-2">
                   <h3 className="font-sans font-bold text-xs text-charcoal-400 uppercase tracking-widest flex items-center gap-1.5">
-                    🛌 Lodging & Stay
+                    <Hotel size={14} className="text-maroon-800" /> Lodging & Stay
                   </h3>
                   <p className="text-charcoal-600 text-sm leading-relaxed">
                     {wedding.accommodation}
@@ -299,7 +329,7 @@ export default async function WeddingDetailPage({ params }: PageProps) {
               </h2>
               <WeddingDetailReviews
                 weddingId={wedding.id}
-                reviews={wedding.reviews}
+                reviews={wedding.reviews as any}
                 userId={userId}
               />
             </section>

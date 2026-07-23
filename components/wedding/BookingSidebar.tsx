@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 import { Users, Heart, Share2, ShieldCheck, Check, Info } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Wedding } from "@/types";
@@ -32,11 +33,12 @@ export function BookingSidebar({ wedding }: BookingSidebarProps) {
 
   const handleBook = async () => {
     if (!user) {
-      router.push("/login");
+      const currentPath = window.location.pathname + window.location.search;
+      router.push(`/login?redirect_url=${encodeURIComponent(currentPath)}`);
       return;
     }
     if (user.role !== "traveler") {
-      alert("Only traveler accounts can request booking spots for wedding experiences.");
+      toast.error("Only traveler accounts can request booking spots for wedding experiences.");
       return;
     }
     setErrorMessage(null);
@@ -210,8 +212,8 @@ export function BookingSidebar({ wedding }: BookingSidebarProps) {
               exit={{ scale: 0.9, y: 20 }}
               className="bg-white max-w-sm w-full p-6 rounded-3xl border border-warm-200 shadow-2xl text-center space-y-4"
             >
-              <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 mx-auto flex items-center justify-center text-xl">
-                ✓
+              <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 mx-auto flex items-center justify-center">
+                <Check size={24} />
               </div>
               <h4 className="font-display font-bold text-lg text-charcoal-900">
                 Reservation Requested!

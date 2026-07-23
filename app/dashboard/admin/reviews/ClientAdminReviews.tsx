@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { toast } from "sonner";
 import { Star, ShieldCheck, Trash2, EyeOff, AlertTriangle, Activity, CheckSquare } from "lucide-react";
 import { adminModerateReviewAction } from "@/lib/actions/reviews";
 
@@ -60,13 +61,13 @@ export function ClientAdminReviews({ initialReviews, auditLogs: initialLogs }: C
     setProcessing((prev) => ({ ...prev, [reviewId]: true }));
     try {
       await adminModerateReviewAction({ reviewId, action, reason });
-      alert(`Review successfully marked as ${action}.`);
+      toast.success(`Review successfully marked as ${action}.`);
       setReviews((prev) => prev.filter((r) => r.id !== reviewId));
       
       // Add to logs
       const author = reviews.find((r) => r.id === reviewId)?.travelerName || "Reviewer";
       const newLog: AuditLog = {
-        id: Math.random().toString(),
+        id: `${reviewId}-${action.toLowerCase()}`,
         action,
         reason,
         createdAt: new Date().toISOString(),
@@ -75,7 +76,7 @@ export function ClientAdminReviews({ initialReviews, auditLogs: initialLogs }: C
       };
       setLogs((prev) => [newLog, ...prev]);
     } catch (err: any) {
-      alert(err.message || "Failed to moderate review.");
+      toast.error(err.message || "Failed to moderate review.");
     } finally {
       setProcessing((prev) => ({ ...prev, [reviewId]: false }));
     }
@@ -122,8 +123,9 @@ export function ClientAdminReviews({ initialReviews, auditLogs: initialLogs }: C
       {activeTab === "queue" ? (
         <div className="space-y-6">
           {reviews.length === 0 ? (
-            <div className="text-center py-16 bg-white border border-warm-200/50 rounded-[2rem] p-6 text-charcoal-400 font-semibold text-sm">
-              ✨ No reviews currently flagged for moderation review.
+            <div className="text-center py-16 bg-white border border-warm-200/50 rounded-[2rem] p-6 text-charcoal-400 font-semibold text-sm flex items-center justify-center gap-2">
+              <ShieldCheck size={18} className="text-emerald-500" />
+              No reviews currently flagged for moderation review.
             </div>
           ) : (
             reviews.map((rev) => (

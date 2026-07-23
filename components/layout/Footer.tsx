@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Mail, Phone, MapPin } from "lucide-react";
+import { Mail, Phone, MapPin, Sparkles } from "lucide-react";
 import { NewsletterForm } from "@/components/ui/NewsletterForm";
 
 // Inline SVG social icons (brand icons not in lucide-react)
@@ -101,8 +101,8 @@ export default function Footer() {
               className="inline-flex items-center gap-2.5 mb-6 group"
               aria-label="Wedding With India — Home"
             >
-              <div className="w-10 h-10 rounded-xl bg-[var(--color-brand-primary)] flex items-center justify-center text-xl">
-                🪔
+              <div className="w-10 h-10 rounded-xl bg-[var(--color-brand-primary)] flex items-center justify-center">
+                <Sparkles size={20} className="text-[var(--color-gold-300)]" />
               </div>
               <div className="flex flex-col leading-none">
                 <span className="font-display font-bold text-white text-base">
@@ -115,7 +115,7 @@ export default function Footer() {
             </Link>
 
             <p className="text-charcoal-400 text-sm leading-relaxed mb-6 max-w-xs">
-              The world's first marketplace to attend real Indian weddings.
+              The world&apos;s first marketplace to attend real Indian weddings.
               Connecting global travellers with authentic cultural celebrations
               since 2024.
             </p>

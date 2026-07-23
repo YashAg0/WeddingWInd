@@ -729,7 +729,7 @@ export async function hostCancelWeddingAction(weddingId: string, reasonText?: st
       await prisma.notification.create({
         data: {
           userId: booking.traveler.user.id,
-          title: "Wedding Event Cancelled by Host 🚨",
+          title: "Wedding Event Cancelled by Host",
           message: `We regret to inform you that the host has cancelled the wedding experience: ${wedding.title}. You have been issued a 100% refund.`,
           type: "ALERT"
         }

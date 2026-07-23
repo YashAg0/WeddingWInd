@@ -1,6 +1,6 @@
-/**
- * Global system constants for Wedding With India backend.
- */
+import { BUSINESS_METRICS } from "./business-metrics";
+
+export { BUSINESS_METRICS };
 
 export const SYSTEM_ROLE_PERMISSIONS = {
   TRAVELER: ["booking:create", "booking:read", "wishlist:manage", "review:write"],
@@ -10,14 +10,14 @@ export const SYSTEM_ROLE_PERMISSIONS = {
 };
 
 export const PRICING_CONSTANTS = {
-  MIN_PRICE: 100,
-  MAX_PRICE: 20000,
-  DEFAULT_CURRENCY: "USD",
-  PLATFORM_FEES_PERCENT: 15.0 // 15% platform host fee
+  MIN_PRICE: BUSINESS_METRICS.MIN_PRICE,
+  MAX_PRICE: BUSINESS_METRICS.MAX_PRICE,
+  DEFAULT_CURRENCY: BUSINESS_METRICS.DEFAULT_CURRENCY,
+  PLATFORM_FEES_PERCENT: BUSINESS_METRICS.PLATFORM_FEE_PERCENT // 15% platform host fee
 };
 
 export const COMMISSION_CONSTANTS = {
-  AGENT_REFERRAL_PERCENT: 5.0 // 5% payout to referring travel agents
+  AGENT_REFERRAL_PERCENT: BUSINESS_METRICS.AGENT_COMMISSION_PERCENT // 5% payout to referring travel agents
 };
 
 export const PAGINATION_CONSTANTS = {

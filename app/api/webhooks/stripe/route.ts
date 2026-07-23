@@ -167,7 +167,7 @@ export async function POST(req: Request) {
         await tx.notification.create({
           data: {
             userId: booking.traveler.user.id,
-            title: "Payment Confirmed! 🎟️",
+            title: "Payment Confirmed!",
             message: `Your payment for ${booking.wedding.title} has been processed. Your ticket is secured and your Digital Pass is ready in the Event Hub.`,
             type: "PAYMENT_RECEIVED",
           },

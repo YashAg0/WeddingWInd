@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Search, MapPin, Calendar, Heart, ArrowRight, Play } from "lucide-react";
+import { Search, MapPin, Calendar, Sparkles } from "lucide-react";
 import { motion, useScroll, useTransform, animate, useReducedMotion } from "framer-motion";
 import type { Stat } from "@/types";
 
@@ -91,13 +91,12 @@ export function Hero({ stats }: HeroProps) {
           alt="Indian Wedding Celebration"
           fill
           priority
+          sizes="100vw"
           quality={90}
           className="object-cover scale-110"
         />
-        {/* Darker, more even overlay for reliable text contrast regardless of photo content */}
         <div className="absolute inset-0 bg-gradient-to-b from-charcoal-950/85 via-charcoal-950/55 to-charcoal-950/92" />
         <div className="absolute inset-0 bg-charcoal-950/20" />
-        {/* Gold bottom gradient */}
         <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-[var(--color-warm-50)] to-transparent" />
       </motion.div>
 
@@ -129,14 +128,13 @@ export function Hero({ stats }: HeroProps) {
               ease: "easeInOut",
             }}
           >
-            🪔
+            <Sparkles size={12} className="text-gold-400/60" />
           </motion.div>
         ))}
       </div>
 
       {/* Content */}
       <div className="relative z-10 container-luxury pt-32 pb-24 flex flex-col items-center text-center">
-        {/* Label */}
         <motion.div
           custom={0}
           variants={fadeUp}
@@ -151,32 +149,29 @@ export function Hero({ stats }: HeroProps) {
           The World&apos;s First Wedding Experience Marketplace
         </motion.div>
 
-        {/* Headline */}
         <motion.h1
           custom={1}
           variants={fadeUp}
           initial="hidden"
           animate="visible"
-          className="font-display font-bold text-white leading-[1.08] tracking-tight mb-6 max-w-4xl text-balance [text-wrap:balance] drop-shadow-[0_2px_24px_rgba(0,0,0,0.35)]"
+          className="font-display font-bold leading-[1.08] tracking-tight mb-6 max-w-4xl text-balance [text-wrap:balance] drop-shadow-[0_4px_32px_rgba(0,0,0,0.5)]"
           style={{ fontSize: "clamp(2.5rem, 6vw, 5rem)" }}
         >
-          Be a Guest at a{" "}
           <span
             className="relative inline-block bg-[length:200%_auto] animate-shimmer"
             style={{
               backgroundImage:
-                "linear-gradient(110deg, #c9972a 0%, #fcd34d 35%, #fff4d6 50%, #fcd34d 65%, #c9972a 100%)",
+                "linear-gradient(110deg, #d4a336 0%, #fef08a 25%, #ffffff 50%, #fef08a 75%, #d4a336 100%)",
               WebkitBackgroundClip: "text",
               backgroundClip: "text",
               WebkitTextFillColor: "transparent",
-              color: "#fcd34d", // fallback if background-clip: text is unsupported
+              color: "#fde68a",
             }}
           >
-            Real Indian Wedding
+            Be a Guest at a Real Indian Wedding
           </span>
         </motion.h1>
 
-        {/* Sub headline */}
         <motion.p
           custom={2}
           variants={fadeUp}
@@ -188,7 +183,6 @@ export function Hero({ stats }: HeroProps) {
           Goa, Punjab, and beyond — an experience no guidebook can offer.
         </motion.p>
 
-        {/* Search bar */}
         <motion.div
           custom={3}
           variants={fadeUp}
@@ -197,18 +191,10 @@ export function Hero({ stats }: HeroProps) {
           className="w-full max-w-3xl mb-10"
         >
           <div className="glass rounded-2xl p-2 flex flex-col sm:flex-row sm:items-stretch gap-2 shadow-[0_16px_64px_0_rgba(0,0,0,0.28)]">
-            {/* Destination */}
             <div className="flex-1 flex items-center gap-3 bg-white rounded-xl px-4 py-3 min-w-0 transition-shadow duration-200 focus-within:ring-2 focus-within:ring-[var(--color-brand-primary)]/40">
-              <MapPin
-                size={18}
-                className="text-[var(--color-brand-primary)] flex-shrink-0"
-                aria-hidden="true"
-              />
+              <MapPin size={18} className="text-[var(--color-brand-primary)] flex-shrink-0" aria-hidden="true" />
               <div className="flex flex-col min-w-0 flex-1 text-left">
-                <label
-                  htmlFor="hero-destination"
-                  className="text-[0.6875rem] font-semibold text-charcoal-500 uppercase tracking-wide"
-                >
+                <label htmlFor="hero-destination" className="text-[0.6875rem] font-semibold text-charcoal-500 uppercase tracking-wide">
                   Where
                 </label>
                 <input
@@ -223,17 +209,12 @@ export function Hero({ stats }: HeroProps) {
               </div>
             </div>
 
-            {/* Divider */}
             <div className="hidden sm:block w-px my-1 bg-warm-200" aria-hidden="true" />
 
-            {/* Category */}
             <div className="flex-1 flex items-center gap-3 bg-white rounded-xl px-4 py-3 min-w-0 transition-shadow duration-200 focus-within:ring-2 focus-within:ring-[var(--color-brand-primary)]/40">
-              <span className="text-lg flex-shrink-0" aria-hidden="true">🪔</span>
+              <Sparkles size={18} className="text-[var(--color-brand-primary)] flex-shrink-0" aria-hidden="true" />
               <div className="flex flex-col min-w-0 flex-1 text-left">
-                <label
-                  htmlFor="hero-category"
-                  className="text-[0.6875rem] font-semibold text-charcoal-500 uppercase tracking-wide"
-                >
+                <label htmlFor="hero-category" className="text-[0.6875rem] font-semibold text-charcoal-500 uppercase tracking-wide">
                   Wedding Style
                 </label>
                 <select
@@ -254,21 +235,12 @@ export function Hero({ stats }: HeroProps) {
               </div>
             </div>
 
-            {/* Divider */}
             <div className="hidden sm:block w-px my-1 bg-warm-200" aria-hidden="true" />
 
-            {/* Date */}
             <div className="flex-1 flex items-center gap-3 bg-white rounded-xl px-4 py-3 min-w-0 transition-shadow duration-200 focus-within:ring-2 focus-within:ring-[var(--color-brand-primary)]/40">
-              <Calendar
-                size={18}
-                className="text-[var(--color-brand-primary)] flex-shrink-0"
-                aria-hidden="true"
-              />
+              <Calendar size={18} className="text-[var(--color-brand-primary)] flex-shrink-0" aria-hidden="true" />
               <div className="flex flex-col min-w-0 flex-1 text-left">
-                <label
-                  htmlFor="hero-date"
-                  className="text-[0.6875rem] font-semibold text-charcoal-500 uppercase tracking-wide"
-                >
+                <label htmlFor="hero-date" className="text-[0.6875rem] font-semibold text-charcoal-500 uppercase tracking-wide">
                   When
                 </label>
                 <input
@@ -280,7 +252,6 @@ export function Hero({ stats }: HeroProps) {
               </div>
             </div>
 
-            {/* Search CTA */}
             <Link
               href="/weddings"
               className="btn btn-primary flex-shrink-0 gap-2 px-6 rounded-xl transition-transform duration-200 hover:scale-[1.03] active:scale-[0.98] flex items-center justify-center"
@@ -292,44 +263,6 @@ export function Hero({ stats }: HeroProps) {
           </div>
         </motion.div>
 
-        {/* CTAs */}
-        <motion.div
-          custom={4}
-          variants={fadeUp}
-          initial="hidden"
-          animate="visible"
-          className="flex flex-col sm:flex-row items-center gap-4 mb-16"
-        >
-          <Link
-            href="/weddings"
-            className="btn btn-secondary btn-lg group"
-          >
-            <Heart size={18} aria-hidden="true" />
-            Attend a Wedding
-            <ArrowRight
-              size={16}
-              className="group-hover:translate-x-1 transition-transform duration-200"
-              aria-hidden="true"
-            />
-          </Link>
-          <Link
-            href="/list-wedding"
-            className="btn btn-ghost-white btn-lg"
-          >
-            List Your Wedding
-          </Link>
-          <button
-            className="flex items-center gap-2.5 text-white hover:text-white transition-colors text-sm font-medium group"
-            aria-label="Watch how it works video"
-          >
-            <span className="w-11 h-11 rounded-full bg-white/20 border border-white/40 flex items-center justify-center group-hover:bg-white/30 group-hover:scale-105 transition-all duration-200 flex-shrink-0">
-              <Play size={15} className="translate-x-0.5" aria-hidden="true" />
-            </span>
-            Watch how it works
-          </button>
-        </motion.div>
-
-        {/* Stats cards */}
         <motion.div
           custom={5}
           variants={fadeUp}
@@ -357,16 +290,13 @@ export function Hero({ stats }: HeroProps) {
               >
                 <AnimatedStatValue value={stat.value} />
               </div>
-              <div className="text-white text-sm font-semibold mb-0.5">
-                {stat.label}
-              </div>
+              <div className="text-white text-sm font-semibold mb-0.5">{stat.label}</div>
               <div className="text-white/75 text-xs">{stat.description}</div>
             </div>
           ))}
         </motion.div>
       </div>
 
-      {/* Scroll indicator */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -381,9 +311,7 @@ export function Hero({ stats }: HeroProps) {
             className="w-1 h-2 rounded-full bg-white/70"
           />
         </div>
-        <span className="text-white/60 text-[0.625rem] uppercase tracking-widest">
-          Scroll
-        </span>
+        <span className="text-white/60 text-[0.625rem] uppercase tracking-widest">Scroll</span>
       </motion.div>
     </section>
   );

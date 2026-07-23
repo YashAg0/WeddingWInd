@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X, ChevronDown, Heart, Globe } from "lucide-react";
+import { Menu, X, ChevronDown, Heart, Globe, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 
@@ -85,12 +85,12 @@ export default function Navbar() {
             >
               <div
                 className={cn(
-                  "w-9 h-9 rounded-xl flex items-center justify-center text-lg transition-all duration-300",
+                  "w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300",
                   "bg-[var(--color-brand-primary)] group-hover:scale-105"
                 )}
                 aria-hidden="true"
               >
-                🪔
+                <Sparkles size={18} className="text-[var(--color-gold-300)]" />
               </div>
               <div className="flex flex-col leading-none">
                 <span
@@ -211,7 +211,7 @@ export default function Navbar() {
                 <Globe size={18} aria-hidden="true" />
               </button>
               <Link
-                href="/weddings"
+                href="/login"
                 className={cn(
                   "text-sm font-semibold px-5 py-2.5 rounded-full transition-all duration-200",
                   isTransparent
@@ -289,8 +289,8 @@ export default function Navbar() {
                   className="flex items-center gap-2.5"
                   onClick={() => setIsMobileOpen(false)}
                 >
-                  <div className="w-8 h-8 rounded-lg bg-[var(--color-brand-primary)] flex items-center justify-center text-base">
-                    🪔
+                  <div className="w-8 h-8 rounded-lg bg-[var(--color-brand-primary)] flex items-center justify-center">
+                    <Sparkles size={16} className="text-[var(--color-gold-300)]" />
                   </div>
                   <span className="font-display font-bold text-[var(--color-brand-primary)] text-sm">
                     Wedding With India

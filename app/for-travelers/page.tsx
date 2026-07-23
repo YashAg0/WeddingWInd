@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Compass, ShieldCheck, Heart, Users, Table, Award, Info, FileText, ArrowRight } from "lucide-react";
+import { Compass, ShieldCheck, Heart, Users, Table, Award, Info, FileText, ArrowRight, Sparkles } from "lucide-react";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 
 export const metadata = {
@@ -73,7 +73,7 @@ export default function ForTravelersPage() {
           <div className="absolute top-0 right-0 w-24 h-24 rounded-full bg-[var(--color-brand-primary)]/5 blur-xl" />
           
           <h3 className="font-display font-bold text-lg text-[var(--color-brand-primary)] flex items-center gap-2">
-            🪔 Wedding Immersion
+            <Sparkles size={18} className="text-[var(--color-gold-500)]" /> Wedding Immersion
           </h3>
           <ul className="space-y-3 text-charcoal-700 text-xs sm:text-sm">
             <li className="flex items-start gap-2">

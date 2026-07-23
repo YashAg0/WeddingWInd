@@ -6,6 +6,10 @@ import { requireAuth } from "../auth";
 import { UserRole, MessageType, NotificationType } from "@prisma/client";
 import { realtime } from "../realtime";
 import { sendNewMessageEmail } from "../email";
+import {
+  detectProhibitedContactInfo,
+  isContactSharingAllowedForBooking,
+} from "../services/contact-moderation";
 
 /**
  * General helper to create a system audit log for messaging events.
@@ -162,6 +166,7 @@ export async function sendMessage(
   const conversation = await prisma.conversation.findUnique({
     where: { id: conversationId },
     include: {
+      booking: true,
       participants: {
         include: {
           user: true,
@@ -181,6 +186,22 @@ export async function sendMessage(
 
   if (conversation.archived) {
     throw new Error("Archived: Cannot send messages into an archived conversation.");
+  }
+
+  // Enforce pre-booking contact leak prevention rule if not admin
+  if (!isAdmin && text) {
+    const isConfirmedBooking = isContactSharingAllowedForBooking(conversation.booking?.status);
+    if (!isConfirmedBooking) {
+      const contactCheck = detectProhibitedContactInfo(text);
+      if (contactCheck.hasProhibitedContact) {
+        await logMessageAudit(
+          "CONTACT_INFO_BLOCKED",
+          conversationId,
+          `Blocked off-platform contact sharing attempt: ${contactCheck.detectedTypes.join(", ")}`
+        );
+        throw new Error(contactCheck.reason);
+      }
+    }
   }
 
   // Create message
@@ -234,7 +255,7 @@ export async function sendMessage(
   // Create database notifications & send Resend emails for other participants
   const otherParticipants = conversation.participants.filter((p) => p.userId !== user.id);
   for (const participant of otherParticipants) {
-    const notifyTitle = `New message from ${senderName} 💬`;
+    const notifyTitle = `New message from ${senderName}`;
     const summary = text || "Sent an attachment.";
 
     const dbNotification = await prisma.notification.create({

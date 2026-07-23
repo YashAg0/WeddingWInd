@@ -4,12 +4,15 @@ import React, { useState } from "react";
 import { useAuth, UserRole } from "@/context/AuthContext";
 import { Compass, ArrowRight, ArrowLeft, Check, Sparkles, User, Heart, Shield } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
-export default function OnboardingPage() {
+function OnboardingContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, loading, updateRole, completeOnboarding } = useAuth();
   
+  const redirectUrl = searchParams.get("redirect_url") || searchParams.get("returnTo") || undefined;
+
   const [role, setRole] = useState<UserRole | null>(null);
   const [step, setStep] = useState(1);
 
@@ -50,12 +53,15 @@ export default function OnboardingPage() {
   React.useEffect(() => {
     if (!loading) {
       if (!user) {
-        router.push("/login");
+        const loginTarget = redirectUrl
+          ? `/login?redirect_url=${encodeURIComponent(redirectUrl)}`
+          : "/login";
+        router.replace(loginTarget);
       } else if (user.onboarded) {
-        router.push("/dashboard");
+        router.replace(redirectUrl || "/dashboard");
       }
     }
-  }, [user, loading, router]);
+  }, [user, loading, router, redirectUrl]);
 
   const handleRoleSelect = (selectedRole: UserRole) => {
     setRole(selectedRole);
@@ -73,11 +79,11 @@ export default function OnboardingPage() {
 
   const handleComplete = () => {
     if (role === "traveler") {
-      completeOnboarding(travelerData);
+      completeOnboarding(travelerData, redirectUrl);
     } else if (role === "couple") {
-      completeOnboarding(coupleData);
+      completeOnboarding(coupleData, redirectUrl);
     } else {
-      completeOnboarding(agentData);
+      completeOnboarding(agentData, redirectUrl);
     }
   };
 
@@ -590,5 +596,17 @@ export default function OnboardingPage() {
         </AnimatePresence>
       </div>
     </div>
+  );
+}
+
+export default function OnboardingPage() {
+  return (
+    <React.Suspense fallback={
+      <div className="min-h-screen bg-warm-50 flex items-center justify-center flex-col gap-3">
+        <div className="w-8 h-8 rounded-full border-4 border-maroon-100 border-t-maroon-800 animate-spin" />
+      </div>
+    }>
+      <OnboardingContent />
+    </React.Suspense>
   );
 }

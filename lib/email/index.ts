@@ -41,7 +41,7 @@ export async function sendWelcomeEmail(to: string, userName: string) {
       <p style="margin-top: 30px; font-size: 0.8em; color: #777;">If you have any questions, reply directly to this email support channel.</p>
     </div>
   `;
-  return sendEmail({ to, subject: "Welcome to Wedding With India 🪔", html });
+  return sendEmail({ to, subject: "Welcome to Wedding With India", html });
 }
 
 /**
@@ -57,7 +57,7 @@ export async function sendBookingConfirmationEmail(
 ) {
   const html = `
     <div style="font-family: sans-serif; padding: 20px; color: #333; max-width: 600px; margin: auto; border: 1px solid #eee; border-radius: 10px;">
-      <h2 style="color: #6b1026;">Booking Confirmed! 🎉</h2>
+      <h2 style="color: #6b1026;">Booking Confirmed</h2>
       <p>Hello ${guestName},</p>
       <p>Your guest pass request for <strong>${weddingTitle}</strong> has been successfully booked.</p>
       <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
@@ -218,7 +218,7 @@ export async function sendVerificationApprovedEmail(to: string, userName: string
       <p>Explore listings, send bookings, or manage guest portals with absolute confidence.</p>
     </div>
   `;
-  return sendEmail({ to, subject: "Trust & Safety: Verification Approved! 🎉", html });
+  return sendEmail({ to, subject: "Trust & Safety: Verification Approved", html });
 }
 
 /**

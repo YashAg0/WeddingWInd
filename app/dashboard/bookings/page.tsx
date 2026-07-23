@@ -6,6 +6,7 @@ import BookingCard from "@/components/dashboard/BookingCard";
 import EmptyState from "@/components/dashboard/EmptyState";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { CreditCard, Clock, CalendarX, History, Ticket } from "lucide-react";
 
 type FilterStatus = "upcoming" | "awaiting_payment" | "pending" | "rejected" | "history";
 
@@ -32,31 +33,31 @@ export default function BookingsPage() {
         return {
           title: "No pending payments",
           description: "All your approved applications have been paid or are resolved.",
-          icon: "💳"
+          icon: <CreditCard size={24} className="text-maroon-800" />
         };
       case "pending":
         return {
           title: "No pending applications",
           description: "You do not have any pending wedding applications at the moment.",
-          icon: "⏳"
+          icon: <Clock size={24} className="text-maroon-800" />
         };
       case "rejected":
         return {
           title: "No declined applications",
           description: "There are no declined reservation requests in your record.",
-          icon: "🍂"
+          icon: <CalendarX size={24} className="text-maroon-800" />
         };
       case "history":
         return {
           title: "Empty reservation history",
           description: "You haven't attended any weddings with us yet, and have no cancelled passes.",
-          icon: "🏛️"
+          icon: <History size={24} className="text-maroon-800" />
         };
       default:
         return {
           title: "No confirmed passes",
           description: "Explore the marketplace, apply to join host families, and complete your checkout payments.",
-          icon: "🎟️",
+          icon: <Ticket size={24} className="text-maroon-800" />,
           actionText: "Browse Weddings",
           actionHref: "/weddings"
         };

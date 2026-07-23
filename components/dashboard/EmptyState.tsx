@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import Link from "next/link";
 import { Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -7,7 +8,7 @@ import { cn } from "@/lib/utils";
 interface EmptyStateProps {
   title: string;
   description: string;
-  icon: string;
+  icon?: React.ReactNode;
   actionText?: string;
   actionHref?: string;
   onAction?: () => void;
@@ -25,8 +26,12 @@ export default function EmptyState({
 }: EmptyStateProps) {
   return (
     <div className={cn("bg-white border border-warm-200/50 rounded-3xl p-8 sm:p-12 text-center max-w-lg mx-auto shadow-sm space-y-5", className)}>
-      <div className="w-14 h-14 rounded-full bg-warm-100 text-2xl flex items-center justify-center mx-auto shadow-sm">
-        <span aria-hidden="true">{icon}</span>
+      <div className="w-14 h-14 rounded-full bg-warm-100 text-maroon-800 text-2xl flex items-center justify-center mx-auto shadow-sm">
+        {icon ? (
+          icon
+        ) : (
+          <Sparkles size={24} className="text-maroon-800" />
+        )}
       </div>
 
       <div className="space-y-2">

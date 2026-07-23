@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { Sparkles } from "lucide-react";
 import type { WeddingEvent } from "@/types";
 import { cn } from "@/lib/utils";
 
@@ -23,12 +24,12 @@ export function WeddingTimeline({ timeline }: WeddingTimelineProps) {
           {/* Timeline Dot Icon */}
           <span
             className={cn(
-              "absolute -left-[43px] md:-left-[51px] top-1.5 w-8 h-8 rounded-full border border-warm-200 bg-white flex items-center justify-center text-sm shadow-md group-hover:border-[var(--color-brand-primary)] group-hover:scale-110 transition-all duration-300",
-              "text-charcoal-700"
+              "absolute -left-[43px] md:-left-[51px] top-1.5 w-8 h-8 rounded-full border border-warm-200 bg-white flex items-center justify-center shadow-md group-hover:border-[var(--color-brand-primary)] group-hover:scale-110 transition-all duration-300",
+              "text-[var(--color-brand-primary)]"
             )}
             aria-hidden="true"
           >
-            {event.icon || "✨"}
+            <Sparkles size={14} className="text-[var(--color-brand-primary)]" />
           </span>
 
           {/* Time & Date */}

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Star, MapPin, Users, Heart, ShieldCheck } from "lucide-react";
+import { Star, MapPin, Users, Heart, ShieldCheck, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
 import type { Wedding } from "@/types";
 import { cn } from "@/lib/utils";
@@ -48,7 +48,7 @@ export function WeddingCard({ wedding, className }: WeddingCardProps) {
         {/* Style Badge */}
         <div className="absolute top-4 left-4 z-10">
           <span className="inline-flex items-center gap-1.5 bg-white/95 backdrop-blur-md text-[var(--color-brand-primary)] text-[0.6875rem] font-bold uppercase tracking-wider px-3.5 py-2 rounded-full shadow-sm border border-warm-100">
-            🪔 {wedding.category}
+            <Sparkles size={11} className="text-[var(--color-brand-secondary)]" /> {wedding.category}
           </span>
         </div>
 

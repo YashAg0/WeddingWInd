@@ -58,8 +58,8 @@
   --color-brand-muted:     var(--color-charcoal-500);
 
   /* Fonts */
-  --font-display: "Playfair Display", Georgia, "Times New Roman", serif;
-  --font-sans:    "Inter", system-ui, -apple-system, sans-serif;
+  --font-display: var(--font-playfair), "Playfair Display", Georgia, serif;
+  --font-sans:    var(--font-plus-jakarta), "Plus Jakarta Sans", system-ui, sans-serif;
 
   /* Custom border radius */
   --radius-xl:  1rem;
