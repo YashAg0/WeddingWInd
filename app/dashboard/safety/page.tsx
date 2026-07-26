@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { ShieldAlert, Plus, HelpCircle, FileText, Scale } from "lucide-react";
 
+export const dynamic = "force-dynamic";
+
 export default async function UserSafetyCenterPage() {
   const user = await requireAuth();
 

@@ -4,19 +4,12 @@ import React, { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { adminGetConversations } from "@/lib/actions/messages";
 import {
-  MessageSquare,
   Search,
   Download,
   AlertTriangle,
-  History,
-  Archive,
-  UserCheck,
-  Calendar,
-  Sparkles,
   ArrowRight,
   ShieldCheck,
-  CheckCircle,
-  XCircle
+  CheckCircle
 } from "lucide-react";
 import Link from "next/link";
 
@@ -44,6 +37,7 @@ export default function AdminMessagesCMSPage() {
     if (user?.role === "admin") {
       loadConversations();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search, status, user]);
 
   // Export conversation transcript to JSON file download

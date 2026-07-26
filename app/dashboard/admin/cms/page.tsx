@@ -9,9 +9,10 @@ import {
   adminUpsertTestimonialAction,
   adminDeleteTestimonialAction,
 } from "@/lib/actions/admin";
-import { HelpCircle, FileText, Quote, Plus, Trash2, Edit2, Bookmark, CheckSquare, Star } from "lucide-react";
+import { HelpCircle, FileText, Quote, Plus, Trash2, Edit2, Star } from "lucide-react";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 
 export const dynamic = "force-dynamic";
 
@@ -27,8 +28,8 @@ export default async function AdminCMSPage({
   const faqs = await prisma.fAQ.findMany({ orderBy: { order: "asc" } });
   const posts = await prisma.blogPost.findMany({ orderBy: { createdAt: "desc" } });
   const testimonials = await prisma.testimonial.findMany({ orderBy: { createdAt: "desc" } });
-  const heroSlides = await prisma.heroContent.findMany({ orderBy: { createdAt: "desc" } });
-  const stats = await prisma.homepageStat.findMany({ orderBy: { order: "asc" } });
+  const _heroSlides = await prisma.heroContent.findMany({ orderBy: { createdAt: "desc" } });
+  const _stats = await prisma.homepageStat.findMany({ orderBy: { order: "asc" } });
 
   // Resolve searchParams
   const params = await searchParams;
@@ -582,11 +583,12 @@ export default async function AdminCMSPage({
                     <div className="flex items-center justify-between border-t border-warm-150 pt-3">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full bg-warm-250 overflow-hidden relative flex-shrink-0">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
+                          <Image
+                            fill
                             src={t.avatar || "https://i.pravatar.cc/80?img=5"}
                             alt={t.name}
-                            className="object-cover w-full h-full"
+                            className="object-cover"
+                            unoptimized
                           />
                         </div>
                         <div>

@@ -4,7 +4,7 @@
  * Verification tests for Phase 14.7 Review Edit, Deletion, and Moderation score adjustments.
  */
 
-import { editReviewAction, deleteReviewAction, adminModerateReviewAction } from "@/lib/actions/reviews";
+import { editReviewAction, deleteReviewAction } from "@/lib/actions/reviews";
 import { logReputationEvent } from "@/lib/services/reputation";
 import { prisma } from "@/lib/prisma";
 import { ReviewType } from "@prisma/client";

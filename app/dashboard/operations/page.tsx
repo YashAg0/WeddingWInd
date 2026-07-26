@@ -1,11 +1,10 @@
-"use server";
-
 import React from "react";
 import { requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { BookingStatus, UserRole } from "@prisma/client";
-import { Calendar, Users, CheckSquare, MessageSquare, AlertTriangle } from "lucide-react";
+import { BookingStatus } from "@prisma/client";
 import ClientOperationsCenter from "./ClientOperationsCenter";
+
+export const dynamic = "force-dynamic";
 
 export default async function OperationsPage() {
   const user = await requireAuth();

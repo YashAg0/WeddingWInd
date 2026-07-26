@@ -1,9 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import { motion } from "framer-motion";
 import { SlidersHorizontal, RotateCcw } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 // Filter options
 const styles = ["Royal", "Punjabi", "South Indian", "Beach", "Destination", "Traditional"];

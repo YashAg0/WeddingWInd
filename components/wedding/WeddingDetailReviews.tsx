@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Star, ThumbsUp, Flag, MessageSquare, ShieldAlert, Award } from "lucide-react";
 import { voteReviewHelpfulAction, reportReviewAction } from "@/lib/actions/reviews";
 import { ReviewReportReason } from "@prisma/client";
+import Image from "next/image";
 
 interface ReviewReplyData {
   id: string;
@@ -49,7 +50,7 @@ interface WeddingDetailReviewsProps {
   userId?: string | null;
 }
 
-export function WeddingDetailReviews({ weddingId, reviews, userId }: WeddingDetailReviewsProps) {
+export function WeddingDetailReviews({ weddingId: _weddingId, reviews, userId }: WeddingDetailReviewsProps) {
   const [reviewsList, setReviewsList] = useState<ReviewData[]>(reviews);
   const [filterRating, setFilterRating] = useState<number | "all">("all");
   const [sortBy, setSortBy] = useState<"recent" | "helpful">("recent");
@@ -252,11 +253,13 @@ export function WeddingDetailReviews({ weddingId, reviews, userId }: WeddingDeta
               <div className="flex items-start justify-between flex-wrap gap-4">
                 {/* Author Info */}
                 <div className="flex items-center gap-3">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
+                  <Image
                     src={rev.traveler?.user?.avatar || (rev as any).authorAvatar || "https://i.pravatar.cc/80?img=4"}
                     alt={rev.traveler?.fullName || (rev as any).authorName || "Anonymous Guest"}
+                    width={40}
+                    height={40}
                     className="w-10 h-10 rounded-full object-cover border border-warm-100 flex-shrink-0"
+                    unoptimized
                   />
                   <div>
                     <div className="font-bold text-charcoal-900 text-sm flex items-center gap-1.5">

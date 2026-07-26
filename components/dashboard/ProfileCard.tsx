@@ -1,7 +1,8 @@
 "use client";
 
 import { useAuth } from "@/context/AuthContext";
-import { MapPin, Globe, CheckCircle2 } from "lucide-react";
+import Image from "next/image";
+import { MapPin, CheckCircle2 } from "lucide-react";
 
 interface ProfileCardProps {
   onEditToggle?: () => void;
@@ -25,11 +26,11 @@ export default function ProfileCard({ onEditToggle, isEditing }: ProfileCardProp
           
           {/* Avatar frame */}
           <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden border-4 border-white bg-warm-100 flex-shrink-0 shadow-md relative">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <Image
               src={user?.avatar || "https://i.pravatar.cc/80?img=5"}
               alt={user?.name || "Avatar"}
-              className="w-full h-full object-cover"
+              fill
+              className="object-cover"
             />
           </div>
 

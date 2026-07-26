@@ -11,22 +11,22 @@ function DashboardShellContent({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { user, loading } = useAuth();
+  const { user, loading, dbOffline, refreshData } = useAuth();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   // Router guards wrapped in useEffect
   React.useEffect(() => {
     if (!loading) {
       const fullUrl = searchParams.toString() ? `${pathname}?${searchParams.toString()}` : pathname;
-      if (!user) {
+      if (!user && !dbOffline) {
         router.replace(`/login?redirect_url=${encodeURIComponent(fullUrl)}`);
-      } else if (!user.onboarded) {
+      } else if (user && !user.onboarded && !dbOffline) {
         router.replace(`/onboarding?redirect_url=${encodeURIComponent(fullUrl)}`);
       }
     }
-  }, [user, loading, router, pathname, searchParams]);
+  }, [user, loading, dbOffline, router, pathname, searchParams]);
 
-  if (loading || !user || !user.onboarded) {
+  if (loading || (!user && !dbOffline)) {
     return (
       <div className="min-h-screen bg-warm-50 flex items-center justify-center flex-col gap-3">
         <div className="w-8 h-8 rounded-full border-4 border-maroon-100 border-t-maroon-800 animate-spin" />
@@ -72,6 +72,17 @@ function DashboardShellContent({ children }: { children: React.ReactNode }) {
       {/* Main viewport */}
       <div className="flex flex-col flex-1 overflow-hidden min-w-0">
         <DashboardHeader onOpenMobileSidebar={() => setMobileSidebarOpen(true)} />
+        {dbOffline && (
+          <div className="bg-amber-500 text-white text-xs px-4 py-2 flex items-center justify-between font-semibold">
+            <span>⚠️ Database Server Offline — Viewing restricted mode.</span>
+            <button
+              onClick={() => refreshData()}
+              className="bg-white text-amber-900 px-3 py-1 rounded font-bold hover:bg-amber-100 transition"
+            >
+              Retry Connection
+            </button>
+          </div>
+        )}
         <main className="flex-1 overflow-y-auto bg-warm-50 p-4 sm:p-6 md:p-8 focus:outline-none">
           <div className="max-w-6xl mx-auto w-full">
             {children}

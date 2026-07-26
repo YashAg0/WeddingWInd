@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
-import { ArrowRight, Heart, ShieldCheck, DollarSign, Gift, Star, HelpCircle, Users } from "lucide-react";
+import { ArrowRight, Heart, ShieldCheck, DollarSign, Gift, Users } from "lucide-react";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import Link from "next/link";
 import { BUSINESS_METRICS } from "@/lib/constants/business-metrics";

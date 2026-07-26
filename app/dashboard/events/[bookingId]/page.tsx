@@ -1,12 +1,11 @@
-"use server";
-
 import React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getGuestPassAction } from "@/lib/actions/event-operations";
 import QRCode from "qrcode";
-import { Calendar, MapPin, Users, AlertTriangle, ShieldCheck, Heart, ArrowLeft, Ticket } from "lucide-react";
+import { Heart, ArrowLeft, Ticket } from "lucide-react";
 import ClientEventHubForm from "./ClientEventHubForm";
 
 interface EventHubPageProps {
@@ -16,6 +15,8 @@ interface EventHubPageProps {
 function calculateDaysToWedding(targetDate: string | Date): number {
   return Math.ceil((new Date(targetDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
 }
+
+export const dynamic = "force-dynamic";
 
 export default async function EventHubDetailPage({ params }: EventHubPageProps) {
   const user = await requireAuth();
@@ -142,8 +143,7 @@ export default async function EventHubDetailPage({ params }: EventHubPageProps) 
 
             {qrCodeUrl ? (
               <div className="p-3 border border-warm-100 rounded-2xl bg-white shadow-inner my-2">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={qrCodeUrl} alt="Check-in QR Pass" className="w-44 h-44" />
+                <Image src={qrCodeUrl} alt="Check-in QR Pass" width={176} height={176} className="w-44 h-44" unoptimized />
               </div>
             ) : (
               <div className="p-6 bg-warm-50 border border-warm-200 rounded-2xl text-xs text-charcoal-500">

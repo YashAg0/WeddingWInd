@@ -60,6 +60,7 @@ export interface Notification {
 interface AuthContextType {
   user: User | null;
   loading: boolean;
+  dbOffline: boolean;
   bookings: Booking[];
   wishlist: string[];
   notifications: Notification[];
@@ -68,8 +69,8 @@ interface AuthContextType {
   coupleStats: any;
   adminStats: any;
   verification: any;
-  login: (email: string, name: string) => void;
-  signup: (email: string, name: string) => void;
+  login: (email?: string, name?: string) => void;
+  signup: (email?: string, name?: string) => void;
   logout: () => void;
   updateRole: (role: UserRole) => void;
   completeOnboarding: (onboardingData: any, redirectUrl?: string) => void;
@@ -95,6 +96,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [dbOffline, setDbOffline] = useState(false);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [wishlist, setWishlist] = useState<string[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -111,10 +113,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const dbUser = await syncAndGetDbUser();
       if (!dbUser) {
         setUser(null);
+        setDbOffline(false);
         setLoading(false);
         return;
       }
 
+      if ((dbUser as any).dbOffline) {
+        setDbOffline(true);
+        setUser({
+          id: dbUser.id,
+          name: dbUser.name || dbUser.email.split("@")[0],
+          email: dbUser.email,
+          role: "traveler",
+          onboarded: true,
+          avatar: dbUser.avatar || "",
+          country: "",
+          bio: "",
+          phone: ""
+        });
+        setLoading(false);
+        return;
+      }
+
+      setDbOffline(false);
       const roleStr = dbUser.role.toLowerCase() as UserRole;
       setUser({
         id: dbUser.id,
@@ -128,19 +149,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         phone: ""
       });
 
-      const dashData = await fetchDashboardDataAction();
-      if (dashData) {
-        setBookings(dashData.bookings);
-        setWishlist(dashData.wishlist);
-        setNotifications(dashData.notifications);
-        setGuestApplications(dashData.guestApplications);
-        setHostWedding(dashData.hostWedding);
-        setCoupleStats(dashData.coupleStats);
-        setAdminStats(dashData.adminStats);
-        setVerification(dashData.verification);
+      try {
+        const dashData = await fetchDashboardDataAction();
+        if (dashData) {
+          setBookings(dashData.bookings || []);
+          setWishlist(dashData.wishlist || []);
+          setNotifications(dashData.notifications || []);
+          setGuestApplications(dashData.guestApplications || []);
+          setHostWedding(dashData.hostWedding || null);
+          setCoupleStats(dashData.coupleStats || null);
+          setAdminStats(dashData.adminStats || null);
+          setVerification(dashData.verification || null);
+        }
+      } catch (err) {
+        console.warn("Dashboard data fetch warning (DB offline?):", err);
+        setDbOffline(true);
       }
     } catch (err) {
       console.error("Failed to sync and load database user session details:", err);
+      setDbOffline(true);
     } finally {
       setLoading(false);
     }
@@ -153,6 +180,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         refreshData();
       } else {
         setUser(null);
+        setDbOffline(false);
         setBookings([]);
         setWishlist([]);
         setNotifications([]);
@@ -296,6 +324,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       value={{
         user,
         loading,
+        dbOffline,
         bookings,
         wishlist,
         notifications,

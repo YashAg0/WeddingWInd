@@ -2,8 +2,7 @@ import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { UserRole } from "@prisma/client";
 import { adminGetAuditLogsAction } from "@/lib/actions/admin";
-import { BarChart3, ShieldAlert, History, Shield, Users, Calendar, Activity } from "lucide-react";
-import { redirect } from "next/navigation";
+import { History, Shield, Users } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -21,8 +20,8 @@ export default async function AdminAnalyticsPage() {
   const adminCount = await prisma.user.count({ where: { role: UserRole.ADMIN } });
 
   // 4. Booking counts
-  const totalBookings = await prisma.booking.count();
-  const totalPayments = await prisma.payment.count();
+  const _totalBookings = await prisma.booking.count();
+  const _totalPayments = await prisma.payment.count();
 
   return (
     <div className="space-y-8">

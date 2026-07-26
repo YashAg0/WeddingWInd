@@ -672,7 +672,7 @@ export async function fetchUnreadCount() {
 export async function fetchEligibleUsers() {
   const user = await requireAuth();
 
-  let rolesFilter: UserRole[] = [UserRole.ADMIN];
+  const rolesFilter: UserRole[] = [UserRole.ADMIN];
   if (user.role === UserRole.TRAVELER) {
     rolesFilter.push(UserRole.COUPLE, UserRole.AGENT);
   } else if (user.role === UserRole.COUPLE) {

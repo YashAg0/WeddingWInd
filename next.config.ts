@@ -55,16 +55,15 @@ const nextConfig: NextConfig = {
               "font-src 'self' https://fonts.gstatic.com",
               // Images: self + Unsplash + Pravatar + Clerk avatars + UploadThing
               "img-src 'self' data: blob: https://images.unsplash.com https://i.pravatar.cc https://img.clerk.com https://*.clerk.com https://uploadthing.com https://utfs.io https://www.google-analytics.com",
-              // Connections: API + Clerk + Stripe + UploadThing
-              "connect-src 'self' https://api.clerk.com https://*.clerk.accounts.dev https://*.clerk.com https://clerk.com https://clerk.weddingwithindia.com https://api.stripe.com https://uploadthing.com https://www.google-analytics.com https://analytics.google.com",
+              // Connections: API + Clerk + Stripe + UploadThing + WebSockets (HMR)
+              "connect-src 'self' ws: wss: https://api.clerk.com https://*.clerk.accounts.dev https://*.clerk.com https://clerk.com https://clerk.weddingwithindia.com https://api.stripe.com https://uploadthing.com https://www.google-analytics.com https://analytics.google.com",
               // Frames: Stripe embedded elements + Clerk
               "frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://*.clerk.accounts.dev https://*.clerk.com https://challenges.cloudflare.com",
               // Scripts in frames
               "frame-ancestors 'none'",
               // Form submissions
               "form-action 'self'",
-              // Upgrade all HTTP to HTTPS
-              "upgrade-insecure-requests",
+              ...(process.env.NODE_ENV === "production" ? ["upgrade-insecure-requests"] : []),
             ].join("; "),
           },
         ],
@@ -87,9 +86,10 @@ const nextConfig: NextConfig = {
 
   // ─── Images ──────────────────────────────────────────────────────────────
   images: {
-    unoptimized: true,
     qualities: [75, 90],
     formats: ["image/avif", "image/webp"],
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
     remotePatterns: [
       {
         protocol: "https",
@@ -118,6 +118,8 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // ─── Transpile Packages ───────────────────────────────────────────────────
+  transpilePackages: [],
 };
 
 export default nextConfig;

@@ -1,10 +1,12 @@
 import React from "react";
 import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { UserRole, RestrictionType, CaseSeverity, CaseStatus } from "@prisma/client";
+import { UserRole } from "@prisma/client";
 import Link from "next/link";
 import ClientCaseDetailActions from "./ClientCaseDetailActions";
-import { ShieldAlert, ArrowLeft, History, Landmark, FileText, Lock, Users } from "lucide-react";
+import { ArrowLeft, History, FileText } from "lucide-react";
+
+export const dynamic = "force-dynamic";
 
 export default async function AdminCaseDetailPage({ params }: { params: Promise<{ caseId: string }> }) {
   await requireRole([UserRole.ADMIN]);

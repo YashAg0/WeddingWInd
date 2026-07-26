@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Compass, Users, UserCheck, Sparkles, Milestone, ArrowRight } from "lucide-react";
-import { SectionHeader } from "@/components/ui/SectionHeader";
+import { Milestone, ArrowRight } from "lucide-react";
 import Link from "next/link";
 
 type TabKey = "travelers" | "couples" | "agents";
@@ -210,7 +209,7 @@ export default function HowItWorksPage() {
             transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
             className="space-y-12"
           >
-            {getSteps().map((step, idx) => (
+            {getSteps().map((step, _idx) => (
               <div key={step.stepNum} className="relative group">
                 
                 {/* Step circle indicator */}

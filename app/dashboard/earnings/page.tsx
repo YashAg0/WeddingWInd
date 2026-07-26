@@ -1,12 +1,12 @@
-"use server";
-
 import React from "react";
 import { requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getAgentGrowthStats } from "@/lib/actions/referrals";
 import { CommissionStatus } from "@prisma/client";
-import { Coins, AlertTriangle, CheckCircle2, History } from "lucide-react";
+import { Coins, History } from "lucide-react";
 import ClientPayoutForm from "./ClientPayoutForm";
+
+export const dynamic = "force-dynamic";
 
 export default async function EarningsPage() {
   const user = await requireAuth();

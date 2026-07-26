@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { toast } from "sonner";
 import { manualCheckInAction, markAttendanceAction } from "@/lib/actions/event-operations";
-import { Calendar, Users, ShieldAlert, History, UserCheck, CheckCircle, XCircle } from "lucide-react";
+import { Calendar, History } from "lucide-react";
 
 interface ClientAdminEventsProps {
   weddings: Array<{
@@ -45,7 +45,7 @@ interface ClientAdminEventsProps {
 
 export default function ClientAdminEvents({ weddings, checkInLogs: initialLogs }: ClientAdminEventsProps) {
   const [selectedWedding, setSelectedWedding] = useState<any>(null);
-  const [logs, setLogs] = useState(initialLogs);
+  const [logs, _setLogs] = useState(initialLogs);
 
   const handleManualCheckIn = async (bookingId: string) => {
     if (!confirm("Confirm administrator bypass manual check-in?")) return;

@@ -13,11 +13,11 @@ import {
 } from "@prisma/client";
 import { logReputationEvent } from "../services/reputation";
 import { z } from "zod";
-import { setAttributionCookie, clearAttributionCookie } from "../attribution";
+import { setAttributionCookie } from "../attribution";
 
 // Zod Validation Schemas
 const referralCodeSchema = z.string().min(6).max(30).regex(/^[a-zA-Z0-9\-]+$/);
-const campaignSchema = z.object({
+const _campaignSchema = z.object({
   name: z.string().min(2).max(50).regex(/^[a-zA-Z0-9_\-\s]+$/),
   source: z.string().optional(),
   medium: z.string().optional(),
@@ -85,7 +85,7 @@ export async function trackReferralVisitAction(
 
     // Set first-party secure cookie
     const visitorId = Math.random().toString(36).substring(2, 15);
-    const attribution = await setAttributionCookie({
+    const _attribution = await setAttributionCookie({
       referralCode: validatedCode,
       visitorId,
       source: utm.source,
@@ -681,7 +681,7 @@ export async function reverseBookingCommissionAction(tx: any, paymentId: string,
 export async function adminResolveReferralFraudFlagAction(
   flagId: string,
   status: "CLEARED" | "CONFIRMED",
-  notes?: string
+  _notes?: string
 ) {
   const admin = await requireAuth();
   if (admin.role !== UserRole.ADMIN) {

@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { Review, FraudSignalType } from "@prisma/client";
+import { FraudSignalType } from "@prisma/client";
 
 export interface FraudCheckResult {
   detected: boolean;
@@ -39,7 +39,7 @@ export async function evaluateReviewFraud(
   userId: string
 ): Promise<FraudCheckResult> {
   const signals: FraudCheckResult["signals"] = [];
-  const normalizedComment = reviewData.comment.toLowerCase().replace(/[^\w]/g, "");
+  const _normalizedComment = reviewData.comment.toLowerCase().replace(/[^\w]/g, "");
 
   // Fetch contextual details
   const booking = await prisma.booking.findUnique({

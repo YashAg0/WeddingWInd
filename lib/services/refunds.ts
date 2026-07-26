@@ -7,7 +7,7 @@
 
 import { prisma } from "../prisma";
 import { stripe } from "../stripe";
-import { BookingStatus, PaymentStatus, CommissionStatus, CancellationStatus, CancellationReasonCode, CancellationActor, ReputationEntityType, ReputationEventType } from "@prisma/client";
+import { BookingStatus, PaymentStatus, CancellationStatus, CancellationReasonCode, CancellationActor, ReputationEntityType, ReputationEventType } from "@prisma/client";
 import { calculateCancellationPolicy } from "./cancellation-policy";
 import { sendRefundConfirmationEmail } from "../email";
 import { logReputationEvent } from "./reputation";

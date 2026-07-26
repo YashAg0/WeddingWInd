@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import ProfileCard from "@/components/dashboard/ProfileCard";
-import { UserCheck, Compass, Check } from "lucide-react";
+import { Check } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function ProfilePage() {
@@ -78,7 +78,7 @@ export default function ProfilePage() {
                 <div>
                   <h4 className="font-sans font-bold text-emerald-800 text-sm">Profile Saved!</h4>
                   <p className="text-emerald-700 text-xs mt-0.5">
-                    Your profile updates have been successfully written to state.
+                    Your profile has been successfully updated.
                   </p>
                 </div>
               </motion.div>

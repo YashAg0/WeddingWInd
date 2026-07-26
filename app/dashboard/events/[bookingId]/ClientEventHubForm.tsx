@@ -7,7 +7,7 @@ import {
   saveTravelDetailsAction,
   updateTravelerPreparationAction
 } from "@/lib/actions/event-operations";
-import { Calendar, MapPin, AlertCircle, FileText, Compass, Send } from "lucide-react";
+
 
 interface EmergencyContactData {
   name: string;

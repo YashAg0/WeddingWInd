@@ -27,17 +27,17 @@ import {
   ShieldCheck,
   Check,
   X,
-  Plus,
   RefreshCw,
   Coins,
   Sparkles
 } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 
 function VerificationWidget({ role, verification, submitVerification }: { role: string; verification: any; submitVerification: any }) {
   const [passportUrl, setPassportUrl] = useState("");
   const [govtIdUrl, setGovtIdUrl] = useState("");
-  const [selfieUrl, setSelfieUrl] = useState("");
+  const [selfieUrl, _setSelfieUrl] = useState("");
   const [invitationUrl, setInvitationUrl] = useState("");
   const [venueConfirmUrl, setVenueConfirmUrl] = useState("");
   const [socialLinks, setSocialLinks] = useState("");
@@ -53,19 +53,19 @@ function VerificationWidget({ role, verification, submitVerification }: { role: 
     setSubmitting(true);
     const payload: any = {};
     if (role === "traveler") {
-      payload.passportUrl = passportUrl || "https://uploadthing.com/f/traveler_passport_mock.pdf";
-      payload.govtIdUrl = govtIdUrl || "https://uploadthing.com/f/traveler_id_mock.pdf";
-      payload.selfieUrl = selfieUrl || "https://uploadthing.com/f/traveler_selfie_mock.jpg";
+      payload.passportUrl = passportUrl;
+      payload.govtIdUrl = govtIdUrl;
+      payload.selfieUrl = selfieUrl;
     } else if (role === "couple") {
-      payload.govtIdUrl = govtIdUrl || "https://uploadthing.com/f/couple_id_mock.pdf";
-      payload.invitationUrl = invitationUrl || "https://uploadthing.com/f/couple_invite_mock.pdf";
-      payload.venueConfirmUrl = venueConfirmUrl || "https://uploadthing.com/f/couple_venue_mock.pdf";
-      payload.socialLinks = socialLinks || "instagram.com/couple_mock";
+      payload.govtIdUrl = govtIdUrl;
+      payload.invitationUrl = invitationUrl;
+      payload.venueConfirmUrl = venueConfirmUrl;
+      payload.socialLinks = socialLinks;
     } else if (role === "agent") {
-      payload.govtIdUrl = govtIdUrl || "https://uploadthing.com/f/agent_id_mock.pdf";
-      payload.orgDetails = orgDetails || "Boutique Heritage Wedding Planners Group LLC";
-      payload.businessRegUrl = businessRegUrl || "https://uploadthing.com/f/agent_reg_mock.pdf";
-      payload.linkedinUrl = linkedinUrl || "linkedin.com/in/agent_mock";
+      payload.govtIdUrl = govtIdUrl;
+      payload.orgDetails = orgDetails;
+      payload.businessRegUrl = businessRegUrl;
+      payload.linkedinUrl = linkedinUrl;
     }
     await submitVerification(payload);
     setSubmitting(false);
@@ -139,15 +139,17 @@ function VerificationWidget({ role, verification, submitVerification }: { role: 
             <div className="space-y-3">
               <div>
                 <label className="text-[0.6875rem] font-bold text-charcoal-400 uppercase tracking-wider block mb-1">Passport Scan</label>
-                <div className="border-2 border-dashed border-warm-200 hover:border-maroon-300 rounded-xl p-3 text-center cursor-pointer bg-warm-50/30 text-xs font-semibold text-charcoal-500 transition-colors" onClick={() => setPassportUrl("https://uploadthing.com/f/traveler_passport_mock.pdf")}>
-                  {passportUrl ? "✓ Passport Selected" : "Click to mock Passport drag & drop"}
-                </div>
+                <label className="border-2 border-dashed border-warm-200 hover:border-maroon-300 rounded-xl p-3 text-center cursor-pointer bg-warm-50/30 text-xs font-semibold text-charcoal-500 transition-colors flex items-center justify-center gap-2">
+                  {passportUrl ? <><Check size={13} className="text-emerald-500" /><span className="text-emerald-600">{passportUrl}</span></> : "Click to upload Passport (PDF / JPG)"}
+                  <input type="file" accept=".pdf,.jpg,.jpeg,.png" className="sr-only" onChange={(e) => { if (e.target.files?.[0]) setPassportUrl(e.target.files[0].name); }} />
+                </label>
               </div>
               <div>
                 <label className="text-[0.6875rem] font-bold text-charcoal-400 uppercase tracking-wider block mb-1">Government Photo ID</label>
-                <div className="border-2 border-dashed border-warm-200 hover:border-maroon-300 rounded-xl p-3 text-center cursor-pointer bg-warm-50/30 text-xs font-semibold text-charcoal-500 transition-colors" onClick={() => setGovtIdUrl("https://uploadthing.com/f/traveler_id_mock.pdf")}>
-                  {govtIdUrl ? "✓ Government ID Selected" : "Click to mock Govt ID drag & drop"}
-                </div>
+                <label className="border-2 border-dashed border-warm-200 hover:border-maroon-300 rounded-xl p-3 text-center cursor-pointer bg-warm-50/30 text-xs font-semibold text-charcoal-500 transition-colors flex items-center justify-center gap-2">
+                  {govtIdUrl ? <><Check size={13} className="text-emerald-500" /><span className="text-emerald-600">{govtIdUrl}</span></> : "Click to upload Government ID (PDF / JPG)"}
+                  <input type="file" accept=".pdf,.jpg,.jpeg,.png" className="sr-only" onChange={(e) => { if (e.target.files?.[0]) setGovtIdUrl(e.target.files[0].name); }} />
+                </label>
               </div>
             </div>
           )}
@@ -156,15 +158,17 @@ function VerificationWidget({ role, verification, submitVerification }: { role: 
             <div className="space-y-3">
               <div>
                 <label className="text-[0.6875rem] font-bold text-charcoal-400 uppercase tracking-wider block mb-1">Wedding Invitation Card / PDF</label>
-                <div className="border-2 border-dashed border-warm-200 hover:border-maroon-300 rounded-xl p-3 text-center cursor-pointer bg-warm-50/30 text-xs font-semibold text-charcoal-500 transition-colors" onClick={() => setInvitationUrl("https://uploadthing.com/f/couple_invite_mock.pdf")}>
-                  {invitationUrl ? "✓ Invitation Selected" : "Click to mock Invitation upload"}
-                </div>
+                <label className="border-2 border-dashed border-warm-200 hover:border-maroon-300 rounded-xl p-3 text-center cursor-pointer bg-warm-50/30 text-xs font-semibold text-charcoal-500 transition-colors flex items-center justify-center gap-2">
+                  {invitationUrl ? <><Check size={13} className="text-emerald-500" /><span className="text-emerald-600">{invitationUrl}</span></> : "Click to upload Invitation (PDF / JPG)"}
+                  <input type="file" accept=".pdf,.jpg,.jpeg,.png" className="sr-only" onChange={(e) => { if (e.target.files?.[0]) setInvitationUrl(e.target.files[0].name); }} />
+                </label>
               </div>
               <div>
                 <label className="text-[0.6875rem] font-bold text-charcoal-400 uppercase tracking-wider block mb-1">Venue Booking Confirmation Scan</label>
-                <div className="border-2 border-dashed border-warm-200 hover:border-maroon-300 rounded-xl p-3 text-center cursor-pointer bg-warm-50/30 text-xs font-semibold text-charcoal-500 transition-colors" onClick={() => setVenueConfirmUrl("https://uploadthing.com/f/couple_venue_mock.pdf")}>
-                  {venueConfirmUrl ? "✓ Venue Confirmation Selected" : "Click to mock Venue booking upload"}
-                </div>
+                <label className="border-2 border-dashed border-warm-200 hover:border-maroon-300 rounded-xl p-3 text-center cursor-pointer bg-warm-50/30 text-xs font-semibold text-charcoal-500 transition-colors flex items-center justify-center gap-2">
+                  {venueConfirmUrl ? <><Check size={13} className="text-emerald-500" /><span className="text-emerald-600">{venueConfirmUrl}</span></> : "Click to upload Venue Confirmation (PDF / JPG)"}
+                  <input type="file" accept=".pdf,.jpg,.jpeg,.png" className="sr-only" onChange={(e) => { if (e.target.files?.[0]) setVenueConfirmUrl(e.target.files[0].name); }} />
+                </label>
               </div>
               <div>
                 <label className="text-[0.6875rem] font-bold text-charcoal-400 uppercase tracking-wider block mb-1">Social Profile Link (Instagram/Facebook)</label>
@@ -177,9 +181,10 @@ function VerificationWidget({ role, verification, submitVerification }: { role: 
             <div className="space-y-3">
               <div>
                 <label className="text-[0.6875rem] font-bold text-charcoal-400 uppercase tracking-wider block mb-1">Business Registration Certificate (Optional)</label>
-                <div className="border-2 border-dashed border-warm-200 hover:border-maroon-300 rounded-xl p-3 text-center cursor-pointer bg-warm-50/30 text-xs font-semibold text-charcoal-500 transition-colors" onClick={() => setBusinessRegUrl("https://uploadthing.com/f/agent_reg_mock.pdf")}>
-                  {businessRegUrl ? "✓ Business Certificate Selected" : "Click to mock Registration certificate upload"}
-                </div>
+                <label className="border-2 border-dashed border-warm-200 hover:border-maroon-300 rounded-xl p-3 text-center cursor-pointer bg-warm-50/30 text-xs font-semibold text-charcoal-500 transition-colors flex items-center justify-center gap-2">
+                  {businessRegUrl ? <><Check size={13} className="text-emerald-500" /><span className="text-emerald-600">{businessRegUrl}</span></> : "Click to upload Registration Certificate (PDF)"}
+                  <input type="file" accept=".pdf,.jpg,.jpeg,.png" className="sr-only" onChange={(e) => { if (e.target.files?.[0]) setBusinessRegUrl(e.target.files[0].name); }} />
+                </label>
               </div>
               <div>
                 <label className="text-[0.6875rem] font-bold text-charcoal-400 uppercase tracking-wider block mb-1">LinkedIn Profile Link</label>
@@ -212,15 +217,15 @@ export default function DashboardOverviewPage() {
     hostWedding,
     coupleStats,
     adminStats,
-    refundBooking,
+    refundBooking: _refundBooking,
     verification,
     submitVerification,
-    reviewVerification
+    reviewVerification: _reviewVerification
   } = useAuth();
 
   const [weddings, setWeddings] = useState<any[]>([]);
   const [appFilter, setAppFilter] = useState<"pending" | "approved" | "rejected">("pending");
-  const [reviewNotes, setReviewNotes] = useState<Record<string, string>>({});
+  const [_reviewNotes, _setReviewNotes] = useState<Record<string, string>>({});
 
   // Discovery states
   const [recentlyViewed, setRecentlyViewed] = useState<any[]>([]);
@@ -229,7 +234,7 @@ export default function DashboardOverviewPage() {
   
   // AI matching advisor states
   const [aiBudget, setAiBudget] = useState(200);
-  const [aiCountry, setAiCountry] = useState("India");
+  const [aiCountry] = useState("India");
   const [aiGroupSize, setAiGroupSize] = useState(2);
   const [aiInterests, setAiInterests] = useState("Beach, Luxury");
   const [aiResult, setAiResult] = useState<any | null>(null);
@@ -331,8 +336,7 @@ export default function DashboardOverviewPage() {
                 {(personalizedRecs.length > 0 ? personalizedRecs : weddings).slice(0, 2).map((wedding: any) => (
                   <div key={wedding.id} className="bg-white border border-warm-200/50 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">
                     <div className="h-40 bg-warm-100 relative">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={wedding.imageUrl || wedding.mainImageUrl} alt={wedding.title} className="w-full h-full object-cover" />
+                      <Image src={wedding.imageUrl || wedding.mainImageUrl} alt={wedding.title} fill className="object-cover" />
                       <span className="absolute top-2 right-2 text-[0.625rem] font-bold uppercase tracking-wider bg-white/95 text-[var(--color-brand-primary)] px-2 py-1 rounded border border-warm-100 shadow-sm">
                         {wedding.category}
                       </span>
@@ -366,9 +370,8 @@ export default function DashboardOverviewPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {wishlistedWeddings.slice(0, 2).map((w) => (
                     <div key={w.id} className="bg-white border border-warm-200/50 rounded-2xl p-4 flex gap-3 items-center animate-fade-in">
-                      <div className="w-12 h-12 rounded-lg overflow-hidden bg-warm-100 flex-shrink-0">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={w.imageUrl || w.mainImageUrl} alt={w.title} className="w-full h-full object-cover" />
+                      <div className="w-12 h-12 rounded-lg overflow-hidden bg-warm-100 flex-shrink-0 relative">
+                        <Image src={w.imageUrl || w.mainImageUrl} alt={w.title} fill className="object-cover" />
                       </div>
                       <div className="min-w-0 flex-1">
                         <h4 className="font-display font-bold text-xs text-charcoal-850 truncate">{w.title}</h4>
@@ -390,9 +393,8 @@ export default function DashboardOverviewPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {recentlyViewed.map((rv) => (
                     <div key={rv.id} className="bg-white border border-warm-200/50 rounded-2xl p-4 flex gap-3 items-center animate-fade-in">
-                      <div className="w-12 h-12 rounded-lg overflow-hidden bg-warm-100 flex-shrink-0">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={rv.wedding.mainImageUrl} alt={rv.wedding.title} className="w-full h-full object-cover" />
+                      <div className="w-12 h-12 rounded-lg overflow-hidden bg-warm-100 flex-shrink-0 relative">
+                        <Image src={rv.wedding.mainImageUrl} alt={rv.wedding.title} fill className="object-cover" />
                       </div>
                       <div className="min-w-0 flex-1">
                         <h4 className="font-display font-bold text-xs text-charcoal-850 truncate">{rv.wedding.title}</h4>
@@ -631,9 +633,8 @@ export default function DashboardOverviewPage() {
                       <div key={app.id} className="bg-white border border-warm-200/50 p-5 rounded-2xl shadow-sm space-y-4">
                         <div className="flex items-center justify-between gap-3 flex-wrap">
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full overflow-hidden bg-warm-100 flex-shrink-0">
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img src={app.travelerAvatar} alt={app.travelerName} className="w-full h-full object-cover" />
+                            <div className="w-10 h-10 rounded-full overflow-hidden bg-warm-100 flex-shrink-0 relative">
+                              <Image src={app.travelerAvatar} alt={app.travelerName} fill className="object-cover" />
                             </div>
                             <div>
                               <h4 className="font-sans font-bold text-sm text-charcoal-850">{app.travelerName}</h4>

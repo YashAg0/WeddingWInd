@@ -1,9 +1,7 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { Users, Award, ShieldCheck, DollarSign, ArrowRight, Eye, Sparkles } from "lucide-react";
+import { Users, DollarSign, ArrowRight, Sparkles } from "lucide-react";
 import { SectionHeader } from "@/components/ui/SectionHeader";
-import Image from "next/image";
 import Link from "next/link";
 
 const programs = [

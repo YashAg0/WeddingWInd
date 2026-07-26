@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import { Search, MapPin, Calendar, Heart, SlidersHorizontal } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Search, MapPin, Calendar, SlidersHorizontal } from "lucide-react";
 
 interface SearchBarProps {
   onToggleMobileFilters?: () => void;

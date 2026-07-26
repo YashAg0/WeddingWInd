@@ -265,7 +265,7 @@ export async function recommendWeddingAction(preferences: {
   groupSize: number;
   interests: string; // comma separated keywords
 }) {
-  const user = await requireAuth();
+  const _user = await requireAuth();
 
   // Parse keywords
   const interestKeywords = preferences.interests
@@ -319,10 +319,6 @@ export async function recommendWeddingAction(preferences: {
   }
 
   // Compile logical match description explanation text
-  const dateString = preferences.travelDates
-    ? `around ${new Date(preferences.travelDates).toLocaleDateString()}`
-    : "during your upcoming trip";
-
   const explanation = `We selected the "${bestMatch.title}" experience in ${bestMatch.location} for you! It perfectly supports your group of ${preferences.groupSize} attendees (capacity up to ${bestMatch.capacity}) and fits your budget with pricing of $${bestMatch.pricePerGuest} per guest. Furthermore, your interest keywords ("${interestKeywords.join(", ")}") intersect strongly with this wedding's cultural category of ${bestMatch.category}.`;
 
   return {
@@ -429,7 +425,7 @@ export async function saveSearchAction(name: string, filters: any) {
 }
 
 export async function deleteSavedSearch(id: string) {
-  const user = await requireAuth();
+  const _user = await requireAuth();
 
   await prisma.savedSearch.delete({
     where: { id },
@@ -440,7 +436,7 @@ export async function deleteSavedSearch(id: string) {
 }
 
 export async function renameSavedSearch(id: string, name: string) {
-  const user = await requireAuth();
+  const _user = await requireAuth();
 
   const updated = await prisma.savedSearch.update({
     where: { id },

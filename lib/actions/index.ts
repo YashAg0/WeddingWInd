@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { prisma } from "../prisma";
+import { prisma, isDatabaseAvailable } from "../prisma";
 import { requireAuth, syncAndGetDbUser } from "../auth";
 export { syncAndGetDbUser };
 import { UserRole, BookingStatus, PaymentStatus, VerificationStatus, ReferralStatus, CancellationReasonCode, CancellationActor } from "@prisma/client";
@@ -10,7 +10,6 @@ import { rateLimit } from "../rate-limit";
 import { getWeddingRatingAggregate, getPublishedReviewWhere } from "../services/trust-score";
 import {
   sendHostApprovalWithPaymentLinkEmail,
-  sendInvoiceEmail,
   sendRefundConfirmationEmail,
   sendHostRejectionEmail,
   sendVerificationSubmittedEmail,
@@ -21,9 +20,7 @@ import {
   travelerProfileSchema,
   coupleProfileSchema,
   agentProfileSchema,
-  weddingSchema,
-  bookingSchema,
-  reviewSchema
+  weddingSchema
 } from "../validation";
 
 /**
@@ -970,6 +967,23 @@ export async function markNotificationsReadAction() {
 export async function fetchDashboardDataAction() {
   const dbUser = await requireAuth();
 
+  if (!(await isDatabaseAvailable())) {
+    return {
+      notifications: [],
+      verification: null,
+      bookings: [],
+      wishlist: [],
+      guestApplications: [],
+      hostWedding: null,
+      revenue: 0,
+      pendingPayouts: 0,
+      paidGuests: [],
+      allPayments: [],
+      refundQueue: [],
+      pendingVerifications: [],
+    };
+  }
+
   const notifications = await prisma.notification.findMany({
     where: { userId: dbUser.id },
     orderBy: { createdAt: "desc" }
@@ -1247,6 +1261,13 @@ export async function seedDatabaseIfNeeded() {
 
 export async function getWeddings() {
   try {
+    const dbOk = await isDatabaseAvailable(1500);
+    if (!dbOk) {
+      console.info("[getWeddings] Database unavailable. Fast-fallback to featuredWeddings.");
+      const { featuredWeddings } = await import("../data");
+      return featuredWeddings;
+    }
+
     const weddings = await prisma.wedding.findMany({
       where: { status: "PUBLISHED" },
       include: {
@@ -1387,6 +1408,13 @@ function mapToPublicReviewDTO(review: any) {
 
 export async function getWeddingBySlug(slug: string) {
   try {
+    const dbOk = await isDatabaseAvailable(1500);
+    if (!dbOk) {
+      console.info(`[getWeddingBySlug] Database unavailable. Serving static fallback for slug '${slug}'.`);
+      const { featuredWeddings } = await import("../data");
+      return featuredWeddings.find((fw) => fw.slug === slug) || featuredWeddings[0] || null;
+    }
+
     const w = await prisma.wedding.findUnique({
       where: { slug },
       include: {

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Compass, ShieldCheck, Heart, Users, Table, Award, Info, FileText, ArrowRight, Sparkles } from "lucide-react";
+import { Compass, Table, Info, FileText, ArrowRight, Sparkles } from "lucide-react";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 
 export const metadata = {

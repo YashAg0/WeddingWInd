@@ -51,7 +51,7 @@ export default function SettingsPage() {
             <div>
               <h4 className="font-sans font-bold text-emerald-800 text-sm">Settings Saved!</h4>
               <p className="text-emerald-700 text-xs mt-0.5">
-                Preferences have been successfully updated in state.
+                Your preferences have been successfully updated.
               </p>
             </div>
           </motion.div>

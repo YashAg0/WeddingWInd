@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { Trash2, MapPin, Calendar, Heart, ArrowRight } from "lucide-react";
+import Image from "next/image";
+import { Trash2, MapPin, ArrowRight } from "lucide-react";
 
 interface WishlistCardProps {
   wedding: {
@@ -21,11 +22,11 @@ export default function WishlistCard({ wedding, onRemove }: WishlistCardProps) {
       
       {/* Photo frame */}
       <div className="w-full sm:w-36 h-28 rounded-xl overflow-hidden flex-shrink-0 relative bg-warm-100">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+        <Image
           src={wedding.imageUrl}
           alt={wedding.title}
-          className="w-full h-full object-cover"
+          fill
+          className="object-cover"
         />
       </div>
 

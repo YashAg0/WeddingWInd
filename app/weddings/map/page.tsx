@@ -5,20 +5,15 @@ import { searchWeddingsAction } from "@/lib/actions/discovery";
 import {
   MapPin,
   Search,
-  Filter,
-  DollarSign,
-  Users,
   Compass,
   Navigation,
   ZoomIn,
   ZoomOut,
   Locate,
-  Info,
-  Calendar,
-  X,
   Map as MapIcon
 } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 
 interface WeddingMapItem {
   id: string;
@@ -99,6 +94,7 @@ export default function WeddingsMapDiscoveryPage() {
 
   useEffect(() => {
     loadMapData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query, selectedStyle]);
 
   const handleLocateSelf = () => {
@@ -328,11 +324,12 @@ export default function WeddingsMapDiscoveryPage() {
               <div className="space-y-4">
                 {/* Header image */}
                 <div className="h-40 rounded-2xl overflow-hidden bg-warm-200 relative border border-warm-150">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
+                  <Image
+                    fill
                     src={selectedWedding.mainImageUrl}
                     alt={selectedWedding.title}
-                    className="object-cover w-full h-full"
+                    className="object-cover"
+                    unoptimized
                   />
                   <span className="absolute top-3 left-3 bg-white/95 backdrop-blur text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border border-warm-200 text-maroon-800 shadow">
                     {selectedWedding.category}

@@ -8,8 +8,9 @@ import { Countries } from "@/components/home/Countries";
 import { FAQ } from "@/components/home/FAQ";
 import { CTASection } from "@/components/home/CTASection";
 import { getWeddings } from "@/lib/actions";
-import { MapPin, Calendar, Compass, ShieldCheck, ArrowRight } from "lucide-react";
+import { ArrowRight, TrendingUp, Clock, Gem } from "lucide-react";
 import Link from "next/link";
+import { WeddingCard } from "@/components/wedding/WeddingCard";
 import { BUSINESS_METRICS } from "@/lib/constants/business-metrics";
 import {
   weddingCategories,
@@ -19,33 +20,81 @@ import {
   heroStats,
   howItWorksSteps,
 } from "@/lib/data";
+import type { Wedding } from "@/types";
 
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Wedding With India — Attend Real Indian Weddings",
-  description:
-    `The world's first marketplace to attend authentic Indian weddings. Join real celebrations in Rajasthan, Goa, Punjab, and Kerala as an honoured guest. Browse ${BUSINESS_METRICS.WEDDINGS_HOSTED} verified listings.`,
+  description: `The world's first marketplace to attend authentic Indian weddings. Join real celebrations in Rajasthan, Goa, Punjab, and Kerala as an honoured guest. Browse ${BUSINESS_METRICS.WEDDINGS_HOSTED} verified listings.`,
   alternates: {
     canonical: "https://weddingwithindia.com",
   },
 };
 
+interface DiscoverySectionProps {
+  icon: React.ReactNode;
+  label: string;
+  title: string;
+  weddings: Wedding[];
+  viewAllHref?: string;
+}
+
+function DiscoverySection({ icon, label, title, weddings, viewAllHref }: DiscoverySectionProps) {
+  if (weddings.length === 0) return null;
+
+  return (
+    <div className="space-y-5">
+      <div className="flex items-end justify-between gap-4">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 text-[var(--color-brand-secondary)]">
+            {icon}
+            <span className="text-xs font-bold uppercase tracking-widest">{label}</span>
+          </div>
+          <h3 className="font-display font-bold text-xl sm:text-2xl text-charcoal-900">
+            {title}
+          </h3>
+        </div>
+        {viewAllHref && (
+          <Link
+            href={viewAllHref}
+            className="flex-shrink-0 flex items-center gap-1.5 text-sm font-semibold text-[var(--color-brand-primary)] hover:text-maroon-700 transition-colors group"
+            aria-label={`View all ${title.toLowerCase()}`}
+          >
+            View all
+            <ArrowRight size={14} className="group-hover:translate-x-0.5 transition-transform" aria-hidden="true" />
+          </Link>
+        )}
+      </div>
+
+      <div
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5"
+        role="list"
+        aria-label={`${title} wedding listings`}
+      >
+        {weddings.slice(0, 4).map((wedding) => (
+          <div key={wedding.id} role="listitem">
+            <WeddingCard wedding={wedding} />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default async function HomePage() {
   const weddings = await getWeddings();
 
-  // Reuse the published listings fetched above. Re-querying the same database
-  // for each tray made the public fallback page wait on repeated connection
-  // timeouts when PostgreSQL is unavailable.
   const trending = weddings.slice(0, 4);
-  const popular = [...weddings]
-    .sort((left, right) => right.guestsBooked - left.guestsBooked)
+  const mostSoughtAfter = [...weddings]
+    .sort((a, b) => b.guestsBooked - a.guestsBooked)
     .slice(0, 4);
-  const recentlyAdded = [...weddings]
-    .sort((left, right) => new Date(right.date).getTime() - new Date(left.date).getTime())
+  const newlyListed = [...weddings]
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     .slice(0, 4);
-  const luxury = weddings.filter((w) => w.pricePerGuest >= 200).slice(0, 4);
-  const budgetFriendly = weddings.filter((w) => w.pricePerGuest <= 100).slice(0, 4);
+  const accessibleLuxury = weddings.filter((w) => w.pricePerGuest <= 150).slice(0, 4);
+
+  const hasDiscoveryContent = trending.length > 0 || mostSoughtAfter.length > 0 || newlyListed.length > 0;
 
   return (
     <>
@@ -59,164 +108,106 @@ export default async function HomePage() {
 
       <Hero stats={heroStats} />
 
-      {/* Dynamic Recommendation & Discovery Trays */}
-      <section className="py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
-        <div className="text-center space-y-2 max-w-2xl mx-auto">
-          <span className="text-[10px] font-extrabold uppercase tracking-widest text-maroon-700 bg-maroon-50 px-3 py-1 rounded-full border border-maroon-150">
-            Heritage Discovery Engine
-          </span>
-          <h2 className="font-display font-bold text-2xl sm:text-4xl text-charcoal-950">
-            Trending & Personalized Curations
-          </h2>
-          <p className="text-charcoal-500 text-xs sm:text-sm font-semibold leading-relaxed">
-            Real weddings trending this week, recently launched, and budget selections.
-          </p>
-        </div>
+      <main id="main-content">
+        {/* ─── Premium Discovery Section ─── */}
+        {hasDiscoveryContent && (
+          <section
+            id="discovery"
+            className="section-padding bg-[var(--color-warm-50)]"
+            aria-labelledby="discovery-heading"
+          >
+            <div className="container-luxury space-y-16">
+              {/* Section header */}
+              <div className="text-center max-w-2xl mx-auto space-y-4">
+                <div className="section-label mx-auto w-fit">Handpicked for You</div>
+                <h2
+                  id="discovery-heading"
+                  className="font-display font-bold text-3xl sm:text-4xl text-charcoal-900 leading-tight"
+                >
+                  Explore This Season&apos;s Celebrations
+                </h2>
+                <p className="text-charcoal-500 text-base leading-relaxed">
+                  Curated wedding experiences trending now, recently listed, and most sought after by global travellers.
+                </p>
+              </div>
 
-        {/* 1. Trending section */}
-        {trending.length > 0 && (
-          <div className="space-y-4">
-            <h3 className="font-display font-bold text-lg text-charcoal-900 flex items-center gap-2">
-              <Compass className="text-maroon-700 animate-spin-slow" size={18} />
-              Trending Indian Weddings
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {trending.map((w: any) => (
-                <div key={w.id} className="bg-white border border-warm-200/50 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-                  <div className="h-40 bg-warm-100 relative">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={w.mainImageUrl} alt={w.title} className="w-full h-full object-cover" />
-                    <span className="absolute top-3 left-3 bg-white/95 text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded shadow text-maroon-800">
-                      {w.category}
-                    </span>
-                  </div>
-                  <div className="p-4 space-y-2 text-xs">
-                    <h4 className="font-display font-bold text-charcoal-900 truncate">{w.title}</h4>
-                    <p className="text-[10px] text-charcoal-500 flex items-center gap-1">
-                      <MapPin size={11} className="text-maroon-600" /> {w.location}
-                    </p>
-                    <div className="flex justify-between items-center pt-2 border-t border-warm-50">
-                      <span className="font-black text-charcoal-850">${w.pricePerGuest} <span className="font-normal text-charcoal-400">/ guest</span></span>
-                      <Link href={`/weddings/${w.slug}`} className="font-bold text-maroon-850 hover:underline">
-                        Details →
-                      </Link>
-                    </div>
-                  </div>
-                </div>
-              ))}
+              {/* Trending This Season */}
+              <DiscoverySection
+                icon={<TrendingUp size={16} aria-hidden="true" />}
+                label="Trending Now"
+                title="Trending This Season"
+                weddings={trending}
+                viewAllHref="/weddings"
+              />
+
+              {/* Most Sought After */}
+              {mostSoughtAfter.length > 0 && (
+                <DiscoverySection
+                  icon={<Gem size={16} aria-hidden="true" />}
+                  label="Most Popular"
+                  title="Most Sought After"
+                  weddings={mostSoughtAfter}
+                  viewAllHref="/weddings?sort=rating"
+                />
+              )}
+
+              {/* Newly Listed Celebrations */}
+              {newlyListed.length > 0 && (
+                <DiscoverySection
+                  icon={<Clock size={16} aria-hidden="true" />}
+                  label="Just Added"
+                  title="Newly Listed Celebrations"
+                  weddings={newlyListed}
+                  viewAllHref="/weddings"
+                />
+              )}
+
+              {/* Accessible Luxury — only show if there are results */}
+              {accessibleLuxury.length > 0 && (
+                <DiscoverySection
+                  icon={<Gem size={16} aria-hidden="true" />}
+                  label="Accessible Luxury"
+                  title="Authentic Weddings From $150"
+                  weddings={accessibleLuxury}
+                  viewAllHref="/weddings?maxBudget=150"
+                />
+              )}
+
+              {/* View all CTA */}
+              <div className="text-center pt-4">
+                <Link
+                  href="/weddings"
+                  className="btn btn-outline btn-lg group inline-flex"
+                >
+                  Browse All Weddings
+                  <ArrowRight
+                    size={17}
+                    className="group-hover:translate-x-0.5 transition-transform"
+                    aria-hidden="true"
+                  />
+                </Link>
+                <p className="text-sm text-charcoal-400 mt-4">
+                  {BUSINESS_METRICS.WEDDINGS_HOSTED} verified celebrations across India
+                </p>
+              </div>
             </div>
-          </div>
+          </section>
         )}
 
-        {/* 2. Popular & Recently Added columns */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Popular */}
-          <div className="space-y-4">
-            <h3 className="font-display font-bold text-base text-charcoal-900">Popular This Week</h3>
-            <div className="space-y-3">
-              {(popular.length > 0 ? popular : weddings.slice(0, 3)).map((w: any) => (
-                <Link
-                  href={`/weddings/${w.slug}`}
-                  key={w.id}
-                  className="flex gap-4 items-center bg-white border border-warm-200/50 p-3 rounded-2xl hover:bg-warm-50/30 transition-colors"
-                >
-                  <div className="w-16 h-16 rounded-xl overflow-hidden bg-warm-100 flex-shrink-0">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={w.mainImageUrl || w.imageUrl} alt={w.title} className="w-full h-full object-cover" />
-                  </div>
-                  <div className="min-w-0">
-                    <h4 className="font-display font-bold text-xs text-charcoal-900 truncate">{w.title}</h4>
-                    <p className="text-[10px] text-charcoal-500 flex items-center gap-0.5 mt-0.5">
-                      <MapPin size={10} className="text-maroon-600" /> {w.location}
-                    </p>
-                    <span className="inline-block text-[9px] font-black text-maroon-800 bg-maroon-50 px-1.5 py-0.5 rounded mt-1.5">
-                      ${w.pricePerGuest} / guest
-                    </span>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </div>
+        <FeaturedWeddings weddings={weddings} />
 
-          {/* Recently Added */}
-          <div className="space-y-4">
-            <h3 className="font-display font-bold text-base text-charcoal-900">Recently Added Outlets</h3>
-            <div className="space-y-3">
-              {(recentlyAdded.length > 0 ? recentlyAdded : weddings.slice(2, 5)).map((w: any) => (
-                <Link
-                  href={`/weddings/${w.slug}`}
-                  key={w.id}
-                  className="flex gap-4 items-center bg-white border border-warm-200/50 p-3 rounded-2xl hover:bg-warm-50/30 transition-colors"
-                >
-                  <div className="w-16 h-16 rounded-xl overflow-hidden bg-warm-100 flex-shrink-0">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={w.mainImageUrl || w.imageUrl} alt={w.title} className="w-full h-full object-cover" />
-                  </div>
-                  <div className="min-w-0">
-                    <h4 className="font-display font-bold text-xs text-charcoal-900 truncate">{w.title}</h4>
-                    <p className="text-[10px] text-charcoal-500 flex items-center gap-0.5 mt-0.5">
-                      <Calendar size={10} className="text-maroon-600" /> {new Date(w.createdAt).toLocaleDateString()}
-                    </p>
-                    <span className="inline-block text-[9px] font-black text-maroon-800 bg-maroon-50 px-1.5 py-0.5 rounded mt-1.5">
-                      ${w.pricePerGuest} / guest
-                    </span>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </div>
-        </div>
+        <HowItWorks steps={howItWorksSteps} />
 
-        {/* 3. Budget Selections */}
-        {budgetFriendly.length > 0 && (
-          <div className="space-y-4">
-            <h3 className="font-display font-bold text-lg text-charcoal-900 flex items-center gap-2">
-              <ShieldCheck className="text-maroon-700" size={18} />
-              Budget Friendly Guest Passes
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {budgetFriendly.map((w: any) => (
-                <div key={w.id} className="bg-white border border-warm-200/50 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-                  <div className="h-40 bg-warm-100 relative">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={w.mainImageUrl} alt={w.title} className="w-full h-full object-cover" />
-                    <span className="absolute top-3 left-3 bg-white/95 text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded shadow text-maroon-800">
-                      {w.category}
-                    </span>
-                  </div>
-                  <div className="p-4 space-y-2 text-xs">
-                    <h4 className="font-display font-bold text-charcoal-900 truncate">{w.title}</h4>
-                    <p className="text-[10px] text-charcoal-500 flex items-center gap-1">
-                      <MapPin size={11} className="text-maroon-600" /> {w.location}
-                    </p>
-                    <div className="flex justify-between items-center pt-2 border-t border-warm-50">
-                      <span className="font-black text-charcoal-850">${w.pricePerGuest} <span className="font-normal text-charcoal-400">/ guest</span></span>
-                      <Link href={`/weddings/${w.slug}`} className="font-bold text-maroon-850 hover:underline">
-                        Details →
-                      </Link>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </section>
+        <Categories categories={weddingCategories} />
 
-      <FeaturedWeddings weddings={weddings} />
+        <Testimonials testimonials={testimonials} />
 
-      <HowItWorks steps={howItWorksSteps} />
+        <Countries countries={countries} />
 
-      <Categories categories={weddingCategories} />
+        <FAQ items={faqItems} />
 
-      <Testimonials testimonials={testimonials} />
-
-      <Countries countries={countries} />
-
-      <FAQ items={faqItems} />
-
-      <CTASection />
+        <CTASection />
+      </main>
     </>
   );
 }
-

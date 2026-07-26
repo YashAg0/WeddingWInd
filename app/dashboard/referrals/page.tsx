@@ -1,10 +1,8 @@
-"use server";
-
 import React from "react";
-import Link from "next/link";
 import { getAgentGrowthStats } from "@/lib/actions/referrals";
-import { Share2, Copy, BarChart3, QrCode } from "lucide-react";
 import ClientReferralCenter from "./ClientReferralCenter";
+
+export const dynamic = "force-dynamic";
 
 export default async function ReferralsPage() {
   const stats = await getAgentGrowthStats();

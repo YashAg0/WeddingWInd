@@ -12,8 +12,8 @@ export const ourFileRouter = {
   profileImage: f({
     image: {
       maxFileSize: "2MB",
-      maxFileCount: 1
-    }
+      maxFileCount: 1,
+    },
   })
     .middleware(async () => {
       const session = await getSession();
@@ -30,8 +30,8 @@ export const ourFileRouter = {
   weddingImage: f({
     image: {
       maxFileSize: "4MB",
-      maxFileCount: 6
-    }
+      maxFileCount: 6,
+    },
   })
     .middleware(async () => {
       const session = await getSession();
@@ -39,14 +39,13 @@ export const ourFileRouter = {
       return { userId: session.userId };
     })
     .onUploadComplete(async ({ metadata, file }) => {
-      console.log(`Wedding image upload completed. URL: ${file.url}`);
-      return { url: file.url };
+      return { uploadedBy: metadata.userId, url: file.url };
     }),
 
   // Upload verification documents (max 8MB, pdf/image)
   verificationDocument: f({
     pdf: { maxFileSize: "8MB", maxFileCount: 2 },
-    image: { maxFileSize: "8MB", maxFileCount: 2 }
+    image: { maxFileSize: "8MB", maxFileCount: 2 },
   })
     .middleware(async () => {
       const session = await getSession();
@@ -54,13 +53,12 @@ export const ourFileRouter = {
       return { userId: session.userId };
     })
     .onUploadComplete(async ({ metadata, file }) => {
-      console.log(`Verification doc upload completed. URL: ${file.url}`);
-      return { url: file.url };
+      return { uploadedBy: metadata.userId, url: file.url };
     }),
 
   // Upload chat images (max 4MB)
   chatImage: f({
-    image: { maxFileSize: "4MB", maxFileCount: 1 }
+    image: { maxFileSize: "4MB", maxFileCount: 1 },
   })
     .middleware(async () => {
       const session = await getSession();
@@ -68,12 +66,12 @@ export const ourFileRouter = {
       return { userId: session.userId };
     })
     .onUploadComplete(async ({ metadata, file }) => {
-      return { url: file.url };
+      return { uploadedBy: metadata.userId, url: file.url };
     }),
 
-  // Upload PDF (max 8MB)
+  // Upload chat PDFs (max 8MB)
   chatPdf: f({
-    pdf: { maxFileSize: "8MB", maxFileCount: 1 }
+    pdf: { maxFileSize: "8MB", maxFileCount: 1 },
   })
     .middleware(async () => {
       const session = await getSession();
@@ -81,13 +79,13 @@ export const ourFileRouter = {
       return { userId: session.userId };
     })
     .onUploadComplete(async ({ metadata, file }) => {
-      return { url: file.url };
+      return { uploadedBy: metadata.userId, url: file.url };
     }),
 
-  // Upload Passport (max 8MB)
+  // Upload passport / government ID (max 8MB)
   passport: f({
     pdf: { maxFileSize: "8MB", maxFileCount: 1 },
-    image: { maxFileSize: "8MB", maxFileCount: 1 }
+    image: { maxFileSize: "8MB", maxFileCount: 1 },
   })
     .middleware(async () => {
       const session = await getSession();
@@ -95,14 +93,14 @@ export const ourFileRouter = {
       return { userId: session.userId };
     })
     .onUploadComplete(async ({ metadata, file }) => {
-      return { url: file.url };
+      return { uploadedBy: metadata.userId, url: file.url };
     }),
 
-  // Upload general Documents (max 16MB)
+  // Upload general documents (max 16MB)
   documents: f({
     pdf: { maxFileSize: "16MB", maxFileCount: 2 },
     image: { maxFileSize: "16MB", maxFileCount: 2 },
-    blob: { maxFileSize: "16MB", maxFileCount: 1 }
+    blob: { maxFileSize: "16MB", maxFileCount: 1 },
   })
     .middleware(async () => {
       const session = await getSession();
@@ -110,12 +108,12 @@ export const ourFileRouter = {
       return { userId: session.userId };
     })
     .onUploadComplete(async ({ metadata, file }) => {
-      return { url: file.url };
+      return { uploadedBy: metadata.userId, url: file.url };
     }),
 
-  // Upload Voice Notes (max 4MB)
+  // Upload voice notes (max 4MB)
   voiceNote: f({
-    audio: { maxFileSize: "4MB", maxFileCount: 1 }
+    audio: { maxFileSize: "4MB", maxFileCount: 1 },
   })
     .middleware(async () => {
       const session = await getSession();
@@ -123,8 +121,8 @@ export const ourFileRouter = {
       return { userId: session.userId };
     })
     .onUploadComplete(async ({ metadata, file }) => {
-      return { url: file.url };
-    })
+      return { uploadedBy: metadata.userId, url: file.url };
+    }),
 } satisfies FileRouter;
 
 export type OurFileRouter = typeof ourFileRouter;

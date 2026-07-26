@@ -1,6 +1,4 @@
-import Link from "next/link";
-import { Shield, Clock, FileText } from "lucide-react";
-import { SectionHeader } from "@/components/ui/SectionHeader";
+import { Shield, Clock } from "lucide-react";
 
 export const metadata = {
   title: "Privacy Policy",
@@ -50,7 +48,7 @@ export default function PrivacyPage() {
             <ul className="list-disc pl-5 space-y-1.5">
               <li><strong>Personal Identifiers:</strong> Name, email address, phone number, nationality, and billing address.</li>
               <li><strong>Verification Details:</strong> Passport photos, national IDs, or social profiles (collected securely solely for vetting and security verification of hosts and guests).</li>
-              <li><strong>Transaction Records:</strong> Mock booking requests, guest slot requests, and list preferences.</li>
+              <li><strong>Transaction Records:</strong> Booking requests, guest slot reservations, payment history, and saved preferences.</li>
               <li><strong>Technical Data:</strong> IP addresses, browser types, cookie identifiers, and platform usage analytics.</li>
             </ul>
           </section>

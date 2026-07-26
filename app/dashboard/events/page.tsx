@@ -1,11 +1,12 @@
-"use server";
-
 import React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { BookingStatus } from "@prisma/client";
 import { Calendar, MapPin, Users, Ticket, ArrowRight } from "lucide-react";
+
+export const dynamic = "force-dynamic";
 
 export default async function EventsPage() {
   const user = await requireAuth();
@@ -84,12 +85,15 @@ export default async function EventsPage() {
                 className="bg-white border border-warm-200 rounded-3xl shadow-sm overflow-hidden flex flex-col justify-between"
               >
                 <div>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={b.wedding.mainImageUrl}
-                    alt={b.wedding.title}
-                    className="w-full h-40 object-cover"
-                  />
+                  <div className="relative w-full h-40">
+                    <Image
+                      fill
+                      src={b.wedding.mainImageUrl}
+                      alt={b.wedding.title}
+                      className="object-cover"
+                      unoptimized
+                    />
+                  </div>
                   <div className="p-5 space-y-3">
                     <span className="inline-block text-[9px] font-black uppercase tracking-wider bg-maroon-50 text-maroon-800 px-2 py-0.5 rounded">
                       {b.status}

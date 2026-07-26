@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { UserRole } from "@prisma/client";
 import Link from "next/link";
 import { adminGetSafetyMetricsAction } from "@/lib/actions/admin";
-import { ShieldAlert, AlertTriangle, Users, Landmark, Scale, ArrowUpRight } from "lucide-react";
+import { ShieldAlert, Landmark, Scale, ArrowUpRight } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 

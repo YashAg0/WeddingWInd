@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Mail, MapPin, Phone, HelpCircle, Send, Check, Compass, Users, ArrowRight } from "lucide-react";
-import { SectionHeader } from "@/components/ui/SectionHeader";
+import { Mail, MapPin, HelpCircle, Send, Check, Compass, Users, ArrowRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 
@@ -148,7 +147,7 @@ export default function ContactPage() {
               >
                 <option value="traveler">Traveler / Guest</option>
                 <option value="couple">Host Family / Couple</option>
-                <option value="agent">Travel Agent / Partner Partner</option>
+                <option value="agent">Travel Agent / Partner</option>
               </select>
             </div>
 

@@ -1,18 +1,13 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { adminGetDiscoveryStats, adminSetManualBoost, searchWeddingsAction } from "@/lib/actions/discovery";
 import {
   TrendingUp,
   Search,
-  Filter,
-  BarChart3,
-  Award,
   AlertOctagon,
   CheckCircle,
-  HelpCircle,
-  Shield,
   Zap,
   Percent
 } from "lucide-react";
@@ -26,7 +21,7 @@ export default function AdminDiscoveryPage() {
   const [boostValues, setBoostValues] = useState<Record<string, number>>({});
   const [message, setMessage] = useState<string | null>(null);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       if (user?.role !== "admin") return;
       
@@ -44,11 +39,11 @@ export default function AdminDiscoveryPage() {
     } catch (err) {
       console.error("Failed to load discovery admin metrics:", err);
     }
-  };
+  }, [user]);
 
   useEffect(() => {
     loadData();
-  }, [user]);
+  }, [loadData]);
 
   const handleUpdateBoost = async (weddingId: string) => {
     try {

@@ -1,10 +1,11 @@
 "use client";
 
-import Link from "next/link";
+
+import Image from "next/image";
 import React, { useState } from "react";
 import { toast } from "sonner";
 import { useAuth, Booking } from "@/context/AuthContext";
-import { MapPin, Calendar, Users, XCircle, Printer, CreditCard, Receipt, Star, ShieldAlert } from "lucide-react";
+import { MapPin, Calendar, Users, XCircle, Printer, CreditCard, Receipt, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { submitReviewAction } from "@/lib/actions/reviews";
 
@@ -122,11 +123,11 @@ export default function BookingCard({ booking, onCancel }: BookingCardProps) {
       <div className="flex flex-col sm:flex-row gap-4">
         {/* Wedding Image frame */}
         <div className="w-full sm:w-36 h-28 rounded-xl overflow-hidden flex-shrink-0 relative bg-warm-100">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          <Image
             src={booking.imageUrl}
             alt={booking.weddingTitle}
-            className="w-full h-full object-cover"
+            fill
+            className="object-cover"
           />
         </div>
 

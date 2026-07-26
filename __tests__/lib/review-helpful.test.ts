@@ -4,7 +4,7 @@
  * Verification tests for Phase 14.7 Review Helpful Vote toggle, status checks, and reconciliation.
  */
 
-import { voteReviewHelpfulAction, reconcileReviewHelpfulCount } from "@/lib/actions/reviews";
+import { voteReviewHelpfulAction } from "@/lib/actions/reviews";
 import { prisma } from "@/lib/prisma";
 
 jest.mock("@/lib/auth", () => ({

@@ -138,7 +138,7 @@ export async function adminGetWeddingsAction() {
 }
 
 export async function adminCreateWeddingAction(data: any) {
-  const admin = await requireRole([UserRole.ADMIN]);
+  const _admin = await requireRole([UserRole.ADMIN]);
   const parsed = adminWeddingSchema.parse({
     ...data,
     pricePerGuest: parseFloat(data.pricePerGuest),
@@ -168,7 +168,7 @@ export async function adminCreateWeddingAction(data: any) {
 }
 
 export async function adminUpdateWeddingAction(weddingId: string, data: any) {
-  const admin = await requireRole([UserRole.ADMIN]);
+  const _admin = await requireRole([UserRole.ADMIN]);
   const parsed = adminWeddingSchema.parse({
     ...data,
     pricePerGuest: parseFloat(data.pricePerGuest),
@@ -192,7 +192,7 @@ export async function adminUpdateWeddingAction(weddingId: string, data: any) {
 }
 
 export async function adminDeleteWeddingAction(weddingId: string) {
-  const admin = await requireRole([UserRole.ADMIN]);
+  const _admin = await requireRole([UserRole.ADMIN]);
   const deleted = await prisma.wedding.delete({
     where: { id: weddingId },
   });
@@ -204,7 +204,7 @@ export async function adminDeleteWeddingAction(weddingId: string) {
 }
 
 export async function adminToggleWeddingStatusAction(weddingId: string, status: any) {
-  const admin = await requireRole([UserRole.ADMIN]);
+  const _admin = await requireRole([UserRole.ADMIN]);
   const updated = await prisma.wedding.update({
     where: { id: weddingId },
     data: { status },
@@ -217,7 +217,7 @@ export async function adminToggleWeddingStatusAction(weddingId: string, status: 
 }
 
 export async function adminToggleWeddingFeaturedAction(weddingId: string, featured: boolean) {
-  const admin = await requireRole([UserRole.ADMIN]);
+  const _admin = await requireRole([UserRole.ADMIN]);
   const updated = await prisma.wedding.update({
     where: { id: weddingId },
     data: { featured },
@@ -453,7 +453,7 @@ export async function adminOverrideBookingStatusAction(
     throw new Error("An override reason must be provided (minimum 5 characters).");
   }
 
-  const updated = await prisma.$transaction(async (tx) => {
+  await prisma.$transaction(async (tx) => {
     const booking = await tx.booking.findUnique({
       where: { id: bookingId },
       include: { traveler: true },
@@ -750,7 +750,7 @@ export async function adminGetAuditLogsAction() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function adminProcessHostPayoutAction(paymentId: string) {
-  const admin = await requireRole([UserRole.ADMIN]);
+  const _admin = await requireRole([UserRole.ADMIN]);
 
   const { isFinanciallyHeld } = require("./safety");
   const payment = await prisma.payment.findUnique({

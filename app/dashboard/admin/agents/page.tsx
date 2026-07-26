@@ -1,11 +1,11 @@
-"use server";
-
 import React from "react";
 import { requireAuth } from "@/lib/auth";
 import { UserRole } from "@prisma/client";
 import { adminGetAgentsList } from "@/lib/actions/referrals";
-import { Users, AlertTriangle, Coins, ShieldAlert } from "lucide-react";
+
 import ClientAdminAgentsList from "./ClientAdminAgentsList";
+
+export const dynamic = "force-dynamic";
 
 export default async function AdminAgentsPage() {
   const user = await requireAuth();

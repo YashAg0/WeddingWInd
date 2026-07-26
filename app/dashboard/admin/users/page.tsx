@@ -2,8 +2,9 @@ import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { UserRole } from "@prisma/client";
 import { adminUpdateUserRoleAction, adminDeleteUserAction } from "@/lib/actions/admin";
-import { User, Shield, Briefcase, Heart, Trash2, Edit2 } from "lucide-react";
+import { User, Shield, Briefcase, Heart, Trash2 } from "lucide-react";
 import { redirect } from "next/navigation";
+import Image from "next/image";
 
 export const dynamic = "force-dynamic";
 
@@ -105,12 +106,13 @@ export default async function AdminUsersPage() {
                       <td className="p-3 pl-4">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-full overflow-hidden bg-warm-200 flex-shrink-0 relative">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                              src={u.avatar || "https://i.pravatar.cc/80?img=5"}
-                              alt={u.name || "Avatar"}
-                              className="object-cover w-full h-full"
-                            />
+                            <Image
+                               fill
+                               src={u.avatar || "https://i.pravatar.cc/80?img=5"}
+                               alt={u.name || "Avatar"}
+                               className="object-cover"
+                               unoptimized
+                             />
                           </div>
                           <div className="font-semibold text-charcoal-850">
                             {u.name || "N/A"}

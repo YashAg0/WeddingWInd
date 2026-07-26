@@ -6,7 +6,7 @@ import { evaluateReviewEligibility } from "@/lib/services/review-eligibility";
 import { evaluateReviewFraud } from "@/lib/services/review-fraud";
 import { logReputationEvent } from "@/lib/services/reputation";
 import { rateLimit } from "@/lib/rate-limit";
-import { BookingStatus, ReviewType, ReviewReportReason, ReputationEntityType, ReputationEventType } from "@prisma/client";
+import { ReviewType, ReviewReportReason, ReputationEntityType, ReputationEventType } from "@prisma/client";
 
 /**
  * Helper to adjust reputation scores dynamically based on review direction and action.

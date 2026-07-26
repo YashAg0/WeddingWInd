@@ -6,7 +6,6 @@
 
 import { adminCreateManualReputationAdjustmentAction } from "@/lib/actions/admin";
 import { logReputationEvent } from "@/lib/services/reputation";
-import { prisma } from "@/lib/prisma";
 import { ReputationEntityType } from "@prisma/client";
 
 jest.mock("@/lib/auth", () => ({

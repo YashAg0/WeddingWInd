@@ -9,7 +9,7 @@ import {
   deleteItineraryItemAction,
   publishWeddingAnnouncementAction
 } from "@/lib/actions/event-operations";
-import { Users, Calendar, Megaphone, CheckSquare, Search, Trash2, MapPin, Eye, AlertTriangle } from "lucide-react";
+import { Search, Trash2, Eye } from "lucide-react";
 
 interface ClientOperationsCenterProps {
   wedding: {

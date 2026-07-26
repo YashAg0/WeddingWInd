@@ -104,10 +104,10 @@ export default function BookingsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-warm-100 text-xs sm:text-sm text-charcoal-600">
-                  {coupleApprovedGuests.map((b) => (
+                  {coupleApprovedGuests.map((b: any) => (
                     <tr key={b.id}>
-                      <td className="p-4 font-bold text-charcoal-900">Johnathan Doe</td>
-                      <td className="p-4">United States</td>
+                      <td className="p-4 font-bold text-charcoal-900">{b.guestName || "Guest"}</td>
+                      <td className="p-4">{b.guestCountry || "—"}</td>
                       <td className="p-4">{b.guestsCount} guest(s)</td>
                       <td className="p-4">{b.date}</td>
                       <td className="p-4">

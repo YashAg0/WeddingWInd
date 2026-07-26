@@ -2,7 +2,7 @@ import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { UserRole, VerificationStatus } from "@prisma/client";
 import { adminReviewVerificationAction } from "@/lib/actions/admin";
-import { Check, X, FileText, User, Mail, ShieldAlert, Award } from "lucide-react";
+import { FileText, User, Mail } from "lucide-react";
 import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";

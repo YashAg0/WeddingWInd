@@ -1,9 +1,9 @@
-"use server";
-
 import React from "react";
 import { requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { MapPin, Calendar, Compass, UserCheck } from "lucide-react";
+import { MapPin, Calendar, Compass } from "lucide-react";
+
+export const dynamic = "force-dynamic";
 
 export default async function LeadsPage() {
   const user = await requireAuth();

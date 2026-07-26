@@ -1,9 +1,7 @@
 import { requireRole } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
-import { UserRole, PaymentStatus } from "@prisma/client";
+import { UserRole } from "@prisma/client";
 import { adminGetPaymentsAndQueuesAction } from "@/lib/actions/admin";
-import { Coins, Heart, CreditCard, RefreshCcw, Landmark, Clock, ArrowUpRight } from "lucide-react";
-import { redirect } from "next/navigation";
+import { Coins, CreditCard, RefreshCcw, Landmark, ArrowUpRight } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -72,7 +70,7 @@ export default async function AdminPaymentsPage() {
             </div>
           ) : (
             <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1">
-              {data.transactions.map((t) => (
+              {data.transactions.map((t: any) => (
                 <div key={t.id} className="border border-warm-200 p-4 rounded-xl space-y-2 text-xs">
                   <div className="flex justify-between font-bold text-charcoal-850">
                     <span className="flex items-center gap-1">
@@ -114,7 +112,7 @@ export default async function AdminPaymentsPage() {
               </div>
             ) : (
               <div className="space-y-3">
-                {data.refundQueue.map((r) => (
+                {data.refundQueue.map((r: any) => (
                   <div key={r.id} className="border border-warm-200 p-3.5 rounded-xl text-xs space-y-2">
                     <div className="flex justify-between font-bold text-charcoal-850">
                       <span>{r.payment.booking.traveler.fullName}</span>
@@ -143,7 +141,7 @@ export default async function AdminPaymentsPage() {
               </div>
             ) : (
               <div className="space-y-3">
-                {data.payoutQueue.map((p) => (
+                {data.payoutQueue.map((p: any) => (
                   <div key={p.id} className="border border-warm-200 p-3.5 rounded-xl text-xs space-y-2">
                     <div className="flex justify-between font-bold text-charcoal-850">
                       <span>{p.payment.booking.wedding.hostCouple.familyBio || "Host Family"}</span>

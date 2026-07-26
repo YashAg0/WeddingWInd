@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { toast } from "sonner";
-import { Star, ShieldCheck, Trash2, EyeOff, AlertTriangle, Activity, CheckSquare } from "lucide-react";
+import { Star, ShieldCheck, Trash2, EyeOff, AlertTriangle, CheckSquare } from "lucide-react";
 import { adminModerateReviewAction } from "@/lib/actions/reviews";
 
 interface Report {

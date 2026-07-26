@@ -1,7 +1,8 @@
 import { prisma } from "@/lib/prisma";
-import { MapPin, Calendar, Users, Star, FileText } from "lucide-react";
+import { MapPin } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import Image from "next/image";
 
 export const dynamic = "force-dynamic";
 
@@ -66,11 +67,12 @@ export default async function SharedWishlistPage({
               <div className="space-y-4">
                 {/* Cover image */}
                 <div className="h-48 bg-warm-100 relative">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
+                  <Image
+                    fill
                     src={w.mainImageUrl}
                     alt={w.title}
-                    className="object-cover w-full h-full"
+                    className="object-cover"
+                    unoptimized
                   />
                   <span className="absolute top-4 left-4 bg-white/95 backdrop-blur border border-warm-250 text-charcoal-700 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded shadow">
                     {w.category}

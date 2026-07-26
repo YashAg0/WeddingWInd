@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { Star, MapPin, ShieldCheck, Heart, Share2, Compass, CheckCircle, XCircle, Sparkles, Shirt, Utensils, Landmark, Hotel } from "lucide-react";
+import { Star, MapPin, ShieldCheck, CheckCircle, XCircle, Sparkles, Shirt, Utensils, Landmark, Hotel } from "lucide-react";
 import { getWeddings, getWeddingBySlug } from "@/lib/actions";
 import { WeddingGallery } from "@/components/wedding/WeddingGallery";
 import { WeddingTimeline } from "@/components/wedding/WeddingTimeline";
@@ -29,7 +29,7 @@ export default async function WeddingDetailPage({ params }: PageProps) {
   let dbUser = null;
   try {
     dbUser = await getDbUser();
-  } catch (e) {}
+  } catch {}
   const userId = dbUser?.id || null;
 
   // Related weddings (same category or high rating, excluding current)

@@ -608,7 +608,7 @@ async function calculateTravelerReadiness(tx: Prisma.TransactionClient, bookingI
     recommendedTasks.filter(Boolean).length +
     optionalTasks.filter(Boolean).length;
 
-  const percentage = Math.round((completedTasksCount / totalTasksCount) * 100);
+  const _percentage = Math.round((completedTasksCount / totalTasksCount) * 100);
 
   const allRequiredComplete = requiredTasks.every(Boolean);
 

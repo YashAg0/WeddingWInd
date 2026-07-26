@@ -1,11 +1,11 @@
-"use server";
-
 import React from "react";
 import { requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { UserRole } from "@prisma/client";
-import { Ticket, ScanLine } from "lucide-react";
+import { ScanLine } from "lucide-react";
 import ClientCheckInScanner from "./ClientCheckInScanner";
+
+export const dynamic = "force-dynamic";
 
 export default async function CheckInScannerPage() {
   const user = await requireAuth();

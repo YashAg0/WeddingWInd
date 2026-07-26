@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Copy, QrCode, Share2, Sparkles } from "lucide-react";
+import Image from "next/image";
 
 interface ClientReferralCenterProps {
   referralCode: string;
@@ -163,8 +164,7 @@ export default function ClientReferralCenter({ referralCode }: ClientReferralCen
 
         {/* QR Code Image */}
         <div className="my-4 w-40 h-40 border border-warm-100 rounded-2xl p-2 bg-white flex items-center justify-center shadow-sm">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={qrCodeUrl} alt="Attribution QR Code" className="w-full h-full object-contain" />
+          <Image src={qrCodeUrl} alt="Attribution QR Code" width={144} height={144} className="w-full h-full object-contain" unoptimized />
         </div>
 
         <a

@@ -37,7 +37,7 @@ const milestones = [
   }
 ];
 
-export default function AboutPage() {
+export default function AboutContent() {
   return (
     <div className="min-h-screen bg-warm-50/50 pt-28 pb-20">
       

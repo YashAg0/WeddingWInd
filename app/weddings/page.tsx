@@ -3,7 +3,6 @@ import { getWeddings } from "@/lib/actions";
 import { WeddingCard } from "@/components/wedding/WeddingCard";
 import { MarketplaceHeader } from "@/components/wedding/MarketplaceHeader";
 import { FilterSidebar } from "@/components/wedding/FilterSidebar";
-import { cn } from "@/lib/utils";
 
 // Make the route dynamic so it parses searchParams on every request
 export const dynamic = "force-dynamic";

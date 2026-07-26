@@ -582,7 +582,7 @@ function OnboardingContent() {
                   Profile configured!
                 </h2>
                 <p className="text-charcoal-500 text-xs sm:text-sm max-w-sm mx-auto">
-                  Your details have been successfully saved to your local profile context. Let&apos;s open your dashboard workspace.
+                  Your profile is complete. Your personalized dashboard is ready to explore.
                 </p>
               </div>
 

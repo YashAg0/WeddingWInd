@@ -9,7 +9,7 @@ import { adminProcessHostPayoutAction, adminReviewVerificationAction } from "@/l
 import { logReputationEvent } from "@/lib/services/reputation";
 import { evaluateEntityBadges } from "@/lib/services/badges";
 import { prisma } from "@/lib/prisma";
-import { VerificationStatus, UserRole, BookingStatus } from "@prisma/client";
+import { VerificationStatus, UserRole } from "@prisma/client";
 
 jest.mock("next/cache", () => ({
   revalidatePath: jest.fn(),

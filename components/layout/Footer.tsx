@@ -32,29 +32,29 @@ const footerLinks = {
     { label: "About Us", href: "/about" },
     { label: "How It Works", href: "/#how-it-works" },
     { label: "Our Story", href: "/about#story" },
-    { label: "Press & Media", href: "/press" },
-    { label: "Careers", href: "/careers" },
+    { label: "Press & Media", href: "/about#story" },
+    { label: "Careers", href: "/about" },
   ],
   forGuests: [
     { label: "Browse Weddings", href: "/weddings" },
     { label: "Wedding Categories", href: "/weddings#categories" },
-    { label: "Guest Guide", href: "/guide/guests" },
-    { label: "Cultural Tips", href: "/guide/culture" },
-    { label: "Safety & Trust", href: "/safety" },
+    { label: "Guest Guide", href: "/how-it-works" },
+    { label: "Cultural Tips", href: "/how-it-works" },
+    { label: "Safety & Trust", href: "/about" },
   ],
   forHosts: [
     { label: "List Your Wedding", href: "/list-wedding" },
-    { label: "Host Guidelines", href: "/guide/hosts" },
-    { label: "Pricing & Fees", href: "/pricing" },
-    { label: "Host Stories", href: "/stories" },
-    { label: "Partner Program", href: "/partners" },
+    { label: "Host Guidelines", href: "/list-wedding" },
+    { label: "Pricing & Fees", href: "/list-wedding" },
+    { label: "Host Stories", href: "/about#story" },
+    { label: "Partner Program", href: "/for-agents" },
   ],
   support: [
-    { label: "Help Centre", href: "/help" },
+    { label: "Help Centre", href: "/contact" },
     { label: "Contact Us", href: "/contact" },
-    { label: "Cancellation Policy", href: "/policies/cancellation" },
-    { label: "Privacy Policy", href: "/policies/privacy" },
-    { label: "Terms of Service", href: "/policies/terms" },
+    { label: "Cancellation Policy", href: "/terms" },
+    { label: "Privacy Policy", href: "/privacy" },
+    { label: "Terms of Service", href: "/terms" },
   ],
 };
 
@@ -65,6 +65,13 @@ const socialLinks = [
   { icon: YoutubeIcon, label: "YouTube", href: "https://youtube.com" },
 ];
 
+const trustItems = [
+  { emoji: "🔒", text: "Secure Payments via Stripe" },
+  { emoji: "🛡️", text: "Every Host Verified" },
+  { emoji: "⭐", text: "4.9/5 Average Rating" },
+  { emoji: "🌍", text: "Guests from 47+ Countries" },
+];
+
 export default function Footer() {
   const currentYear = new Date().getFullYear();
 
@@ -73,6 +80,26 @@ export default function Footer() {
       className="bg-[var(--color-charcoal-900)] text-white"
       role="contentinfo"
     >
+      {/* Trust strip */}
+      <div className="border-b border-white/8">
+        <div className="container-luxury py-4">
+          <div
+            className="flex flex-wrap items-center justify-center gap-x-8 gap-y-2"
+            aria-label="Trust and security signals"
+          >
+            {trustItems.map(({ emoji, text }, i) => (
+              <div key={text} className="flex items-center gap-2 text-xs text-white/50 font-medium">
+                {i > 0 && (
+                  <span className="hidden sm:block w-1 h-1 rounded-full bg-white/20 flex-shrink-0" aria-hidden="true" />
+                )}
+                <span aria-hidden="true">{emoji}</span>
+                <span>{text}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
       {/* Newsletter strip */}
       <div className="border-b border-white/10">
         <div className="container-luxury py-12">
@@ -211,19 +238,19 @@ export default function Footer() {
             </p>
             <div className="flex items-center gap-6">
               <Link
-                href="/policies/privacy"
+                href="/privacy"
                 className="hover:text-charcoal-300 transition-colors"
               >
                 Privacy
               </Link>
               <Link
-                href="/policies/terms"
+                href="/terms"
                 className="hover:text-charcoal-300 transition-colors"
               >
                 Terms
               </Link>
               <Link
-                href="/policies/cookies"
+                href="/privacy"
                 className="hover:text-charcoal-300 transition-colors"
               >
                 Cookies

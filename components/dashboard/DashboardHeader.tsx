@@ -1,17 +1,18 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { Bell, Search, Menu, LogOut, User, Settings, Check } from "lucide-react";
-import { useRouter } from "next/navigation";
+
 
 interface DashboardHeaderProps {
   onOpenMobileSidebar: () => void;
 }
 
 export default function DashboardHeader({ onOpenMobileSidebar }: DashboardHeaderProps) {
-  const router = useRouter();
+
   const { user, notifications, markNotificationsRead, logout } = useAuth();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -123,12 +124,12 @@ export default function DashboardHeader({ onOpenMobileSidebar }: DashboardHeader
             className="flex items-center gap-2 cursor-pointer outline-none"
             aria-label="User menu"
           >
-            <div className="w-9 h-9 rounded-xl overflow-hidden bg-warm-100 border border-warm-200/55 flex-shrink-0">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+            <div className="w-9 h-9 rounded-xl overflow-hidden bg-warm-100 border border-warm-200/55 flex-shrink-0 relative">
+              <Image
                 src={user?.avatar || "https://i.pravatar.cc/80?img=5"}
                 alt={user?.name || "Avatar"}
-                className="w-full h-full object-cover"
+                fill
+                className="object-cover"
               />
             </div>
           </button>

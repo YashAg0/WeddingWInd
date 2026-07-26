@@ -25,24 +25,18 @@ import {
   Volume2,
   Archive,
   Send,
-  Image as ImageIcon,
   Paperclip,
   Trash2,
   Edit2,
   CheckCheck,
   PlusCircle,
   FileText,
-  Music,
   Smile,
   X,
-  Sparkles,
-  Shield,
-  Heart,
-  Briefcase,
-  HelpCircle,
   ArrowLeft,
   BookOpen
 } from "lucide-react";
+import NextImage from "next/image";
 import Link from "next/link";
 
 export default function MessagesDashboardPage() {
@@ -69,7 +63,7 @@ export default function MessagesDashboardPage() {
   const [editingText, setEditingText] = useState("");
 
   const chatEndRef = useRef<HTMLDivElement>(null);
-  const dragRef = useRef<HTMLDivElement>(null);
+  const _dragRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
 
   // Fetch inbox on load
@@ -87,6 +81,7 @@ export default function MessagesDashboardPage() {
     // Poll for new messages every 8 seconds (real-time adapter simulation fallback)
     const interval = setInterval(loadInbox, 8000);
     return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [inboxTab]);
 
   // Load active chat details when activeConversationId changes
@@ -112,6 +107,7 @@ export default function MessagesDashboardPage() {
     // Poll active chat messages every 4 seconds
     const interval = setInterval(loadChat, 4000);
     return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeConversationId]);
 
   // Scroll to bottom on new messages
@@ -428,11 +424,12 @@ export default function MessagesDashboardPage() {
                   {/* User Profile Info */}
                   <div className="flex gap-2.5 items-center min-w-0">
                     <div className="w-10 h-10 rounded-full overflow-hidden bg-warm-200 flex-shrink-0 relative">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
+                      <NextImage
+                        fill
                         src={otherUser?.avatar || "https://i.pravatar.cc/80?img=5"}
                         alt={chatTitle}
-                        className="object-cover w-full h-full"
+                        className="object-cover"
+                        unoptimized
                       />
                     </div>
 
@@ -499,11 +496,12 @@ export default function MessagesDashboardPage() {
                 </button>
 
                 <div className="w-10 h-10 rounded-full overflow-hidden bg-warm-200 relative flex-shrink-0">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
+                  <NextImage
+                    fill
                     src={activeChat?.participants.filter((p: any) => p.userId !== user?.id)[0]?.user?.avatar || "https://i.pravatar.cc/80?img=5"}
                     alt="Active Avatar"
-                    className="object-cover w-full h-full"
+                    className="object-cover"
+                    unoptimized
                   />
                 </div>
 
@@ -631,12 +629,13 @@ export default function MessagesDashboardPage() {
 
                             {/* Image Attachment */}
                             {msg.image && (
-                              <div className="rounded-xl overflow-hidden max-w-[240px] border border-warm-100 bg-warm-50 mt-1">
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img
+                              <div className="rounded-xl overflow-hidden max-w-[240px] border border-warm-100 bg-warm-50 mt-1 relative h-[160px]">
+                                <NextImage
+                                  fill
                                   src={msg.image}
                                   alt="Attachment Preview"
-                                  className="object-cover w-full h-full max-h-[160px]"
+                                  className="object-cover"
+                                  unoptimized
                                 />
                               </div>
                             )}
@@ -852,11 +851,12 @@ export default function MessagesDashboardPage() {
                     >
                       <div className="flex gap-2.5 items-center min-w-0">
                         <div className="w-8 h-8 rounded-full overflow-hidden bg-warm-200 flex-shrink-0 relative">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
+                          <NextImage
+                            fill
                             src={u.avatar || "https://i.pravatar.cc/80?img=5"}
                             alt={u.name || "User Avatar"}
-                            className="object-cover w-full h-full"
+                            className="object-cover"
+                            unoptimized
                           />
                         </div>
                         <div className="min-w-0">

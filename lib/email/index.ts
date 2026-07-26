@@ -208,7 +208,7 @@ export async function sendVerificationSubmittedEmail(to: string, userName: strin
 /**
  * 9. Verification Approved Email Template
  */
-export async function sendVerificationApprovedEmail(to: string, userName: string, role: string) {
+export async function sendVerificationApprovedEmail(to: string, userName: string, _role: string) {
   const html = `
     <div style="font-family: sans-serif; padding: 20px; color: #333; max-width: 600px; margin: auto; border: 1px solid #eee; border-radius: 10px;">
       <h2 style="color: #10b981;">Verification Approved! ✅</h2>

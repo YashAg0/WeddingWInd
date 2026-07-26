@@ -126,7 +126,7 @@ const websiteJsonLd = {
     "@type": "SearchAction",
     target: {
       "@type": "EntryPoint",
-      urlTemplate: `${APP_URL}/weddings?q={search_term_string}`,
+      urlTemplate: `${APP_URL}/weddings?destination={search_term_string}`,
     },
     "query-input": "required name=search_term_string",
   },

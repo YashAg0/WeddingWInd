@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useAuth, UserRole } from "@/context/AuthContext";
 import {
@@ -12,7 +13,6 @@ import {
   Settings,
   LogOut,
   Compass,
-  Menu,
   X,
   Share2,
   Users,
@@ -23,12 +23,8 @@ import {
   MessageSquare,
   Ticket,
   ScanLine,
-  ShieldCheck,
-  CheckCircle2,
-  Sliders,
   Sparkles
 } from "lucide-react";
-import { useState } from "react";
 import { cn } from "@/lib/utils";
 
 interface SidebarProps {
@@ -239,8 +235,7 @@ export default function Sidebar({ className, onCloseMobile }: SidebarProps) {
         {/* User Card inside Sidebar */}
         <div className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-2xl p-4">
           <div className="w-10 h-10 rounded-full overflow-hidden bg-charcoal-800 flex-shrink-0 relative">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={user?.avatar || "https://i.pravatar.cc/80?img=5"} alt={user?.name || "User Avatar"} className="object-cover w-full h-full" />
+            <Image src={user?.avatar || "https://i.pravatar.cc/80?img=5"} alt={user?.name || "User Avatar"} fill className="object-cover" />
           </div>
           <div className="min-w-0">
             <div className="font-bold text-xs truncate">{user?.name || "Guest User"}</div>

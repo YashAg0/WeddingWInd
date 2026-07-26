@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { UserRole } from "@prisma/client";
 import ClientReportForm from "./ClientReportForm";
 
+export const dynamic = "force-dynamic";
+
 export default async function ReportIncidentPage() {
   const user = await requireAuth();
 

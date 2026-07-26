@@ -6,7 +6,7 @@ import {
   adminReviewPayoutRequestAction,
   regenerateReferralCodeAction
 } from "@/lib/actions/referrals";
-import { Coins, AlertTriangle, Users, Compass, RefreshCw } from "lucide-react";
+import { Coins, AlertTriangle, Users, RefreshCw } from "lucide-react";
 
 interface ClientAdminAgentsListProps {
   agents: Array<{
@@ -78,7 +78,7 @@ export default function ClientAdminAgentsList({
   payoutRequests: initialPayoutRequests,
 }: ClientAdminAgentsListProps) {
   const [agents, setAgents] = useState(initialAgents);
-  const [fraudFlags, setFraudFlags] = useState(initialFraudFlags);
+  const [fraudFlags, _setFraudFlags] = useState(initialFraudFlags);
   const [payoutRequests, setPayoutRequests] = useState(initialPayoutRequests);
   const [noteMap, setNoteMap] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState<Record<string, boolean>>({});
