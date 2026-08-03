@@ -41,17 +41,24 @@ export function FeaturedWeddings({ weddings }: FeaturedWeddingsProps) {
         </div>
 
         {/* Grid */}
-        <div
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
-          role="list"
-          aria-label="Featured wedding listings"
-        >
-          {weddings.map((wedding) => (
-            <div key={wedding.id} role="listitem">
-              <WeddingCard wedding={wedding} />
-            </div>
-          ))}
-        </div>
+        {weddings.length === 0 ? (
+          <div className="text-center py-16">
+            <p className="text-charcoal-400 text-lg">No weddings available at the moment.</p>
+            <p className="text-charcoal-300 text-sm mt-2">Check back soon for new listings.</p>
+          </div>
+        ) : (
+          <div
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
+            role="list"
+            aria-label="Featured wedding listings"
+          >
+            {weddings.map((wedding) => (
+              <div key={wedding.id} role="listitem">
+                <WeddingCard wedding={wedding} />
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Load more CTA */}
         <div className="mt-12 text-center">

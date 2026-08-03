@@ -1,7 +1,10 @@
 "use client";
 
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import { SlidersHorizontal, RotateCcw } from "lucide-react";
+import { SlidersHorizontal, RotateCcw, Bookmark } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
+import { saveSearchAction } from "@/lib/actions/discovery";
 
 // Filter options
 const styles = ["Royal", "Punjabi", "South Indian", "Beach", "Destination", "Traditional"];
@@ -13,6 +16,23 @@ export function FilterSidebar() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
+
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleSaveSearch = async () => {
+    setIsSaving(true);
+    try {
+      const filters = Object.fromEntries(searchParams.entries());
+      const name = `Saved Search - ${new Date().toLocaleDateString()}`;
+      await saveSearchAction(name, filters);
+      toast.success("Search saved to your dashboard!");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to save search. Make sure you are logged in.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
 
   // Helper to read query values
   const getParamArray = (key: string) => {
@@ -225,6 +245,18 @@ export function FilterSidebar() {
           <option value="3">3 Days+</option>
         </select>
       </div>
+
+      <hr className="border-warm-200/60" />
+
+      <button
+        onClick={handleSaveSearch}
+        disabled={isSaving}
+        className="btn btn-secondary w-full text-xs font-bold flex items-center justify-center gap-2"
+      >
+        <Bookmark size={14} />
+        {isSaving ? "Saving..." : "Save This Search"}
+      </button>
     </aside>
+
   );
 }

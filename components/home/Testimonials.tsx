@@ -1,8 +1,8 @@
 import Image from "next/image";
 import { Star, Quote, Sparkles } from "lucide-react";
 import { SectionHeader } from "@/components/ui/SectionHeader";
-import type { Testimonial } from "@/types";
 import { BUSINESS_METRICS } from "@/lib/constants/business-metrics";
+import type { Testimonial } from "@/types";
 
 interface TestimonialsProps {
   testimonials: Testimonial[];
@@ -11,7 +11,7 @@ interface TestimonialsProps {
 function TestimonialCard({ testimonial }: { testimonial: Testimonial }) {
   return (
     <article
-      className="bg-white rounded-3xl p-6 sm:p-8 flex flex-col gap-5 border border-warm-200/50 shadow-[0_8px_32px_-12px_rgba(0,0,0,0.06)] hover:shadow-[0_16px_48px_-12px_rgba(107,16,38,0.12)] transition-shadow duration-500"
+      className="card-luxury p-6 sm:p-8 flex flex-col gap-5"
       aria-label={`Testimonial from ${testimonial.name}`}
     >
       {/* Quote icon */}
@@ -53,8 +53,9 @@ function TestimonialCard({ testimonial }: { testimonial: Testimonial }) {
 
       {/* Wedding type tag */}
       <div>
-        <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--color-brand-primary)] bg-maroon-50 px-3 py-1 rounded-full border border-maroon-100">
-          <Sparkles size={11} className="text-[var(--color-brand-secondary)]" /> {testimonial.weddingType}
+        <span className="inline-flex items-center text-xs font-semibold text-[var(--color-brand-primary)] bg-maroon-50 px-3 py-1 rounded-full border border-maroon-100">
+          <Sparkles size={12} className="mr-1.5 text-[var(--color-brand-primary)]" aria-hidden="true" />
+          {testimonial.weddingType}
         </span>
       </div>
 
@@ -125,8 +126,8 @@ export function Testimonials({ testimonials }: TestimonialsProps) {
         >
           {[
             { value: BUSINESS_METRICS.AVERAGE_RATING_LABEL, label: "Average Guest Rating" },
-            { value: BUSINESS_METRICS.SATISFACTION_RATE, label: "Would Recommend" },
-            { value: BUSINESS_METRICS.GLOBAL_GUESTS, label: "Experiences Delivered" },
+            { value: `${BUSINESS_METRICS.WOULD_RECOMMEND_PERCENT}%`, label: "Would Recommend" },
+            { value: BUSINESS_METRICS.GUESTS_ATTENDED, label: "Experiences Delivered" },
             { value: BUSINESS_METRICS.COUNTRIES_REPRESENTED, label: "Countries Represented" },
           ].map(({ value, label }) => (
             <div key={label}>

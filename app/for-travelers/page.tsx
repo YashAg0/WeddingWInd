@@ -1,10 +1,11 @@
+import { Metadata } from "next";
 import Link from "next/link";
 import { Compass, Table, Info, FileText, ArrowRight, Sparkles } from "lucide-react";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 
-export const metadata = {
+export const metadata: Metadata = {
   title: "For Travelers",
-  description: "Learn what to expect, wedding etiquette, dress codes, visa rules, and safety guidelines for international guests.",
+  description: "Everything you need to know about attending an authentic Indian wedding as an international guest.",
 };
 
 const travelerFAQs = [

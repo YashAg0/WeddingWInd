@@ -2,7 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import { Search, MapPin, Calendar, SlidersHorizontal } from "lucide-react";
+import { Search, MapPin, Calendar, SlidersHorizontal, Flower2, Bookmark } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import { saveSearchAction } from "@/lib/actions/discovery";
+import { toast } from "sonner";
 
 interface SearchBarProps {
   onToggleMobileFilters?: () => void;
@@ -12,10 +15,12 @@ export function SearchBar({ onToggleMobileFilters }: SearchBarProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
+  const { user } = useAuth();
 
   const [destination, setDestination] = useState(searchParams.get("destination") || "");
   const [style, setStyle] = useState(searchParams.get("category") || "");
   const [date, setDate] = useState(searchParams.get("date") || "");
+  const [savingSearch, setSavingSearch] = useState(false);
 
   // Update local state when searchParams change
   useEffect(() => {
@@ -23,6 +28,24 @@ export function SearchBar({ onToggleMobileFilters }: SearchBarProps) {
     setStyle(searchParams.get("category") || "");
     setDate(searchParams.get("date") || "");
   }, [searchParams]);
+
+  const handleSaveSearch = async () => {
+    if (!user) {
+      router.push("/login");
+      return;
+    }
+
+    try {
+      setSavingSearch(true);
+      const searchName = [destination, style, date].filter(Boolean).join(" · ") || "All Weddings Search";
+      await saveSearchAction(searchName, { destination, category: style, date });
+      toast.success(`Saved search "${searchName}" to your dashboard!`);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to save search.");
+    } finally {
+      setSavingSearch(false);
+    }
+  };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,7 +102,7 @@ export function SearchBar({ onToggleMobileFilters }: SearchBarProps) {
 
         {/* Wedding Style Dropdown */}
         <div className="flex-1 flex items-center gap-3 bg-white/70 hover:bg-white focus-within:bg-white rounded-2xl px-4 py-3 transition-colors duration-200 border border-warm-200/50">
-          <span className="text-lg flex-shrink-0" aria-hidden="true">🪷</span>
+          <Flower2 size={18} className="text-[var(--color-brand-primary)] flex-shrink-0" aria-hidden="true" />
           <div className="flex flex-col min-w-0 flex-1">
             <label
               htmlFor="style-select"
@@ -139,6 +162,16 @@ export function SearchBar({ onToggleMobileFilters }: SearchBarProps) {
               <SlidersHorizontal size={18} />
             </button>
           )}
+          <button
+            type="button"
+            onClick={handleSaveSearch}
+            disabled={savingSearch}
+            className="flex items-center justify-center p-3.5 rounded-2xl bg-warm-100 hover:bg-maroon-50 text-charcoal-700 hover:text-[var(--color-brand-primary)] border border-warm-200 transition-all active:scale-95"
+            title="Save this search query to your dashboard"
+            aria-label="Save search query"
+          >
+            <Bookmark size={18} className={savingSearch ? "animate-pulse" : ""} />
+          </button>
           <button
             type="submit"
             className="btn btn-primary rounded-2xl px-6 py-4 shadow-lg hover:shadow-xl active:scale-95 transition-all flex-1 md:flex-initial flex items-center justify-center gap-2"

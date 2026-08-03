@@ -1,8 +1,9 @@
+import { Metadata } from "next";
 import { Shield, Clock } from "lucide-react";
 
-export const metadata = {
+export const metadata: Metadata = {
   title: "Privacy Policy",
-  description: "Privacy Policy for Wedding With India. Learn how we handle your personal data.",
+  description: "WeddingWithIndia's privacy policy. How we collect, use, and protect your personal information.",
 };
 
 export default function PrivacyPage() {

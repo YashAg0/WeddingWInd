@@ -84,15 +84,30 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       orderBy: { updatedAt: "desc" },
     });
 
-    weddingRoutes = weddings.map((wedding) => ({
-      url: `${baseUrl}/weddings/${wedding.slug}`,
-      lastModified: wedding.updatedAt,
+    if (weddings.length > 0) {
+      weddingRoutes = weddings.map((wedding) => ({
+        url: `${baseUrl}/weddings/${wedding.slug}`,
+        lastModified: wedding.updatedAt,
+        changeFrequency: "weekly" as const,
+        priority: 0.8,
+      }));
+    } else {
+      const { featuredWeddings } = await import("@/lib/data");
+      weddingRoutes = featuredWeddings.map((w) => ({
+        url: `${baseUrl}/weddings/${w.slug}`,
+        lastModified: new Date(),
+        changeFrequency: "weekly" as const,
+        priority: 0.8,
+      }));
+    }
+  } catch (err) {
+    const { featuredWeddings } = await import("@/lib/data");
+    weddingRoutes = featuredWeddings.map((w) => ({
+      url: `${baseUrl}/weddings/${w.slug}`,
+      lastModified: new Date(),
       changeFrequency: "weekly" as const,
       priority: 0.8,
     }));
-  } catch (err) {
-    // DB offline at build time — skip dynamic routes
-    console.warn("[sitemap] Database unavailable — omitting dynamic wedding routes", err);
   }
 
   return [...staticRoutes, ...weddingRoutes];

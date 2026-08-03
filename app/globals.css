@@ -58,8 +58,8 @@
   --color-brand-muted:     var(--color-charcoal-500);
 
   /* Fonts */
-  --font-display: var(--font-playfair), "Playfair Display", Georgia, serif;
-  --font-sans:    var(--font-plus-jakarta), "Plus Jakarta Sans", system-ui, sans-serif;
+  --font-display: var(--font-playfair), Georgia, "Times New Roman", serif;
+  --font-sans:    var(--font-inter), system-ui, -apple-system, sans-serif;
 
   /* Custom border radius */
   --radius-xl:  1rem;
@@ -375,6 +375,11 @@ p {
   }
 }
 
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
 @keyframes float {
   0%, 100% { transform: translateY(0); }
   50%       { transform: translateY(-8px); }
@@ -486,28 +491,4 @@ p {
   flex: 1;
   height: 1px;
   background: linear-gradient(90deg, transparent, var(--color-gold-300), transparent);
-}
-
-
-@keyframes shimmer {
-  0% { background-position: 0% 50%; }
-  100% { background-position: 200% 50%; }
-}
-.animate-shimmer {
-  animation: shimmer 6s linear infinite;
-}
-
-.text-outline {
-  text-shadow:
-    0 2px 12px rgba(0, 0, 0, 0.35),
-    -1px -1px 0 rgba(255, 255, 255, 0.95),
-    1px -1px 0 rgba(255, 255, 255, 0.95),
-    -1px 1px 0 rgba(255, 255, 255, 0.95),
-    1px 1px 0 rgba(255, 255, 255, 0.95);
-}
-
-@supports (-webkit-text-stroke: 1px black) {
-  .text-outline {
-    text-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
-  }
 }

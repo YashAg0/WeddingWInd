@@ -14,6 +14,9 @@ interface WeddingGalleryProps {
 export function WeddingGallery({ images, title }: WeddingGalleryProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [heroImgSrc, setHeroImgSrc] = useState(
+    images[0] || "https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=1200&q=85"
+  );
 
   // Take first 5 images for the desktop grid, fallback to placeholder if none
   const gridImages = images.slice(0, 5);
@@ -33,71 +36,26 @@ export function WeddingGallery({ images, title }: WeddingGalleryProps) {
 
   return (
     <section className="relative" aria-label="Photo gallery">
-      {/* Desktop Grid Layout (inspired by Airbnb & Aman Resorts) */}
-      <div className="hidden md:grid grid-cols-4 grid-rows-2 gap-3 h-[450px] rounded-3xl overflow-hidden shadow-lg border border-warm-200/50">
-        
-        {/* Main large image */}
-        <div className="col-span-2 row-span-2 relative cursor-pointer group" onClick={() => handleOpenModal(0)}>
+      <div className="mt-4">
+        {/* Unified View: Single Hero Image */}
+        <div className="relative rounded-3xl overflow-hidden h-[40vh] md:h-[500px] min-h-[400px] shadow-lg border border-warm-200/50 bg-warm-100">
           <Image
-            src={gridImages[0] || "https://images.unsplash.com/photo-1583939003579-730e3918a45a"}
-            alt={`${title} Gallery Image 1`}
+            src={heroImgSrc}
+            alt={`${title} main photo`}
             fill
             priority
-            sizes="(max-width: 1024px) 50vw, 50vw"
-            className="object-cover transition-transform duration-700 group-hover:scale-[1.02]"
+            sizes="100vw"
+            className="object-cover"
+            onError={() => setHeroImgSrc("https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=1200&q=85")}
           />
-          <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors" />
+          <button
+            onClick={() => handleOpenModal(0)}
+            className="absolute bottom-4 right-4 md:bottom-6 md:right-6 bg-white/90 backdrop-blur-sm text-charcoal-900 text-sm font-semibold px-4 py-2 md:px-5 md:py-2.5 rounded-xl shadow-md hover:bg-white transition-colors flex items-center gap-2"
+          >
+            <Grid2x2 size={16} />
+            View all {images.length} photos
+          </button>
         </div>
-
-        {/* 4 smaller side grid images */}
-        {Array.from({ length: 4 }).map((_, idx) => {
-          const imgIndex = idx + 1;
-          const imgSrc = gridImages[imgIndex] || gridImages[0];
-          return (
-            <div
-              key={idx}
-              className="relative cursor-pointer group"
-              onClick={() => handleOpenModal(imgIndex)}
-            >
-              <Image
-                src={imgSrc}
-                alt={`${title} Gallery Image ${imgIndex + 1}`}
-                fill
-                sizes="(max-width: 1024px) 25vw, 25vw"
-                className="object-cover transition-transform duration-700 group-hover:scale-[1.02]"
-              />
-              <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors" />
-            </div>
-          );
-        })}
-
-        {/* View all photos trigger button */}
-        <button
-          onClick={() => handleOpenModal(0)}
-          className="absolute bottom-5 right-5 bg-white/95 backdrop-blur-md text-charcoal-800 text-xs font-bold px-4 py-2.5 rounded-xl border border-warm-200 flex items-center gap-1.5 shadow-md hover:bg-white active:scale-95 transition-all"
-        >
-          <Grid2x2 size={14} />
-          Show all photos
-        </button>
-      </div>
-
-      {/* Mobile Slider / Main Image Layout */}
-      <div className="md:hidden relative h-72 rounded-3xl overflow-hidden shadow-md">
-        <Image
-          src={images[0]}
-          alt={title}
-          fill
-          priority
-          sizes="100vw"
-          className="object-cover"
-        />
-        <button
-          onClick={() => handleOpenModal(0)}
-          className="absolute bottom-4 right-4 bg-black/60 backdrop-blur-sm text-white text-[0.6875rem] font-bold px-3.5 py-2 rounded-full flex items-center gap-1 shadow-md"
-        >
-          <Grid2x2 size={12} />
-          {images.length} Photos
-        </button>
       </div>
 
       {/* Full Screen Photo Modal (inspired by Apple Photos layout) */}

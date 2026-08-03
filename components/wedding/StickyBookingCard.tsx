@@ -2,11 +2,18 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { ShieldCheck, Calendar, X } from "lucide-react";
+import { ShieldCheck, Calendar, X, Check, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Wedding } from "@/types";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
+import {
+  PRICING_TIERS,
+  formatCurrencyINR,
+  formatSecondaryCurrency,
+  PricingTier
+} from "@/lib/constants/financial-model";
+import { useCurrency } from "@/context/CurrencyContext";
 
 interface StickyBookingCardProps {
   wedding: Wedding;
@@ -14,30 +21,36 @@ interface StickyBookingCardProps {
 
 export function StickyBookingCard({ wedding }: StickyBookingCardProps) {
   const { user, addBooking } = useAuth();
+  const { formatPrice } = useCurrency();
   const router = useRouter();
 
   const [isOpen, setIsOpen] = useState(false);
+  const [selectedTierKey, setSelectedTierKey] = useState<string>("CELEBRATION_EXPERIENCE");
   const [guestsCount, setGuestsCount] = useState(1);
   const [isBooked, setIsBooked] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const availableSlots = wedding.guestsAllowed - wedding.guestsBooked;
-  const totalPrice = wedding.pricePerGuest * guestsCount;
+  const activeTier: PricingTier = PRICING_TIERS[selectedTierKey] || PRICING_TIERS.CULTURAL_GUEST;
+  const subtotalINR = activeTier.priceINR * guestsCount;
 
   return (
     <>
       {/* Bottom Floating Bar */}
       <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-xl border-t border-warm-200/60 p-4 shadow-[0_-10px_32px_-12px_rgba(0,0,0,0.1)] flex items-center justify-between md:hidden">
         <div>
-          <div className="flex items-baseline gap-0.5">
-            <span className="font-display font-black text-lg text-charcoal-900">
-              ${wedding.pricePerGuest.toLocaleString()}
+          <span className="text-[0.625rem] text-charcoal-400 font-semibold uppercase tracking-wider block">From</span>
+          <div className="flex items-baseline gap-1">
+            <span className="font-display font-black text-lg text-[var(--color-brand-primary)]">
+              {formatPrice(PRICING_TIERS.CULTURAL_GUEST.priceINR).primary}
             </span>
-            <span className="text-[0.625rem] text-charcoal-400 font-semibold uppercase tracking-wider">/guest</span>
+            <span className="text-[0.625rem] text-charcoal-400 font-semibold">/guest</span>
           </div>
-          <span className="text-[0.6875rem] text-charcoal-500 font-medium">
-            {new Date(wedding.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-          </span>
+          {formatPrice(PRICING_TIERS.CULTURAL_GUEST.priceINR).secondary && (
+            <span className="text-[0.625rem] text-charcoal-500 font-medium block">
+              {formatPrice(PRICING_TIERS.CULTURAL_GUEST.priceINR).secondary}
+            </span>
+          )}
         </div>
 
         <button
@@ -68,7 +81,7 @@ export function StickyBookingCard({ wedding }: StickyBookingCardProps) {
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-              className="relative w-full bg-white rounded-t-[2rem] p-6 shadow-2xl z-10 flex flex-col gap-5 border-t border-warm-200/50"
+              className="relative w-full max-h-[90vh] overflow-y-auto bg-white rounded-t-[2rem] p-6 shadow-2xl z-10 flex flex-col gap-5 border-t border-warm-200/50"
             >
               {/* Drag Handle indicator */}
               <div className="w-12 h-1 bg-warm-200 rounded-full mx-auto" aria-hidden="true" />
@@ -77,10 +90,10 @@ export function StickyBookingCard({ wedding }: StickyBookingCardProps) {
               <div className="flex justify-between items-start">
                 <div>
                   <h4 className="font-display font-bold text-lg text-charcoal-900">
-                    Book Spot
+                    Select Experience Tier
                   </h4>
                   <p className="text-xs text-charcoal-500 mt-0.5">
-                    ${wedding.pricePerGuest.toLocaleString()} per guest
+                    Choose your access level for this wedding
                   </p>
                 </div>
                 <button
@@ -96,6 +109,35 @@ export function StickyBookingCard({ wedding }: StickyBookingCardProps) {
               <div className="flex items-center gap-2 text-xs font-semibold text-emerald-600 bg-emerald-50 border border-emerald-500/10 p-3 rounded-2xl">
                 <ShieldCheck size={14} className="flex-shrink-0" />
                 <span>{availableSlots} spots left for this verified wedding.</span>
+              </div>
+
+              {/* Tiers List */}
+              <div className="space-y-2">
+                {Object.entries(PRICING_TIERS).map(([key, tier]) => {
+                  const isSelected = selectedTierKey === key;
+                  return (
+                    <button
+                      key={tier.id}
+                      type="button"
+                      onClick={() => setSelectedTierKey(key)}
+                      className={`w-full text-left p-3 rounded-xl border text-xs transition-all relative ${
+                        isSelected
+                          ? "border-[var(--color-brand-primary)] bg-maroon-50/20 ring-1 ring-[var(--color-brand-primary)]"
+                          : "border-warm-200 bg-white"
+                      }`}
+                    >
+                      <div className="flex justify-between items-baseline font-bold text-charcoal-900">
+                        <span>{tier.name}</span>
+                        <span className="text-[var(--color-brand-primary)] font-display text-sm">
+                          {formatCurrencyINR(tier.priceINR)}
+                        </span>
+                      </div>
+                      <div className="text-[0.625rem] text-charcoal-500 font-medium mt-0.5">
+                        {formatSecondaryCurrency(tier.priceINR)}
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
 
               {/* Form fields */}
@@ -139,9 +181,14 @@ export function StickyBookingCard({ wedding }: StickyBookingCardProps) {
               {/* Totals */}
               <div className="flex justify-between items-baseline pt-2 border-t border-warm-100">
                 <span className="text-sm font-semibold text-charcoal-600">Total Price</span>
-                <span className="font-display font-black text-xl text-charcoal-900">
-                  ${totalPrice.toLocaleString()}
-                </span>
+                <div className="text-right">
+                  <span className="font-display font-black text-xl text-charcoal-900">
+                    {formatCurrencyINR(subtotalINR)}
+                  </span>
+                  <span className="text-[0.625rem] text-charcoal-400 font-medium block">
+                    {formatSecondaryCurrency(subtotalINR)}
+                  </span>
+                </div>
               </div>
 
               {/* Action Button */}
@@ -165,11 +212,11 @@ export function StickyBookingCard({ wedding }: StickyBookingCardProps) {
                   try {
                     await addBooking({
                       weddingId: wedding.id,
-                      weddingTitle: wedding.title,
+                      weddingTitle: `${wedding.title} - ${activeTier.name}`,
                       location: wedding.location,
                       imageUrl: wedding.imageUrl,
                       date: wedding.date,
-                      pricePerGuest: wedding.pricePerGuest,
+                      pricePerGuest: activeTier.priceINR,
                       guestsCount,
                       status: "pending"
                     });
@@ -183,6 +230,21 @@ export function StickyBookingCard({ wedding }: StickyBookingCardProps) {
               >
                 Confirm Booking
               </button>
+
+              {/* Trust signals — cancellation policy */}
+              <div className="text-[0.625rem] text-charcoal-400 space-y-1 pt-1">
+                <p className="font-semibold text-charcoal-600 flex items-center gap-1">
+                  <ShieldCheck size={11} className="text-[var(--color-brand-primary)] flex-shrink-0" />
+                  Cancellation Policy
+                </p>
+                <p>30+ days: <strong className="text-charcoal-600">Full refund</strong> · 14–29 days: 50% refund · Under 14: No refund</p>
+                <p>
+                  Questions?{" "}
+                  <a href="mailto:support@weddingwithindia.com" className="text-[var(--color-brand-primary)] underline font-semibold">
+                    support@weddingwithindia.com
+                  </a>
+                </p>
+              </div>
             </motion.div>
           </motion.div>
         )}
@@ -203,8 +265,8 @@ export function StickyBookingCard({ wedding }: StickyBookingCardProps) {
               exit={{ scale: 0.9, y: 20 }}
               className="bg-white max-w-sm w-full p-6 rounded-3xl border border-warm-200 shadow-2xl text-center space-y-4"
             >
-              <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 mx-auto flex items-center justify-center text-xl">
-                ✓
+              <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 mx-auto flex items-center justify-center">
+                <Check size={24} />
               </div>
               <h4 className="font-display font-bold text-lg text-charcoal-900">
                 Reservation Requested!
@@ -212,8 +274,8 @@ export function StickyBookingCard({ wedding }: StickyBookingCardProps) {
               <p className="text-charcoal-600 text-sm">
                 Your reservation request for {guestsCount} guest spot(s) has been sent to the wedding host family.
               </p>
-              <div className="text-xs bg-warm-50 border border-warm-100 p-3 rounded-xl text-charcoal-500">
-                Order Total: ${totalPrice.toLocaleString()} (Hold only)
+              <div className="text-xs bg-warm-50 border border-warm-100 p-3 rounded-xl text-charcoal-600 font-medium">
+                Total Payment: {formatCurrencyINR(subtotalINR)} ({formatSecondaryCurrency(subtotalINR)})
               </div>
               <button
                 onClick={() => setIsBooked(false)}

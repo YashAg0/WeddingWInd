@@ -5,6 +5,7 @@ import Image from "next/image";
 import React, { useState } from "react";
 import { toast } from "sonner";
 import { useAuth, Booking } from "@/context/AuthContext";
+import { useCurrency } from "@/context/CurrencyContext";
 import { MapPin, Calendar, Users, XCircle, Printer, CreditCard, Receipt, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { submitReviewAction } from "@/lib/actions/reviews";
@@ -15,6 +16,7 @@ interface BookingCardProps {
 }
 
 export default function BookingCard({ booking, onCancel }: BookingCardProps) {
+  const { formatPrice } = useCurrency();
   const { checkoutBooking, user } = useAuth();
   const [showInvoice, setShowInvoice] = useState(false);
   const [paying, setPaying] = useState(false);
@@ -157,7 +159,7 @@ export default function BookingCard({ booking, onCancel }: BookingCardProps) {
               {booking.guestsCount} {booking.guestsCount > 1 ? "guests" : "guest"}
             </span>
             <span className="text-[var(--color-brand-primary)]">
-              Total: ${(booking.pricePerGuest * booking.guestsCount).toLocaleString()}
+              Total: {formatPrice(booking.pricePerGuest * booking.guestsCount).primary}
             </span>
           </div>
 

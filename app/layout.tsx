@@ -1,25 +1,16 @@
 import type { Metadata, Viewport } from "next";
-import { Playfair_Display, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import { AuthProvider } from "@/context/AuthContext";
+import { CurrencyProvider } from "@/context/CurrencyContext";
 import LayoutVisibilityWrapper from "@/components/layout/LayoutVisibilityWrapper";
 import CookieConsent from "@/components/ui/CookieConsent";
 import Script from "next/script";
 import { Toaster } from "sonner";
 import { BUSINESS_METRICS } from "@/lib/constants/business-metrics";
 
-const playfair = Playfair_Display({
-  subsets: ["latin"],
-  variable: "--font-playfair",
-  display: "swap",
-});
-
-const plusJakarta = Plus_Jakarta_Sans({
-  subsets: ["latin"],
-  variable: "--font-plus-jakarta",
-  display: "swap",
-});
+const inter = { variable: "--font-inter" };
+const playfairDisplay = { variable: "--font-playfair" };
 
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
 const APP_URL = "https://weddingwithindia.com";
@@ -33,7 +24,7 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL(APP_URL),
   title: {
-    default: "Wedding With India — Attend Real Indian Weddings",
+    default: "Wedding With India — Attend Authentic Indian Weddings",
     template: "%s | Wedding With India",
   },
   description:
@@ -54,7 +45,7 @@ export const metadata: Metadata = {
     locale: "en_US",
     url: APP_URL,
     siteName: "Wedding With India",
-    title: "Wedding With India — Attend Real Indian Weddings",
+    title: "Wedding With India — Attend Authentic Indian Weddings",
     description:
       `Experience the magic of authentic Indian weddings as an honoured guest. Browse ${BUSINESS_METRICS.WEDDINGS_HOSTED} verified wedding listings across India.`,
     images: [
@@ -68,7 +59,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Wedding With India — Attend Real Indian Weddings",
+    title: "Wedding With India — Attend Authentic Indian Weddings",
     description:
       "Experience the magic of authentic Indian weddings. Browse verified listings across India.",
     images: ["/og-image.jpg"],
@@ -111,7 +102,7 @@ const organizationJsonLd = {
   contactPoint: {
     "@type": "ContactPoint",
     contactType: "customer support",
-    email: "hello@weddingwithindia.com",
+    email: "contact@weddingwithindia.com",
     availableLanguage: ["English", "Hindi"],
   },
 };
@@ -139,7 +130,7 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkProvider publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}>
-      <html lang="en" className={`${playfair.variable} ${plusJakarta.variable} scroll-smooth`}>
+      <html lang="en" className={`${inter.variable} ${playfairDisplay.variable} scroll-smooth`}>
         <head>
           {/* JSON-LD Structured Data */}
           <script
@@ -177,7 +168,9 @@ export default function RootLayout({
           </noscript>
 
           <AuthProvider>
-            <LayoutVisibilityWrapper>{children}</LayoutVisibilityWrapper>
+            <CurrencyProvider>
+              <LayoutVisibilityWrapper>{children}</LayoutVisibilityWrapper>
+            </CurrencyProvider>
           </AuthProvider>
 
           {/* Cookie Consent — loads before analytics */}

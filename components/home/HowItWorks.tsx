@@ -1,9 +1,25 @@
+import { Search, CalendarCheck, Plane, Sparkles, Lock, ShieldCheck, Shield, PhoneCall, Award } from "lucide-react";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import type { HowItWorksStep } from "@/types";
 
 interface HowItWorksProps {
   steps: HowItWorksStep[];
 }
+
+const STEP_ICONS: Record<number, React.ReactNode> = {
+  1: <Search size={24} aria-hidden="true" />,
+  2: <CalendarCheck size={24} aria-hidden="true" />,
+  3: <Plane size={24} aria-hidden="true" />,
+  4: <Sparkles size={24} aria-hidden="true" />,
+};
+
+const TRUST_ICONS: Record<string, React.ReactNode> = {
+  "Secure Payments": <Lock size={18} aria-hidden="true" />,
+  "Verified Hosts": <ShieldCheck size={18} aria-hidden="true" />,
+  "Guest Protection": <Shield size={18} aria-hidden="true" />,
+  "24/7 Support": <PhoneCall size={18} aria-hidden="true" />,
+  "Satisfaction Guarantee": <Award size={18} aria-hidden="true" />,
+};
 
 export function HowItWorks({ steps }: HowItWorksProps) {
   return (
@@ -56,10 +72,10 @@ export function HowItWorks({ steps }: HowItWorksProps) {
                   aria-hidden="true"
                 />
                 <div
-                  className="relative w-16 h-16 rounded-full flex items-center justify-center text-2xl shadow-[0_8px_32px_0_rgba(201,151,42,0.25)] border-2 border-[var(--color-gold-200)]"
+                  className="relative w-16 h-16 rounded-full flex items-center justify-center text-[var(--color-brand-primary)] shadow-[0_8px_32px_0_rgba(201,151,42,0.25)] border-2 border-[var(--color-gold-200)]"
                   style={{ background: "linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)" }}
                 >
-                  {step.icon}
+                  {STEP_ICONS[step.step] || <span className="font-display font-bold text-xl">{step.step}</span>}
                 </div>
                 {/* Step number badge */}
                 <span
@@ -84,17 +100,17 @@ export function HowItWorks({ steps }: HowItWorksProps) {
         {/* Trust badges */}
         <div className="mt-16 flex flex-wrap items-center justify-center gap-6 sm:gap-10">
           {[
-            { icon: "🔐", label: "Secure Payments" },
-            { icon: "✅", label: "Verified Hosts" },
-            { icon: "🛡️", label: "Guest Protection" },
-            { icon: "📞", label: "24/7 Support" },
-            { icon: "💯", label: "Satisfaction Guarantee" },
-          ].map(({ icon, label }) => (
+            "Secure Payments",
+            "Verified Hosts",
+            "Guest Protection",
+            "24/7 Support",
+            "Satisfaction Guarantee",
+          ].map((label) => (
             <div
               key={label}
               className="flex items-center gap-2 text-charcoal-600 text-sm font-medium"
             >
-              <span className="text-lg" aria-hidden="true">{icon}</span>
+              <span className="text-[var(--color-brand-secondary)]">{TRUST_ICONS[label]}</span>
               {label}
             </div>
           ))}

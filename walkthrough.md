@@ -589,3 +589,51 @@ There is no drift between migrations and database schema files. Schema formats v
     - **ASSET REQUIRED**: `public/logo.png` (Used as the logo in organization structured JSON-LD data for search index visibility).
     - **ASSET REQUIRED**: `public/og-image.jpg` (1200x630 pixel open graph representation card for public shares).
 
+---
+
+## Phase 15 — Critical Repair Session (2026-08-02)
+
+### Objective
+Fix `npm run build` failure and eliminate all HTTP 500 errors found in the independent audit.
+
+### Verification Results
+
+| Check | Result | Details |
+|:---|:---|:---|
+| **TypeScript (`tsc --noEmit`)** | ✅ PASS | 0 errors |
+| **Production build (`next build`)** | ✅ PASS | 39/39 pages generated |
+| **Route HTTP sweep (12 routes)** | ✅ PASS | 0 failures / 0 × 500 errors |
+| `/` | ✅ 200 | |
+| `/weddings` | ✅ 200 | |
+| `/hosts/dashboard` | ↪️ 307 | Clerk auth (correct) |
+| `/for-agents/dashboard` | ✅ 200 | Suspense fix applied |
+| `/admin` | ↪️ 307 | RBAC layout → sign-in redirect (correct) |
+| `/admin/hosts` | ↪️ 307 | RBAC layout (correct) |
+| `/admin/agents` | ↪️ 307 | RBAC layout (correct) |
+| `/admin/bookings` | ↪️ 307 | RBAC layout (correct) |
+| `/admin/coordinators` | ↪️ 307 | RBAC layout (correct) |
+| `/for-agents/apply` | ✅ 200 | |
+| `/coordinators/apply` | ↪️ 307 | Clerk auth (correct) |
+| `/list-wedding` | ✅ 200 | |
+
+### Changes Made
+
+**Build Fix** — `lib/mock-data-store.ts`: Restored `MockHostRecord`, `MockAgentRecord`, `MockBookingRecord` and `MockStore` class. Fixed `subscribe()` return type to `() => void`.
+
+**Admin RBAC** — `app/admin/layout.tsx` [NEW]: Server component guard — requires Clerk session + DB `ADMIN` role. DB-offline shows informative block page instead of 500.
+
+**Data Persistence** — All 3 application forms now write to mock stores:
+- `/list-wedding` → `mockStore.addHost()`
+- `/for-agents/apply` → `mockStore.addAgent()` (success screen updated to "Under Review")
+- `/coordinators/apply` → `coordinatorMockStore.addCoordinator()` (wired in prior session)
+
+**Numbers.pdf Pricing Fix** — `lib/data.ts`: All 6 `pricePerGuest` values changed from legacy USD to `7499 INR`. Budget filters updated to INR thresholds. `for-couples` earnings simulator converted to INR (₹7,499–₹29,999 tier range, 72% host split shown).
+
+**BookingSidebar Trust Signals** — Cancellation policy (30d/14d/0d tiers) + support email added.
+
+**Suspense Fix** — `app/for-agents/dashboard/page.tsx`: `useSearchParams()` wrapped in `<Suspense>` to fix static prerender build failure.
+
+### Outstanding Blockers (user action required)
+1. **DATABASE_URL**: Switch from direct Supabase host to Session Pooler URI to enable real Prisma queries. See block page at `/admin` for exact steps.
+2. **Admin role assignment**: Once DB online, run `UPDATE "User" SET role = 'ADMIN' WHERE "clerkUserId" = '<your-clerk-id>';`
+

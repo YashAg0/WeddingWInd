@@ -1,9 +1,19 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Palette, Music, Utensils, HeartHandshake, Camera, PartyPopper } from "lucide-react";
 import type { WeddingEvent } from "@/types";
 import { cn } from "@/lib/utils";
+
+const IconMap: Record<string, React.ElementType> = {
+  "🎨": Palette,
+  "💃": Music,
+  "🍽️": Utensils,
+  "🤝": HeartHandshake,
+  "📸": Camera,
+  "🎉": PartyPopper,
+  "Sparkles": Sparkles
+};
 
 interface WeddingTimelineProps {
   timeline: WeddingEvent[];
@@ -29,7 +39,10 @@ export function WeddingTimeline({ timeline }: WeddingTimelineProps) {
             )}
             aria-hidden="true"
           >
-            <Sparkles size={14} className="text-[var(--color-brand-primary)]" />
+            {(() => {
+              const Icon = IconMap[(event as any).icon || ""] || Sparkles;
+              return <Icon size={14} className="text-[var(--color-brand-primary)]" />;
+            })()}
           </span>
 
           {/* Time & Date */}

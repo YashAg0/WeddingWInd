@@ -1,8 +1,15 @@
+import { Metadata } from "next";
 import { Suspense } from "react";
 import { getWeddings } from "@/lib/actions";
 import { WeddingCard } from "@/components/wedding/WeddingCard";
 import { MarketplaceHeader } from "@/components/wedding/MarketplaceHeader";
 import { FilterSidebar } from "@/components/wedding/FilterSidebar";
+import { Flower2 } from "lucide-react";
+
+export const metadata: Metadata = {
+  title: "Browse Weddings",
+  description: "Explore verified Indian wedding celebrations across Rajasthan, Goa, Punjab, and Kerala. Filter by style, date, and budget.",
+};
 
 // Make the route dynamic so it parses searchParams on every request
 export const dynamic = "force-dynamic";
@@ -34,7 +41,7 @@ export default async function WeddingsPage({ searchParams }: PageProps) {
   const date = resolvedParams.date || ""; // YYYY-MM format
   
   const stylesFilter = resolvedParams.styles ? resolvedParams.styles.split(",") : [];
-  const maxBudgetFilter = Number(resolvedParams.maxBudget || "5000");
+  const maxBudgetFilter = Number(resolvedParams.maxBudget || "99999"); // INR — default shows all tiers
   const luxuryFilter = resolvedParams.luxuryLevels ? resolvedParams.luxuryLevels.split(",") : [];
   const religionFilter = resolvedParams.religions ? resolvedParams.religions.split(",") : [];
   const minSlotsFilter = Number(resolvedParams.minSlots || "0");
@@ -175,7 +182,7 @@ export default async function WeddingsPage({ searchParams }: PageProps) {
             ) : (
               /* Empty state */
               <div className="text-center py-20 bg-white border border-warm-200/50 rounded-3xl shadow-sm flex flex-col items-center gap-3">
-                <span className="text-4xl" aria-hidden="true">🪷</span>
+                <Flower2 size={40} className="text-[var(--color-brand-primary)] opacity-40" aria-hidden="true" />
                 <h3 className="font-display font-bold text-lg text-charcoal-900">
                   No celebrations found
                 </h3>

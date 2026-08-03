@@ -2,10 +2,11 @@
 
 import { motion } from "framer-motion";
 import Image from "next/image";
-import { ShieldCheck, Compass, Users, Award } from "lucide-react";
+import { ShieldCheck, Compass, Users, Award, TrendingUp, DollarSign } from "lucide-react";
+import { PlatformOverviewDiagram } from "@/components/diagrams/PlatformOverviewDiagram";
 import { SectionHeader } from "@/components/ui/SectionHeader";
-
 import { BUSINESS_METRICS } from "@/lib/constants/business-metrics";
+import { INVESTOR_PROJECTIONS } from "@/lib/constants/financial-model";
 
 const stats = [
   { value: BUSINESS_METRICS.WEDDINGS_HOSTED, label: "Weddings Hosted" },
@@ -28,7 +29,7 @@ const milestones = [
   {
     year: "2025",
     title: "Scaling Trust",
-    description: "Launched the global guest liaison system, partnering with local translators and curators to offer 24/7 on-ground assistance."
+    description: "Launched the global guest liaison system, partnering with local translators and coordinators to offer 24/7 on-ground assistance."
   },
   {
     year: "2026",
@@ -100,57 +101,60 @@ export default function AboutContent() {
         </div>
       </section>
 
-      {/* Mission & Vision Cards */}
-      <section className="container-luxury grid grid-cols-1 md:grid-cols-2 gap-8 mb-20">
-        <div className="bg-white border border-warm-200/50 p-8 rounded-[2rem] shadow-sm space-y-4">
-          <div className="w-10 h-10 rounded-xl bg-maroon-50 text-[var(--color-brand-primary)] flex items-center justify-center">
-            <Compass size={20} />
-          </div>
-          <h3 className="font-display font-bold text-xl text-charcoal-900">Our Mission</h3>
-          <p className="text-charcoal-600 text-sm leading-relaxed">
-            To bridge cultural gaps by offering travelers deep, respectful cultural immersion while empowering local families to share their heritage and celebrations with the world.
-          </p>
-        </div>
-
-        <div className="bg-white border border-warm-200/50 p-8 rounded-[2rem] shadow-sm space-y-4">
-          <div className="w-10 h-10 rounded-xl bg-maroon-50 text-[var(--color-brand-primary)] flex items-center justify-center">
-            <Award size={20} />
-          </div>
-          <h3 className="font-display font-bold text-xl text-charcoal-900">Our Vision</h3>
-          <p className="text-charcoal-600 text-sm leading-relaxed">
-            To redefine experiential travel, transforming tourism into real human connections, mutual respect, and shared celebrations that guests will remember for a lifetime.
-          </p>
-        </div>
+      {/* Internal Unit Economics Diagram */}
+      <section className="container-luxury max-w-5xl mb-16">
+        <PlatformOverviewDiagram />
       </section>
 
-      {/* Growth Timeline */}
-      <section className="container-luxury mb-20 space-y-12">
+      {/* Investor & Financial Trajectory Section */}
+      <section className="container-luxury max-w-5xl mb-20 space-y-8">
         <SectionHeader
-          label="Our Journey"
-          title="Milestones along the way"
-          highlightedWord="milestones"
+          label="Corporate & Investor Information"
+          title="Unit Economics & Five-Year Trajectory"
+          highlightedWord="Trajectory"
         />
 
-        <div className="relative border-l border-warm-300 max-w-3xl mx-auto pl-8 space-y-10">
-          {milestones.map((m, idx) => (
-            <motion.div
-              key={m.year}
-              initial={{ opacity: 0, x: -15 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: idx * 0.1 }}
-              className="relative"
-            >
-              {/* Year marker */}
-              <span className="absolute -left-[53px] top-0 w-10 h-10 rounded-xl bg-[var(--color-brand-primary)] text-white font-display font-bold text-xs flex items-center justify-center shadow-md">
-                {m.year}
-              </span>
-              <div className="bg-white border border-warm-200/50 p-6 rounded-2xl shadow-sm space-y-2">
-                <h4 className="font-display font-bold text-base text-charcoal-900">{m.title}</h4>
-                <p className="text-charcoal-600 text-xs sm:text-sm leading-relaxed">{m.description}</p>
+        <div className="bg-white border border-warm-200/60 rounded-[2.5rem] p-6 sm:p-10 shadow-sm space-y-8">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
+            <div className="bg-warm-50 border border-warm-200 p-6 rounded-2xl space-y-1">
+              <span className="text-[0.6875rem] font-bold text-charcoal-500 uppercase tracking-wider block">Year 1 Target</span>
+              <div className="font-display font-bold text-2xl text-[var(--color-brand-primary)]">
+                {INVESTOR_PROJECTIONS.YEAR_1_BOOKINGS} Bookings
               </div>
-            </motion.div>
-          ))}
+              <span className="text-xs text-charcoal-500">Break-even: ~{INVESTOR_PROJECTIONS.BREAK_EVEN_ANNUAL}/yr (~{INVESTOR_PROJECTIONS.BREAK_EVEN_MONTHLY}/mo)</span>
+            </div>
+
+            <div className="bg-warm-50 border border-warm-200 p-6 rounded-2xl space-y-1">
+              <span className="text-[0.6875rem] font-bold text-charcoal-500 uppercase tracking-wider block">5-Year Projected Revenue</span>
+              <div className="font-display font-bold text-2xl text-emerald-600">
+                {INVESTOR_PROJECTIONS.FIVE_YEAR_TOTAL_REVENUE_INR_LABEL}
+              </div>
+              <span className="text-xs text-charcoal-500">Scales to 5,200 annual bookings</span>
+            </div>
+
+            <div className="bg-warm-50 border border-warm-200 p-6 rounded-2xl space-y-1">
+              <span className="text-[0.6875rem] font-bold text-charcoal-500 uppercase tracking-wider block">5-Year Projected PAT</span>
+              <div className="font-display font-bold text-2xl text-charcoal-900">
+                {INVESTOR_PROJECTIONS.FIVE_YEAR_PAT_INR_LABEL}
+              </div>
+              <span className="text-xs text-charcoal-500">Sustainable unit profitability</span>
+            </div>
+          </div>
+
+          <div className="space-y-3 pt-4 border-t border-warm-100">
+            <h4 className="text-xs font-bold text-charcoal-500 uppercase tracking-widest text-center">
+              Five-Year Volume Growth Trajectory
+            </h4>
+            <div className="grid grid-cols-5 gap-2 text-center text-xs font-bold">
+              {INVESTOR_PROJECTIONS.FIVE_YEAR_BOOKINGS_TRAJECTORY.map((count, idx) => (
+                <div key={idx} className="bg-warm-100/60 p-3 rounded-xl border border-warm-200">
+                  <div className="text-[0.625rem] text-charcoal-400">Year {idx + 1}</div>
+                  <div className="text-charcoal-900 font-display font-bold text-sm sm:text-base mt-0.5">{count}</div>
+                  <div className="text-[0.625rem] text-charcoal-500 font-normal">bookings</div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 
@@ -166,47 +170,6 @@ export default function AboutContent() {
               <div className="text-white/70 text-xs sm:text-sm font-semibold">{s.label}</div>
             </div>
           ))}
-        </div>
-      </section>
-
-      {/* Trust & Safety highlights */}
-      <section className="container-luxury max-w-4xl space-y-10">
-        <SectionHeader
-          label="Trust & Safety"
-          title="Your safety is our top priority"
-          highlightedWord="safety"
-        />
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white border border-warm-200/50 p-6 rounded-2xl shadow-sm text-center space-y-3">
-            <div className="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 mx-auto flex items-center justify-center">
-              <ShieldCheck size={20} />
-            </div>
-            <h4 className="font-sans font-bold text-sm text-charcoal-900">Vetted Hosts</h4>
-            <p className="text-charcoal-500 text-xs leading-relaxed">
-              Every host family is background-checked and vetted in-person by our local compliance agents.
-            </p>
-          </div>
-
-          <div className="bg-white border border-warm-200/50 p-6 rounded-2xl shadow-sm text-center space-y-3">
-            <div className="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 mx-auto flex items-center justify-center">
-              <Users size={20} />
-            </div>
-            <h4 className="font-sans font-bold text-sm text-charcoal-900">24/7 Guest Liaison</h4>
-            <p className="text-charcoal-500 text-xs leading-relaxed">
-              Local bilingual guest liaison support is provided on the ground throughout the wedding events.
-            </p>
-          </div>
-
-          <div className="bg-white border border-warm-200/50 p-6 rounded-2xl shadow-sm text-center space-y-3">
-            <div className="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 mx-auto flex items-center justify-center">
-              <Award size={20} />
-            </div>
-            <h4 className="font-sans font-bold text-sm text-charcoal-900">Secure Hold Trust</h4>
-            <p className="text-charcoal-500 text-xs leading-relaxed">
-              Booking funds are held securely in a trust account and only released to the family post-event.
-            </p>
-          </div>
         </div>
       </section>
 

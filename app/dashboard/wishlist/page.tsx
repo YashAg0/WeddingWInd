@@ -14,8 +14,8 @@ export default function WishlistPage() {
     getWeddings().then(setWeddings).catch(console.error);
   }, []);
 
-  // Match active wishlist slugs with weddings
-  const savedWeddings = weddings.filter((w) => wishlist.includes(w.slug));
+  // Match active wishlist IDs or slugs with weddings
+  const savedWeddings = weddings.filter((w) => wishlist.includes(w.id) || wishlist.includes(w.slug));
 
   return (
     <div className="space-y-8 animate-fade-in">

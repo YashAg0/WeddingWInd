@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { Star, MapPin, ShieldCheck, CheckCircle, XCircle, Sparkles, Shirt, Utensils, Landmark, Hotel } from "lucide-react";
+import { Star, MapPin, ShieldCheck, CheckCircle, XCircle, Sparkles, Shirt, Utensils, Landmark, Hotel, Calendar, Users, Globe, Palette } from "lucide-react";
 import { getWeddings, getWeddingBySlug } from "@/lib/actions";
 import { WeddingGallery } from "@/components/wedding/WeddingGallery";
 import { WeddingTimeline } from "@/components/wedding/WeddingTimeline";
@@ -9,7 +9,27 @@ import { BookingSidebar } from "@/components/wedding/BookingSidebar";
 import { StickyBookingCard } from "@/components/wedding/StickyBookingCard";
 import { WeddingCard } from "@/components/wedding/WeddingCard";
 import { WeddingDetailReviews } from "@/components/wedding/WeddingDetailReviews";
+import type { Metadata } from 'next';
 import { getDbUser } from "@/lib/auth";
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const resolvedParams = await params;
+  const wedding = await getWeddingBySlug(resolvedParams.slug);
+  
+  if (!wedding) {
+    return {
+      title: 'Wedding Not Found',
+    };
+  }
+  
+  return {
+    title: `${wedding.title} — ${wedding.location}`,
+    description: `Attend ${wedding.title} in ${wedding.location}. ${wedding.category} wedding celebration. Book your spot starting from ₹${wedding.pricePerGuest?.toLocaleString() || '7,499'}/guest.`,
+    openGraph: {
+      images: [wedding.imageUrl || wedding.coupleImage],
+    },
+  };
+}
 
 export const dynamic = "force-dynamic";
 
@@ -76,8 +96,7 @@ export default async function WeddingDetailPage({ params }: PageProps) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(eventJsonLd) }}
       />
-      
-      {/* Header Container */}
+
       <header className="container-luxury mt-4 flex flex-col gap-4">
         {/* Breadcrumbs */}
         <nav aria-label="Breadcrumb" className="text-xs font-semibold text-charcoal-400 uppercase tracking-wider flex items-center gap-1.5">
@@ -106,20 +125,25 @@ export default async function WeddingDetailPage({ params }: PageProps) {
               {wedding.title}
             </h1>
             <div className="flex flex-wrap items-center gap-4 text-xs font-medium text-charcoal-500">
-              <div className="flex items-center gap-1 text-charcoal-900">
-                <Star size={14} className="text-[var(--color-brand-secondary)] fill-[var(--color-brand-secondary)]" />
-                <span className="font-bold">{wedding.rating}</span>
-                <span className="text-charcoal-400">({wedding.reviewCount} reviews)</span>
-              </div>
+              {wedding.reviewCount > 0 ? (
+                <div className="flex items-center gap-1 text-charcoal-900">
+                  <Star size={14} className="text-[var(--color-brand-secondary)] fill-[var(--color-brand-secondary)]" />
+                  <span className="font-bold">{wedding.rating}</span>
+                  <span className="text-charcoal-400">({wedding.reviewCount} reviews)</span>
+                </div>
+              ) : (
+                <span className="text-xs font-semibold text-charcoal-400 bg-warm-50 border border-warm-100 rounded-full px-3 py-1">
+                  Be the first to review
+                </span>
+              )}
               <span className="w-1.5 h-1.5 rounded-full bg-warm-300" aria-hidden="true" />
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1.5">
                 <MapPin size={14} />
                 <span>{wedding.location}, {wedding.country}</span>
               </div>
             </div>
           </div>
 
-          {/* Quick Stats Summary */}
           <div className="flex items-center gap-3 bg-white border border-warm-200/50 p-4 rounded-2xl shadow-sm self-start">
             <div className="text-center px-4 border-r border-warm-200">
               <div className="text-xs text-charcoal-400 uppercase font-bold tracking-wider mb-0.5">Duration</div>
@@ -127,26 +151,29 @@ export default async function WeddingDetailPage({ params }: PageProps) {
             </div>
             <div className="text-center px-4">
               <div className="text-xs text-charcoal-400 uppercase font-bold tracking-wider mb-0.5 font-sans">Religion</div>
-              <div className="font-display font-bold text-sm text-charcoal-800">{wedding.religion}</div>
+              <div className="font-display font-bold text-sm text-charcoal-800">{wedding.religion || "Any"}</div>
             </div>
           </div>
         </div>
       </header>
 
-      {/* Image Gallery */}
+      {/* ─── IMMERSIVE GALLERY HERO ─── */}
       <div className="container-luxury mt-6">
         <WeddingGallery images={wedding.gallery} title={wedding.title} />
       </div>
 
-      {/* Main Grid Content */}
+      {/* ─── Main 2-col layout ─── */}
       <div className="container-luxury mt-10">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-          
-          {/* Detailed description sections */}
-          <main className="lg:col-span-2 space-y-10" role="main">
-            
-            {/* Story section */}
-            <section className="bg-white border border-warm-200/50 p-6 sm:p-8 rounded-3xl shadow-sm space-y-4" aria-labelledby="story-heading">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 lg:gap-16">
+
+          {/* LEFT: Story + Details */}
+          <main className="lg:col-span-2 space-y-12" role="main">
+
+            {/* ─── COUPLE PORTRAIT & STORY — restoring to live site layout ─── */}
+            <section
+              className="bg-white border border-warm-200/50 p-6 sm:p-8 rounded-3xl shadow-sm space-y-4"
+              aria-labelledby="story-heading"
+            >
               <h2 id="story-heading" className="font-display font-bold text-xl text-charcoal-900 border-b border-warm-100 pb-3">
                 Our Wedding Story
               </h2>
@@ -154,9 +181,11 @@ export default async function WeddingDetailPage({ params }: PageProps) {
                 &ldquo;{wedding.story}&rdquo;
               </p>
             </section>
-
-            {/* Meet the couple */}
-            <section className="bg-white border border-warm-200/50 p-6 sm:p-8 rounded-3xl shadow-sm space-y-5" aria-labelledby="couple-heading">
+            
+            <section
+              className="bg-white border border-warm-200/50 p-6 sm:p-8 rounded-3xl shadow-sm space-y-5"
+              aria-labelledby="couple-heading"
+            >
               <h2 id="couple-heading" className="font-display font-bold text-xl text-charcoal-900 border-b border-warm-100 pb-3">
                 Meet the Couple
               </h2>
@@ -167,39 +196,47 @@ export default async function WeddingDetailPage({ params }: PageProps) {
                     alt={wedding.coupleName}
                     fill
                     className="object-cover"
+                    sizes="112px"
                   />
                 </div>
                 <div className="space-y-2 text-center sm:text-left">
                   <h3 className="font-display font-bold text-lg text-charcoal-900">
                     {wedding.coupleName}
                   </h3>
-                  <p className="text-charcoal-600 text-sm leading-relaxed">
-                    {wedding.coupleBio}
-                  </p>
+                  {wedding.coupleBio && (
+                    <p className="text-charcoal-600 text-sm leading-relaxed">
+                      {wedding.coupleBio}
+                    </p>
+                  )}
                 </div>
               </div>
             </section>
 
-            {/* Wedding Timeline */}
+            {/* ─── Celebration Schedule ─── */}
             <section className="space-y-5" aria-labelledby="timeline-heading">
-              <h2 id="timeline-heading" className="font-display font-bold text-xl text-charcoal-900 border-b border-warm-200 pb-3">
+              <h2 id="timeline-heading" className="font-display font-bold text-2xl text-charcoal-900">
                 Celebration Schedule
               </h2>
               <WeddingTimeline timeline={wedding.timeline} />
             </section>
 
-            {/* Traditions */}
-            <section className="bg-white border border-warm-200/50 p-6 sm:p-8 rounded-3xl shadow-sm space-y-4" aria-labelledby="traditions-heading">
-              <h2 id="traditions-heading" className="font-display font-bold text-xl text-charcoal-900 border-b border-warm-100 pb-3">
-                Key Customs & Traditions
+            <div className="h-px w-full bg-gradient-to-r from-transparent via-gold-300/50 to-transparent my-10" aria-hidden="true" />
+
+            {/* ─── Traditions ─── */}
+            <section
+              className="bg-warm-50/40 border border-warm-200/50 p-6 sm:p-8 rounded-3xl shadow-sm space-y-6"
+              aria-labelledby="traditions-heading"
+            >
+              <h2 id="traditions-heading" className="font-display font-bold text-2xl text-charcoal-900">
+                Key Customs &amp; Traditions
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 {wedding.traditions.map((trad) => (
-                  <div key={trad.title} className="space-y-1.5 p-4 rounded-2xl bg-warm-50/50 border border-warm-200/40">
-                    <h3 className="font-sans font-bold text-sm text-charcoal-800">
+                  <div key={trad.title} className="space-y-2 p-5 rounded-2xl bg-warm-50/80 border border-warm-200/40">
+                    <h3 className="font-display font-semibold text-base text-charcoal-800">
                       {trad.title}
                     </h3>
-                    <p className="text-charcoal-600 text-xs sm:text-sm leading-relaxed">
+                    <p className="text-charcoal-600 text-sm leading-relaxed">
                       {trad.description}
                     </p>
                   </div>
@@ -207,9 +244,14 @@ export default async function WeddingDetailPage({ params }: PageProps) {
               </div>
             </section>
 
-            {/* Practical information card */}
-            <section className="bg-white border border-warm-200/50 p-6 sm:p-8 rounded-3xl shadow-sm space-y-6" aria-labelledby="practical-heading">
-              <h2 id="practical-heading" className="font-display font-bold text-xl text-charcoal-900 border-b border-warm-100 pb-3">
+            <div className="h-px w-full bg-gradient-to-r from-transparent via-gold-300/50 to-transparent my-10" aria-hidden="true" />
+
+            {/* ─── Practical Info ─── */}
+            <section
+              className="bg-white border border-warm-200/50 p-6 sm:p-8 rounded-3xl shadow-sm space-y-6"
+              aria-labelledby="practical-heading"
+            >
+              <h2 id="practical-heading" className="font-display font-bold text-2xl text-charcoal-900">
                 Practical Information
               </h2>
               
@@ -217,7 +259,7 @@ export default async function WeddingDetailPage({ params }: PageProps) {
                 {/* Theme */}
                 <div className="space-y-2">
                   <h3 className="font-sans font-bold text-xs text-charcoal-400 uppercase tracking-widest flex items-center gap-1.5">
-                    🎨 Wedding Theme
+                    <Palette size={14} className="text-maroon-800" /> Wedding Theme
                   </h3>
                   <p className="text-charcoal-600 text-sm leading-relaxed">
                     {wedding.theme || "Traditional Indian Celebration"}
@@ -227,21 +269,10 @@ export default async function WeddingDetailPage({ params }: PageProps) {
                 {/* Ethnicity */}
                 <div className="space-y-2">
                   <h3 className="font-sans font-bold text-xs text-charcoal-400 uppercase tracking-widest flex items-center gap-1.5">
-                    🌏 Culture & Ethnicity
+                    <Globe size={14} className="text-maroon-800" /> Culture &amp; Ethnicity
                   </h3>
                   <p className="text-charcoal-600 text-sm leading-relaxed">
                     {wedding.ethnicity || "Multicultural"}
-                  </p>
-                </div>
-
-                {/* Guests */}
-                <div className="space-y-2">
-                  <h3 className="font-sans font-bold text-xs text-charcoal-400 uppercase tracking-widest flex items-center gap-1.5">
-                    👥 Guest Capacity
-                  </h3>
-                  <p className="text-charcoal-600 text-sm leading-relaxed">
-                    Up to {wedding.guestsAllowed} guests
-                    {wedding.requiredGuests ? ` · Host expects at least ${wedding.requiredGuests} guests` : ""}
                   </p>
                 </div>
 
@@ -278,7 +309,7 @@ export default async function WeddingDetailPage({ params }: PageProps) {
                 {/* Accommodations */}
                 <div className="space-y-2">
                   <h3 className="font-sans font-bold text-xs text-charcoal-400 uppercase tracking-widest flex items-center gap-1.5">
-                    <Hotel size={14} className="text-maroon-800" /> Lodging & Stay
+                    <Hotel size={14} className="text-maroon-800" /> Lodging &amp; Stay
                   </h3>
                   <p className="text-charcoal-600 text-sm leading-relaxed">
                     {wedding.accommodation}
@@ -287,18 +318,18 @@ export default async function WeddingDetailPage({ params }: PageProps) {
               </div>
             </section>
 
-            {/* Inclusions & Exclusions */}
-            <section className="grid grid-cols-1 md:grid-cols-2 gap-6" aria-label="Package highlights">
+            {/* ─── Inclusions & Exclusions ─── */}
+            <section className="grid grid-cols-1 md:grid-cols-2 gap-5" aria-label="Package highlights">
               {/* Included */}
-              <div className="bg-emerald-50/20 border border-emerald-500/10 p-6 sm:p-8 rounded-3xl shadow-sm space-y-4">
-                <h3 className="font-sans font-bold text-sm text-emerald-800 uppercase tracking-wider flex items-center gap-2">
+              <div className="bg-emerald-50/40 border border-emerald-500/15 p-6 sm:p-8 rounded-3xl shadow-sm space-y-4">
+                <h3 className="font-display font-semibold text-base text-emerald-800 flex items-center gap-2">
                   <CheckCircle size={16} className="text-emerald-600" />
                   What is Included
                 </h3>
                 <ul className="space-y-2.5">
                   {wedding.included.map((inc) => (
                     <li key={inc} className="text-charcoal-700 text-sm leading-relaxed flex items-start gap-2">
-                      <span className="text-emerald-500 font-bold mt-0.5">•</span>
+                      <span className="text-emerald-500 font-bold mt-0.5 flex-shrink-0">•</span>
                       {inc}
                     </li>
                   ))}
@@ -306,15 +337,15 @@ export default async function WeddingDetailPage({ params }: PageProps) {
               </div>
               
               {/* Not Included */}
-              <div className="bg-rose-50/10 border border-rose-500/10 p-6 sm:p-8 rounded-3xl shadow-sm space-y-4">
-                <h3 className="font-sans font-bold text-sm text-rose-800 uppercase tracking-wider flex items-center gap-2">
+              <div className="bg-rose-50/20 border border-rose-500/10 p-6 sm:p-8 rounded-3xl shadow-sm space-y-4">
+                <h3 className="font-display font-semibold text-base text-rose-800 flex items-center gap-2">
                   <XCircle size={16} className="text-rose-600" />
                   Not Included
                 </h3>
                 <ul className="space-y-2.5">
                   {wedding.notIncluded.map((exc) => (
                     <li key={exc} className="text-charcoal-700 text-sm leading-relaxed flex items-start gap-2">
-                      <span className="text-rose-400 font-bold mt-0.5">•</span>
+                      <span className="text-rose-400 font-bold mt-0.5 flex-shrink-0">•</span>
                       {exc}
                     </li>
                   ))}
@@ -322,9 +353,9 @@ export default async function WeddingDetailPage({ params }: PageProps) {
               </div>
             </section>
 
-            {/* Reviews */}
+            {/* ─── Reviews ─── */}
             <section className="space-y-5" aria-labelledby="reviews-heading">
-              <h2 id="reviews-heading" className="font-display font-bold text-xl text-charcoal-900 border-b border-warm-200 pb-3">
+              <h2 id="reviews-heading" className="font-display font-bold text-2xl text-charcoal-900">
                 Guest Reviews ({wedding.reviews.length})
               </h2>
               <WeddingDetailReviews
@@ -336,18 +367,24 @@ export default async function WeddingDetailPage({ params }: PageProps) {
 
           </main>
 
-          {/* Sticky Booking Sidebar (desktop) */}
+          {/* RIGHT: Sticky Booking Sidebar (desktop) */}
           <div className="hidden lg:block lg:col-span-1">
             <BookingSidebar wedding={wedding} />
           </div>
         </div>
       </div>
 
-      {/* Related listings */}
-      <section className="container-luxury border-t border-warm-200/60 mt-16 pt-12 space-y-6" aria-labelledby="related-heading">
-        <h2 id="related-heading" className="font-display font-bold text-xl md:text-2xl text-charcoal-900 text-center md:text-left">
-          Other Celebrations You Might Like
-        </h2>
+      {/* ─── Related Listings ─── */}
+      <section
+        className="container-luxury border-t border-warm-200/60 mt-20 pt-14 space-y-8"
+        aria-labelledby="related-heading"
+      >
+        <div className="text-center space-y-2">
+          <p className="text-xs font-bold uppercase tracking-widest text-[var(--color-brand-secondary)]">You might also love</p>
+          <h2 id="related-heading" className="font-display font-bold text-2xl md:text-3xl text-charcoal-900">
+            Other Celebrations Open to You
+          </h2>
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {relatedWeddings.map((w) => (
             <div key={w.id}>

@@ -30,29 +30,21 @@ const YoutubeIcon = () => (
 const footerLinks = {
   company: [
     { label: "About Us", href: "/about" },
-    { label: "How It Works", href: "/#how-it-works" },
+    { label: "How It Works", href: "/how-it-works" },
     { label: "Our Story", href: "/about#story" },
-    { label: "Press & Media", href: "/about#story" },
-    { label: "Careers", href: "/about" },
   ],
   forGuests: [
     { label: "Browse Weddings", href: "/weddings" },
-    { label: "Wedding Categories", href: "/weddings#categories" },
-    { label: "Guest Guide", href: "/how-it-works" },
-    { label: "Cultural Tips", href: "/how-it-works" },
-    { label: "Safety & Trust", href: "/about" },
+    { label: "For Travelers", href: "/for-travelers" },
   ],
   forHosts: [
     { label: "List Your Wedding", href: "/list-wedding" },
-    { label: "Host Guidelines", href: "/list-wedding" },
-    { label: "Pricing & Fees", href: "/list-wedding" },
-    { label: "Host Stories", href: "/about#story" },
-    { label: "Partner Program", href: "/for-agents" },
+    { label: "For Couples", href: "/for-couples" },
+    { label: "For Agents", href: "/for-agents" },
+    { label: "Coordinators", href: "/coordinators" },
   ],
   support: [
-    { label: "Help Centre", href: "/contact" },
     { label: "Contact Us", href: "/contact" },
-    { label: "Cancellation Policy", href: "/terms" },
     { label: "Privacy Policy", href: "/privacy" },
     { label: "Terms of Service", href: "/terms" },
   ],
@@ -65,13 +57,6 @@ const socialLinks = [
   { icon: YoutubeIcon, label: "YouTube", href: "https://youtube.com" },
 ];
 
-const trustItems = [
-  { emoji: "🔒", text: "Secure Payments via Stripe" },
-  { emoji: "🛡️", text: "Every Host Verified" },
-  { emoji: "⭐", text: "4.9/5 Average Rating" },
-  { emoji: "🌍", text: "Guests from 47+ Countries" },
-];
-
 export default function Footer() {
   const currentYear = new Date().getFullYear();
 
@@ -80,26 +65,6 @@ export default function Footer() {
       className="bg-[var(--color-charcoal-900)] text-white"
       role="contentinfo"
     >
-      {/* Trust strip */}
-      <div className="border-b border-white/8">
-        <div className="container-luxury py-4">
-          <div
-            className="flex flex-wrap items-center justify-center gap-x-8 gap-y-2"
-            aria-label="Trust and security signals"
-          >
-            {trustItems.map(({ emoji, text }, i) => (
-              <div key={text} className="flex items-center gap-2 text-xs text-white/50 font-medium">
-                {i > 0 && (
-                  <span className="hidden sm:block w-1 h-1 rounded-full bg-white/20 flex-shrink-0" aria-hidden="true" />
-                )}
-                <span aria-hidden="true">{emoji}</span>
-                <span>{text}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
       {/* Newsletter strip */}
       <div className="border-b border-white/10">
         <div className="container-luxury py-12">
@@ -129,7 +94,7 @@ export default function Footer() {
               aria-label="Wedding With India — Home"
             >
               <div className="w-10 h-10 rounded-xl bg-[var(--color-brand-primary)] flex items-center justify-center">
-                <Sparkles size={20} className="text-[var(--color-gold-300)]" />
+                <Sparkles size={20} className="text-white" aria-hidden="true" />
               </div>
               <div className="flex flex-col leading-none">
                 <span className="font-display font-bold text-white text-base">
@@ -142,7 +107,7 @@ export default function Footer() {
             </Link>
 
             <p className="text-charcoal-400 text-sm leading-relaxed mb-6 max-w-xs">
-              The world&apos;s first marketplace to attend real Indian weddings.
+              The world's first marketplace to attend real Indian weddings.
               Connecting global travellers with authentic cultural celebrations
               since 2024.
             </p>
@@ -150,7 +115,7 @@ export default function Footer() {
             {/* Contact */}
             <address className="not-italic space-y-3 mb-8">
               <a
-                href="mailto:hello@weddingwithindia.com"
+                href="mailto:contact@weddingwithindia.com"
                 className="flex items-center gap-3 text-sm text-charcoal-400 hover:text-[var(--color-brand-secondary)] transition-colors group"
               >
                 <Mail
@@ -158,10 +123,10 @@ export default function Footer() {
                   className="text-[var(--color-brand-secondary)] flex-shrink-0"
                   aria-hidden="true"
                 />
-                hello@weddingwithindia.com
+                contact@weddingwithindia.com
               </a>
               <a
-                href="tel:+917001234567"
+                href="tel:+919116734675"
                 className="flex items-center gap-3 text-sm text-charcoal-400 hover:text-[var(--color-brand-secondary)] transition-colors"
               >
                 <Phone
@@ -248,12 +213,6 @@ export default function Footer() {
                 className="hover:text-charcoal-300 transition-colors"
               >
                 Terms
-              </Link>
-              <Link
-                href="/privacy"
-                className="hover:text-charcoal-300 transition-colors"
-              >
-                Cookies
               </Link>
               <span className="flex items-center gap-1.5">
                 Made with{" "}

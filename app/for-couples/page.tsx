@@ -27,9 +27,12 @@ const hostFAQs = [
 
 export default function ForCouplesPage() {
   const [guestCount, setGuestCount] = useState(10);
-  const [pricePerGuest, setPricePerGuest] = useState(1500);
+  const [pricePerGuest, setPricePerGuest] = useState(11999); // default: Celebration Experience tier (INR)
 
-  const totalEarnings = guestCount * pricePerGuest;
+  // Host receives 72% of core booking value (per Numbers.pdf)
+  const grossEarnings = guestCount * pricePerGuest;
+  const hostEarnings = Math.round(grossEarnings * 0.72);
+  const totalEarnings = hostEarnings;
 
   return (
     <div className="min-h-screen bg-warm-50/50 pt-28 pb-20">
@@ -115,21 +118,27 @@ export default function ForCouplesPage() {
             />
           </div>
 
-          {/* Price selector */}
+          {/* Price selector — tiers in INR per Numbers.pdf */}
           <div className="space-y-2">
             <div className="flex justify-between text-xs font-bold text-charcoal-500 uppercase tracking-wider">
-              <span>Price per Guest</span>
-              <span className="text-[var(--color-brand-primary)] font-black">${pricePerGuest.toLocaleString()}</span>
+              <span>Guest Tier (per guest)</span>
+              <span className="text-[var(--color-brand-primary)] font-black">₹{pricePerGuest.toLocaleString("en-IN")}</span>
             </div>
             <input
               type="range"
-              min="500"
-              max="3000"
-              step="250"
+              min="7499"
+              max="29999"
+              step="4500"
               value={pricePerGuest}
               onChange={(e) => setPricePerGuest(Number(e.target.value))}
               className="w-full h-1.5 bg-warm-200 rounded-lg appearance-none cursor-pointer accent-[var(--color-brand-primary)]"
             />
+            <div className="flex justify-between text-[0.6rem] text-charcoal-400 font-medium">
+              <span>₹7,499 Cultural</span>
+              <span>₹11,999 Celebration</span>
+              <span>₹17,999 Immersive</span>
+              <span>₹29,999 Premium</span>
+            </div>
           </div>
         </div>
 
@@ -142,11 +151,16 @@ export default function ForCouplesPage() {
           </span>
           
           <h4 className="font-display font-black text-4xl sm:text-5xl text-gradient-gold">
-            ${totalEarnings.toLocaleString()}
+            ₹{totalEarnings.toLocaleString("en-IN")}
           </h4>
+
+          <div className="text-white/70 text-xs space-y-1">
+            <p>Host receives <strong className="text-white">72%</strong> of core booking value</p>
+            <p className="text-white/50">(Gross: ₹{grossEarnings.toLocaleString("en-IN")} · Platform fee 28% = ₹{(grossEarnings - totalEarnings).toLocaleString("en-IN")})</p>
+          </div>
           
           <p className="text-white/60 text-[0.6875rem] max-w-xs mx-auto leading-relaxed">
-            Earnings estimate based on local rates. Platform fee and compliance charges may apply upon registration.
+            Estimates per Numbers.pdf financial model. Actual payouts processed 7 days post-event.
           </p>
         </div>
       </section>

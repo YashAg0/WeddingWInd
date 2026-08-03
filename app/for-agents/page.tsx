@@ -1,195 +1,205 @@
 "use client";
 
-import { Users, DollarSign, ArrowRight, Sparkles } from "lucide-react";
-import { SectionHeader } from "@/components/ui/SectionHeader";
 import Link from "next/link";
-
-const programs = [
-  {
-    title: "Student Ambassadors",
-    description: "Perfect for students studying abroad. Share unique invitations with study groups and college societies. Earn pocket money while sharing culture.",
-    icon: "🎓"
-  },
-  {
-    title: "Travel Agencies",
-    description: "Add authentic Indian wedding invitations to your agency's standard luxury packages or group tour itineraries. Expand your travel catalog.",
-    icon: "✈️"
-  },
-  {
-    title: "Influencers & Bloggers",
-    description: "Create video content about the world's most vibrant celebrations. Share your custom links with your followers to monetize your travel content.",
-    icon: "🤳"
-  }
-];
-
-const leaderboards = [
-  { rank: 1, name: "Sophia Laurent", program: "Influencer", referrals: 42, earnings: "$9,450" },
-  { rank: 2, name: "David Kim", program: "Travel Agent", referrals: 35, earnings: "$7,875" },
-  { rank: 3, name: "Lucas Müller", program: "Student Ambassador", referrals: 24, earnings: "$5,400" },
-  { rank: 4, name: "Elena Rossi", program: "Influencer", referrals: 18, referralsCount: 18, earnings: "$4,050" }
-];
+import { Users, ShieldCheck, ArrowRight, DollarSign, Award, CheckCircle, AlertTriangle, Briefcase, Globe } from "lucide-react";
+import { AgentJourneyDiagram } from "@/components/diagrams/AgentJourneyDiagram";
+import { SectionHeader } from "@/components/ui/SectionHeader";
+import { COMMISSION_MODEL, formatCurrencyINR, formatSecondaryCurrency } from "@/lib/constants/financial-model";
+import { BUSINESS_METRICS } from "@/lib/constants/business-metrics";
 
 export default function ForAgentsPage() {
+  const travelerRate = COMMISSION_MODEL.AGENT_REFERRAL_COMMISSION_PERCENT; // 7%
+  const hostRate = COMMISSION_MODEL.HOST_REFERRAL_COMMISSION_PERCENT; // 4%
+  const avgBookingINR = BUSINESS_METRICS.WEIGHTED_AVG_BOOKING_INR; // ₹13,799
+
+  const travelerCommissionINR = Math.round((avgBookingINR * travelerRate) / 100); // ₹966
+  const hostCommissionINR = Math.round((avgBookingINR * hostRate) / 100); // ₹552
+
   return (
     <div className="min-h-screen bg-warm-50/50 pt-28 pb-20">
       
-      {/* Hero */}
-      <section className="container-luxury text-center max-w-3xl mb-16 space-y-4">
+      {/* Hero Section */}
+      <section className="container-luxury text-center max-w-4xl mb-16 space-y-5">
         <div className="inline-flex items-center gap-2 bg-maroon-50 text-[var(--color-brand-primary)] text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-full border border-maroon-100/50">
-          <Users size={12} />
-          Partnerships
+          <Briefcase size={13} />
+          Freelance Referral Agent Programme
         </div>
-        <h1 className="font-display font-bold text-4xl sm:text-5xl text-charcoal-900 leading-tight">
-          Partners in <span className="text-gradient-brand">Celebration</span>
+        <h1 className="font-display font-bold text-3xl sm:text-4xl md:text-5xl text-charcoal-900 leading-tight">
+          Earn Independent Commissions <br className="hidden sm:inline" />
+          <span className="text-gradient-brand">Sharing Authentic Culture</span>
         </h1>
-        <p className="text-charcoal-500 text-sm sm:text-base leading-relaxed">
-          Invite global travelers to experience the magic of authentic Indian weddings. Earn premium commissions on every verified booking.
+        <p className="text-charcoal-500 text-sm sm:text-base max-w-2xl mx-auto leading-relaxed">
+          Open to anyone worldwide. Refer international travelers or Indian host families and earn up to 7% of completed booking values.
         </p>
-      </section>
 
-      {/* Program Types Grid */}
-      <section className="container-luxury grid grid-cols-1 md:grid-cols-3 gap-8 mb-20">
-        {programs.map((p) => (
-          <div key={p.title} className="bg-white border border-warm-200/50 p-8 rounded-[2rem] shadow-sm space-y-4">
-            <span className="text-3xl inline-block" aria-hidden="true">{p.icon}</span>
-            <h3 className="font-display font-bold text-lg text-charcoal-900">{p.title}</h3>
-            <p className="text-charcoal-500 text-xs sm:text-sm leading-relaxed">{p.description}</p>
-          </div>
-        ))}
-      </section>
-
-      {/* Commission Model Table */}
-      <section className="container-luxury max-w-4xl bg-white border border-warm-200/50 rounded-[2.5rem] p-6 sm:p-10 shadow-sm mb-20 space-y-8">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-maroon-50 text-[var(--color-brand-primary)] flex items-center justify-center shadow-sm">
-            <DollarSign size={18} />
-          </div>
-          <h2 className="font-display font-bold text-xl text-charcoal-900">
-            Commission Structure & Tiers
-          </h2>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse" role="table">
-            <thead>
-              <tr className="border-b border-warm-200 text-xs font-bold text-charcoal-500 uppercase tracking-widest bg-warm-50">
-                <th className="p-4 rounded-tl-xl">Volume Tier</th>
-                <th className="p-4">Monthly Bookings</th>
-                <th className="p-4">Commission Rate</th>
-                <th className="p-4 rounded-tr-xl">Additional Perks</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-warm-100 text-xs sm:text-sm text-charcoal-600">
-              <tr>
-                <td className="p-4 font-bold text-charcoal-900">Tier 1 (Silver)</td>
-                <td className="p-4">1 - 5 Bookings</td>
-                <td className="p-4 font-semibold text-[var(--color-brand-primary)]">10.0%</td>
-                <td className="p-4">Standard support & portal access</td>
-              </tr>
-              <tr>
-                <td className="p-4 font-bold text-charcoal-900">Tier 2 (Gold)</td>
-                <td className="p-4">6 - 20 Bookings</td>
-                <td className="p-4 font-semibold text-[var(--color-brand-primary)]">12.5%</td>
-                <td className="p-4">Dedicated Slack channel access</td>
-              </tr>
-              <tr>
-                <td className="p-4 font-bold text-charcoal-900">Tier 3 (Platinum)</td>
-                <td className="p-4">21+ Bookings</td>
-                <td className="p-4 font-semibold text-[var(--color-brand-primary)]">15.0%</td>
-                <td className="p-4">Dedicated account manager & early catalog bookings</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      {/* Leaderboard Mock */}
-      <section className="container-luxury max-w-3xl mb-20 space-y-8">
-        <SectionHeader
-          label="Top Partners"
-          title="Commission Leaderboard"
-          highlightedWord="Leaderboard"
-        />
-
-        <div className="bg-white border border-warm-200/50 rounded-3xl overflow-hidden shadow-sm">
-          <div className="p-5 border-b border-warm-200 bg-warm-50/50 flex justify-between items-center">
-            <span className="text-xs font-bold text-charcoal-500 uppercase tracking-widest">Rankings</span>
-            <span className="inline-flex items-center gap-1.5 text-xs text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-100">
-              <Sparkles size={11} />
-              Updated hourly
-            </span>
-          </div>
-
-          <div className="divide-y divide-warm-100">
-            {leaderboards.map((l) => (
-              <div key={l.rank} className="p-4 sm:p-5 flex items-center justify-between text-xs sm:text-sm">
-                <div className="flex items-center gap-4">
-                  <span className="font-display font-black text-charcoal-400 w-5 text-center">
-                    #{l.rank}
-                  </span>
-                  <div>
-                    <div className="font-bold text-charcoal-800">{l.name}</div>
-                    <div className="text-[0.625rem] text-charcoal-400 font-semibold uppercase tracking-wider">{l.program}</div>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="font-bold text-[var(--color-brand-primary)]">{l.earnings}</div>
-                  <div className="text-[0.625rem] text-charcoal-400">{l.referrals} referrals</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Partner Portal Feature Section */}
-      <section className="container-luxury max-w-4xl mb-20 space-y-8">
-        <SectionHeader
-          label="Partner Portal"
-          title="Agent Dashboard Features"
-          highlightedWord="Features"
-        />
-
-        <div className="relative rounded-[2.5rem] overflow-hidden border border-warm-300 shadow-xl bg-charcoal-900 p-8 sm:p-12 text-white">
-          <div className="max-w-2xl space-y-6 relative z-10">
-            <div className="inline-flex items-center gap-2 bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-semibold px-3.5 py-1.5 rounded-full">
-              <Sparkles size={14} /> Live Partner Dashboard
-            </div>
-            <h3 className="font-display font-bold text-2xl sm:text-3xl text-white">
-              Track conversions, referrals & payouts in real-time
-            </h3>
-            <p className="text-white/70 text-sm leading-relaxed">
-              Every certified agent receives a unique tracking code, dynamic referral links, automated 5.0% commission calculations, and instant monthly payout requests.
-            </p>
-            <div className="pt-2">
-              <Link
-                href="/login?redirect_url=/dashboard/referrals"
-                className="btn btn-secondary btn-md inline-flex gap-2"
-              >
-                Access Partner Dashboard <ArrowRight size={16} />
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Join CTA */}
-      <section className="container-luxury text-center">
-        <div className="max-w-2xl mx-auto space-y-6">
-          <h2 className="font-display font-bold text-2xl sm:text-3xl text-charcoal-900">
-            Start earning commission today
-          </h2>
-          <p className="text-charcoal-500 text-sm max-w-md mx-auto">
-            Become a certified brand ambassador or travel agency partner. Monetize your invitations and cultural travel guides.
-          </p>
+        <div className="pt-2 flex flex-wrap items-center justify-center gap-4">
           <Link
-            href="/login?redirect_url=/dashboard/referrals"
-            className="btn btn-primary btn-lg shadow-lg group inline-flex gap-2"
+            href="/for-agents/apply"
+            className="btn btn-primary btn-lg shadow-lg font-bold flex items-center gap-2"
           >
-            Become a Partner
-            <ArrowRight size={16} className="group-hover:translate-x-0.5 transition-transform" />
+            Become an Agent Now
+            <ArrowRight size={16} />
+          </Link>
+          <Link
+            href="/for-agents/dashboard"
+            className="btn btn-secondary btn-lg font-bold border-warm-300"
+          >
+            Access Agent Dashboard
           </Link>
         </div>
+      </section>
+
+      {/* Two Ways to Earn Grid */}
+      <section className="container-luxury max-w-5xl mb-20 space-y-8">
+        <SectionHeader
+          label="Honest Earnings"
+          title="Two Direct Ways to Earn"
+          highlightedWord="Ways to Earn"
+        />
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {/* Way 1: Traveler Referrals */}
+          <div className="bg-white border border-warm-200/60 p-8 rounded-[2rem] shadow-sm space-y-6 flex flex-col justify-between">
+            <div className="space-y-4">
+              <div className="w-12 h-12 rounded-2xl bg-maroon-50 text-[var(--color-brand-primary)] flex items-center justify-center font-display font-bold text-xl">
+                <Globe size={22} />
+              </div>
+              <span className="text-xs font-bold text-charcoal-400 uppercase tracking-widest block">
+                Traveler-Side Referral
+              </span>
+              <h3 className="font-display font-bold text-2xl text-charcoal-900">
+                {travelerRate}% Commission per Booking
+              </h3>
+              <p className="text-charcoal-600 text-xs sm:text-sm leading-relaxed">
+                Refer foreign travelers who book any wedding tier. On average ({formatCurrencyINR(avgBookingINR)} booking), you earn <strong>{formatCurrencyINR(travelerCommissionINR)} ({formatSecondaryCurrency(travelerCommissionINR)})</strong> per completed stay.
+              </p>
+              <ul className="space-y-2 text-xs text-charcoal-600">
+                <li className="flex items-center gap-2">
+                  <CheckCircle size={14} className="text-emerald-600 flex-shrink-0" />
+                  <span>Unique trackable agent referral code</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle size={14} className="text-emerald-600 flex-shrink-0" />
+                  <span>Paid post-event after booking is completed & cleared</span>
+                </li>
+              </ul>
+            </div>
+
+            <div className="bg-warm-50 border border-warm-200 p-4 rounded-xl text-center">
+              <span className="text-[0.6875rem] font-bold text-charcoal-500 uppercase tracking-wider block">Average Traveler Referral Payout</span>
+              <span className="font-display font-bold text-xl text-[var(--color-brand-primary)]">{formatCurrencyINR(travelerCommissionINR)}</span>
+            </div>
+          </div>
+
+          {/* Way 2: Host Referrals */}
+          <div className="bg-white border border-warm-200/60 p-8 rounded-[2rem] shadow-sm space-y-6 flex flex-col justify-between">
+            <div className="space-y-4">
+              <div className="w-12 h-12 rounded-2xl bg-maroon-50 text-[var(--color-brand-primary)] flex items-center justify-center font-display font-bold text-xl">
+                <Users size={22} />
+              </div>
+              <span className="text-xs font-bold text-charcoal-400 uppercase tracking-widest block">
+                Host-Side Referral
+              </span>
+              <h3 className="font-display font-bold text-2xl text-charcoal-900">
+                {hostRate}% Qualifying Booking Value
+              </h3>
+              <p className="text-charcoal-600 text-xs sm:text-sm leading-relaxed">
+                Refer Indian families who list their wedding as verified hosts. Earn {hostRate}% of qualifying core booking value (avg <strong>{formatCurrencyINR(hostCommissionINR)}</strong>) when guests complete their attendance.
+              </p>
+              <ul className="space-y-2 text-xs text-charcoal-600">
+                <li className="flex items-center gap-2">
+                  <CheckCircle size={14} className="text-emerald-600 flex-shrink-0" />
+                  <span>Applies to hosts onboarded via your link</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle size={14} className="text-emerald-600 flex-shrink-0" />
+                  <span>Verified family host approval required</span>
+                </li>
+              </ul>
+            </div>
+
+            <div className="bg-warm-50 border border-warm-200 p-4 rounded-xl text-center">
+              <span className="text-[0.6875rem] font-bold text-charcoal-500 uppercase tracking-wider block">Average Host Referral Payout</span>
+              <span className="font-display font-bold text-xl text-[var(--color-brand-primary)]">{formatCurrencyINR(hostCommissionINR)}</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* On-Site Agent Explainer Diagram */}
+      <section className="container-luxury max-w-5xl mb-20">
+        <AgentJourneyDiagram />
+      </section>
+
+      {/* Explicit Rules & Anti-MLM Terms */}
+      <section className="container-luxury max-w-4xl bg-white border border-warm-200/60 rounded-[2.5rem] p-6 sm:p-10 shadow-sm mb-20 space-y-6">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center shadow-sm">
+            <ShieldCheck size={20} />
+          </div>
+          <h2 className="font-display font-bold text-xl text-charcoal-900">
+            Clear & Transparent Programme Terms
+          </h2>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="bg-warm-50/70 border border-warm-200 p-5 rounded-2xl space-y-2">
+            <h4 className="font-sans font-bold text-sm text-charcoal-900 flex items-center gap-2">
+              <CheckCircle size={16} className="text-emerald-600" />
+              Success-Based Payouts Only
+            </h4>
+            <p className="text-charcoal-600 text-xs leading-relaxed">
+              Commissions are paid only when a referred guest completes their wedding experience and funds are cleared. No fake lead payouts, no registration fees, and no upfront costs ever.
+            </p>
+          </div>
+
+          <div className="bg-warm-50/70 border border-warm-200 p-5 rounded-2xl space-y-2">
+            <h4 className="font-sans font-bold text-sm text-charcoal-900 flex items-center gap-2">
+              <AlertTriangle size={16} className="text-amber-600" />
+              Strict Anti-MLM Structure
+            </h4>
+            <p className="text-charcoal-600 text-xs leading-relaxed">
+              Agents are independent referral partners. You earn strictly on direct traveler or host referrals. There are no downline tiers, multi-level structures, or commissions for recruiting other agents.
+            </p>
+          </div>
+
+          <div className="bg-warm-50/70 border border-warm-200 p-5 rounded-2xl space-y-2">
+            <h4 className="font-sans font-bold text-sm text-charcoal-900 flex items-center gap-2">
+              <Briefcase size={16} className="text-maroon-800" />
+              No Fixed Salary or Stipend
+            </h4>
+            <p className="text-charcoal-600 text-xs leading-relaxed">
+              This is a flexible freelance partner role with zero fixed salaries or mandatory quotas. Earn as much as your network generates on your own schedule.
+            </p>
+          </div>
+
+          <div className="bg-warm-50/70 border border-warm-200 p-5 rounded-2xl space-y-2">
+            <h4 className="font-sans font-bold text-sm text-charcoal-900 flex items-center gap-2">
+              <Award size={16} className="text-maroon-800" />
+              Automated Code Tracking
+            </h4>
+            <p className="text-charcoal-600 text-xs leading-relaxed">
+              Every approved agent receives a unique tracking identifier format <code>WWI-AGENT-XXXX</code> for direct link attribution in our system.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section className="container-luxury text-center max-w-2xl mx-auto space-y-6">
+        <h2 className="font-display font-bold text-3xl text-charcoal-900">
+          Ready to Start Earning?
+        </h2>
+        <p className="text-charcoal-500 text-sm leading-relaxed">
+          Application takes approximately 10 minutes. Get instant access to your referral code and promotional materials.
+        </p>
+        <Link
+          href="/for-agents/apply"
+          className="btn btn-primary btn-lg shadow-lg font-bold inline-flex items-center gap-2"
+        >
+          Complete 10-Min Application
+          <ArrowRight size={16} />
+        </Link>
       </section>
 
     </div>

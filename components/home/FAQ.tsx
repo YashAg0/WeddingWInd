@@ -1,3 +1,4 @@
+import { MessageCircle, Phone } from "lucide-react";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { FAQAccordion } from "@/components/home/FAQAccordion";
 import type { FAQItem } from "@/types";
@@ -31,27 +32,27 @@ export function FAQ({ items }: FAQProps) {
 
             <div className="mt-8 flex flex-col gap-4">
               <div className="flex items-start gap-3 p-4 rounded-xl bg-white border border-warm-200">
-                <span className="text-2xl flex-shrink-0" aria-hidden="true">💬</span>
+                <span className="text-[var(--color-brand-primary)] flex-shrink-0" aria-hidden="true"><MessageCircle size={22} /></span>
                 <div>
                   <div className="font-semibold text-charcoal-800 text-sm mb-0.5">
                     Still have questions?
                   </div>
                   <a
-                    href="mailto:hello@weddingwithindia.com"
+                    href="mailto:contact@weddingwithindia.com"
                     className="text-[var(--color-brand-primary)] text-sm font-medium hover:underline"
                   >
-                    hello@weddingwithindia.com
+                    contact@weddingwithindia.com
                   </a>
                 </div>
               </div>
               <div className="flex items-start gap-3 p-4 rounded-xl bg-white border border-warm-200">
-                <span className="text-2xl flex-shrink-0" aria-hidden="true">📞</span>
+                <span className="text-[var(--color-brand-primary)] flex-shrink-0" aria-hidden="true"><Phone size={22} /></span>
                 <div>
                   <div className="font-semibold text-charcoal-800 text-sm mb-0.5">
                     Talk to our team
                   </div>
                   <a
-                    href="tel:+917001234567"
+                    href="tel:+919116734675"
                     className="text-[var(--color-brand-primary)] text-sm font-medium hover:underline"
                   >
                     +91 70 0123 4567

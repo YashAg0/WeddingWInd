@@ -1,8 +1,9 @@
+import { Metadata } from "next";
 import { FileText, Clock } from "lucide-react";
 
-export const metadata = {
+export const metadata: Metadata = {
   title: "Terms of Service",
-  description: "Terms of Service for Wedding With India. General rules and guidelines.",
+  description: "WeddingWithIndia's terms of service. Rules and guidelines for using our wedding tourism marketplace.",
 };
 
 export default function TermsPage() {

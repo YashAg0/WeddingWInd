@@ -1,6 +1,16 @@
 const { PrismaClient } = require("@prisma/client");
 
-const prisma = new PrismaClient();
+// Supabase Session Pooler (port 5432) works with Prisma if we avoid prepared statements.
+// Add ?pgbouncer=true to the URL when running scripts.
+const connectionUrl = process.env.DATABASE_URL + (process.env.DATABASE_URL?.includes('?') ? '&' : '?') + 'pgbouncer=true&connection_limit=1';
+
+const prisma = new PrismaClient({
+  datasources: {
+    db: {
+      url: connectionUrl
+    }
+  }
+});
 
 async function main() {
   console.log("--------------------------------------------------");
@@ -88,11 +98,55 @@ async function main() {
       console.log(`  ✓ Created wedding: ${w.title} (${w.slug})`);
     }
 
+    // Also create an admin user
+    console.log("[seed-db] Creating admin user...");
+    const adminUser = await prisma.user.create({
+      data: {
+        clerkUserId: "admin_bootstrap_id",
+        email: "admin@weddingwithindia.com",
+        name: "Platform Admin",
+        role: "ADMIN",
+        status: "ACTIVE"
+      }
+    });
+    console.log(`  ✓ Created admin user: ${adminUser.email} (role: ${adminUser.role}, id: ${adminUser.id})`);
+
+    // Create a sample agent for testing
+    console.log("[seed-db] Creating sample agent...");
+    const agentUser = await prisma.user.create({
+      data: {
+        clerkUserId: "agent_sample_id",
+        email: "agent@weddingwithindia.com",
+        name: "Amir Hussain (Sample Agent)",
+        role: "AGENT",
+        status: "ACTIVE"
+      }
+    });
+    const agentProfile = await prisma.agentProfile.create({
+      data: {
+        userId: agentUser.id,
+        organization: "Mumbai Hospitality Network",
+        country: "India",
+        experienceYears: 5,
+        targetAudience: "Luxury travelers",
+        verifiedChecks: true,
+        referralCode: "WWI-AGENT-8921X"
+      }
+    });
+    console.log(`  ✓ Created agent: ${agentUser.email} (code: ${agentProfile.referralCode})`);
+
     console.log("--------------------------------------------------");
-    console.log("Successfully seeded database with initial wedding marketplace listings!");
+    console.log("Successfully seeded database with initial data!");
+    console.log("Summary:");
+    const finalUserCount = await prisma.user.count();
+    const finalWeddingCount = await prisma.wedding.count();
+    const finalAgentCount = await prisma.agentProfile.count();
+    console.log(`  Users: ${finalUserCount}`);
+    console.log(`  Weddings: ${finalWeddingCount}`);
+    console.log(`  Agent Profiles: ${finalAgentCount}`);
     console.log("--------------------------------------------------");
   } catch (error) {
-    console.error("Fatal: Failed to seed database:", error);
+    console.error("Fatal: Failed to seed database:", error.message);
     process.exit(1);
   } finally {
     await prisma.$disconnect();

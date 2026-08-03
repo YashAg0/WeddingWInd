@@ -8,17 +8,15 @@ interface CategoriesProps {
   categories: Category[];
 }
 
-function getCategoryIcon(name: string) {
-  const lower = name.toLowerCase();
-  if (lower.includes("royal")) return <Crown size={18} className="text-[var(--color-gold-300)]" />;
-  if (lower.includes("punjabi")) return <Sparkles size={18} className="text-[var(--color-gold-300)]" />;
-  if (lower.includes("south")) return <Flower2 size={18} className="text-[var(--color-gold-300)]" />;
-  if (lower.includes("beach")) return <Waves size={18} className="text-[var(--color-gold-300)]" />;
-  if (lower.includes("destination")) return <Compass size={18} className="text-[var(--color-gold-300)]" />;
-  return <Flame size={18} className="text-[var(--color-gold-300)]" />;
-}
-
 export function Categories({ categories }: CategoriesProps) {
+  const ICON_MAP: Record<string, React.ReactNode> = {
+    Crown: <Crown size={20} className="text-white" />,
+    Sparkles: <Sparkles size={20} className="text-white" />,
+    Flower2: <Flower2 size={20} className="text-white" />,
+    Waves: <Waves size={20} className="text-white" />,
+    Compass: <Compass size={20} className="text-white" />,
+    Flame: <Flame size={20} className="text-white" />,
+  };
   return (
     <section
       id="categories"
@@ -44,7 +42,7 @@ export function Categories({ categories }: CategoriesProps) {
             <Link
               key={category.id}
               href={`/weddings?category=${category.name.toLowerCase().replace(/\s+/g, "-")}`}
-              className="card group relative overflow-hidden aspect-[4/5] sm:aspect-[3/4] hover:shadow-[0_16px_48px_-12px_rgba(107,16,38,0.15)] transition-shadow duration-500 rounded-3xl"
+              className="card group relative overflow-hidden aspect-[4/5] sm:aspect-[3/4]"
               role="listitem"
               aria-label={`${category.name} weddings — ${category.weddingCount} listings`}
             >
@@ -54,19 +52,19 @@ export function Categories({ categories }: CategoriesProps) {
                 alt={`${category.name} wedding style`}
                 fill
                 sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                className="object-cover transition-transform duration-1000 group-hover:scale-110"
+                className="object-cover transition-transform duration-700 group-hover:scale-110"
                 loading={index < 2 ? "eager" : "lazy"}
               />
 
               {/* Dark gradient overlay */}
               <div
-                className="absolute inset-0 bg-gradient-to-t from-charcoal-950/95 via-charcoal-950/20 to-transparent transition-opacity duration-500 opacity-80 group-hover:opacity-100"
+                className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent transition-opacity duration-300 group-hover:opacity-90"
                 aria-hidden="true"
               />
 
               {/* Maroon hover tint */}
               <div
-                className="absolute inset-0 bg-[var(--color-brand-primary)]/0 group-hover:bg-[var(--color-brand-primary)]/20 transition-all duration-700"
+                className="absolute inset-0 bg-[var(--color-brand-primary)]/0 group-hover:bg-[var(--color-brand-primary)]/15 transition-all duration-500"
                 aria-hidden="true"
               />
 
@@ -74,10 +72,10 @@ export function Categories({ categories }: CategoriesProps) {
               <div className="absolute inset-0 flex flex-col justify-end p-4 sm:p-5">
                 {/* Icon */}
                 <div
-                  className="w-10 h-10 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center mb-3 transition-transform duration-300 group-hover:scale-110"
+                  className="w-10 h-10 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center text-xl mb-3 transition-transform duration-300 group-hover:scale-110"
                   aria-hidden="true"
                 >
-                  {getCategoryIcon(category.name)}
+                  {ICON_MAP[category.icon] || category.icon}
                 </div>
 
                 <h3 className="font-display font-bold text-white text-lg sm:text-xl leading-tight mb-1">

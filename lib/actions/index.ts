@@ -1261,7 +1261,7 @@ export async function seedDatabaseIfNeeded() {
 
 export async function getWeddings() {
   try {
-    const dbOk = await isDatabaseAvailable(1500);
+    const dbOk = await isDatabaseAvailable(300);
     if (!dbOk) {
       console.info("[getWeddings] Database unavailable. Fast-fallback to featuredWeddings.");
       const { featuredWeddings } = await import("../data");
@@ -1311,10 +1311,10 @@ export async function getWeddings() {
           guestsAllowed: w.capacity,
           guestsBooked: 24,
           imageUrl: w.mainImageUrl,
-          coupleImage: w.hostCouple.user.avatar || "https://images.unsplash.com/photo-1615966650071-855b15f29ad1?w=400&q=80",
-          coupleName: w.hostCouple.user.name || "Devika & Kaber",
-          hostName: w.hostCouple.user.name || "Devika & Kaber",
-          hostAvatar: w.hostCouple.user.avatar || "https://images.unsplash.com/photo-1615966650071-855b15f29ad1?w=400&q=80",
+          coupleImage: (w as any).coupleImage || w.mainImageUrl || w.hostCouple.user.avatar || "https://images.unsplash.com/photo-1615966650071-855b15f29ad1?w=400&q=80",
+          coupleName: (w as any).coupleName || w.hostCouple.user.name || "Host Couple",
+          hostName: (w as any).hostName || w.hostCouple.user.name || "Host Couple",
+          hostAvatar: (w as any).hostAvatar || w.hostCouple.user.avatar || "https://images.unsplash.com/photo-1615966650071-855b15f29ad1?w=400&q=80",
           featured: true,
           tags: w.traditions.map((t) => t.name),
           date: w.date.toISOString().split("T")[0],
@@ -1512,10 +1512,10 @@ export async function getWeddingBySlug(slug: string) {
       guestsAllowed: w.capacity,
       guestsBooked: 24,
       imageUrl: w.mainImageUrl,
-      coupleImage: w.hostCouple.user.avatar || "https://images.unsplash.com/photo-1615966650071-855b15f29ad1?w=400&q=80",
-      coupleName: w.hostCouple.user.name || "Devika & Kaber",
-      hostName: w.hostCouple.user.name || "Devika & Kaber",
-      hostAvatar: w.hostCouple.user.avatar || "https://images.unsplash.com/photo-1615966650071-855b15f29ad1?w=400&q=80",
+      coupleImage: (w as any).coupleImage || w.mainImageUrl || w.hostCouple.user.avatar || "https://images.unsplash.com/photo-1615966650071-855b15f29ad1?w=400&q=80",
+      coupleName: (w as any).coupleName || w.hostCouple.user.name || "Host Couple",
+      hostName: (w as any).hostName || w.hostCouple.user.name || "Host Couple",
+      hostAvatar: (w as any).hostAvatar || w.hostCouple.user.avatar || "https://images.unsplash.com/photo-1615966650071-855b15f29ad1?w=400&q=80",
       featured: true,
       tags: w.traditions.map((t) => t.name),
       date: w.date.toISOString().split("T")[0],

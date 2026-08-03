@@ -57,8 +57,8 @@ export default function ContactPage() {
           <p className="text-charcoal-500 text-xs sm:text-sm">
             For general enquiries, media, and quick help.
           </p>
-          <a href="mailto:hello@weddingwithindia.com" className="text-sm font-semibold text-[var(--color-brand-primary)] hover:underline block">
-            hello@weddingwithindia.com
+          <a href="mailto:contact@weddingwithindia.com" className="text-sm font-semibold text-[var(--color-brand-primary)] hover:underline block">
+            contact@weddingwithindia.com
           </a>
         </div>
 

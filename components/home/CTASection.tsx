@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Heart, Sparkles } from "lucide-react";
+import { ArrowRight, Heart, Sparkles, Globe, Star, Lock } from "lucide-react";
 import { BUSINESS_METRICS } from "@/lib/constants/business-metrics";
 
 export function CTASection() {
@@ -90,15 +90,15 @@ export function CTASection() {
             aria-label="Social proof"
           >
             {[
-              { emoji: "🌍", text: `Guests from ${BUSINESS_METRICS.COUNTRIES_REPRESENTED} countries` },
-              { emoji: "⭐", text: `${BUSINESS_METRICS.AVERAGE_RATING_LABEL} average rating` },
-              { emoji: "🔒", text: "Fully vetted & secure" },
-            ].map(({ emoji, text }) => (
+              { icon: <Globe size={16} aria-hidden="true" />, text: `Guests from ${BUSINESS_METRICS.COUNTRIES_REPRESENTED} countries` },
+              { icon: <Star size={16} aria-hidden="true" />, text: `${BUSINESS_METRICS.AVERAGE_RATING_LABEL} average rating` },
+              { icon: <Lock size={16} aria-hidden="true" />, text: "Fully vetted & secure" },
+            ].map(({ icon, text }) => (
               <div
                 key={text}
                 className="flex items-center gap-2 text-white/60 text-sm"
               >
-                <span aria-hidden="true">{emoji}</span>
+                <span className="text-white/40" aria-hidden="true">{icon}</span>
                 {text}
               </div>
             ))}
