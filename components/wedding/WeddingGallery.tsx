@@ -19,7 +19,7 @@ export function WeddingGallery({ images, title }: WeddingGalleryProps) {
   );
 
   // Take first 5 images for the desktop grid, fallback to placeholder if none
-  const gridImages = images.slice(0, 5);
+  const _gridImages = images.slice(0, 5);
 
   const handleOpenModal = (index: number) => {
     setActiveImageIndex(index);

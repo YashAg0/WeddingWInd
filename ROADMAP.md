@@ -1,4 +1,4 @@
-# WeddingWithIndia — Multi-Year Product & Technical Roadmap
+# WeddingWithIndia — Multi-Year Experience & Technical Roadmap
 
 This document outlines the multi-year engineering roadmap for scaling **WeddingWithIndia** from public launch to international market dominance.
 
@@ -22,7 +22,7 @@ This document outlines the multi-year engineering roadmap for scaling **WeddingW
 - [ ] Setting up Datadog / New Relic APM for latency monitoring.
 
 ### Phase 2: Hyper-Growth & Agent Network Scaling (Q4 2026)
-- [ ] Automated Stripe Connect Payouts for host 72% shares and agent 7% commissions.
+- [ ] Automated Stripe Connect Payouts for host 78% shares and agent tiered commission (₹500-₹500)s.
 - [ ] Multi-Language Localization (`next-intl`) supporting French, German, Spanish, and Japanese.
 - [ ] Automated Playwright E2E test suite running in GitHub Actions CI/CD pipeline.
 - [ ] Expand agent referral portal with custom marketing kits and collateral downloads.

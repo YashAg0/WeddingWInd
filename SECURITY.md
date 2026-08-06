@@ -30,11 +30,11 @@ This document outlines the security architecture, authentication policies, Role-
           ┌───────────────────┼───────────────────┐
           ▼                   ▼                   ▼
      [ TRAVELER ]        [ COUPLE ]            [ ADMIN ]
-  /dashboard/bookings  /dashboard/listings  /dashboard/admin
+  /dashboard/bookings  /dashboard/celebrations  /dashboard/admin
 ```
 
 - **Travelers**: Restricted to personal booking management, wishlist modification, and review submission.
-- **Couples (Hosts)**: Restricted to managing their own wedding listings, event timelines, and guest approvals.
+- **Couples (Hosts)**: Restricted to managing their own Our Indian Weddings, event timelines, and guest approvals.
 - **Agents**: Restricted to viewing personal referral link metrics, accrued commissions, and payout histories.
 - **Admins & Super Admins**: Granted platform-wide read/write permissions for verifications, safety cases, and financial reconciliation.
 
@@ -58,9 +58,9 @@ This document outlines the security architecture, authentication policies, Role-
 
 ## 4. Trust, Safety & Anti-Fraud Mechanisms
 
-- **Verification System**: Hosts and Agents must submit government ID, business registrations, or venue permission proofs before listings or referral codes are published.
+- **Verification System**: Hosts and Agents must submit government ID, business registrations, or venue permission proofs before celebrations or referral codes are published.
 - **Review Fraud Prevention**: Reviews can only be submitted by travelers with verified, completed bookings (`status: ATTENDED` or `COMPLETED`).
-- **Anti-MLM & Referral Rules**: Agent referrals enforce single-tier 7% commission attribution without multi-level pyramids or chain recruitment incentives.
+- **Anti-MLM & Referral Rules**: Agent referrals enforce single-tier tiered commission (₹500-₹500) attribution without multi-level pyramids or chain recruitment incentives.
 
 ---
 

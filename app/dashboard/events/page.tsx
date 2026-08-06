@@ -60,13 +60,13 @@ export default async function EventsPage() {
           <Ticket className="mx-auto text-warm-300" size={48} />
           <h2 className="font-display font-bold text-lg text-charcoal-850">No Active Events</h2>
           <p className="text-xs text-charcoal-500 max-w-sm mx-auto">
-            Book passes for upcoming traditional Indian weddings on the marketplace to activate your event hub.
+            Book passes for upcoming traditional Indian weddings on our platform to activate your event hub.
           </p>
           <Link
             href="/weddings"
             className="inline-block bg-maroon-850 hover:bg-maroon-900 text-white font-bold text-xs px-6 py-2.5 rounded-xl transition-all"
           >
-            Explore Marketplace
+            Explore Celebrations
           </Link>
         </div>
       ) : (

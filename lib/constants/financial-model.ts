@@ -22,12 +22,12 @@ export interface PricingTier {
 }
 
 export const PRICING_TIERS: Record<string, PricingTier> = {
-  CULTURAL_GUEST: {
-    id: "cultural-guest",
-    name: "Cultural Guest",
-    priceINR: 7499,
-    priceUSD: 78.52,
-    priceEUR: 69.44,
+  BUDGET: {
+    id: "budget",
+    name: "Budget",
+    priceINR: 9000,
+    priceUSD: 94.24,
+    priceEUR: 83.33,
     bookingMixPercent: 20,
     description: "Entry experience into an authentic Indian wedding celebration.",
     features: [
@@ -38,12 +38,12 @@ export const PRICING_TIERS: Record<string, PricingTier> = {
       "Dedicated venue host assistance"
     ]
   },
-  CELEBRATION_EXPERIENCE: {
-    id: "celebration-experience",
-    name: "Celebration Experience",
-    priceINR: 11999,
-    priceUSD: 125.64,
-    priceEUR: 111.10,
+  PREMIUM: {
+    id: "premium",
+    name: "Premium",
+    priceINR: 16000,
+    priceUSD: 167.54,
+    priceEUR: 148.15,
     bookingMixPercent: 45,
     description: "Multi-event access with hands-on pre-wedding festivities.",
     popular: true,
@@ -55,29 +55,13 @@ export const PRICING_TIERS: Record<string, PricingTier> = {
       "Personal bilingual local coordinator support"
     ]
   },
-  IMMERSIVE_WEDDING: {
-    id: "immersive-wedding-experience",
-    name: "Immersive Wedding Experience",
-    priceINR: 17999,
-    priceUSD: 188.47,
-    priceEUR: 166.66,
-    bookingMixPercent: 30,
-    description: "Full 3-day complete wedding celebration with family events.",
-    features: [
-      "Full 3-day pass: Mehndi, Sangeet & Baraat Wedding Ceremony",
-      "VIP seating at Sangeet & ceremony rituals",
-      "Custom fitted traditional Indian outfit rental",
-      "Local hotel transfers on event days",
-      "Private pre-ceremony ritual briefing by cultural expert"
-    ]
-  },
-  PREMIUM_HOSTED: {
-    id: "premium-hosted-experience",
-    name: "Premium Hosted Experience",
-    priceINR: 29999,
-    priceUSD: 314.13,
-    priceEUR: 277.77,
-    bookingMixPercent: 5,
+  VIP: {
+    id: "vip",
+    name: "VIP",
+    priceINR: 30000,
+    priceUSD: 314.14,
+    priceEUR: 277.78,
+    bookingMixPercent: 35,
     description: "All-inclusive royal experience hosted directly by the family.",
     features: [
       "Complete multi-day wedding access with family lounge entry",
@@ -90,18 +74,21 @@ export const PRICING_TIERS: Record<string, PricingTier> = {
 };
 
 export const WEIGHTED_AVERAGE_BOOKING = {
-  priceINR: 13799,
-  priceUSD: 144.49,
-  priceEUR: 127.77
+  priceINR: 15500,
+  priceUSD: 162.30,
+  priceEUR: 143.52
 };
 
 export const COMMISSION_MODEL = {
-  PLATFORM_COMMISSION_PERCENT: 28,
-  HOST_ALLOCATION_PERCENT: 72,
-  AGENT_REFERRAL_COMMISSION_PERCENT: 7,
+  PLATFORM_COMMISSION_PERCENT: 22,
+  HOST_ALLOCATION_PERCENT: 78,
+  AGENT_REFERRAL_PAYOUT_BUDGET: 500,
+  AGENT_REFERRAL_PAYOUT_PREMIUM: 900,
+  AGENT_REFERRAL_PAYOUT_VIP: 1800,
+  AGENT_REFERRAL_PAYOUT_DEFAULT: 1000,
   HOST_REFERRAL_COMMISSION_PERCENT: 4,
   ADDON_ATTACHMENT_RATE_PERCENT: 40,
-  ADDON_AVERAGE_VALUE_INR: 2200,
+  ADDON_AVERAGE_VALUE_INR: 2000,
   ADDON_PLATFORM_COMMISSION_PERCENT: 20,
   AFFILIATE_INCOME_PER_BOOKING_INR: 110,
   VENDOR_ANNUAL_FEE_INR: 12000,
@@ -115,11 +102,11 @@ export const COORDINATOR_MODEL = {
 };
 
 export const INVESTOR_PROJECTIONS = {
-  YEAR_1_BOOKINGS: 180,
+  YEAR_1_BOOKINGS: 50,
   BREAK_EVEN_ANNUAL: 162,
   BREAK_EVEN_MONTHLY: 14,
-  FIVE_YEAR_BOOKINGS_TRAJECTORY: [180, 600, 1500, 3000, 5200],
-  FIVE_YEAR_TOTAL_REVENUE_INR_LABEL: "₹76.11M",
+  FIVE_YEAR_BOOKINGS_TRAJECTORY: [50, 300, 700, 3000, 5200],
+  FIVE_YEAR_TOTAL_REVENUE_INR_LABEL: "₹5.2 Crore",
   FIVE_YEAR_PAT_INR_LABEL: "₹26.62M"
 };
 
@@ -138,13 +125,13 @@ export function formatSecondaryCurrency(amountINR: number): string {
 
 export interface FinancialBreakdown {
   coreValueINR: number;
-  platformShare28INR: number;
-  hostShare72INR: number;
-  agentReferral7INR: number;
+  platformShare22INR: number;
+  hostShare78INR: number;
+  agentReferralINR: number;
   hostReferral4INR: number;
-  exactAgentReferral7INR: number;
-  exactPlatformShare28INR: number;
-  exactHostShare72INR: number;
+  exactAgentReferralINR: number;
+  exactPlatformShare22INR: number;
+  exactHostShare78INR: number;
 }
 
 export function calculateBookingFinancials(
@@ -152,19 +139,32 @@ export function calculateBookingFinancials(
   isAgentAttributed: boolean = false,
   isHostReferralAttributed: boolean = false
 ): FinancialBreakdown {
-  const platformShare28INR = Math.round((coreValueINR * COMMISSION_MODEL.PLATFORM_COMMISSION_PERCENT) / 100);
-  const hostShare72INR = Math.round((coreValueINR * COMMISSION_MODEL.HOST_ALLOCATION_PERCENT) / 100);
-  const agentReferral7INR = isAgentAttributed ? Math.round((coreValueINR * COMMISSION_MODEL.AGENT_REFERRAL_COMMISSION_PERCENT) / 100) : 0;
+  const platformShare22INR = Math.round((coreValueINR * COMMISSION_MODEL.PLATFORM_COMMISSION_PERCENT) / 100);
+  const hostShare78INR = coreValueINR - platformShare22INR;
+  
+  let agentReferralINR = 0;
+  if (isAgentAttributed) {
+    if (coreValueINR <= 9000) {
+      agentReferralINR = COMMISSION_MODEL.AGENT_REFERRAL_PAYOUT_BUDGET;
+    } else if (coreValueINR <= 16000) {
+      agentReferralINR = COMMISSION_MODEL.AGENT_REFERRAL_PAYOUT_PREMIUM;
+    } else if (coreValueINR >= 30000) {
+      agentReferralINR = COMMISSION_MODEL.AGENT_REFERRAL_PAYOUT_VIP;
+    } else {
+      agentReferralINR = COMMISSION_MODEL.AGENT_REFERRAL_PAYOUT_DEFAULT;
+    }
+  }
+
   const hostReferral4INR = isHostReferralAttributed ? Math.round((coreValueINR * COMMISSION_MODEL.HOST_REFERRAL_COMMISSION_PERCENT) / 100) : 0;
 
   return {
     coreValueINR,
-    platformShare28INR,
-    hostShare72INR,
-    agentReferral7INR,
+    platformShare22INR,
+    hostShare78INR,
+    agentReferralINR,
     hostReferral4INR,
-    exactAgentReferral7INR: Number((coreValueINR * 0.07).toFixed(2)),
-    exactPlatformShare28INR: Number((coreValueINR * 0.28).toFixed(2)),
-    exactHostShare72INR: Number((coreValueINR * 0.72).toFixed(2)),
+    exactAgentReferralINR: agentReferralINR,
+    exactPlatformShare22INR: Number((coreValueINR * 0.22).toFixed(2)),
+    exactHostShare78INR: Number((coreValueINR * 0.78).toFixed(2)),
   };
 }

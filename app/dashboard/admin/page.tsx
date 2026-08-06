@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ShieldCheck, Users, Compass, DollarSign, ArrowRight, Building2, AlertCircle, TrendingUp, CheckCircle2, Clock } from "lucide-react";
+import { ShieldCheck, Users, Compass, DollarSign, ArrowRight, Building2, AlertCircle } from "lucide-react";
 import { formatCurrencyINR, formatSecondaryCurrency } from "@/lib/constants/financial-model";
 
 interface OverviewData {
@@ -65,7 +65,7 @@ export default function AdminOverviewPage() {
             {loading ? "…" : data?.pendingHostsCount ?? 0}
             <span className="text-xs font-semibold text-amber-800 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-full">Requires Review</span>
           </div>
-          <span className="text-[0.6875rem] text-charcoal-500 font-medium">Out of {data?.totalWeddingsCount ?? 0} total listings</span>
+          <span className="text-[0.6875rem] text-charcoal-500 font-medium">Out of {data?.totalWeddingsCount ?? 0} total celebrations</span>
         </div>
 
         <div className="bg-white border border-warm-200/60 p-6 rounded-3xl shadow-sm space-y-2">
@@ -78,7 +78,7 @@ export default function AdminOverviewPage() {
         </div>
 
         <div className="bg-white border border-warm-200/60 p-6 rounded-3xl shadow-sm space-y-2">
-          <span className="text-xs font-bold text-charcoal-400 uppercase tracking-widest block">Platform Revenue Accrued (28%)</span>
+          <span className="text-xs font-bold text-charcoal-400 uppercase tracking-widest block">Platform Revenue Accrued (22%)</span>
           <div className="font-display font-bold text-2xl text-[var(--color-brand-primary)]">
             {loading ? "…" : formatCurrencyINR(data?.platformCommissionAccrued ?? 0)}
           </div>
@@ -88,12 +88,12 @@ export default function AdminOverviewPage() {
         </div>
 
         <div className="bg-white border border-warm-200/60 p-6 rounded-3xl shadow-sm space-y-2">
-          <span className="text-xs font-bold text-charcoal-400 uppercase tracking-widest block">Agent Referral Accrued (7%)</span>
+          <span className="text-xs font-bold text-charcoal-400 uppercase tracking-widest block">Agent Referral Accrued (Tiered Payout)</span>
           <div className="font-display font-bold text-2xl text-emerald-600">
             {loading ? "…" : formatCurrencyINR(data?.agentCommissionAccrued ?? 0)}
           </div>
           <span className="text-[0.6875rem] text-charcoal-500 font-medium">
-            Carved from 28% platform share
+            Carved from 22% platform share
           </span>
         </div>
       </div>
@@ -112,7 +112,7 @@ export default function AdminOverviewPage() {
             Host Verification Queue
           </h3>
           <p className="text-charcoal-500 text-xs leading-relaxed">
-            Review pending family host listings, verify venue permissions, and approve for marketplace publishing.
+            Review pending family verified celebrations, verify venue permissions, and approve for publishing.
           </p>
           <div className="flex items-center gap-1 text-xs font-bold text-[var(--color-brand-primary)] pt-2">
             Review Queue ({data?.pendingHostsCount ?? 0}) <ArrowRight size={12} className="group-hover:translate-x-1 transition-transform" />
@@ -169,7 +169,7 @@ export default function AdminOverviewPage() {
             Internal Financial Ledger
           </h3>
           <p className="text-charcoal-500 text-xs leading-relaxed">
-            Full internal 28% platform / 72% host breakdown, 7% agent commissions, and affiliate accounting.
+            Full internal 22% platform / 78% host breakdown, tiered agent commissions (₹500-₹1800), and affiliate accounting.
           </p>
           <div className="flex items-center gap-1 text-xs font-bold text-[var(--color-brand-primary)] pt-2">
             Open Financial Ledger <ArrowRight size={12} className="group-hover:translate-x-1 transition-transform" />

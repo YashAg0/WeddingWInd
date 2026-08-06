@@ -1,6 +1,6 @@
 /**
  * Contact Moderation & Disintermediation Prevention Service.
- * Enforces WeddingWithIndia strict marketplace safety rules:
+ * Enforces WeddingWithIndia strict platform safety rules:
  * - NO direct phone numbers
  * - NO WhatsApp sharing
  * - NO email exchange

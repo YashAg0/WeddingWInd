@@ -219,7 +219,7 @@ export async function searchWeddingsAction(
     })
   );
 
-  // Filter out any safety excluded listings (nulls)
+  // Filter out any safety excluded celebrations (nulls)
   const weddingsWithReviews = mappedWeddings.filter((item): item is NonNullable<typeof item> => item !== null);
 
   // Apply sorting with deterministic tie-breakers on id
@@ -314,7 +314,7 @@ export async function recommendWeddingAction(preferences: {
   if (!bestMatch) {
     return {
       match: null,
-      explanation: "Unfortunately, no current listings match your budget or guest count capacity constraints. Try modifying your preferences or raising your budget criteria.",
+      explanation: "Unfortunately, no current celebrations match your budget or guest count capacity constraints. Try modifying your preferences or raising your budget criteria.",
     };
   }
 

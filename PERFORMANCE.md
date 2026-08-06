@@ -18,7 +18,7 @@ This document details the performance optimization strategies, bundling architec
 ## 2. Server Components vs Client Components
 
 WeddingWithIndia strictly enforces a **Server-First Architecture**:
-- **Server Components (Default)**: Static pages (`/about`, `/contact`, `/how-it-works`, `/terms`, `/privacy`) and listings (`/weddings`, `/weddings/[slug]`) compile to static HTML at build time.
+- **Server Components (Default)**: Static pages (`/about`, `/contact`, `/how-it-works`, `/terms`, `/privacy`) and celebrations (`/weddings`, `/weddings/[slug]`) compile to static HTML at build time.
 - **Client Components (`"use client"`)**: Isolated strictly to interactive leaf nodes (e.g. `SearchBar.tsx`, `WishlistButton.tsx`, `SortSelect.tsx`, `BookingSidebar.tsx`, `GateScanner.tsx`).
 
 ---

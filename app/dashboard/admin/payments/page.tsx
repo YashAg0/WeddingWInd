@@ -1,6 +1,7 @@
 import { requireRole } from "@/lib/auth";
 import { UserRole } from "@prisma/client";
 import { adminGetPaymentsAndQueuesAction } from "@/lib/actions/admin";
+import AdminStripeAuditManager from "@/components/dashboard/AdminStripeAuditManager";
 import { Coins, CreditCard, RefreshCcw, Landmark, ArrowUpRight } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -158,6 +159,14 @@ export default async function AdminPaymentsPage() {
           </div>
         </div>
       </div>
+
+      {/* Stripe Webhook Audit Register & Refund Operations Manager */}
+      <AdminStripeAuditManager
+        transactions={data.transactions}
+        refundQueue={data.refundQueue}
+        payoutQueue={data.payoutQueue}
+        webhookEvents={data.webhookEvents}
+      />
     </div>
   );
 }

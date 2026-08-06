@@ -1,6 +1,6 @@
 /**
  * WeddingWithIndia - Centralized Shared Status Model
- * Single Source of Truth for all booking, host listing, agent application,
+ * Single Source of Truth for all booking, host celebration, agent application,
  * and coordinator application lifecycle states across the platform.
  */
 
@@ -90,19 +90,19 @@ export const HOST_STATUS_CONFIG: Record<HostListingStatus, StatusMeta<HostListin
   live: {
     value: "live",
     label: "Live & Accepting Bookings",
-    description: "Listing active on marketplace for global guest bookings.",
+    description: "Celebration active on platform for global guest bookings.",
     badgeClass: "bg-emerald-50 text-emerald-950 border-emerald-300 font-bold",
   },
   rejected: {
     value: "rejected",
     label: "Application Declined",
-    description: "Listing application did not pass host safety or venue criteria.",
+    description: "Celebration application did not pass host safety or venue criteria.",
     badgeClass: "bg-rose-50 text-rose-950 border-rose-300 font-bold",
   },
   suspended: {
     value: "suspended",
-    label: "Listing Suspended",
-    description: "Listing temporarily paused by operations team.",
+    label: "Celebration Suspended",
+    description: "Celebration temporarily paused by operations team.",
     badgeClass: "bg-charcoal-100 text-charcoal-900 border-charcoal-300 font-bold",
   },
 };
@@ -137,7 +137,7 @@ export const AGENT_STATUS_CONFIG: Record<AgentApplicationStatus, StatusMeta<Agen
   active: {
     value: "active",
     label: "Active Partner",
-    description: "Active referral partner. Eligible for 7% traveler / 4% host commissions post-clearance.",
+    description: "Active referral partner. Eligible for tiered traveler / 4% host commissions post-clearance.",
     badgeClass: "bg-emerald-50 text-emerald-950 border-emerald-300 font-bold",
   },
   rejected: {

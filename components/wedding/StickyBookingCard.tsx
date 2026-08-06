@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { ShieldCheck, Calendar, X, Check, Sparkles } from "lucide-react";
+import { ShieldCheck, Calendar, X, Check } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Wedding } from "@/types";
 import { useAuth } from "@/context/AuthContext";
@@ -57,7 +57,7 @@ export function StickyBookingCard({ wedding }: StickyBookingCardProps) {
           onClick={() => setIsOpen(true)}
           className="btn btn-primary btn-sm px-6 py-3 shadow-md font-bold"
         >
-          Book Spot
+          Reserve Invitation
         </button>
       </div>
 
@@ -228,7 +228,7 @@ export function StickyBookingCard({ wedding }: StickyBookingCardProps) {
                 }}
                 className="btn btn-primary w-full py-3.5 justify-center font-bold rounded-2xl"
               >
-                Confirm Booking
+                Confirm Reservation
               </button>
 
               {/* Trust signals — cancellation policy */}
@@ -237,7 +237,7 @@ export function StickyBookingCard({ wedding }: StickyBookingCardProps) {
                   <ShieldCheck size={11} className="text-[var(--color-brand-primary)] flex-shrink-0" />
                   Cancellation Policy
                 </p>
-                <p>30+ days: <strong className="text-charcoal-600">Full refund</strong> · 14–29 days: 50% refund · Under 14: No refund</p>
+                <p>30+ days: <strong className="text-charcoal-600">Full refund</strong> · 14–29 days: 50% refund · Under 14: Non-refundable</p>
                 <p>
                   Questions?{" "}
                   <a href="mailto:support@weddingwithindia.com" className="text-[var(--color-brand-primary)] underline font-semibold">
@@ -269,10 +269,10 @@ export function StickyBookingCard({ wedding }: StickyBookingCardProps) {
                 <Check size={24} />
               </div>
               <h4 className="font-display font-bold text-lg text-charcoal-900">
-                Reservation Requested!
+                Invitation Request Sent
               </h4>
               <p className="text-charcoal-600 text-sm">
-                Your reservation request for {guestsCount} guest spot(s) has been sent to the wedding host family.
+                Your invitation request for {guestsCount} guest(s) has been received. The host family will review your details with care.
               </p>
               <div className="text-xs bg-warm-50 border border-warm-100 p-3 rounded-xl text-charcoal-600 font-medium">
                 Total Payment: {formatCurrencyINR(subtotalINR)} ({formatSecondaryCurrency(subtotalINR)})
@@ -281,7 +281,7 @@ export function StickyBookingCard({ wedding }: StickyBookingCardProps) {
                 onClick={() => setIsBooked(false)}
                 className="btn btn-primary w-full py-3 justify-center text-sm font-bold"
               >
-                Close Window
+                Done
               </button>
             </motion.div>
           </motion.div>

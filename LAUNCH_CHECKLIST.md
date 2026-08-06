@@ -27,7 +27,7 @@ This document serves as the master operational checklist for launching **Wedding
 - [x] **Stripe Checkout**: Integrated for instant guest ticket purchases.
 - [x] **Stripe Webhook Signature Verification**: Webhook handler (`/api/webhooks/stripe`) verifying `STRIPE_WEBHOOK_SECRET`.
 - [x] **Multi-Currency Context**: `INR ₹`, `USD $`, `EUR €` formats verified.
-- [x] **Revenue Split Automation**: 72% Host / 28% Platform / 7% Agent calculation verified.
+- [x] **Revenue Split Automation**: 78% Host / 22% Platform / Tiered Agent calculation verified.
 
 ---
 

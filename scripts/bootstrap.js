@@ -69,7 +69,7 @@ async function runBootstrap() {
     console.log("   Syncing database schema via 'prisma db push'...");
     execSync("npx prisma db push --skip-generate", { stdio: "inherit" });
     console.log("✅ Database schema is up to date.\n");
-  } catch (err) {
+  } catch {
     console.warn("⚠️ Schema push completed with notice or remote DB was unreachable.");
   }
 
@@ -77,7 +77,7 @@ async function runBootstrap() {
   console.log("STEP 5: Master Data & RBAC Account Seeding");
   try {
     await seedMasterData();
-  } catch (err) {
+  } catch {
     console.warn("⚠️ Master seeding running in offline fallback mode.");
   }
 

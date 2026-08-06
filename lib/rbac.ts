@@ -11,7 +11,7 @@
  */
 
 import { UserRole } from "@prisma/client";
-import { syncAndGetDbUser, requireAuth } from "./auth";
+import { requireAuth } from "./auth";
 
 export type ExtendedRole = 
   | "GUEST"

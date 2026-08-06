@@ -23,6 +23,8 @@ import {
   ReputationEventType,
 } from "@prisma/client";
 import crypto from "crypto";
+import { rateLimit } from "../rate-limit";
+import { AuditLogger } from "../security/audit";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. Restriction Assertions
@@ -106,6 +108,11 @@ export async function reportIncidentAction({
   evidenceFiles?: Array<{ fileUrl: string; fileKey?: string; mimeType: string; size: number }>;
 }) {
   const user = await requireAuth();
+
+  const { success: rateLimitOk } = await rateLimit("reportIncident", user.id, { limit: 3, window: 3600 });
+  if (!rateLimitOk) {
+    throw new Error("You have submitted too many safety reports. Please wait before submitting again.");
+  }
 
   // Basic validation
   if (!title.trim() || !description.trim()) {
@@ -257,6 +264,8 @@ export async function adminTriageCaseAction(
       },
     });
 
+    await AuditLogger.logAdminAction(admin.id, "TRIAGE_SAFETY_CASE", "SafetyCase", caseId, `Triaged case ${caseId} to severity ${severity} and status ${status}`, { severity, status, assignedAdminId });
+
     return updated;
   });
 }
@@ -286,6 +295,8 @@ export async function adminToggleFinancialHoldAction(caseId: string, enable: boo
         safeSummary: enable ? "A financial hold has been applied." : "The financial hold has been released.",
       },
     });
+
+    await AuditLogger.logAdminAction(admin.id, "TOGGLE_FINANCIAL_HOLD", "SafetyCase", caseId, `Toggled financial hold for case ${caseId} to ${enable}`, { enable });
   });
 }
 
@@ -334,6 +345,8 @@ export async function adminRestrictUserAction({
       });
     }
 
+    await AuditLogger.logAdminAction(admin.id, "RESTRICT_USER", "User", userId, `Restricted user ${userId} for capability: ${type}`, { type, reasonCode });
+
     return restriction;
   });
 }
@@ -361,6 +374,8 @@ export async function adminRevokeRestrictionAction(restrictionId: string, caseId
       });
     }
 
+    await AuditLogger.logAdminAction(admin.id, "REVOKE_RESTRICTION", "UserRestriction", restrictionId, `Revoked restriction ${restrictionId}`);
+
     return updated;
   });
 }
@@ -387,6 +402,8 @@ export async function adminToggleWeddingSuspensionAction(weddingId: string, susp
         },
       });
     }
+
+    await AuditLogger.logAdminAction(admin.id, "TOGGLE_WEDDING_SUSPENSION", "Wedding", weddingId, `Toggled suspension for wedding ${weddingId} to ${suspend}`, { suspend });
   });
 }
 
@@ -416,6 +433,8 @@ export async function adminResolveCaseAction(caseId: string, resolutionCode: str
         metadata: JSON.stringify({ resolutionCode, notes }),
       },
     });
+
+    await AuditLogger.logAdminAction(admin.id, "RESOLVE_SAFETY_CASE", "SafetyCase", caseId, `Resolved case ${caseId} with code ${resolutionCode}`, { resolutionCode });
 
     return safetyCase;
   });

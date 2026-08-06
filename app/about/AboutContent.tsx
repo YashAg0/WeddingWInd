@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import Image from "next/image";
-import { ShieldCheck, Compass, Users, Award, TrendingUp, DollarSign } from "lucide-react";
+import { Compass } from "lucide-react";
 import { PlatformOverviewDiagram } from "@/components/diagrams/PlatformOverviewDiagram";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { BUSINESS_METRICS } from "@/lib/constants/business-metrics";
@@ -15,7 +15,7 @@ const stats = [
   { value: BUSINESS_METRICS.SATISFACTION_RATE, label: "Satisfaction Rate" }
 ];
 
-const milestones = [
+const _milestones = [
   {
     year: "2023",
     title: "The Spark",
@@ -33,7 +33,7 @@ const milestones = [
   },
   {
     year: "2026",
-    title: "Marketplace Expansion",
+    title: "Platform Expansion",
     description: `Onboarded ${BUSINESS_METRICS.WEDDINGS_HOSTED} weddings and welcomed travelers from ${BUSINESS_METRICS.COUNTRIES_REPRESENTED} countries, establishing the gold standard of cultural immersion.`
   }
 ];
@@ -69,7 +69,7 @@ export default function AboutContent() {
           transition={{ duration: 0.6, delay: 0.2 }}
           className="text-charcoal-500 text-base sm:text-lg leading-relaxed max-w-2xl mx-auto"
         >
-          We are the world&apos;s first marketplace connecting global travelers with genuine Indian families to attend authentic weddings as honored guests.
+          We are the world&apos;s most trusted platform connecting global guests with genuine Indian families to attend authentic weddings as honored guests.
         </motion.p>
       </section>
 

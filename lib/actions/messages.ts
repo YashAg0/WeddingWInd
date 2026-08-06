@@ -10,6 +10,7 @@ import {
   detectProhibitedContactInfo,
   isContactSharingAllowedForBooking,
 } from "../services/contact-moderation";
+import { rateLimit } from "../rate-limit";
 
 /**
  * General helper to create a system audit log for messaging events.
@@ -46,6 +47,11 @@ export async function createConversation(
   title?: string
 ) {
   const user = await requireAuth();
+
+  const { success: rateLimitOk } = await rateLimit("createConversation", user.id, { limit: 5, window: 300 });
+  if (!rateLimitOk) {
+    throw new Error("Too many conversations created. Please wait before trying again.");
+  }
 
   // Normalize participants list to include self
   const uniqueIds = Array.from(new Set([...participantIds, user.id]));
@@ -158,6 +164,11 @@ export async function sendMessage(
   type: MessageType = MessageType.TEXT
 ) {
   const user = await requireAuth();
+
+  const { success: rateLimitOk } = await rateLimit("sendMessage", user.id, { limit: 10, window: 60 });
+  if (!rateLimitOk) {
+    throw new Error("You are sending messages too quickly. Please wait a moment.");
+  }
 
   const { assertCanMessage } = require("./safety");
   await assertCanMessage(user.id);

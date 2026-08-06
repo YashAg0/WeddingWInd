@@ -14,6 +14,7 @@ import {
 import { logReputationEvent } from "../services/reputation";
 import { z } from "zod";
 import { setAttributionCookie } from "../attribution";
+import { AuditLogger } from "../security/audit";
 
 // Zod Validation Schemas
 const referralCodeSchema = z.string().min(6).max(30).regex(/^[a-zA-Z0-9\-]+$/);
@@ -317,6 +318,8 @@ export async function adminReviewPayoutRequestAction(data: z.infer<typeof payout
     });
   }
 
+  await AuditLogger.logAdminAction(user.id, "REVIEW_PAYOUT_REQUEST", "PayoutRequest", updated.id, `Admin reviewed payout request: ${updated.status}`, { status: updated.status, notes: payload.notes });
+
   revalidatePath("/dashboard/admin/agents");
   return updated;
 }
@@ -487,6 +490,8 @@ export async function regenerateReferralCodeAction(agentId: string) {
     where: { id: agentId },
     data: { referralCode: newCode },
   });
+
+  await AuditLogger.logAdminAction(user.id, "REGENERATE_REFERRAL_CODE", "AgentProfile", agentId, `Admin regenerated referral code for agent ${agentId}`);
 
   revalidatePath("/dashboard/admin/agents");
   return { success: true, newCode };
@@ -713,6 +718,8 @@ export async function adminResolveReferralFraudFlagAction(
       idempotencyKey: `REFERRAL_FRAUD_CONFIRMED:${flag.id}`
     });
   }
+
+  await AuditLogger.logAdminAction(admin.id, "RESOLVE_FRAUD_FLAG", "ReferralFraudFlag", flagId, `Admin resolved fraud flag: ${status}`, { status });
 
   return { success: true, flag: updatedFlag };
 }

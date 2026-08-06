@@ -17,25 +17,26 @@ const hostFAQs = [
   },
   {
     q: "How do we receive our payouts?",
-    a: "Earnings are held securely in a trust account when the traveler books. They are transferred directly to your bank account within 3 business days after the wedding celebrations conclude."
+    a: "Earnings are held securely in a trust account when the guest reserves. They are transferred directly to your bank account within 3 business days after the wedding celebrations conclude."
   },
   {
     q: "How does the screening process work?",
-    a: "Travelers submit passport scans, social profiles, and write a motivational statement explaining why they wish to attend. You have final approval on every single application."
+    a: "Global guests submit passport scans, social profiles, and write a motivational statement explaining why they wish to attend. You have final approval on every single application."
   }
 ];
 
 export default function ForCouplesPage() {
   const [guestCount, setGuestCount] = useState(10);
-  const [pricePerGuest, setPricePerGuest] = useState(11999); // default: Celebration Experience tier (INR)
+  const [pricePerGuest, setPricePerGuest] = useState(16000); // default: Premium Experience tier (INR)
 
-  // Host receives 72% of core booking value (per Numbers.pdf)
+  // Host receives 78% of core booking value (per Numbers.pdf)
   const grossEarnings = guestCount * pricePerGuest;
   const hostEarnings = Math.round(grossEarnings * 0.72);
   const totalEarnings = hostEarnings;
 
   return (
-    <div className="min-h-screen bg-warm-50/50 pt-28 pb-20">
+    <div className="px-5 sm:px-8 lg:px-12 xl:px-16">
+    <div className="min-h-screen bg-warm-50/50 pt-28 pb-20 rounded-[2.5rem]">
       
       {/* Hero */}
       <section className="container-luxury text-center max-w-3xl mb-16 space-y-4">
@@ -47,7 +48,7 @@ export default function ForCouplesPage() {
           Share your joy. <span className="text-gradient-brand">Welcome the world</span>.
         </h1>
         <p className="text-charcoal-500 text-sm sm:text-base leading-relaxed">
-          Open your wedding gates to global travelers. Share your sacred traditions, create lifelong friendships, and offset your wedding expenses.
+          Open your wedding gates to international guests. Share your sacred traditions, create lifelong friendships, and offset your wedding expenses.
         </p>
       </section>
 
@@ -61,7 +62,7 @@ export default function ForCouplesPage() {
           </div>
           <h3 className="font-display font-bold text-lg text-charcoal-900">Cultural Pride</h3>
           <p className="text-charcoal-500 text-xs sm:text-sm leading-relaxed">
-            Showcase the colors, rituals, music, and cuisine of your region to global travelers who appreciate authentic heritage.
+            Showcase the colors, rituals, music, and cuisine of your region to global guests who appreciate authentic heritage.
           </p>
         </div>
 
@@ -83,7 +84,7 @@ export default function ForCouplesPage() {
           </div>
           <h3 className="font-display font-bold text-lg text-charcoal-900">Global Friendships</h3>
           <p className="text-charcoal-500 text-xs sm:text-sm leading-relaxed">
-            Forge deep relationships with international guests who join your celebrations as family, not tourists.
+            Forge deep relationships with international guests who join your celebrations as family, not strangers.
           </p>
         </div>
 
@@ -126,8 +127,8 @@ export default function ForCouplesPage() {
             </div>
             <input
               type="range"
-              min="7499"
-              max="29999"
+              min="9000"
+              max="30000"
               step="4500"
               value={pricePerGuest}
               onChange={(e) => setPricePerGuest(Number(e.target.value))}
@@ -155,8 +156,8 @@ export default function ForCouplesPage() {
           </h4>
 
           <div className="text-white/70 text-xs space-y-1">
-            <p>Host receives <strong className="text-white">72%</strong> of core booking value</p>
-            <p className="text-white/50">(Gross: ₹{grossEarnings.toLocaleString("en-IN")} · Platform fee 28% = ₹{(grossEarnings - totalEarnings).toLocaleString("en-IN")})</p>
+            <p>Host receives <strong className="text-white">78%</strong> of core booking value</p>
+            <p className="text-white/50">(Gross: ₹{grossEarnings.toLocaleString("en-IN")} · Platform fee 22% = ₹{(grossEarnings - totalEarnings).toLocaleString("en-IN")})</p>
           </div>
           
           <p className="text-white/60 text-[0.6875rem] max-w-xs mx-auto leading-relaxed">
@@ -221,7 +222,7 @@ export default function ForCouplesPage() {
             <details key={faq.q} className="group bg-white border border-warm-200/50 rounded-2xl p-5 shadow-sm cursor-pointer transition-colors duration-200">
               <summary className="font-sans font-bold text-sm sm:text-base text-charcoal-800 flex justify-between items-center list-none outline-none">
                 <span>{faq.q}</span>
-                <span className="text-charcoal-400 group-open:rotate-180 transition-transform duration-200">↓</span>
+                <span className="text-charcoal-400 group-open:rotate-50 transition-transform duration-200">↓</span>
               </summary>
               <p className="text-charcoal-500 text-xs sm:text-sm leading-relaxed mt-3 pt-3 border-t border-warm-100">
                 {faq.a}
@@ -235,21 +236,22 @@ export default function ForCouplesPage() {
       <section className="container-luxury text-center">
         <div className="max-w-2xl mx-auto space-y-6">
           <h2 className="font-display font-bold text-2xl sm:text-3xl text-charcoal-900">
-            Ready to list your celebration?
+            Ready to share your celebration?
           </h2>
           <p className="text-charcoal-500 text-sm max-w-md mx-auto">
-            Join {BUSINESS_METRICS.WEDDINGS_HOSTED} verified host families across India sharing their special moments with travelers from all corners of the globe.
+            Join {BUSINESS_METRICS.WEDDINGS_HOSTED} verified host families across India sharing their special moments with guests from all corners of the globe.
           </p>
           <Link
             href="/login?redirect_url=/dashboard/operations"
             className="btn btn-primary btn-lg shadow-lg group inline-flex gap-2"
           >
-            Register Your Wedding
+            Share Your Celebration
             <ArrowRight size={16} className="group-hover:translate-x-0.5 transition-transform" />
           </Link>
         </div>
       </section>
 
     </div>
-  );
+  
+    </div>);
 }

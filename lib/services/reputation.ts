@@ -40,7 +40,7 @@ export async function logReputationEvent(params: LogEventParams): Promise<boolea
   } catch (err: any) {
     // Check for unique key constraint violation in Prisma (P2002)
     if (err.code === "P2002") {
-      console.log(`Reputation event ignored: idempotencyKey ${idempotencyKey} already exists.`);
+      console.info(`Reputation event ignored: idempotencyKey ${idempotencyKey} already exists.`);
       return false;
     }
     console.error("Error logging reputation event:", err);

@@ -1,7 +1,6 @@
 "use client";
 
-import { CreditCard, Building2, Heart, Award, Compass, Percent } from "lucide-react";
-import { COMMISSION_MODEL, formatCurrencyINR } from "@/lib/constants/financial-model";
+import { CreditCard, Award, Compass, Percent } from "lucide-react";
 
 export function PlatformOverviewDiagram() {
   return (
@@ -36,7 +35,7 @@ export function PlatformOverviewDiagram() {
           <div className="bg-maroon-900 text-white p-5 rounded-2xl space-y-2">
             <div className="flex justify-between items-center">
               <span className="text-xs font-bold uppercase tracking-wider text-white/70">Platform Commission</span>
-              <span className="font-display font-bold text-2xl text-gradient-gold">28%</span>
+              <span className="font-display font-bold text-2xl text-gradient-gold">22%</span>
             </div>
             <p className="text-xs text-white/70 leading-relaxed">
               Company recognised revenue (Avg ₹3,863.72). Carves out optional agent referrals.
@@ -46,7 +45,7 @@ export function PlatformOverviewDiagram() {
           <div className="bg-emerald-950 text-white p-5 rounded-2xl space-y-2">
             <div className="flex justify-between items-center">
               <span className="text-xs font-bold uppercase tracking-wider text-white/70">Host Family Allocation</span>
-              <span className="font-display font-bold text-2xl text-emerald-300">72%</span>
+              <span className="font-display font-bold text-2xl text-emerald-300">78%</span>
             </div>
             <p className="text-xs text-white/70 leading-relaxed">
               Direct host payout (Avg ₹9,935.28) held in trust and released post-ceremony.
@@ -59,10 +58,10 @@ export function PlatformOverviewDiagram() {
           <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl space-y-1">
             <div className="flex items-center gap-2 font-bold text-amber-950">
               <Award size={16} className="text-amber-700" />
-              <span>Agent Referral Carve-Out (7% / 4%)</span>
+              <span>Agent Referral Carve-Out (Tiered / 4%)</span>
             </div>
             <p className="text-amber-900 leading-normal">
-              7% traveler or 4% host referral is paid strictly from the platform&apos;s 28% recognised share after booking clears.
+              tiered traveler or 4% host referral is paid strictly from the platform&apos;s 22% recognised share after booking clears.
             </p>
           </div>
 

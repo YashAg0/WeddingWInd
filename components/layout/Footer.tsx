@@ -35,10 +35,10 @@ const footerLinks = {
   ],
   forGuests: [
     { label: "Browse Weddings", href: "/weddings" },
-    { label: "For Travelers", href: "/for-travelers" },
+    { label: "Guest Guide", href: "/for-travelers" },
   ],
   forHosts: [
-    { label: "List Your Wedding", href: "/list-wedding" },
+    { label: "Host Your Wedding", href: "/list-wedding" },
     { label: "For Couples", href: "/for-couples" },
     { label: "For Agents", href: "/for-agents" },
     { label: "Coordinators", href: "/coordinators" },
@@ -73,8 +73,8 @@ export default function Footer() {
               <h2 className="font-display text-2xl font-bold text-white mb-2">
                 Never miss a celebration
               </h2>
-              <p className="text-charcoal-300 text-sm leading-relaxed">
-                Get curated wedding listings, cultural guides, and exclusive
+              <p className="text-white/80 text-base leading-relaxed">
+                Get curated celebrations, cultural guides, and exclusive
                 early access delivered to your inbox.
               </p>
             </div>
@@ -101,22 +101,21 @@ export default function Footer() {
                   Wedding With India
                 </span>
                 <span className="text-[0.625rem] font-medium uppercase tracking-widest text-[var(--color-brand-secondary)] mt-0.5">
-                  Attend Authentic Weddings
+                  Experience Our Indian Weddings
                 </span>
               </div>
             </Link>
 
-            <p className="text-charcoal-400 text-sm leading-relaxed mb-6 max-w-xs">
-              The world's first marketplace to attend real Indian weddings.
-              Connecting global travellers with authentic cultural celebrations
-              since 2024.
+            <p className="text-white/90 text-sm leading-relaxed mb-6 max-w-xs">
+              The world's most trusted platform to celebrate Our Indian Weddings.
+              Connecting Guest Families with authentic cultural celebrations.
             </p>
 
             {/* Contact */}
             <address className="not-italic space-y-3 mb-8">
               <a
                 href="mailto:contact@weddingwithindia.com"
-                className="flex items-center gap-3 text-sm text-charcoal-400 hover:text-[var(--color-brand-secondary)] transition-colors group"
+                className="flex items-center gap-3 text-sm text-white/80 hover:text-[var(--color-brand-secondary)] transition-colors group"
               >
                 <Mail
                   size={16}
@@ -127,16 +126,16 @@ export default function Footer() {
               </a>
               <a
                 href="tel:+919116734675"
-                className="flex items-center gap-3 text-sm text-charcoal-400 hover:text-[var(--color-brand-secondary)] transition-colors"
+                className="flex items-center gap-3 text-sm text-white/80 hover:text-[var(--color-brand-secondary)] transition-colors"
               >
                 <Phone
                   size={16}
                   className="text-[var(--color-brand-secondary)] flex-shrink-0"
                   aria-hidden="true"
                 />
-                +91 70 0123 4567
+                +91 91 1673 4675
               </a>
-              <div className="flex items-start gap-3 text-sm text-charcoal-400">
+              <div className="flex items-start gap-3 text-sm text-white/80">
                 <MapPin
                   size={16}
                   className="text-[var(--color-brand-secondary)] flex-shrink-0 mt-0.5"
@@ -156,7 +155,7 @@ export default function Footer() {
                   rel="noopener noreferrer"
                   aria-label={label}
                   role="listitem"
-                  className="w-9 h-9 rounded-xl bg-white/8 border border-white/10 flex items-center justify-center text-charcoal-400 hover:text-white hover:bg-[var(--color-brand-primary)] hover:border-[var(--color-brand-primary)] transition-all duration-200"
+                  className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white/80 hover:text-white hover:bg-[var(--color-brand-primary)] hover:border-[var(--color-brand-primary)] transition-all duration-200"
                 >
                   <Icon />
                 </a>
@@ -169,7 +168,7 @@ export default function Footer() {
             [
               { title: "Company", links: footerLinks.company },
               { title: "For Guests", links: footerLinks.forGuests },
-              { title: "For Hosts", links: footerLinks.forHosts },
+              { title: "Our Host Families", links: footerLinks.forHosts },
               { title: "Support", links: footerLinks.support },
             ] as const
           ).map(({ title, links }) => (
@@ -182,7 +181,7 @@ export default function Footer() {
                   <li key={label} role="listitem">
                     <Link
                       href={href}
-                      className="text-charcoal-400 text-sm hover:text-[var(--color-brand-secondary)] transition-colors duration-150"
+                      className="text-white/80 text-sm hover:text-[var(--color-brand-secondary)] transition-colors duration-150"
                     >
                       {label}
                     </Link>
@@ -197,7 +196,7 @@ export default function Footer() {
       {/* Bottom bar */}
       <div className="border-t border-white/10">
         <div className="container-luxury py-6">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-charcoal-500">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-white/70">
             <p>
               © {currentYear} Wedding With India. All rights reserved.
             </p>

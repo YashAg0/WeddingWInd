@@ -49,6 +49,8 @@ export interface Wedding {
   durationDays: number;
   languages: string[];
   isVerified: boolean;
+  isCurated?: boolean;
+  curatedBadge?: string;
   
   // Detailed fields for detail page
   gallery: string[];

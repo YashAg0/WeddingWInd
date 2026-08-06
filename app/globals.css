@@ -90,43 +90,45 @@
    GLOBAL BASE STYLES
    ───────────────────────────────────────────── */
 
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
 
-html {
-  scroll-behavior: smooth;
-  -webkit-text-size-adjust: 100%;
-  text-size-adjust: 100%;
-}
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
 
-body {
-  background-color: var(--color-warm-50);
-  color: var(--color-charcoal-900);
-  font-family: var(--font-sans);
-  font-size: 1rem;
-  line-height: 1.6;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
+  body {
+    background-color: var(--color-warm-50);
+    color: var(--color-charcoal-900);
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
 
-/* ─────────────────────────────────────────────
-   TYPOGRAPHY SCALE
-   ───────────────────────────────────────────── */
+  /* ─────────────────────────────────────────────
+     TYPOGRAPHY SCALE
+     ───────────────────────────────────────────── */
 
-h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-display);
-  font-weight: 700;
-  line-height: 1.15;
-  letter-spacing: -0.02em;
-  color: var(--color-charcoal-900);
-}
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    color: var(--color-charcoal-900);
+  }
 
-p {
-  color: var(--color-charcoal-600);
-  line-height: 1.75;
+  p {
+    color: var(--color-charcoal-600);
+    line-height: 1.75;
+  }
 }
 
 /* ─────────────────────────────────────────────

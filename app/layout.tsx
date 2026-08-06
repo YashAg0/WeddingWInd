@@ -8,9 +8,12 @@ import CookieConsent from "@/components/ui/CookieConsent";
 import Script from "next/script";
 import { Toaster } from "sonner";
 import { BUSINESS_METRICS } from "@/lib/constants/business-metrics";
+import { RoyalBackground } from "@/components/ui/RoyalBackground";
 
-const inter = { variable: "--font-inter" };
-const playfairDisplay = { variable: "--font-playfair" };
+// Fonts disabled via Next.js builder due to Turbopack network failures
+// Using native <link> tags in the head instead.
+const interVariable = "font-inter";
+const playfairVariable = "font-playfair";
 
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
 const APP_URL = "https://weddingwithindia.com";
@@ -47,7 +50,7 @@ export const metadata: Metadata = {
     siteName: "Wedding With India",
     title: "Wedding With India — Attend Authentic Indian Weddings",
     description:
-      `Experience the magic of authentic Indian weddings as an honoured guest. Browse ${BUSINESS_METRICS.WEDDINGS_HOSTED} verified wedding listings across India.`,
+      `Experience the magic of authentic Indian weddings as an honoured guest. Browse ${BUSINESS_METRICS.WEDDINGS_HOSTED} verified Our Indian Weddings across India.`,
     images: [
       {
         url: "/og-image.jpg",
@@ -61,7 +64,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Wedding With India — Attend Authentic Indian Weddings",
     description:
-      "Experience the magic of authentic Indian weddings. Browse verified listings across India.",
+      "Experience the magic of authentic Indian weddings. Browse verified celebrations across India.",
     images: ["/og-image.jpg"],
     creator: "@weddingwithindia",
   },
@@ -101,7 +104,7 @@ const organizationJsonLd = {
   ],
   contactPoint: {
     "@type": "ContactPoint",
-    contactType: "customer support",
+    contactType: "guest support",
     email: "contact@weddingwithindia.com",
     availableLanguage: ["English", "Hindi"],
   },
@@ -130,19 +133,25 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkProvider publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}>
-      <html lang="en" className={`${inter.variable} ${playfairDisplay.variable} scroll-smooth`}>
+      <html lang="en" className={`${interVariable} ${playfairVariable} scroll-smooth`}>
         <head>
+          {/* Native Google Fonts loading */}
+          <link rel="preconnect" href="https://fonts.googleapis.com" />
+          <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+          {/* eslint-disable-next-line @next/next/no-page-custom-font */}
+          <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet" />
+          
           {/* JSON-LD Structured Data */}
           <script
             type="application/ld+json"
             dangerouslySetInnerHTML={{
-              __html: JSON.stringify(organizationJsonLd),
+              __html: JSON.stringify(organizationJsonLd).replace(/</g, "\\u003c"),
             }}
           />
           <script
             type="application/ld+json"
             dangerouslySetInnerHTML={{
-              __html: JSON.stringify(websiteJsonLd),
+              __html: JSON.stringify(websiteJsonLd).replace(/</g, "\\u003c"),
             }}
           />
         </head>
@@ -167,6 +176,7 @@ export default function RootLayout({
             </div>
           </noscript>
 
+          <RoyalBackground />
           <AuthProvider>
             <CurrencyProvider>
               <LayoutVisibilityWrapper>{children}</LayoutVisibilityWrapper>

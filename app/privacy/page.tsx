@@ -8,7 +8,8 @@ export const metadata: Metadata = {
 
 export default function PrivacyPage() {
   return (
-    <div className="min-h-screen bg-warm-50/50 pt-28 pb-20">
+    <div className="px-5 sm:px-8 lg:px-12 xl:px-16">
+    <div className="min-h-screen bg-warm-50/50 pt-28 pb-20 rounded-[2.5rem]">
       <div className="container-luxury max-w-4xl">
         {/* Header */}
         <div className="flex flex-col items-center text-center gap-4 mb-12">
@@ -32,7 +33,7 @@ export default function PrivacyPage() {
               1. Introduction
             </h2>
             <p>
-              Welcome to <strong>Wedding With India</strong>. We value your privacy and are committed to protecting your personal data. This Privacy Policy outlines how we collect, use, store, and share your personal information when you use our website, marketplace, or services.
+              Welcome to <strong>Wedding With India</strong>. We value your privacy and are committed to protecting your personal data. This Privacy Policy outlines how we collect, use, store, and share your personal information when you use our website, platform, or services.
             </p>
             <p>
               By accessing or using our platform, you agree to the collection and use of information in accordance with this policy. If you do not agree with any terms, please do not use our services.
@@ -116,5 +117,6 @@ export default function PrivacyPage() {
         </div>
       </div>
     </div>
-  );
+  
+    </div>);
 }

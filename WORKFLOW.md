@@ -21,13 +21,13 @@ This document details the step-by-step end-to-end workflows across all user jour
 
 ---
 
-## 2. Host Journey: Listing to Revenue Payout
+## 2. Host Journey: Celebration to Revenue Payout
 
-1. **Submission**: Host family fills out listing form (`/list-wedding`), specifying location, capacity (`guestsAllowed`), price per guest in INR, and event timeline.
-2. **Verification Audit**: Admin reviews uploaded host ID and venue proof in `/dashboard/admin/verifications` and clicks "Approve". Listing status updates to `PUBLISHED`.
+1. **Submission**: Host family fills out celebration form (`/list-wedding`), specifying location, capacity (`guestsAllowed`), price per guest in INR, and event timeline.
+2. **Verification Audit**: Admin reviews uploaded host ID and venue proof in `/dashboard/admin/verifications` and clicks "Approve". Celebration status updates to `PUBLISHED`.
 3. **Guest Request Management**: Host receives notification of new traveler booking requests and reviews traveler profiles before confirming.
 4. **On-Site Hosting**: Host welcomes guest to wedding ceremonies. Coordinator handles QR check-in scanning.
-5. **Revenue Disbursal**: Host tracks 72% revenue share in INR (`/dashboard/earnings`) and requests bank transfer payout.
+5. **Revenue Disbursal**: Host tracks 78% revenue share in INR (`/dashboard/earnings`) and requests bank transfer payout.
 
 ---
 
@@ -35,5 +35,5 @@ This document details the step-by-step end-to-end workflows across all user jour
 
 1. **Onboarding**: Agent registers at `/for-agents/apply` and receives unique tracking code (`WWI-AGENT-XXXX`).
 2. **Link Distribution**: Agent shares customized referral link (`https://weddingwithindia.com?ref=WWI-ROYAL-AGENT`) with clients.
-3. **Attribution & Conversion**: First-touch cookie attributes traveler signup to agent. When traveler completes a paid booking, agent accrues 7% commission.
+3. **Attribution & Conversion**: First-touch cookie attributes traveler signup to agent. When traveler completes a paid booking, agent accrues tiered commission (₹500-₹500).
 4. **Payout Withdrawal**: Agent tracks accrued commissions (`/dashboard/referrals`) and requests payout.

@@ -85,7 +85,7 @@ export default async function AdminAnalyticsPage() {
               </div>
               <div className="p-3 bg-rose-50/50 border border-rose-100 rounded-xl">
                 <strong className="text-rose-700 block mb-0.5">COUPLE Role</strong>
-                Can build a wedding experience listing, review applicant dossiers, approve or reject guest requests, and clear payouts.
+                Can build a wedding experience celebration, review applicant dossiers, approve or reject guest requests, and clear payouts.
               </div>
               <div className="p-3 bg-emerald-50/50 border border-emerald-100 rounded-xl">
                 <strong className="text-emerald-700 block mb-0.5">AGENT Role</strong>

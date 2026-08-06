@@ -75,7 +75,7 @@ export default function AdminDiscoveryPage() {
           Discovery & Search Analytics Console
         </h1>
         <p className="text-charcoal-500 text-xs sm:text-sm">
-          Audit customer search click-through rates, identify search abandonment trends, and set trending scores boost levels.
+          Audit guest search click-through rates, identify search abandonment trends, and set trending scores boost levels.
         </p>
       </div>
 

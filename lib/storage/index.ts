@@ -21,8 +21,8 @@ export const ourFileRouter = {
       return { userId: session.userId };
     })
     .onUploadComplete(async ({ metadata, file }) => {
-      console.log(`Profile image upload completed for user: ${metadata.userId}`);
-      console.log(`File URL: ${file.url}`);
+      console.info(`Profile image upload completed for user: ${metadata.userId}`);
+      console.info(`File URL: ${file.url}`);
       return { uploadedBy: metadata.userId, url: file.url };
     }),
 

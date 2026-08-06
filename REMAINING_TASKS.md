@@ -16,7 +16,7 @@ This document outlines the recommended V2 feature enhancements, scaling initiati
 
 ### C. Native Mobile iOS & Android Applications
 - **Current State**: Fully responsive Mobile Web App with Touch Drawers and Camera QR Scanner.
-- **Recommendation**: Package the PWA or build React Native wrappers for iOS App Store and Google Play Store distribution.
+- **Recommendation**: Experience the PWA or build React Native wrappers for iOS App Store and Google Play Store distribution.
 
 ---
 

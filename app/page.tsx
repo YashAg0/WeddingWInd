@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Hero } from "@/components/home/Hero";
-import { EditorialMoment } from "@/components/home/EditorialMoment";
+
 import { FeaturedWeddings } from "@/components/home/FeaturedWeddings";
 import { HowItWorks } from "@/components/home/HowItWorks";
 import { Categories } from "@/components/home/Categories";
@@ -19,12 +19,12 @@ import {
   howItWorksSteps,
 } from "@/lib/data";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;
 
 export const metadata: Metadata = {
   title: "Wedding With India — Attend Authentic Indian Weddings",
   description:
-    `The world's first marketplace to attend authentic Indian weddings. Join real celebrations in Rajasthan, Goa, Punjab, and Kerala as an honoured guest. Browse ${BUSINESS_METRICS.WEDDINGS_HOSTED} verified listings.`,
+    `The world's most trusted platform to attend authentic Indian weddings. Join real celebrations in Rajasthan, Goa, Punjab, and Kerala as an honoured guest. Browse ${BUSINESS_METRICS.WEDDINGS_HOSTED} curated celebrations.`,
   alternates: {
     canonical: "https://weddingwithindia.com",
   },
@@ -37,7 +37,6 @@ export default async function HomePage() {
     <>
 
       <Hero stats={heroStats} />
-      <EditorialMoment />
 
       <main id="main-content">
         <FeaturedWeddings weddings={weddings} />

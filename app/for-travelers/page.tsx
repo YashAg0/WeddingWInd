@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 const travelerFAQs = [
   {
     q: "Is it respectful to attend a stranger's wedding?",
-    a: "Yes! Host families on our platform list their weddings because they explicitly want to welcome international guests. Sharing their joy and traditions with the world is a matter of cultural pride and happiness for them."
+    a: "Yes! Host families on our platform invite international guests because they want to share their joy and traditions with the world. It is a matter of immense cultural pride and happiness."
   },
   {
     q: "Do I need to bring a gift?",
@@ -29,19 +29,20 @@ const travelerFAQs = [
 
 export default function ForTravelersPage() {
   return (
-    <div className="min-h-screen bg-warm-50/50 pt-28 pb-20">
+    <div className="px-5 sm:px-8 lg:px-12 xl:px-16">
+    <div className="min-h-screen bg-warm-50/50 pt-28 pb-20 rounded-[2.5rem]">
       
       {/* Hero */}
       <section className="container-luxury text-center max-w-3xl mb-16 space-y-4">
         <div className="inline-flex items-center gap-2 bg-maroon-50 text-[var(--color-brand-primary)] text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-full border border-maroon-100/50">
           <Compass size={12} />
-          Traveler Guide
+          Global Guest Guide
         </div>
         <h1 className="font-display font-bold text-4xl sm:text-5xl text-charcoal-900 leading-tight">
-          A guest, <span className="text-gradient-brand">not a tourist</span>.
+          Family, <span className="text-gradient-brand">not just a traveler</span>.
         </h1>
         <p className="text-charcoal-500 text-sm sm:text-base leading-relaxed">
-          Step beyond the standard tourist trail. Celebrate alongside real families, taste legendary culinary recipes, and make memories that no guidebook can offer.
+          Step beyond ordinary sightseeing. Celebrate alongside real families, taste legendary culinary recipes, and make memories that no guidebook can offer.
         </p>
       </section>
 
@@ -51,16 +52,16 @@ export default function ForTravelersPage() {
         {/* Surface sightseeing */}
         <div className="bg-white/40 border border-warm-200/50 p-8 rounded-[2rem] space-y-4">
           <h3 className="font-display font-bold text-lg text-charcoal-400">
-            Standard Sightseeing
+            Ordinary Travel
           </h3>
           <ul className="space-y-3 text-charcoal-500 text-xs sm:text-sm">
             <li className="flex items-start gap-2">
               <span className="text-red-500 font-bold mt-0.5">✕</span>
-              Viewing monuments and castles from behind barriers.
+              Viewing monuments and palaces from behind barriers.
             </li>
             <li className="flex items-start gap-2">
               <span className="text-red-500 font-bold mt-0.5">✕</span>
-              Eating hotel buffets and tourist-trap restaurants.
+              Eating hotel buffets and generic restaurant meals.
             </li>
             <li className="flex items-start gap-2">
               <span className="text-red-500 font-bold mt-0.5">✕</span>
@@ -151,7 +152,7 @@ export default function ForTravelersPage() {
               India Visa Guidance & Travel Checklist
             </h2>
             <p className="text-charcoal-600 text-sm leading-relaxed">
-              Most travelers require a tourist visa to enter India. We recommend applying for the official <strong>e-Tourist Visa (30 Days, 1 Year, or 5 Years)</strong> online at least 15 days before your departure.
+              Most international guests require a visa to enter India. We recommend applying for the official <strong>e-Visa (Tourist) (30 Days, 1 Year, or 5 Years)</strong> online at least 15 days before your departure.
             </p>
             <div className="flex flex-wrap gap-4 pt-2">
               <a
@@ -174,8 +175,8 @@ export default function ForTravelersPage() {
       <section className="container-luxury max-w-3xl mb-20 space-y-10" aria-label="Frequently Asked Questions">
         <SectionHeader
           label="FAQs"
-          title="Questions from travelers"
-          highlightedWord="travelers"
+          title="Questions from global guests"
+          highlightedWord="global guests"
         />
 
         <div className="space-y-4">
@@ -183,7 +184,7 @@ export default function ForTravelersPage() {
             <details key={faq.q} className="group bg-white border border-warm-200/50 rounded-2xl p-5 shadow-sm cursor-pointer transition-colors duration-200">
               <summary className="font-sans font-bold text-sm sm:text-base text-charcoal-800 flex justify-between items-center list-none outline-none">
                 <span>{faq.q}</span>
-                <span className="text-charcoal-400 group-open:rotate-180 transition-transform duration-200">↓</span>
+                <span className="text-charcoal-400 group-open:rotate-50 transition-transform duration-200">↓</span>
               </summary>
               <p className="text-charcoal-500 text-xs sm:text-sm leading-relaxed mt-3 pt-3 border-t border-warm-100">
                 {faq.a}
@@ -200,7 +201,7 @@ export default function ForTravelersPage() {
             Ready to find your celebration?
           </h2>
           <p className="text-charcoal-500 text-sm max-w-md mx-auto">
-            Browse verified listings, read guest reviews, and choose a wedding style that speaks to your soul.
+            Browse verified celebrations, read guest reviews, and choose a wedding style that speaks to your soul.
           </p>
           <Link href="/weddings" className="btn btn-primary btn-lg shadow-lg group inline-flex gap-2">
             Explore All Weddings
@@ -210,5 +211,6 @@ export default function ForTravelersPage() {
       </section>
 
     </div>
-  );
+  
+    </div>);
 }

@@ -24,7 +24,7 @@ export default async function CoupleListingsPage({
 }: {
   searchParams: Promise<{ action?: string; id?: string }>;
 }) {
-  // Only host couples may manage their own wedding listings.
+  // Only host couples may manage their own Our Indian Weddings.
   await requireRole([UserRole.COUPLE]);
 
   const weddings = await getMyWeddings();
@@ -59,14 +59,14 @@ export default async function CoupleListingsPage({
     } else {
       await createWedding(payload);
     }
-    redirect("/dashboard/listings");
+    redirect("/dashboard/celebrations");
   }
 
   async function handleDelete(formData: FormData) {
     "use server";
     const id = formData.get("id") as string;
     await deleteWedding(id);
-    redirect("/dashboard/listings");
+    redirect("/dashboard/celebrations");
   }
 
   return (
@@ -75,7 +75,7 @@ export default async function CoupleListingsPage({
       <div className="flex justify-between items-center">
         <div className="space-y-1">
           <h1 className="font-display font-bold text-2xl sm:text-3xl text-charcoal-900">
-            My Wedding Listings
+            My Our Indian Weddings
           </h1>
           <p className="text-charcoal-500 text-xs sm:text-sm">
             Create and publish your wedding experiences for travelers to discover and register.
@@ -83,7 +83,7 @@ export default async function CoupleListingsPage({
         </div>
         {!action && (
           <Link
-            href="/dashboard/listings?action=create"
+            href="/dashboard/celebrations?action=create"
             className="inline-flex items-center gap-2 bg-[var(--color-brand-primary)] text-white text-xs font-bold uppercase tracking-wider px-4 py-2.5 rounded-xl hover:opacity-90 transition-opacity"
           >
             <Plus size={14} />
@@ -100,7 +100,7 @@ export default async function CoupleListingsPage({
               {editListing ? `Edit "${editListing.title}"` : "List a New Wedding"}
             </h3>
             <Link
-              href="/dashboard/listings"
+              href="/dashboard/celebrations"
               className="text-xs font-bold text-charcoal-400 hover:text-charcoal-600 transition-colors"
             >
               Cancel
@@ -282,7 +282,7 @@ export default async function CoupleListingsPage({
 
             <div className="flex gap-3 justify-end pt-4 border-t border-warm-100">
               <Link
-                href="/dashboard/listings"
+                href="/dashboard/celebrations"
                 className="px-5 py-2.5 rounded-xl border border-warm-200 text-charcoal-600 text-xs font-bold hover:bg-warm-50 transition-colors"
               >
                 Cancel
@@ -291,14 +291,14 @@ export default async function CoupleListingsPage({
                 type="submit"
                 className="px-5 py-2.5 rounded-xl bg-[var(--color-brand-primary)] text-white text-xs font-bold uppercase tracking-wider hover:opacity-90 transition-opacity cursor-pointer"
               >
-                Save Listing
+                Save Celebration
               </button>
             </div>
           </form>
         </div>
       )}
 
-      {/* Listings Grid */}
+      {/* Celebrations Grid */}
       <div className="bg-white border border-warm-200/50 p-6 rounded-[2rem] shadow-sm space-y-4">
         <h3 className="font-display font-bold text-base text-charcoal-900 border-b border-warm-100 pb-3">
           Your Weddings ({weddings.length})
@@ -363,20 +363,20 @@ export default async function CoupleListingsPage({
                     </span>
 
                     <div className="flex gap-1">
-                      {/* View public listing */}
+                      {/* View public celebration */}
                       <Link
                         href={`/weddings/${w.slug}`}
                         className="p-1.5 rounded-lg border border-warm-200 bg-white text-charcoal-600 hover:bg-warm-50"
-                        title="View public listing"
+                        title="View public celebration"
                       >
                         <Eye size={13} />
                       </Link>
 
                       {/* Edit */}
                       <Link
-                        href={`/dashboard/listings?action=edit&id=${w.id}`}
+                        href={`/dashboard/celebrations?action=edit&id=${w.id}`}
                         className="p-1.5 rounded-lg border border-warm-200 bg-white text-charcoal-600 hover:bg-warm-50"
-                        title="Edit listing"
+                        title="Edit celebration"
                       >
                         <Edit2 size={13} />
                       </Link>
@@ -386,7 +386,7 @@ export default async function CoupleListingsPage({
                         <input type="hidden" name="id" value={w.id} />
                         <button
                           type="submit"
-                          title="Delete listing"
+                          title="Delete celebration"
                           className="p-1.5 rounded-lg border border-rose-100 bg-rose-50 text-rose-650 hover:bg-rose-500 hover:text-white cursor-pointer"
                         >
                           <Trash2 size={13} />

@@ -33,10 +33,10 @@ export default function AppError({
         {/* Heading */}
         <div className="space-y-2">
           <h2 className="font-display font-bold text-2xl text-charcoal-900">
-            Something went wrong
+            A Momentary Interruption
           </h2>
           <p className="text-charcoal-500 text-sm leading-relaxed">
-            We encountered an unexpected error while loading this page. Our team has been notified.
+            We were unable to load this view. Please try refreshing your page or return home while our concierge liaison team checks the connection.
           </p>
           {process.env.NODE_ENV === "development" && error.message && (
             <p className="p-3 bg-warm-50 text-rose-600 text-xs font-mono rounded-xl border border-warm-200 break-all text-left">
@@ -52,13 +52,13 @@ export default function AppError({
             className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[var(--color-brand-primary)] text-white text-sm font-bold hover:opacity-90 transition-opacity cursor-pointer"
           >
             <RefreshCw size={15} />
-            Try again
+            Refresh Page
           </button>
           <Link
             href="/"
             className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl border border-warm-200 text-charcoal-600 text-sm font-bold hover:bg-warm-50 transition-colors"
           >
-            Back to Home
+            Return to Home
           </Link>
         </div>
       </div>

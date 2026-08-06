@@ -33,7 +33,7 @@ export default function WishlistPage() {
       {savedWeddings.length === 0 ? (
         <EmptyState
           title="Your wishlist is empty"
-          description="Save matching weddings from the marketplace to keep track of dates, locations, and pricing options."
+          description="Save matching weddings from our curated platform to keep track of dates, locations, and pricing options."
           icon="❤️"
           actionText="Explore Weddings"
           actionHref="/weddings"

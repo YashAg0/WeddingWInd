@@ -14,7 +14,7 @@ export function FAQAccordion({ items }: { items: FAQItem[] }) {
 
   return (
     <div
-      className="flex flex-col gap-3"
+      className="flex flex-col gap-4"
       role="list"
       aria-label="Frequently asked questions"
     >
@@ -67,8 +67,8 @@ function FAQAccordionItem({
       >
         <span
           className={cn(
-            "font-semibold text-base leading-snug transition-colors duration-200",
-            isOpen ? "text-[var(--color-brand-primary)]" : "text-charcoal-800"
+            "font-bold text-base leading-snug transition-colors duration-200",
+            isOpen ? "text-[var(--color-brand-primary)]" : "text-charcoal-900"
           )}
         >
           {item.question}
@@ -96,7 +96,7 @@ function FAQAccordionItem({
         )}
       >
         <div className="px-5 sm:px-6 pb-5 sm:pb-6 pt-3 bg-white rounded-b-2xl border-t border-warm-100">
-          <p className="text-charcoal-600 text-sm sm:text-base leading-relaxed">
+          <p className="text-charcoal-800 font-medium text-sm sm:text-base leading-relaxed">
             {item.answer}
           </p>
         </div>

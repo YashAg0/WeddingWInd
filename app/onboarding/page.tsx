@@ -150,7 +150,7 @@ function OnboardingContent() {
                   <div>
                     <h3 className="font-display font-bold text-base text-charcoal-800">Traveler / Guest</h3>
                     <p className="text-charcoal-500 text-xs mt-1 leading-normal">
-                      Discover authentic weddings, purchase tourist tickets, and celebrate cultural rituals as an honored family guest.
+                      Discover authentic weddings, purchase traveler tickets, and celebrate cultural rituals as an honored family guest.
                     </p>
                   </div>
                 </button>
@@ -182,7 +182,7 @@ function OnboardingContent() {
                   <div>
                     <h3 className="font-display font-bold text-base text-charcoal-800">Partner / Agent</h3>
                     <p className="text-charcoal-500 text-xs mt-1 leading-normal">
-                      Promote cultural wedding packages, recruit travelers, manage links, and earn monthly referral commissions.
+                      Promote cultural Wedding Experiences, recruit travelers, manage links, and earn monthly referral commissions.
                     </p>
                   </div>
                 </button>
@@ -601,12 +601,14 @@ function OnboardingContent() {
 
 export default function OnboardingPage() {
   return (
+    <div className="px-5 sm:px-8 lg:px-12 xl:px-16">
     <React.Suspense fallback={
-      <div className="min-h-screen bg-warm-50 flex items-center justify-center flex-col gap-3">
+      <div className="min-h-screen bg-warm-50 flex items-center justify-center flex-col gap-3 rounded-[2.5rem]">
         <div className="w-8 h-8 rounded-full border-4 border-maroon-100 border-t-maroon-800 animate-spin" />
       </div>
     }>
       <OnboardingContent />
     </React.Suspense>
-  );
+  
+    </div>);
 }

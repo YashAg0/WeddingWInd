@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-// POST /api/host-application — submit a new host listing application
+// POST /api/host-application — submit a new host celebration application
 // Creates User + CoupleProfile + Wedding (DRAFT status awaiting admin verification)
 export async function POST(req: NextRequest) {
   try {
@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Create the wedding listing in DRAFT status
+    // Create the Indian Wedding Experience in DRAFT status
     const slug = `${coupleNames.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${city.toLowerCase()}-${Date.now()}`;
     const wedding = await prisma.wedding.create({
       data: {
@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
         location: `${venue}, ${city}, ${state}`,
         category: religion || "Traditional",
         date: new Date(weddingDate),
-        pricePerGuest: 11999, // Default to tier 2; admin can update
+        pricePerGuest: 16000, // Default to tier 2; admin can update
         capacity: intlGuestCapacity || 10,
         mainImageUrl: photoUrl || "https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=800&q=80",
         status: "DRAFT", // Always starts DRAFT for admin verification

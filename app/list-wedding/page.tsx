@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Heart, ShieldCheck, CheckCircle2, Clock, Upload, ArrowRight, Info, AlertCircle } from "lucide-react";
+import { Heart, ShieldCheck, CheckCircle2, Clock, AlertCircle } from "lucide-react";
 import { HostJourneyDiagram } from "@/components/diagrams/HostJourneyDiagram";
 import { BUSINESS_METRICS } from "@/lib/constants/business-metrics";
 import { COMMISSION_MODEL, formatCurrencyINR, formatSecondaryCurrency } from "@/lib/constants/financial-model";
@@ -31,7 +31,7 @@ export default function ListWeddingPage() {
     photoUrl: ""
   });
 
-  // Calculate estimated host payout (72% of core booking value per guest)
+  // Calculate estimated host payout (78% of core booking value per guest)
   const avgBookingINR = BUSINESS_METRICS.WEIGHTED_AVG_BOOKING_INR; // ₹13,799
   const hostSharePerGuest = (avgBookingINR * COMMISSION_MODEL.HOST_ALLOCATION_PERCENT) / 100; // ₹9,935.28
   const estimatedHostPayoutTotal = Math.round(hostSharePerGuest * guestCapacity);
@@ -75,20 +75,21 @@ export default function ListWeddingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-warm-50/50 pt-28 pb-20">
+    <div className="px-5 sm:px-8 lg:px-12 xl:px-16">
+    <div className="min-h-screen bg-warm-50/50 pt-28 pb-20 rounded-[2.5rem]">
       <div className="container-luxury max-w-4xl mx-auto space-y-12">
         
         {/* Header */}
         <div className="text-center space-y-4 max-w-2xl mx-auto">
           <div className="inline-flex items-center gap-2 bg-maroon-50 text-[var(--color-brand-primary)] text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-full border border-maroon-100/50">
             <Heart size={13} />
-            Host Application & Listing Gate
+            Host Application & Celebration Gate
           </div>
           <h1 className="font-display font-bold text-3xl sm:text-4xl md:text-5xl text-charcoal-900 leading-tight">
             List Your Wedding as a <span className="text-gradient-brand">Verified Host</span>
           </h1>
           <p className="text-charcoal-500 text-sm sm:text-base leading-relaxed">
-            Welcome global travelers to your sacred celebration. Every listing undergoes mandatory manual verification before going live.
+            Welcome global travelers to your sacred celebration. Every celebration undergoes mandatory manual verification before going live.
           </p>
         </div>
 
@@ -99,10 +100,10 @@ export default function ListWeddingPage() {
               Transparent Host Economics
             </span>
             <h3 className="font-display font-bold text-2xl text-charcoal-900 leading-snug">
-              Earn 72% Direct Payout
+              Earn 78% Direct Payout
             </h3>
             <p className="text-charcoal-600 text-xs sm:text-sm leading-relaxed">
-              For an average booking value of {formatCurrencyINR(avgBookingINR)}, host families receive 72% ({formatCurrencyINR(Math.round(hostSharePerGuest))} per guest) safely released post-ceremony.
+              For an average booking value of {formatCurrencyINR(avgBookingINR)}, host families receive 78% ({formatCurrencyINR(Math.round(hostSharePerGuest))} per guest) safely released post-ceremony.
             </p>
 
             <div className="space-y-2">
@@ -142,7 +143,7 @@ export default function ListWeddingPage() {
         <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-5 flex items-start gap-3 text-amber-900 text-xs sm:text-sm leading-relaxed">
           <ShieldCheck size={18} className="text-amber-700 flex-shrink-0 mt-0.5" />
           <div>
-            <strong className="font-bold">Trust-First Listing Policy:</strong> All wedding applications default to <span className="underline font-semibold">Pending Verification</span> status. Our local team conducts background checks and venue confirmation before approving your listing for international bookings.
+            <strong className="font-bold">Trust-First Celebration Policy:</strong> All wedding applications default to <span className="underline font-semibold">Pending Verification</span> status. Our local team conducts background checks and venue confirmation before approving your celebration for international bookings.
           </div>
         </div>
 
@@ -160,7 +161,7 @@ export default function ListWeddingPage() {
                 Application Successfully Submitted!
               </h2>
               <p className="text-charcoal-600 text-sm leading-relaxed">
-                Thank you, <strong>{formData.hostName}</strong>. Your celebration listing for <strong>{formData.coupleNames}</strong> in {formData.city} has been received.
+                Thank you, <strong>{formData.hostName}</strong>. Your celebration celebration for <strong>{formData.coupleNames}</strong> in {formData.city} has been received.
               </p>
             </div>
 
@@ -179,7 +180,7 @@ export default function ListWeddingPage() {
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle2 size={14} className="text-emerald-600 mt-0.5 flex-shrink-0" />
-                  <span>Once verified, your listing will be active for global guests to book.</span>
+                  <span>Once verified, your celebration will be active for global guests to book.</span>
                 </li>
               </ul>
             </div>
@@ -363,7 +364,7 @@ export default function ListWeddingPage() {
                 disabled={isSubmitting}
                 className="btn btn-primary px-8 py-3.5 shadow-md font-bold w-full sm:w-auto justify-center"
               >
-                {isSubmitting ? "Submitting..." : "Submit Listing for Verification"}
+                {isSubmitting ? "Submitting..." : "Submit Celebration for Verification"}
               </button>
             </div>
           </form>
@@ -371,5 +372,6 @@ export default function ListWeddingPage() {
 
       </div>
     </div>
-  );
+  
+    </div>);
 }

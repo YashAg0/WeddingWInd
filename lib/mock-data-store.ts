@@ -26,43 +26,7 @@ export interface MockCoordinatorRecord {
   assignedDate?: string;
 }
 
-const defaultCoordinators: MockCoordinatorRecord[] = [
-  {
-    id: "CORD-APP-01",
-    fullName: "Rohan Varma",
-    email: "rohan@example.com",
-    phone: "+91 98765 11223",
-    city: "Udaipur",
-    eventExperience: "College Fest Management (Head Coordinator)",
-    availability: "Flexible (Weekends & Weekdays)",
-    languages: "English, Hindi, Marwari",
-    status: "approved_awaiting_placement"
-  },
-  {
-    id: "CORD-APP-02",
-    fullName: "Ananya Deshmukh",
-    email: "ananya@example.com",
-    phone: "+91 98765 33445",
-    city: "Goa",
-    eventExperience: "Campus Cultural Event Team",
-    availability: "Weekends",
-    languages: "English, Hindi, Konkani",
-    status: "not_available_in_city"
-  },
-  {
-    id: "CORD-APP-03",
-    fullName: "Vikram Malhotra",
-    email: "vikram@example.com",
-    phone: "+91 98765 55667",
-    city: "Jodhpur",
-    eventExperience: "Hotel Front Desk & Guest Liaison",
-    availability: "Flexible",
-    languages: "English, Hindi, French",
-    status: "placed",
-    assignedEventTitle: "The Grand Maharaja Wedding",
-    assignedDate: "Feb 14, 2025 (Day 1 - Mehndi)"
-  }
-];
+const defaultCoordinators: MockCoordinatorRecord[] = [];
 
 const COORDINATOR_STORAGE_KEY = "wwi_mock_coordinators_v2";
 

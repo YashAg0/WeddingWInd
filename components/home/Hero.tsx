@@ -181,7 +181,7 @@ export function Hero({ stats }: HeroProps) {
     <section
       ref={sectionRef}
       className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden"
-      aria-label="Hero — Attend Authentic Indian Weddings"
+      aria-label="Hero — Experience Our Indian Weddings"
     >
       {/* Background image layer — moves most on scroll (appears closest to
           the "camera" of the parallax stack, farthest in actual depth) */}
@@ -283,20 +283,17 @@ export function Hero({ stats }: HeroProps) {
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--color-brand-secondary)] opacity-75" />
             <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--color-brand-secondary)]" />
           </span>
-          The World&apos;s First Wedding Experience Marketplace
+          The World's Most Trusted Indian Wedding Platform
         </motion.div>
 
-        {/* Secondary CTA for the not-ready-to-search visitor — someone who
-            doesn't yet trust the premise ("wait, I can really attend a
-            stranger's wedding?") needs a low-commitment next step before
-            they'll type into the search bar. */}
+        {/* Secondary CTA */}
         <motion.div custom={0.6} variants={fadeUp} initial="hidden" animate="visible" className="mb-8">
           <Link
             href="/#how-it-works"
-            className="inline-flex items-center gap-1.5 text-white/80 hover:text-white text-sm font-medium underline-offset-4 hover:underline transition-colors duration-200"
+            className="inline-flex items-center gap-1.5 text-white/85 hover:text-white text-sm font-medium underline-offset-4 hover:underline transition-colors duration-200"
           >
             <PlayCircle size={16} aria-hidden="true" />
-            See how attending works
+            Explore the journey
           </Link>
         </motion.div>
 
@@ -320,7 +317,7 @@ export function Hero({ stats }: HeroProps) {
               textShadow: "0 2px 20px rgba(0,0,0,0.35)",
             }}
           >
-            Be a Guest at an Indian Wedding
+            Experience Our Indian Weddings
           </span>
         </motion.h1>
 
@@ -331,8 +328,8 @@ export function Hero({ stats }: HeroProps) {
           animate="visible"
           className="relative text-white/95 text-lg sm:text-xl leading-relaxed max-w-2xl mb-10 text-balance drop-shadow-[0_2px_16px_rgba(0,0,0,0.55)]"
         >
-          Travel beyond tourism. Celebrate alongside real families in Rajasthan,
-          Goa, Punjab, and beyond — an experience no guidebook can offer.
+          Beyond travel lies belonging. Join Host Families in Rajasthan, Goa,
+          and Kerala as an honored guest. Become part of the celebration.
         </motion.p>
 
         <motion.div
@@ -442,11 +439,11 @@ export function Hero({ stats }: HeroProps) {
         >
           <span className="inline-flex items-center gap-1.5">
             <ShieldCheck size={14} className="text-gold-400 flex-shrink-0" aria-hidden="true" />
-            Verified local hosts
+            Trusted Host Families
           </span>
           <span className="inline-flex items-center gap-1.5">
             <Check size={14} className="text-gold-400 flex-shrink-0" aria-hidden="true" />
-            Free to browse, no hidden fees
+            Secure and transparent
           </span>
         </motion.div>
 

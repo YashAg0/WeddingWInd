@@ -1,14 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { Users, ShieldCheck, ArrowRight, DollarSign, Award, CheckCircle, AlertTriangle, Briefcase, Globe } from "lucide-react";
+import { Users, ShieldCheck, ArrowRight, Award, CheckCircle, AlertTriangle, Briefcase, Globe } from "lucide-react";
 import { AgentJourneyDiagram } from "@/components/diagrams/AgentJourneyDiagram";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { COMMISSION_MODEL, formatCurrencyINR, formatSecondaryCurrency } from "@/lib/constants/financial-model";
 import { BUSINESS_METRICS } from "@/lib/constants/business-metrics";
 
 export default function ForAgentsPage() {
-  const travelerRate = COMMISSION_MODEL.AGENT_REFERRAL_COMMISSION_PERCENT; // 7%
+  const travelerRate = COMMISSION_MODEL.AGENT_REFERRAL_PAYOUT_DEFAULT; // Tiered (avg ₹1000)
   const hostRate = COMMISSION_MODEL.HOST_REFERRAL_COMMISSION_PERCENT; // 4%
   const avgBookingINR = BUSINESS_METRICS.WEIGHTED_AVG_BOOKING_INR; // ₹13,799
 
@@ -16,7 +16,8 @@ export default function ForAgentsPage() {
   const hostCommissionINR = Math.round((avgBookingINR * hostRate) / 100); // ₹552
 
   return (
-    <div className="min-h-screen bg-warm-50/50 pt-28 pb-20">
+    <div className="px-5 sm:px-8 lg:px-12 xl:px-16">
+    <div className="min-h-screen bg-warm-50/50 pt-28 pb-20 rounded-[2.5rem]">
       
       {/* Hero Section */}
       <section className="container-luxury text-center max-w-4xl mb-16 space-y-5">
@@ -29,7 +30,7 @@ export default function ForAgentsPage() {
           <span className="text-gradient-brand">Sharing Authentic Culture</span>
         </h1>
         <p className="text-charcoal-500 text-sm sm:text-base max-w-2xl mx-auto leading-relaxed">
-          Open to anyone worldwide. Refer international travelers or Indian host families and earn up to 7% of completed booking values.
+          Open to anyone worldwide. Refer international guests or Indian host families and earn up to ₹1,800 per completed booking.
         </p>
 
         <div className="pt-2 flex flex-wrap items-center justify-center gap-4">
@@ -65,13 +66,13 @@ export default function ForAgentsPage() {
                 <Globe size={22} />
               </div>
               <span className="text-xs font-bold text-charcoal-400 uppercase tracking-widest block">
-                Traveler-Side Referral
+                Guest-Side Referral
               </span>
               <h3 className="font-display font-bold text-2xl text-charcoal-900">
                 {travelerRate}% Commission per Booking
               </h3>
               <p className="text-charcoal-600 text-xs sm:text-sm leading-relaxed">
-                Refer foreign travelers who book any wedding tier. On average ({formatCurrencyINR(avgBookingINR)} booking), you earn <strong>{formatCurrencyINR(travelerCommissionINR)} ({formatSecondaryCurrency(travelerCommissionINR)})</strong> per completed stay.
+                Refer global guests who reserve any celebration tier. On average ({formatCurrencyINR(avgBookingINR)} booking), you earn <strong>{formatCurrencyINR(travelerCommissionINR)} ({formatSecondaryCurrency(travelerCommissionINR)})</strong> per completed stay.
               </p>
               <ul className="space-y-2 text-xs text-charcoal-600">
                 <li className="flex items-center gap-2">
@@ -86,7 +87,7 @@ export default function ForAgentsPage() {
             </div>
 
             <div className="bg-warm-50 border border-warm-200 p-4 rounded-xl text-center">
-              <span className="text-[0.6875rem] font-bold text-charcoal-500 uppercase tracking-wider block">Average Traveler Referral Payout</span>
+              <span className="text-[0.6875rem] font-bold text-charcoal-500 uppercase tracking-wider block">Average Guest Referral Payout</span>
               <span className="font-display font-bold text-xl text-[var(--color-brand-primary)]">{formatCurrencyINR(travelerCommissionINR)}</span>
             </div>
           </div>
@@ -104,7 +105,7 @@ export default function ForAgentsPage() {
                 {hostRate}% Qualifying Booking Value
               </h3>
               <p className="text-charcoal-600 text-xs sm:text-sm leading-relaxed">
-                Refer Indian families who list their wedding as verified hosts. Earn {hostRate}% of qualifying core booking value (avg <strong>{formatCurrencyINR(hostCommissionINR)}</strong>) when guests complete their attendance.
+                Refer Indian families who share their celebration as verified hosts. Earn {hostRate}% of qualifying core booking value (avg <strong>{formatCurrencyINR(hostCommissionINR)}</strong>) when guests complete their attendance.
               </p>
               <ul className="space-y-2 text-xs text-charcoal-600">
                 <li className="flex items-center gap-2">
@@ -149,7 +150,7 @@ export default function ForAgentsPage() {
               Success-Based Payouts Only
             </h4>
             <p className="text-charcoal-600 text-xs leading-relaxed">
-              Commissions are paid only when a referred guest completes their wedding experience and funds are cleared. No fake lead payouts, no registration fees, and no upfront costs ever.
+              Commissions are paid only when a referred guest completes their cultural experience and funds are cleared. No fake lead payouts, no registration fees, and no upfront costs ever.
             </p>
           </div>
 
@@ -159,7 +160,7 @@ export default function ForAgentsPage() {
               Strict Anti-MLM Structure
             </h4>
             <p className="text-charcoal-600 text-xs leading-relaxed">
-              Agents are independent referral partners. You earn strictly on direct traveler or host referrals. There are no downline tiers, multi-level structures, or commissions for recruiting other agents.
+              Agents are independent referral partners. You earn strictly on direct guest or host referrals. There are no downline tiers, multi-level structures, or commissions for recruiting other agents.
             </p>
           </div>
 
@@ -203,5 +204,6 @@ export default function ForAgentsPage() {
       </section>
 
     </div>
-  );
+  
+    </div>);
 }

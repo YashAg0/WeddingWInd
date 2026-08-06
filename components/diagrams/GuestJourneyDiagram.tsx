@@ -42,7 +42,7 @@ export function GuestJourneyDiagram() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 relative">
-        {steps.map((step, idx) => {
+        {steps.map((step, _idx) => {
           const IconComponent = step.icon;
           return (
             <div

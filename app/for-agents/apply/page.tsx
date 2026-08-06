@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Users, ShieldCheck, CheckCircle2, ArrowRight, AlertCircle, Sparkles } from "lucide-react";
+import { Users, CheckCircle2 } from "lucide-react";
 import { COMMISSION_MODEL } from "@/lib/constants/financial-model";
 // Real Prisma API — no mock store
 
@@ -60,7 +60,8 @@ export default function AgentApplicationPage() {
   };
 
   return (
-    <div className="min-h-screen bg-warm-50/50 pt-28 pb-20">
+    <div className="px-5 sm:px-8 lg:px-12 xl:px-16">
+    <div className="min-h-screen bg-warm-50/50 pt-28 pb-20 rounded-[2.5rem]">
       <div className="container-luxury max-w-3xl mx-auto space-y-8">
         
         {/* Header */}
@@ -73,7 +74,7 @@ export default function AgentApplicationPage() {
             Become an Authorized Referral Partner
           </h1>
           <p className="text-charcoal-500 text-xs sm:text-sm max-w-lg mx-auto leading-relaxed">
-            Earn {COMMISSION_MODEL.AGENT_REFERRAL_COMMISSION_PERCENT}% on traveler bookings and {COMMISSION_MODEL.HOST_REFERRAL_COMMISSION_PERCENT}% on host referrals upon completed celebrations.
+            Earn {COMMISSION_MODEL.AGENT_REFERRAL_PAYOUT_DEFAULT}% on traveler bookings and {COMMISSION_MODEL.HOST_REFERRAL_COMMISSION_PERCENT}% on host referrals upon completed celebrations.
           </p>
         </div>
 
@@ -92,7 +93,7 @@ export default function AgentApplicationPage() {
                 Thanks, {formData.fullName}!
               </h2>
               <p className="text-charcoal-600 text-sm max-w-md mx-auto">
-                Your application is in our queue. Our team typically reviews within 2–3 business days. We'll contact you at <strong>{formData.email}</strong> with your unique referral code once approved.
+                Your application is in our queue. Our team typically reviews within 2–3 business days. We&apos;ll contact you at <strong>{formData.email}</strong> with your unique referral code once approved.
               </p>
             </div>
 
@@ -194,7 +195,7 @@ export default function AgentApplicationPage() {
                     onChange={(e) => setFormData({ ...formData, focusArea: e.target.value })}
                     className="input-luxury w-full bg-white text-sm cursor-pointer"
                   >
-                    <option value="traveler">Traveler Referrals (7% commission)</option>
+                    <option value="traveler">Traveler Referrals (tiered commission (₹500-₹500))</option>
                     <option value="host">Host Family Referrals (4% commission)</option>
                     <option value="both">Both Traveler & Host Referrals</option>
                   </select>
@@ -267,5 +268,6 @@ export default function AgentApplicationPage() {
 
       </div>
     </div>
-  );
+  
+    </div>);
 }

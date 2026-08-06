@@ -193,7 +193,7 @@ export function BookingSidebar({ wedding }: BookingSidebarProps) {
           onClick={handleBook}
           className="btn btn-primary w-full py-4 text-base shadow-lg justify-center font-bold"
         >
-          Book Spot — {formatPrice(subtotalINR).primary}
+          Reserve Invitation — {formatPrice(subtotalINR).primary}
         </button>
 
         <div className="grid grid-cols-2 gap-2">
@@ -222,7 +222,7 @@ export function BookingSidebar({ wedding }: BookingSidebarProps) {
       <div className="flex items-start gap-2 bg-warm-100/50 p-3 rounded-2xl border border-warm-200/30">
         <Info size={14} className="text-charcoal-400 mt-0.5 flex-shrink-0" />
         <p className="text-[0.6875rem] text-charcoal-500 leading-normal">
-          Every host family goes through background check and in-person verification. Booking fees held securely in trust until check-in.
+          Every host family is in-person verified by our team. Your reservation payment is held securely in trust until check-in.
         </p>
       </div>
 
@@ -235,22 +235,22 @@ export function BookingSidebar({ wedding }: BookingSidebarProps) {
         <ul className="space-y-1 pl-1">
           <li className="flex items-start gap-1.5">
             <Check size={11} className="text-emerald-600 mt-0.5 flex-shrink-0" />
-            <span><strong className="text-charcoal-700">30+ days before event:</strong> Full refund of booking amount.</span>
+            <span><strong className="text-charcoal-700">30+ days before event:</strong> Full refund of reservation fee.</span>
           </li>
           <li className="flex items-start gap-1.5">
             <Check size={11} className="text-amber-600 mt-0.5 flex-shrink-0" />
-            <span><strong className="text-charcoal-700">14–29 days before event:</strong> 50% refund of booking amount.</span>
+            <span><strong className="text-charcoal-700">14–29 days before event:</strong> 50% refund of reservation fee.</span>
           </li>
           <li className="flex items-start gap-1.5">
             <Check size={11} className="text-rose-600 mt-0.5 flex-shrink-0" />
-            <span><strong className="text-charcoal-700">Under 14 days:</strong> No refund. Booking amount is non-refundable.</span>
+            <span><strong className="text-charcoal-700">Under 14 days:</strong> Non-refundable as host arrangements are finalized.</span>
           </li>
         </ul>
       </div>
 
       {/* Support Contact */}
       <div className="text-[0.6875rem] text-charcoal-500 border-t border-warm-100 pt-3">
-        <p className="font-bold text-charcoal-700 mb-1">Questions before booking?</p>
+        <p className="font-bold text-charcoal-700 mb-1">Questions before reserving?</p>
         <a
           href="mailto:support@weddingwithindia.com"
           className="text-[var(--color-brand-primary)] font-semibold hover:underline"
@@ -258,7 +258,7 @@ export function BookingSidebar({ wedding }: BookingSidebarProps) {
           support@weddingwithindia.com
         </a>
         <span className="mx-1.5 text-charcoal-300">·</span>
-        <span>Typically responds within 24 hours.</span>
+        <span>Concierge responds within 24 hours.</span>
       </div>
 
       {/* Success Booking Modal */}
@@ -280,10 +280,10 @@ export function BookingSidebar({ wedding }: BookingSidebarProps) {
                 <Check size={24} />
               </div>
               <h4 className="font-display font-bold text-lg text-charcoal-900">
-                Reservation Confirmed!
+                Invitation Request Sent
               </h4>
               <p className="text-charcoal-600 text-sm leading-relaxed">
-                Your reservation request for {guestsCount} guest spot(s) on the <strong>{activeTier.name}</strong> tier has been submitted to the host family.
+                Your invitation request for {guestsCount} guest(s) on the <strong>{activeTier.name}</strong> experience has been received. The host family will review your details with care.
               </p>
               <div className="text-xs bg-warm-50 border border-warm-100 p-3 rounded-xl text-charcoal-600 font-medium">
                 Total Payment: {formatCurrencyINR(subtotalINR)} ({formatSecondaryCurrency(subtotalINR)})

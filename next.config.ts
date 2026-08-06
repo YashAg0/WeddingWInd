@@ -81,13 +81,17 @@ const nextConfig: NextConfig = {
     ];
   },
 
-  // ─── Performance ─────────────────────────────────────────────────────────
+  // ─── Performance & Experience Tree-Shaking ──────────────────────────────────
   compress: true,
+  experimental: {
+    optimizePackageImports: ["lucide-react", "framer-motion", "date-fns"],
+  },
 
   // ─── Images ──────────────────────────────────────────────────────────────
   images: {
     qualities: [75, 90],
     formats: ["image/avif", "image/webp"],
+    minimumCacheTTL: 31536000,
     deviceSizes: [640, 750, 828, 1080, 1200, 1920],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
     remotePatterns: [
@@ -118,7 +122,7 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  // ─── Transpile Packages ───────────────────────────────────────────────────
+  // ─── Transpile Experiences ───────────────────────────────────────────────────
   transpilePackages: [],
 };
 

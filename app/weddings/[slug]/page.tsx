@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { Star, MapPin, ShieldCheck, CheckCircle, XCircle, Sparkles, Shirt, Utensils, Landmark, Hotel, Calendar, Users, Globe, Palette } from "lucide-react";
+import { Star, MapPin, ShieldCheck, CheckCircle, XCircle, Sparkles, Shirt, Utensils, Landmark, Hotel, Globe, Palette } from "lucide-react";
 import { getWeddings, getWeddingBySlug } from "@/lib/actions";
 import { WeddingGallery } from "@/components/wedding/WeddingGallery";
 import { WeddingTimeline } from "@/components/wedding/WeddingTimeline";
@@ -24,7 +24,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   
   return {
     title: `${wedding.title} — ${wedding.location}`,
-    description: `Attend ${wedding.title} in ${wedding.location}. ${wedding.category} wedding celebration. Book your spot starting from ₹${wedding.pricePerGuest?.toLocaleString() || '7,499'}/guest.`,
+    description: `Attend ${wedding.title} in ${wedding.location}. ${wedding.category} wedding celebration. Reserve your honorary guest seat starting from ₹${wedding.pricePerGuest?.toLocaleString() || '0'}/guest.`,
     openGraph: {
       images: [wedding.imageUrl || wedding.coupleImage],
     },
@@ -91,10 +91,11 @@ export default async function WeddingDetailPage({ params }: PageProps) {
   };
 
   return (
-    <div className="min-h-screen bg-warm-50/50 pt-24 pb-20">
+    <div className="px-5 sm:px-8 lg:px-12 xl:px-16">
+    <div className="min-h-screen bg-warm-50/50 pt-24 pb-20 rounded-[2.5rem]">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(eventJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(eventJsonLd).replace(/</g, "\\u003c") }}
       />
 
       <header className="container-luxury mt-4 flex flex-col gap-4">
@@ -319,7 +320,7 @@ export default async function WeddingDetailPage({ params }: PageProps) {
             </section>
 
             {/* ─── Inclusions & Exclusions ─── */}
-            <section className="grid grid-cols-1 md:grid-cols-2 gap-5" aria-label="Package highlights">
+            <section className="grid grid-cols-1 md:grid-cols-2 gap-5" aria-label="Experience highlights">
               {/* Included */}
               <div className="bg-emerald-50/40 border border-emerald-500/15 p-6 sm:p-8 rounded-3xl shadow-sm space-y-4">
                 <h3 className="font-display font-semibold text-base text-emerald-800 flex items-center gap-2">
@@ -374,7 +375,7 @@ export default async function WeddingDetailPage({ params }: PageProps) {
         </div>
       </div>
 
-      {/* ─── Related Listings ─── */}
+      {/* ─── Related Celebrations ─── */}
       <section
         className="container-luxury border-t border-warm-200/60 mt-20 pt-14 space-y-8"
         aria-labelledby="related-heading"
@@ -398,5 +399,6 @@ export default async function WeddingDetailPage({ params }: PageProps) {
       <StickyBookingCard wedding={wedding} />
 
     </div>
-  );
+  
+    </div>);
 }

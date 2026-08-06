@@ -83,7 +83,7 @@ export default function AgentDashboardPage() {
   const clearedBookings = agentBookings.filter((b) => b.status === "cleared");
   const totalTravelerCommissionClearedINR = clearedBookings.reduce((sum, b) => {
     const financials = calculateBookingFinancials(b.coreBookingValueINR, true);
-    return sum + financials.agentReferral7INR;
+    return sum + financials.agentReferralINR;
   }, 0);
 
   if (loading) {
@@ -289,10 +289,10 @@ export default function AgentDashboardPage() {
                         {isCleared ? (
                           <div>
                             <span className="font-bold text-emerald-700 text-sm">
-                              {formatCurrencyINR(financials.agentReferral7INR)}
+                              {formatCurrencyINR(financials.agentReferralINR)}
                             </span>
                             <span className="text-[0.625rem] text-charcoal-400 font-mono block">
-                              Exact 7%: ₹{financials.exactAgentReferral7INR.toFixed(2)}
+                              Exact 7%: ₹{financials.exactAgentReferralINR.toFixed(2)}
                             </span>
                             <span className="text-[0.625rem] font-bold text-emerald-800 uppercase tracking-wider block">
                               ✓ Cleared & Payable

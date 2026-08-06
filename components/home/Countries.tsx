@@ -12,11 +12,12 @@ export function Countries({ countries }: CountriesProps) {
   const [featured, ...rest] = countries;
 
   return (
-    <section
-      id="countries"
-      className="section-padding bg-[var(--color-warm-50)]"
-      aria-labelledby="countries-heading"
-    >
+    <>
+      <section
+        id="countries"
+        className="section-padding"
+        aria-labelledby="countries-heading"
+      >
       <div className="container-luxury">
         <SectionHeader
           id="countries-heading"
@@ -25,6 +26,7 @@ export function Countries({ countries }: CountriesProps) {
           highlightedWord="celebrate"
           description="Explore weddings from iconic Indian regions and surrounding South Asian destinations."
           className="mb-14"
+          theme="dark"
         />
 
         {/* Asymmetric grid: big card + 3 smaller */}
@@ -46,7 +48,7 @@ export function Countries({ countries }: CountriesProps) {
                 priority
               />
               <div
-                className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent"
+                className="absolute inset-0 bg-gradient-to-t from-maroon-900/90 via-maroon-900/40 to-transparent"
                 aria-hidden="true"
               />
               <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-8">
@@ -59,7 +61,7 @@ export function Countries({ countries }: CountriesProps) {
                 <h3 className="font-display font-bold text-white text-3xl sm:text-4xl mb-2">
                   {featured.name}
                 </h3>
-                <p className="text-white/70 text-sm mb-4">{featured.description}</p>
+                <p className="text-white/90 text-sm mb-4 drop-shadow-sm font-medium">{featured.description}</p>
                 <div className="flex items-center justify-between">
                   <span
                     className="font-bold text-lg"
@@ -99,14 +101,14 @@ export function Countries({ countries }: CountriesProps) {
                   loading="lazy"
                 />
                 <div
-                  className="absolute inset-0 bg-gradient-to-r from-black/75 to-transparent"
+                  className="absolute inset-0 bg-gradient-to-t from-maroon-900/90 via-maroon-900/40 to-transparent"
                   aria-hidden="true"
                 />
                 <div className="absolute inset-0 p-4 flex flex-col justify-end">
                   <h3 className="font-display font-bold text-white text-lg leading-tight">
                     {country.name}
                   </h3>
-                  <p className="text-white/60 text-xs mt-0.5">{country.description}</p>
+                  <p className="text-white/90 text-sm mt-1 drop-shadow-sm">{country.description}</p>
                   <span className="text-[var(--color-gold-300)] text-xs font-semibold mt-1">
                     {country.weddingCount} listings
                   </span>
@@ -116,6 +118,7 @@ export function Countries({ countries }: CountriesProps) {
           </div>
         </div>
       </div>
-    </section>
+      </section>
+    </>
   );
 }

@@ -8,7 +8,7 @@ export const BookingStatusSchema = z.enum(["PENDING", "APPROVED", "REJECTED", "A
 export const PaymentStatusSchema = z.enum(["PENDING", "PAID", "REFUNDED", "FAILED"]);
 export const CommissionStatusSchema = z.enum(["PENDING", "PAID", "VOIDED"]);
 export const ReferralStatusSchema = z.enum(["PENDING", "CONVERTED"]);
-export const VerificationStatusSchema = z.enum(["NOT_SUBMITTED", "PENDING", "UNDER_REVIEW", "APPROVED", "REJECTED", "EXPIRED"]);
+export const VerificationStatusSchema = z.enum(["NOT_SUBMITTED", "PENDING", "UNDER_REVIEW", "APPROVED", "REJECTED", "NEED_MORE_DOCUMENTS", "EXPIRED"]);
 export const NotificationTypeSchema = z.enum(["INFO", "SUCCESS", "ALERT", "REQUEST"]);
 export const ContactStatusSchema = z.enum(["NEW", "READ", "RESOLVED"]);
 
@@ -198,17 +198,40 @@ export const verificationSchema = z.object({
   id: z.string().uuid().optional(),
   userId: z.string().uuid("Invalid User UUID"),
   status: VerificationStatusSchema.default("NOT_SUBMITTED"),
-  passportUrl: z.string().url().nullable().optional(),
   govtIdUrl: z.string().url().nullable().optional(),
-  selfieUrl: z.string().url().nullable().optional(),
   phoneVerified: z.boolean().default(false),
   emailVerified: z.boolean().default(false),
-  invitationUrl: z.string().url().nullable().optional(),
+  passportUrl: z.string().url().nullable().optional(),
+  selfieUrl: z.string().url().nullable().optional(),
+  emergencyContact: z.string().nullable().optional(),
+  nationality: z.string().nullable().optional(),
+  visaStatus: z.string().nullable().optional(),
+  travelInsuranceUrl: z.string().url().nullable().optional(),
+  medicalDeclaration: z.string().nullable().optional(),
+  panNumber: z.string().nullable().optional(),
+  panUrl: z.string().url().nullable().optional(),
+  aadhaarNumber: z.string().nullable().optional(),
+  aadhaarUrl: z.string().url().nullable().optional(),
+  addressProofUrl: z.string().url().nullable().optional(),
+  weddingProofUrl: z.string().url().nullable().optional(),
   venueConfirmUrl: z.string().url().nullable().optional(),
+  invitationUrl: z.string().url().nullable().optional(),
+  bankName: z.string().nullable().optional(),
+  bankAccountNo: z.string().nullable().optional(),
+  bankIfsc: z.string().nullable().optional(),
+  bankVerificationUrl: z.string().url().nullable().optional(),
   socialLinks: z.string().nullable().optional(),
+  gstNumber: z.string().nullable().optional(),
+  gstUrl: z.string().url().nullable().optional(),
   orgDetails: z.string().nullable().optional(),
   businessRegUrl: z.string().url().nullable().optional(),
   linkedinUrl: z.string().url().nullable().optional(),
+  portfolioUrl: z.string().url().nullable().optional(),
+  experienceYears: z.number().int().nonnegative().nullable().optional(),
+  references: z.string().nullable().optional(),
+  experienceNotes: z.string().nullable().optional(),
+  availability: z.string().nullable().optional(),
+  languages: z.string().nullable().optional(),
   submissionDate: z.coerce.date().nullable().optional(),
   notes: z.string().nullable().optional(),
   expiryDate: z.coerce.date().nullable().optional(),
@@ -255,16 +278,16 @@ export const faqSchema = z.object({
 // 23. Contact Submission Schema
 export const contactSubmissionSchema = z.object({
   id: z.string().uuid().optional(),
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().email("Invalid email format"),
-  subject: z.string().min(3, "Subject must be at least 3 characters"),
-  message: z.string().min(10, "Message must be at least 10 characters"),
+  name: z.string().min(2, "Please enter your full name"),
+  email: z.string().email("Please enter a valid email address"),
+  subject: z.string().min(3, "Please provide a subject for your inquiry"),
+  message: z.string().min(10, "Please share a few details so we can assist you"),
   status: ContactStatusSchema.default("NEW")
 });
 
 // 24. Newsletter Subscriber Schema
 export const newsletterSubscriberSchema = z.object({
   id: z.string().uuid().optional(),
-  email: z.string().email("Invalid email format"),
+  email: z.string().email("Please enter a valid email address"),
   active: z.boolean().default(true)
 });

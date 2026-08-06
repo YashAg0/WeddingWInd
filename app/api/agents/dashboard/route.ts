@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getDbUser } from "@/lib/auth";
 
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   try {
     const user = await getDbUser();
 
@@ -94,7 +94,7 @@ export async function GET(req: NextRequest) {
       weddingTitle: b.wedding.title,
       guestName: b.traveler.fullName || b.traveler.user.name || "Guest Traveler",
       guestsCount: b.guestsCount,
-      tierName: b.pricePerGuest >= 17000 ? "Immersive Experience" : "Celebration Experience",
+      tierName: b.pricePerGuest >= 17000 ? "Immersive Experience" : "Premium Experience",
       coreBookingValueINR: b.totalAmount,
       status: b.status === "ATTENDED" || b.status === "COMPLETED" ? "cleared" : b.status === "CONFIRMED" ? "confirmed" : "pending_payment"
     }));

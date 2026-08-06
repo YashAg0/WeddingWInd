@@ -13,13 +13,13 @@ export function HostJourneyDiagram() {
     {
       num: "02",
       title: "Verification Gate",
-      desc: "Listing stays Pending Verification while background & venue checks complete.",
+      desc: "Celebration stays Pending Verification while background & venue checks complete.",
       icon: ShieldCheck,
       highlight: true,
     },
     {
       num: "03",
-      title: "Listing Goes Live",
+      title: "Celebration Goes Live",
       desc: "Once verified, your celebration becomes visible to screened global guests.",
       icon: Globe,
     },
@@ -31,8 +31,8 @@ export function HostJourneyDiagram() {
     },
     {
       num: "05",
-      title: "Receive 72% Share",
-      desc: "Your 72% host payout is released to your bank account 3 days post-event.",
+      title: "Receive 78% Share",
+      desc: "Your 78% host payout is released to your bank account 3 days post-event.",
       icon: DollarSign,
     },
   ];

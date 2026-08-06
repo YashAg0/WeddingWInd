@@ -3,12 +3,13 @@ import { FileText, Clock } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Terms of Service",
-  description: "WeddingWithIndia's terms of service. Rules and guidelines for using our wedding tourism marketplace.",
+  description: "WeddingWithIndia's terms of service. Rules and guidelines for using our wedding immersion platform.",
 };
 
 export default function TermsPage() {
   return (
-    <div className="min-h-screen bg-warm-50/50 pt-28 pb-20">
+    <div className="px-5 sm:px-8 lg:px-12 xl:px-16">
+    <div className="min-h-screen bg-warm-50/50 pt-28 pb-20 rounded-[2.5rem]">
       <div className="container-luxury max-w-4xl">
         {/* Header */}
         <div className="flex flex-col items-center text-center gap-4 mb-12">
@@ -41,7 +42,7 @@ export default function TermsPage() {
               2. Description of Service
             </h2>
             <p>
-              Wedding With India provides an online marketplace platform connecting international travelers wishing to experience authentic Indian culture with genuine Indian families hosting weddings. We act solely as a matching and facilitation platform and do not operate, organize, or own any specific wedding events.
+              Wedding With India provides an online platform connecting international travelers wishing to experience authentic Indian culture with genuine Indian families hosting weddings. We act solely as a matching and facilitation platform and do not operate, organize, or own any specific wedding events.
             </p>
           </section>
 
@@ -98,5 +99,6 @@ export default function TermsPage() {
         </div>
       </div>
     </div>
-  );
+  
+    </div>);
 }

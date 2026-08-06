@@ -46,7 +46,7 @@ The database uses **Prisma ORM 6.x** backed by **PostgreSQL**. The schema enforc
 
 ### Financials & Commissions
 - **Payment**: Payment record storing amount, currency, status, and `stripePaymentIntentId`.
-- **Commission**: 7% referral commission record linked to an `AgentProfile`, `Booking`, and `Payment`.
+- **Commission**: tiered referral commission record linked to an `AgentProfile`, `Booking`, and `Payment`.
 - **AgentReferral**: Click and conversion tracking record connecting a visitor ID to a signed-up user.
 
 ### Trust, Safety & Reviews
@@ -69,7 +69,7 @@ npm run db:seed
 
 This creates connected demo data:
 - Super Admin, Admin, Host, Guest, Agent, and Coordinator user accounts.
-- 6 Full Wedding listings with galleries, events, traditions, and itineraries.
+- 6 Full Our Indian Weddings with galleries, events, traditions, and itineraries.
 - Attended & paid guest bookings with generated QR guest passes.
 - Verified 5-star reviews with host responses.
 - Accrued agent referral commissions and financial audit logs.

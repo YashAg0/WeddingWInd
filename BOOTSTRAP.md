@@ -45,7 +45,7 @@ When `npm run bootstrap` is invoked, the system executes 6 sequential verificati
 - Provisions 6 RBAC user accounts:
   - **Super Admin**: `superadmin@weddingwithindia.com` (Role: `ADMIN`, full audit privileges)
   - **Platform Admin**: `admin@weddingwithindia.com` (Role: `ADMIN`, operations manager)
-  - **Host Couple**: `host@weddingwithindia.com` (Role: `COUPLE`, `CoupleProfile` with listings)
+  - **Host Couple**: `host@weddingwithindia.com` (Role: `COUPLE`, `CoupleProfile` with celebrations)
   - **Guest Traveler**: `guest@weddingwithindia.com` (Role: `TRAVELER`, `TravelerProfile` with bookings)
   - **Referral Agent**: `agent@weddingwithindia.com` (Role: `AGENT`, `AgentProfile` with code `WWI-ROYAL-AGENT`)
   - **Coordinator**: `coordinator@weddingwithindia.com` (Role: `ADMIN`, city logistics lead)

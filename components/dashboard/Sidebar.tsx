@@ -23,7 +23,9 @@ import {
   MessageSquare,
   Ticket,
   ScanLine,
-  Sparkles
+  Sparkles,
+  ShieldCheck,
+  Sliders
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -53,7 +55,7 @@ const navItems: NavItem[] = [
     roles: ["traveler", "couple", "agent", "admin"]
   },
   {
-    label: "Bookings",
+    label: "Reservations",
     href: "/dashboard/bookings",
     icon: Calendar,
     roles: ["traveler", "couple", "agent"]
@@ -66,7 +68,7 @@ const navItems: NavItem[] = [
   },
   {
     label: "My Weddings",
-    href: "/dashboard/listings",
+    href: "/dashboard/celebrations",
     icon: Heart,
     roles: ["couple"]
   },
@@ -113,7 +115,7 @@ const navItems: NavItem[] = [
     roles: ["admin"]
   },
   {
-    label: "Saved Weddings",
+    label: "Saved Celebrations",
     href: "/dashboard/wishlist",
     icon: Heart,
     roles: ["traveler"]
@@ -173,6 +175,12 @@ const navItems: NavItem[] = [
     roles: ["admin"]
   },
   {
+    label: "Founder Panel",
+    href: "/dashboard/admin/founder",
+    icon: Sliders,
+    roles: ["admin"]
+  },
+  {
     label: "Safety Center",
     href: "/dashboard/safety",
     icon: ShieldAlert,
@@ -188,6 +196,12 @@ const navItems: NavItem[] = [
     label: "Notifications",
     href: "/dashboard/notifications",
     icon: Bell,
+    roles: ["traveler", "couple", "agent", "admin"]
+  },
+  {
+    label: "Trust & Verification",
+    href: "/dashboard/verification",
+    icon: ShieldCheck,
     roles: ["traveler", "couple", "agent", "admin"]
   },
   {
@@ -277,14 +291,14 @@ export default function Sidebar({ className, onCloseMobile }: SidebarProps) {
           className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-white/50 hover:text-white transition-colors"
         >
           <Compass size={18} />
-          <span>Explore Weddings</span>
+          <span>Explore Celebrations</span>
         </Link>
         <button
           onClick={logout}
           className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors cursor-pointer text-left"
         >
           <LogOut size={18} />
-          <span>Logout</span>
+          <span>Sign Out</span>
         </button>
       </div>
     </div>

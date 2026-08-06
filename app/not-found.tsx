@@ -3,8 +3,8 @@ import type { Metadata } from "next";
 import { Search, Home, ArrowLeft } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Page Not Found — Wedding With India",
-  description: "The page you are looking for does not exist. Browse our wedding marketplace instead.",
+  title: "Destination Uncharted — Wedding With India",
+  description: "The page you requested could not be found. Explore our authentic heritage wedding invitations instead.",
   robots: { index: false, follow: false },
 };
 
@@ -20,20 +20,19 @@ export default function NotFound() {
       <div className="max-w-lg w-full text-center space-y-8">
         {/* Large 404 */}
         <div className="space-y-2">
-          <p className="text-8xl font-display font-bold text-[var(--color-brand-primary)] opacity-20 select-none leading-none">
+          <p className="text-8xl font-display font-bold text-[var(--color-gold-300)] opacity-20 select-none leading-none">
             404
           </p>
-          <div className="w-16 h-1 bg-[var(--color-brand-primary)] rounded-full mx-auto" />
+          <div className="w-16 h-1 bg-[var(--color-gold-300)] rounded-full mx-auto" />
         </div>
 
         {/* Message */}
         <div className="space-y-3">
-          <h1 className="font-display font-bold text-2xl text-charcoal-900">
-            Page Not Found
+          <h1 className="font-display font-bold text-2xl text-white">
+            Destination Uncharted
           </h1>
-          <p className="text-charcoal-500 text-sm leading-relaxed max-w-sm mx-auto">
-            The page you&apos;re looking for doesn&apos;t exist or has been moved.
-            Browse our collection of authentic Indian weddings instead.
+          <p className="text-white/80 text-sm leading-relaxed max-w-sm mx-auto">
+            The path you are looking for has moved or is no longer active. Explore our hand-vetted wedding celebrations across India.
           </p>
         </div>
 
@@ -44,24 +43,24 @@ export default function NotFound() {
             className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[var(--color-brand-primary)] text-white text-sm font-bold hover:opacity-90 transition-opacity"
           >
             <Home size={15} />
-            Back to Home
+            Return Home
           </Link>
           <Link
             href="/weddings"
-            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl border border-warm-200 text-charcoal-600 text-sm font-bold hover:bg-warm-50 transition-colors"
+            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl border border-white/20 text-white text-sm font-bold hover:bg-white/10 transition-colors"
           >
             <Search size={15} />
-            Browse Weddings
+            Explore Celebrations
           </Link>
         </div>
 
         {/* Back link */}
         <Link
           href="/"
-          className="inline-flex items-center gap-1.5 text-xs text-charcoal-400 hover:text-charcoal-600 transition-colors"
+          className="inline-flex items-center gap-1.5 text-xs text-white/60 hover:text-white transition-colors"
         >
           <ArrowLeft size={12} />
-          Go back to home page
+          Return to home page
         </Link>
       </div>
     </div>

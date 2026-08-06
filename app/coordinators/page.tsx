@@ -1,14 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { Users, Calendar, MapPin, ShieldCheck, CheckCircle2, ArrowRight, Clock, Award, Compass, MessageSquare } from "lucide-react";
+import { Users, MapPin, ShieldCheck, ArrowRight, Clock, Award, Compass } from "lucide-react";
 import { CoordinatorJourneyDiagram } from "@/components/diagrams/CoordinatorJourneyDiagram";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { COORDINATOR_MODEL } from "@/lib/constants/financial-model";
 
 export default function CoordinatorsLandingPage() {
   return (
-    <div className="min-h-screen bg-warm-50/50 pt-28 pb-20">
+    <div className="px-5 sm:px-8 lg:px-12 xl:px-16">
+    <div className="min-h-screen bg-warm-50/50 pt-28 pb-20 rounded-[2.5rem]">
       
       {/* Hero */}
       <section className="container-luxury text-center max-w-4xl mb-16 space-y-5">
@@ -153,5 +154,6 @@ export default function CoordinatorsLandingPage() {
       </section>
 
     </div>
-  );
+  
+    </div>);
 }

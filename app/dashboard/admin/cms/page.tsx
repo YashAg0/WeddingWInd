@@ -116,7 +116,7 @@ export default async function AdminCMSPage({
           CMS & Homepage Content Editor
         </h1>
         <p className="text-charcoal-500 text-xs sm:text-sm">
-          Publish blog posts, curate customer testimonials, and manage FAQ lists.
+          Publish blog posts, curate guest testimonials, and manage FAQ lists.
         </p>
       </div>
 
@@ -144,7 +144,7 @@ export default async function AdminCMSPage({
             currentTab === "testimonials" ? "border-maroon-800 text-[var(--color-brand-primary)]" : "border-transparent text-charcoal-400 hover:text-charcoal-600"
           }`}
         >
-          Customer Testimonials
+          Guest Testimonials
         </Link>
       </div>
 
@@ -544,7 +544,7 @@ export default async function AdminCMSPage({
             <div className="flex justify-between items-center border-b border-warm-100 pb-3">
               <h3 className="font-display font-bold text-base text-charcoal-900 flex items-center gap-2">
                 <Quote size={18} className="text-maroon-600" />
-                Customer Testimonials ({testimonials.length})
+                Guest Testimonials ({testimonials.length})
               </h3>
               {!action && (
                 <Link
@@ -559,7 +559,7 @@ export default async function AdminCMSPage({
 
             {testimonials.length === 0 ? (
               <div className="p-8 text-center text-xs text-charcoal-400 font-semibold">
-                No customer testimonials cataloged.
+                No guest testimonials cataloged.
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

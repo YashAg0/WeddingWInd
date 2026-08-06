@@ -14,7 +14,7 @@ The Admin Operations Control Hub centralizes marketplace management across 8 key
  ┌─────────────┬─────────────┬──────┴──────┬─────────────┬─────────────┐
  ▼             ▼             ▼             ▼             ▼             ▼
 Verifications  Weddings      Users        Bookings      Payments       Safety Ops
-Queue         Listings      Accounts     Ledger        Financials     Disputes
+Queue         Celebrations      Accounts     Ledger        Financials     Disputes
 ```
 
 ---
@@ -26,17 +26,17 @@ Queue         Listings      Accounts     Ledger        Financials     Disputes
 - **Workflow**:
   1. Inspect uploaded passport/ID URLs, invitation cards, and venue confirmation letters.
   2. Verify phone number and social media profile links.
-  3. Click **Approve Verification** to issue the `VERIFIED_HOST` badge and update listing status to `PUBLISHED`.
+  3. Click **Approve Verification** to issue the `VERIFIED_HOST` badge and update celebration status to `PUBLISHED`.
   4. Or click **Reject** with structured feedback notes sent directly to the host.
 
 ### B. Agent Partner Applications (`/dashboard/admin/agents`)
 - **Purpose**: Review luxury travel agent credentials, agency registrations, and target audience alignment.
 - **Workflow**:
   1. Inspect agency organization details, website, and LinkedIn profiles.
-  2. Click **Activate Partner** to assign a unique referral code (`WWI-AGENT-XXXX`) and enable 7% commission accrual.
+  2. Click **Activate Partner** to assign a unique referral code (`WWI-AGENT-XXXX`) and enable tiered commission (₹500-₹500) accrual.
 
 ### C. Financial Reconciliation Ledger (`/dashboard/admin/payments`)
-- **Purpose**: Reconcile Stripe payment intents, host 72% revenue payouts in INR, agent 7% commission payouts, and platform 28% fees.
+- **Purpose**: Reconcile Stripe payment intents, host 78% revenue payouts in INR, agent tiered commission (₹500-₹500) payouts, and platform 22% fees.
 - **Workflow**:
   1. View gross booking volume across date ranges.
   2. Audit pending host and agent payout withdrawal requests.

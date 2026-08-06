@@ -119,7 +119,7 @@ export default async function AdminWeddingsPage({
             Wedding Directory Management
           </h1>
           <p className="text-charcoal-500 text-xs sm:text-sm">
-            Draft, publish, feature, or manage capacities of global listings.
+            Draft, publish, feature, or manage capacities of global celebrations.
           </p>
         </div>
         {!action && (
@@ -128,7 +128,7 @@ export default async function AdminWeddingsPage({
             className="inline-flex items-center gap-2 bg-[var(--color-brand-primary)] text-white text-xs font-bold uppercase tracking-wider px-4 py-2.5 rounded-xl hover:opacity-90 transition-opacity"
           >
             <Plus size={14} />
-            Create Listing
+            Create Celebration
           </Link>
         )}
       </div>
@@ -278,8 +278,8 @@ export default async function AdminWeddingsPage({
                   defaultValue={editWedding?.featured ? "true" : "false"}
                   className="input-luxury w-full bg-white select-reset"
                 >
-                  <option value="false">Standard Listing</option>
-                  <option value="true">Featured Listing</option>
+                  <option value="false">Standard Celebration</option>
+                  <option value="true">Featured Celebration</option>
                 </select>
               </div>
             </div>
@@ -307,7 +307,7 @@ export default async function AdminWeddingsPage({
                 type="submit"
                 className="px-5 py-2.5 rounded-xl bg-[var(--color-brand-primary)] text-white text-xs font-bold uppercase tracking-wider hover:opacity-90 transition-opacity cursor-pointer"
               >
-                Save Listing
+                Save Celebration
               </button>
             </div>
           </form>
@@ -416,7 +416,7 @@ export default async function AdminWeddingsPage({
                         <input type="hidden" name="id" value={w.id} />
                         <button
                           type="submit"
-                          title="Delete Listing"
+                          title="Delete Celebration"
                           className="p-1.5 rounded-lg border border-rose-100 bg-rose-50 text-rose-650 hover:bg-rose-500 hover:text-white cursor-pointer"
                         >
                           <Trash2 size={13} />

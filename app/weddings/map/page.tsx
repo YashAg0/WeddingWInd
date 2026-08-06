@@ -48,7 +48,7 @@ export default function WeddingsMapDiscoveryPage() {
       // Delhi/Punjab: x: 40%, y: 30%
       // Rajasthan: x: 30%, y: 40%
       // Kerala: x: 35%, y: 85%
-      // Goa beach: x: 28%, y: 72%
+      // Goa beach: x: 22%, y: 78%
       const items = res.weddings.map((w, index) => {
         let x = 45;
         let y = 45;
@@ -88,7 +88,7 @@ export default function WeddingsMapDiscoveryPage() {
 
       setWeddings(items);
     } catch (err) {
-      console.error("Failed to load map listings:", err);
+      console.error("Failed to load map celebrations:", err);
     }
   };
 
@@ -181,11 +181,11 @@ export default function WeddingsMapDiscoveryPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 border-b border-warm-150 pb-4">
         <div className="space-y-1">
-          <h1 className="font-display font-bold text-2xl sm:text-3xl text-charcoal-900 flex items-center gap-2">
-            <MapIcon size={24} className="text-maroon-700" />
+          <h1 className="font-display font-bold text-2xl sm:text-3xl text-white flex items-center gap-2">
+            <MapIcon size={24} className="text-[var(--color-gold-300)]" />
             Heritage Map Discovery
           </h1>
-          <p className="text-charcoal-500 text-xs sm:text-sm">
+          <p className="text-white/80 text-xs sm:text-sm">
             Discover and locate cultural wedding celebrations across geographic clusters.
           </p>
         </div>
@@ -195,7 +195,7 @@ export default function WeddingsMapDiscoveryPage() {
           href="/weddings"
           className="text-xs font-bold uppercase tracking-wider text-charcoal-700 border border-warm-250 bg-white hover:bg-warm-50 px-4 py-2.5 rounded-xl self-start transition-colors"
         >
-          View Listings Directory
+          View Celebrations Directory
         </Link>
       </div>
 
@@ -285,7 +285,7 @@ export default function WeddingsMapDiscoveryPage() {
               <path d="M40 10 L45 8 L48 10 L52 14 L50 18 L55 20 L58 18 L60 22 L62 26 L60 30 L65 32 L60 36 L63 40 L58 45 L52 50 L48 55 L45 60 L42 66 L40 72 L38 80 L39 88 L37 92 L35 90 L34 84 L32 78 L30 70 L28 65 L25 60 L28 55 L30 48 L28 42 L32 38 L35 32 L34 26 L36 20 L38 14 Z" />
             </svg>
 
-            {/* Glowing pulses for listings markers */}
+            {/* Glowing pulses for celebrations markers */}
             {renderMarkers()}
 
             {/* User self indicator */}

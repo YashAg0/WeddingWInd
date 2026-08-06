@@ -56,7 +56,7 @@ export default function BookingsPage() {
       default:
         return {
           title: "No confirmed passes",
-          description: "Explore the marketplace, apply to join host families, and complete your checkout payments.",
+          description: "Explore our platform, apply to join host families, and complete your checkout payments.",
           icon: <Ticket size={24} className="text-maroon-800" />,
           actionText: "Browse Weddings",
           actionHref: "/weddings"

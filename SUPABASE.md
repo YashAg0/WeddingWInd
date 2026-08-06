@@ -40,7 +40,7 @@ This document details the Supabase PostgreSQL database architecture, connection 
 ## 3. Row Level Security (RLS) & Security Policies
 
 All Supabase tables enforce strict Row Level Security (RLS):
-- **Public Tables (`Wedding`, `WeddingGallery`, `WeddingEvent`, `Review`)**: `SELECT` policy grants public read access to `PUBLISHED` listings.
+- **Public Tables (`Wedding`, `WeddingGallery`, `WeddingEvent`, `Review`)**: `SELECT` policy grants public read access to `PUBLISHED` celebrations.
 - **User Private Tables (`Booking`, `GuestPass`, `Payment`)**: `SELECT`/`UPDATE` policy restricts access strictly to the authenticated user ID (`auth.uid() == user_id`) or an Admin.
 - **Admin Audit Logs (`AuditLog`, `Verification`, `SafetyCase`)**: Restrict `ALL` operations to users possessing `role = 'ADMIN'`.
 

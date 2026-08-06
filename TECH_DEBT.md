@@ -4,7 +4,7 @@ This document catalogs technical debt items, architectural trade-offs, and refac
 
 ---
 
-## 1. Technical Debt Inventory
+## 1. Technical Debt Collection
 
 | Item ID | Category | Description | Priority | Target Quarter |
 | :--- | :--- | :--- | :--- | :--- |

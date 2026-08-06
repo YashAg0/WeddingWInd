@@ -40,7 +40,7 @@ export function NewsletterForm() {
         placeholder="Enter your email"
         autoComplete="email"
         required
-        className="flex-1 bg-white/10 border border-white/20 rounded-full px-5 py-3 text-sm text-white placeholder:text-charcoal-400 focus:outline-none focus:border-[var(--color-brand-secondary)] focus:bg-white/15 transition-all duration-200"
+        className="flex-1 bg-white/10 border border-white/20 rounded-full px-5 py-3 text-sm text-white placeholder:text-white/70 focus:outline-none focus:border-[var(--color-brand-secondary)] focus:bg-white/15 transition-all duration-200"
       />
       <button
         type="submit"

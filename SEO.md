@@ -10,7 +10,7 @@ WeddingWithIndia embeds semantic **JSON-LD Structured Data** on every key page t
 
 | Page Type | JSON-LD Schema Type | Embedded Properties |
 | :--- | :--- | :--- |
-| **Global Layout** | `Organization` | Name, Logo, URL, Social Profiles, Customer Support |
+| **Global Layout** | `Organization` | Name, Logo, URL, Social Profiles, Guest Support |
 | **Global Layout** | `WebSite` | Sitelinks Searchbox (`target: /weddings?destination={query}`) |
 | **Wedding Detail** | `Event` / `TouristAttraction` | Event Name, Date, Location, Per-Guest Pricing, Currency, Capacity |
 | **Reviews Section** | `AggregateRating` | Rating Value (1-5), Review Count, Best/Worst Rating |
@@ -20,7 +20,7 @@ WeddingWithIndia embeds semantic **JSON-LD Structured Data** on every key page t
 
 ## 2. Dynamic Sitemap & Robots Configuration
 
-- **Dynamic Sitemap Generator** (`app/sitemap.ts`): Automatically indexes static pages (`/about`, `/contact`, `/privacy`, `/terms`, `/how-it-works`) and dynamic published wedding listings (`/weddings/[slug]`).
+- **Dynamic Sitemap Generator** (`app/sitemap.ts`): Automatically indexes static pages (`/about`, `/contact`, `/privacy`, `/terms`, `/how-it-works`) and dynamic published Our Indian Weddings (`/weddings/[slug]`).
   - Access URL: `https://weddingwithindia.com/sitemap.xml`
 - **Robots Directives Generator** (`app/robots.ts`): Instructs search engine bots to crawl public pages while blocking private dashboard routes (`/dashboard/*`, `/api/*`).
   - Access URL: `https://weddingwithindia.com/robots.txt`

@@ -82,6 +82,7 @@ enum VerificationStatus {
   UNDER_REVIEW
   APPROVED
   REJECTED
+  NEED_MORE_DOCUMENTS
   EXPIRED
 }
 
@@ -156,9 +157,12 @@ model User {
   badges                 UserQualityBadge[]
   reviewAppealsSubmitted ReviewAppeal[]           @relation("ReviewAppealSubmittedBy")
   reviewAppealsReviewed  ReviewAppeal[]           @relation("ReviewAppealReviewedBy")
+  deletedAt              DateTime?
 
   @@index([email])
   @@index([clerkUserId])
+  @@index([status])
+  @@index([createdAt])
 }
 
 model TravelerProfile {
@@ -181,6 +185,7 @@ model TravelerProfile {
   bookings  Booking[]
   wishlists Wishlist[]
   reviews   Review[]
+  deletedAt DateTime?
 
   @@index([userId])
 }
@@ -201,7 +206,11 @@ model CoupleProfile {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  weddings Wedding[]
+  stripeAccountId String?
+  stripeOnboardingComplete Boolean @default(false)
+
+  weddings  Wedding[]
+  deletedAt DateTime?
 
   @@index([userId])
 }
@@ -222,9 +231,13 @@ model AgentProfile {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  stripeAccountId String?
+  stripeOnboardingComplete Boolean @default(false)
+
   referrals      AgentReferral[] @relation("Agent")
   commissions    Commission[]
   payoutRequests PayoutRequest[]
+  deletedAt      DateTime?
 
   @@index([userId])
 }
@@ -268,9 +281,12 @@ model Wedding {
   suspended   Boolean               @default(false)
   safetyCases SafetyCase[]
   badges      WeddingQualityBadge[]
+  deletedAt   DateTime?
 
   @@index([hostCoupleId])
   @@index([slug])
+  @@index([status])
+  @@index([createdAt])
 }
 
 model WeddingGallery {
@@ -319,9 +335,9 @@ model WeddingTradition {
 model Booking {
   id         String          @id @default(uuid())
   travelerId String
-  traveler   TravelerProfile @relation(fields: [travelerId], references: [id], onDelete: Cascade)
+  traveler   TravelerProfile @relation(fields: [travelerId], references: [id], onDelete: Restrict)
   weddingId  String
-  wedding    Wedding         @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  wedding    Wedding         @relation(fields: [weddingId], references: [id], onDelete: Restrict)
 
   date          DateTime
   guestsCount   Int           @default(1)
@@ -345,9 +361,12 @@ model Booking {
   // Trust & Safety Relations
   cancellationRequests CancellationRequest[]
   safetyCases          SafetyCase[]
+  deletedAt            DateTime?
 
   @@index([travelerId])
   @@index([weddingId])
+  @@index([status])
+  @@index([createdAt])
 }
 
 model BookingGuest {
@@ -449,7 +468,7 @@ model Notification {
 model Payment {
   id        String  @id @default(uuid())
   bookingId String
-  booking   Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  booking   Booking @relation(fields: [bookingId], references: [id], onDelete: Restrict)
 
   amount                Float
   currency              String        @default("USD")
@@ -465,14 +484,17 @@ model Payment {
   refunds        Refund[]
   payouts        Payout[]
   paymentIntents PaymentIntent[]
+  deletedAt      DateTime?
 
   @@index([bookingId])
+  @@index([status])
+  @@index([createdAt])
 }
 
 model Transaction {
   id          String   @id @default(uuid())
   paymentId   String
-  payment     Payment  @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  payment     Payment  @relation(fields: [paymentId], references: [id], onDelete: Restrict)
   type        String
   amount      Float
   status      String
@@ -486,7 +508,7 @@ model Transaction {
 model Refund {
   id             String   @id @default(uuid())
   paymentId      String
-  payment        Payment  @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  payment        Payment  @relation(fields: [paymentId], references: [id], onDelete: Restrict)
   amount         Float
   reason         String?
   stripeRefundId String?  @unique
@@ -504,7 +526,7 @@ model Refund {
 model Payout {
   id               String   @id @default(uuid())
   paymentId        String
-  payment          Payment  @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  payment          Payment  @relation(fields: [paymentId], references: [id], onDelete: Restrict)
   amount           Float
   stripeTransferId String?  @unique
   status           String
@@ -529,13 +551,13 @@ model PaymentIntent {
 model Commission {
   id               String          @id @default(uuid())
   agentId          String
-  agent            AgentProfile    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  agent            AgentProfile    @relation(fields: [agentId], references: [id], onDelete: Restrict)
   referralId       String?
   referral         AgentReferral?  @relation(fields: [referralId], references: [id], onDelete: Cascade)
   bookingId        String?
-  booking          Booking?        @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  booking          Booking?        @relation(fields: [bookingId], references: [id], onDelete: Restrict)
   paymentId        String?
-  payment          Payment?        @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  payment          Payment?        @relation(fields: [paymentId], references: [id], onDelete: Restrict)
   transactionId    String? // related transaction ledger item ID
   commissionRuleId String?
   commissionRule   CommissionRule? @relation(fields: [commissionRuleId], references: [id], onDelete: SetNull)
@@ -560,14 +582,16 @@ model Commission {
   @@index([referralId])
   @@index([bookingId])
   @@index([paymentId])
+  @@index([status])
+  @@index([createdAt])
 }
 
 model AgentReferral {
   id             String       @id @default(uuid())
   agentId        String
-  agent          AgentProfile @relation(name: "Agent", fields: [agentId], references: [id], onDelete: Cascade)
+  agent          AgentProfile @relation(name: "Agent", fields: [agentId], references: [id], onDelete: Restrict)
   referredUserId String?
-  referredUser   User?        @relation(name: "ReferredUser", fields: [referredUserId], references: [id], onDelete: Cascade)
+  referredUser   User?        @relation(name: "ReferredUser", fields: [referredUserId], references: [id], onDelete: Restrict)
 
   referralCode String
   referralType ReferralType   @default(TRAVELER)
@@ -597,6 +621,8 @@ model AgentReferral {
   @@index([referredUserId])
   @@index([visitorId])
   @@index([referralCode])
+  @@index([status])
+  @@index([createdAt])
 }
 
 model Verification {
@@ -606,22 +632,49 @@ model Verification {
 
   status VerificationStatus @default(NOT_SUBMITTED)
 
-  // Traveler Verification Details
-  passportUrl   String?
+  // Common Verification
   govtIdUrl     String?
-  selfieUrl     String?
   phoneVerified Boolean @default(false)
   emailVerified Boolean @default(false)
 
-  // Couple Verification Details
-  invitationUrl   String?
-  venueConfirmUrl String?
-  socialLinks     String? @db.Text
+  // Traveler Verification Details
+  passportUrl        String?
+  selfieUrl          String?
+  emergencyContact   String?
+  nationality        String?
+  visaStatus         String?
+  travelInsuranceUrl String?
+  medicalDeclaration String? @db.Text
+
+  // Host Verification Details
+  panNumber           String?
+  panUrl              String?
+  aadhaarNumber       String?
+  aadhaarUrl          String?
+  addressProofUrl     String?
+  weddingProofUrl     String?
+  venueConfirmUrl     String?
+  invitationUrl       String?
+  bankName            String?
+  bankAccountNo       String?
+  bankIfsc            String?
+  bankVerificationUrl String?
+  socialLinks         String? @db.Text
 
   // Agent Verification Details
-  orgDetails     String? @db.Text
-  businessRegUrl String?
-  linkedinUrl    String?
+  gstNumber       String?
+  gstUrl          String?
+  orgDetails      String? @db.Text
+  businessRegUrl  String?
+  linkedinUrl     String?
+  portfolioUrl    String?
+  experienceYears Int?
+  references      String? @db.Text
+
+  // Coordinator Verification Details
+  experienceNotes String? @db.Text
+  availability    String?
+  languages       String?
 
   // Metadata for audit
   submissionDate DateTime? @default(now())

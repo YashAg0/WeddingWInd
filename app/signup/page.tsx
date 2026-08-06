@@ -77,12 +77,14 @@ function SignupContent() {
 
 export default function SignupPage() {
   return (
+    <div className="px-5 sm:px-8 lg:px-12 xl:px-16">
     <Suspense fallback={
-      <div className="min-h-screen bg-warm-50 flex items-center justify-center flex-col gap-3">
+      <div className="min-h-screen bg-warm-50 flex items-center justify-center flex-col gap-3 rounded-[2.5rem]">
         <div className="w-8 h-8 rounded-full border-4 border-maroon-100 border-t-maroon-800 animate-spin" />
       </div>
     }>
       <SignupContent />
     </Suspense>
-  );
+  
+    </div>);
 }

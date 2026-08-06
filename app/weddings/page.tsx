@@ -125,8 +125,9 @@ export default async function WeddingsPage({ searchParams }: PageProps) {
   });
 
   return (
-    <div className="min-h-screen bg-warm-50/50 pt-24 pb-16">
-      <div className="container-luxury flex flex-col gap-8">
+    <div className="px-5 sm:px-8 lg:px-12 xl:px-16">
+      <div className="min-h-screen bg-warm-50/50 pt-24 pb-16 rounded-[2.5rem]">
+        <div className="container-luxury flex flex-col gap-8">
         
         {/* Search header container */}
         <div className="text-center max-w-2xl mx-auto space-y-3 mt-4">
@@ -192,6 +193,7 @@ export default async function WeddingsPage({ searchParams }: PageProps) {
               </div>
             )}
           </main>
+        </div>
         </div>
       </div>
     </div>

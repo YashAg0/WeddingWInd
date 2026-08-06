@@ -5,7 +5,7 @@ const baseUrl = "https://weddingwithindia.com";
 /**
  * app/sitemap.ts
  *
- * Dynamic sitemap — includes all public wedding listings.
+ * Dynamic sitemap — includes all public Our Indian Weddings.
  * Regenerated on each deployment (static export at build time).
  * If DB is offline at build time, falls back to static routes only.
  */
@@ -74,7 +74,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   ];
 
-  // Dynamic wedding listing routes
+  // Dynamic Indian Wedding Experience routes
   let weddingRoutes: MetadataRoute.Sitemap = [];
   try {
     const { prisma } = await import("@/lib/prisma");
@@ -100,7 +100,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         priority: 0.8,
       }));
     }
-  } catch (err) {
+  } catch {
     const { featuredWeddings } = await import("@/lib/data");
     weddingRoutes = featuredWeddings.map((w) => ({
       url: `${baseUrl}/weddings/${w.slug}`,

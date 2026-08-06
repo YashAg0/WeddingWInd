@@ -24,10 +24,10 @@ function validateEnv() {
   console.log("  WeddingWithIndia — Environment Validator");
   console.log("==================================================\n");
 
-  let missingRequired = [];
-  let presentRequired = [];
-  let presentOptional = [];
-  let missingOptional = [];
+  const missingRequired = [];
+  const presentRequired = [];
+  const presentOptional = [];
+  const missingOptional = [];
 
   for (const envVar of requiredVars) {
     const val = process.env[envVar.name];

@@ -38,9 +38,9 @@ Super Admins can promote registered accounts directly from the Admin Panel (`/da
 | Capability | Admin | Super Admin |
 | :--- | :---: | :---: |
 | Access Internal Operations Control Hub (`/dashboard/admin`) | ✅ | ✅ |
-| Review & Approve Host Wedding Listings | ✅ | ✅ |
+| Review & Approve Host Our Indian Weddings | ✅ | ✅ |
 | Review & Approve Freelance Agent Applications | ✅ | ✅ |
-| View Financial Ledger (28% Platform / 72% Host split) | ✅ | ✅ |
+| View Financial Ledger (22% Platform / 78% Host split) | ✅ | ✅ |
 | Scan Guest Pass QR Codes at Venue Entry | ✅ | ✅ |
 | Triage Safety Dispute Reports | ✅ | ✅ |
 | Promote / Demote User Roles | ❌ | ✅ |
@@ -56,16 +56,16 @@ Super Admins can promote registered accounts directly from the Admin Panel (`/da
 1. Log into `/dashboard/admin`.
 2. Navigate to **Host Verification Queue** (`/dashboard/admin/hosts`).
 3. Verify uploaded ID, venue confirmation, and photography guidelines.
-4. Click **Approve Listing & Publish**. The system notifies the host via email and updates the listing status to `PUBLISHED`.
+4. Click **Approve Celebration & Publish**. The system notifies the host via email and updates the celebration status to `PUBLISHED`.
 
 ### 2. Referral Agent Activation Workflow
 1. Navigate to **Agent Application Review** (`/dashboard/admin/agents`).
 2. Review agency credentials and experience.
-3. Click **Activate Referral Partner**. The system generates a unique referral tracking code (`WWI-AGENT-XXXX`) and activates 7% commission accrual.
+3. Click **Activate Referral Partner**. The system generates a unique referral tracking code (`WWI-AGENT-XXXX`) and activates tiered commission (₹500-₹500) accrual.
 
 ### 3. Financial Audit & Payout Reconciliation
 1. Navigate to **Internal Financial Ledger** (`/dashboard/admin/bookings`).
-2. Inspect gross booking volume, host 72% earnings, platform 28% fees, and 7% agent commissions.
+2. Inspect gross booking volume, host 78% earnings, platform 22% fees, and tiered agent commissions (₹500-₹1800).
 3. Mark payout requests as `PAID` upon bank transfer completion.
 
 ---

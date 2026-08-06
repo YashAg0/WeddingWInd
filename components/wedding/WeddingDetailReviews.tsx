@@ -267,7 +267,7 @@ export function WeddingDetailReviews({ weddingId: _weddingId, reviews, userId }:
                       {rev.traveler?.user?.status === "VERIFIED" && (
                         <span className="inline-flex items-center text-[0.625rem] bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded font-bold uppercase tracking-wider border border-emerald-100">
                           <Award size={10} className="mr-0.5 fill-emerald-500" />
-                          Verified Buyer
+                          Verified Traveler
                         </span>
                       )}
                     </div>
@@ -364,7 +364,7 @@ export function WeddingDetailReviews({ weddingId: _weddingId, reviews, userId }:
             </div>
             
             <p className="text-charcoal-500 text-xs sm:text-sm leading-relaxed">
-              Help us maintain marketplace authenticity. What is incorrect or abusive about this guest review?
+              Help us maintain platform authenticity. What is incorrect or abusive about this guest review?
             </p>
 
             <div className="space-y-3">

@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { isAdmin } from "@/lib/auth";
 
@@ -8,20 +8,34 @@ export async function GET() {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const [pendingHostsCount, pendingAgentsCount, bookings, totalWeddingsCount, totalAgentsCount] = await Promise.all([
+    const [
+      pendingHostsCount,
+      pendingAgentsCount,
+      totalWeddingsCount,
+      totalAgentsCount,
+      bookingAggregates,
+      statusGroups
+    ] = await Promise.all([
       prisma.wedding.count({ where: { status: "DRAFT" } }),
       prisma.agentProfile.count({ where: { verifiedChecks: false } }),
-      prisma.booking.findMany({ select: { status: true, totalAmount: true, createdAt: true } }),
       prisma.wedding.count(),
-      prisma.agentProfile.count()
+      prisma.agentProfile.count(),
+      prisma.booking.aggregate({
+        _sum: { totalAmount: true },
+        _count: { _all: true }
+      }),
+      prisma.booking.groupBy({
+        by: ["status"],
+        _count: { _all: true }
+      })
     ]);
 
-    const bookingsByStatus = bookings.reduce((acc: Record<string, number>, b) => {
-      acc[b.status] = (acc[b.status] || 0) + 1;
+    const bookingsByStatus = statusGroups.reduce((acc: Record<string, number>, group) => {
+      acc[group.status] = group._count._all;
       return acc;
     }, {});
 
-    const totalVolume = bookings.reduce((sum, b) => sum + b.totalAmount, 0);
+    const totalVolume = bookingAggregates._sum.totalAmount || 0;
     const platformCommissionAccrued = Math.round(totalVolume * 0.28);
     const agentCommissionAccrued = Math.round(totalVolume * 0.07);
 
@@ -30,7 +44,7 @@ export async function GET() {
       pendingAgentsCount,
       totalWeddingsCount,
       totalAgentsCount,
-      totalBookingsCount: bookings.length,
+      totalBookingsCount: bookingAggregates._count._all,
       bookingsByStatus,
       totalVolume,
       platformCommissionAccrued,

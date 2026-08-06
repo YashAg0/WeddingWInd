@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Users, CheckCircle2, Clock, MapPin, Award, AlertCircle, ArrowLeft } from "lucide-react";
+import { Users, CheckCircle2, AlertCircle, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { COORDINATOR_MODEL } from "@/lib/constants/financial-model";
 import { coordinatorMockStore } from "@/lib/mock-data-store";
@@ -52,7 +52,8 @@ export default function CoordinatorApplyPage() {
   };
 
   return (
-    <div className="min-h-screen bg-warm-50/50 pt-28 pb-20">
+    <div className="px-5 sm:px-8 lg:px-12 xl:px-16">
+    <div className="min-h-screen bg-warm-50/50 pt-28 pb-20 rounded-[2.5rem]">
       <div className="container-luxury max-w-3xl mx-auto space-y-8">
         
         {/* Navigation */}
@@ -260,5 +261,6 @@ export default function CoordinatorApplyPage() {
 
       </div>
     </div>
-  );
+  
+    </div>);
 }

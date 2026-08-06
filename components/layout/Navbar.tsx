@@ -15,28 +15,23 @@ interface NavItem {
   children?: { label: string; href: string; description: string }[];
 }
 
-// Category slugs match the "Wedding Style" <select> in the Hero search card
-// exactly (royal, punjabi, south-indian, beach, destination, traditional) —
-// the two were out of sync before (this dropdown only linked to 4 of 6
-// categories), so a visitor could search a style from the hero that had no
-// equivalent quick-link in the nav.
 const navItems: NavItem[] = [
   {
     label: "Explore Weddings",
     href: "/weddings",
     children: [
-      { label: "All Weddings", href: "/weddings", description: "Browse all listings" },
-      { label: "Royal Weddings", href: "/weddings?category=royal", description: "Palace grandeur" },
-      { label: "Punjabi Weddings", href: "/weddings?category=punjabi", description: "Dhol, bhangra, dazzling colour" },
-      { label: "South Indian Weddings", href: "/weddings?category=south-indian", description: "Temple rituals, timeless custom" },
-      { label: "Beach Weddings", href: "/weddings?category=beach", description: "Oceanside romance" },
-      { label: "Destination Weddings", href: "/weddings?category=destination", description: "Exotic locales" },
-      { label: "Traditional Weddings", href: "/weddings?category=traditional", description: "Generations of ritual" },
+      { label: "All Weddings", href: "/weddings", description: "Browse all curated celebrations" },
+      { label: "Royal Ceremonies", href: "/weddings?category=royal", description: "Palace grandeur & royal rituals" },
+      { label: "Punjabi Weddings", href: "/weddings?category=punjabi", description: "Dhol rhythms & vibrant joy" },
+      { label: "South Indian Weddings", href: "/weddings?category=south-indian", description: "Temple traditions & sacred customs" },
+      { label: "Coastal Weddings", href: "/weddings?category=beach", description: "Sunset Weddings by the sea" },
+      { label: "Destination Weddings", href: "/weddings?category=destination", description: "Exotic heritage locales" },
+      { label: "Traditional Ceremonies", href: "/weddings?category=traditional", description: "Generations of timeless ritual" },
     ],
   },
-  { label: "How It Works", href: "/#how-it-works" },
-  { label: "Countries", href: "/#countries" },
-  { label: "List Your Wedding", href: "/list-wedding" },
+  { label: "How It Works?", href: "/#how-it-works" },
+  { label: "Destinations", href: "/#countries" },
+  { label: "Host Your Wedding", href: "/list-wedding" },
 ];
 
 /** A same-page anchor (e.g. "/#how-it-works") isn't a distinct "page," so it
@@ -228,7 +223,7 @@ export default function Navbar() {
           isHeaderHidden && "-translate-y-full",
           isTransparent
             ? "bg-transparent py-6"
-            : "bg-white/90 backdrop-blur-md shadow-sm py-4 border-b border-warm-200"
+            : "bg-white/80 backdrop-blur-md py-4 border-b border-white/20"
         )}
         role="banner"
       >
@@ -258,7 +253,7 @@ export default function Navbar() {
                     isTransparent ? "text-white/80" : "text-[var(--color-brand-secondary)]"
                   )}
                 >
-                  Attend Authentic Weddings
+                  Attend Indian Weddings
                 </span>
               </div>
             </Link>
@@ -300,7 +295,7 @@ export default function Navbar() {
                         size={14}
                         className={cn(
                           "transition-transform duration-200",
-                          activeDropdown === item.label && "rotate-180"
+                          activeDropdown === item.label && "rotate-50"
                         )}
                         aria-hidden="true"
                       />

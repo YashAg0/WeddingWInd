@@ -29,7 +29,8 @@ export default function ContactPage() {
   };
 
   return (
-    <div className="min-h-screen bg-warm-50/50 pt-28 pb-20">
+    <div className="px-5 sm:px-8 lg:px-12 xl:px-16">
+    <div className="min-h-screen bg-warm-50/50 pt-28 pb-20 rounded-[2.5rem]">
       
       {/* Intro Hero */}
       <section className="container-luxury text-center max-w-3xl mb-16 space-y-4">
@@ -41,7 +42,7 @@ export default function ContactPage() {
           We&apos;re here to <span className="text-gradient-brand">help</span>
         </h1>
         <p className="text-charcoal-500 text-sm sm:text-base leading-relaxed">
-          Have questions about listings, host vetting, or partnership referral programs? Send us a message or contact our team directly.
+          Have questions about celebrations, host vetting, or partnership referral programs? Send us a message or contact our team directly.
         </p>
       </section>
 
@@ -264,7 +265,7 @@ export default function ContactPage() {
               <span>Checking FAQs?</span>
             </div>
             <p className="text-charcoal-500 text-xs sm:text-sm leading-relaxed">
-              If you have quick queries about what clothes to wear, how payouts work, or security, please check our FAQ listings first.
+              If you have quick queries about what clothes to wear, how payouts work, or security, please check our FAQ celebrations first.
             </p>
             <Link href="/for-travelers#faqs" className="inline-flex items-center gap-1.5 text-[var(--color-brand-primary)] text-xs font-bold uppercase tracking-wider hover:underline pt-1">
               <span>Read Travelers FAQs</span>
@@ -277,7 +278,8 @@ export default function ContactPage() {
       </section>
 
     </div>
-  );
+  
+    </div>);
 }
 
 

@@ -8,6 +8,7 @@ import { z } from "zod";
 import { sendVerificationApprovedEmail, sendVerificationRejectedEmail } from "../email";
 import crypto from "crypto";
 import { logReputationEvent } from "../services/reputation";
+import { stripe } from "../stripe";
 
 // Helper function to log audit events
 export async function createAuditLog(
@@ -341,6 +342,7 @@ export async function adminReviewVerificationAction(
       status,
       notes,
       reviewedBy: admin.name || admin.email,
+      expiryDate: status === VerificationStatus.APPROVED ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000) : null,
     },
     include: {
       user: {
@@ -388,11 +390,27 @@ export async function adminReviewVerificationAction(
   }
 
   // Create Notification
-  const notifyType = status === VerificationStatus.APPROVED ? "VERIFICATION_APPROVED" : "VERIFICATION_REJECTED";
-  const notifyTitle = status === VerificationStatus.APPROVED ? "Verification Approved!" : "Verification Request Declined";
-  const notifyMessage = status === VerificationStatus.APPROVED 
-    ? "Your identity verification checks passed! A trust badge has been linked to your profile." 
-    : `Your trust verification request was declined. Notes: ${notes || "Invalid/blurred docs."}`;
+  let notifyTitle = "Verification Status Update";
+  let notifyMessage = notes || "Your verification status has been updated.";
+  let notifyType: any = "INFO";
+
+  if (status === VerificationStatus.APPROVED) {
+    notifyTitle = "Profile Verified!";
+    notifyMessage = "Your identity verification checks passed! A trust badge has been linked to your profile.";
+    notifyType = "SUCCESS";
+  } else if (status === VerificationStatus.REJECTED) {
+    notifyTitle = "Verification Request Declined";
+    notifyMessage = `Your trust verification request was declined. Notes: ${notes || "Invalid/blurred docs."}`;
+    notifyType = "ALERT";
+  } else if (status === VerificationStatus.NEED_MORE_DOCUMENTS) {
+    notifyTitle = "Action Required: Additional Verification Documents Requested";
+    notifyMessage = `Our trust team needs additional documents or clearer scans. Notes: ${notes || "Please re-upload clearer files."}`;
+    notifyType = "ALERT";
+  } else if (status === VerificationStatus.UNDER_REVIEW) {
+    notifyTitle = "Verification Under Review";
+    notifyMessage = `Your verification documents are currently being audited by our trust & safety team.`;
+    notifyType = "INFO";
+  }
 
   await prisma.notification.create({
     data: {
@@ -410,6 +428,8 @@ export async function adminReviewVerificationAction(
       await sendVerificationApprovedEmail(updated.user.email, userName, updated.user.role);
     } else if (status === VerificationStatus.REJECTED) {
       await sendVerificationRejectedEmail(updated.user.email, userName, notes);
+    } else if (status === VerificationStatus.NEED_MORE_DOCUMENTS) {
+      await sendVerificationRejectedEmail(updated.user.email, userName, `Additional Documents Required: ${notes || "Please log into your dashboard to update your files."}`);
     }
   }
 
@@ -573,10 +593,16 @@ export async function adminGetPaymentsAndQueuesAction() {
     orderBy: { createdAt: "desc" },
   });
 
+  const webhookEvents = await prisma.stripeWebhookEvent.findMany({
+    orderBy: { createdAt: "desc" },
+    take: 50,
+  });
+
   return {
-    transactions,
-    refundQueue,
-    payoutQueue,
+    transactions: JSON.parse(JSON.stringify(transactions)),
+    refundQueue: JSON.parse(JSON.stringify(refundQueue)),
+    payoutQueue: JSON.parse(JSON.stringify(payoutQueue)),
+    webhookEvents: JSON.parse(JSON.stringify(webhookEvents)),
   };
 }
 
@@ -796,12 +822,32 @@ export async function adminProcessHostPayoutAction(paymentId: string) {
     throw new Error("Payout has already been processed for this transaction.");
   }
 
+  let stripeTransferId = `tr_${crypto.randomBytes(12).toString("hex")}`;
+  const hostStripeId = payment.booking.wedding.hostCouple.stripeAccountId;
+
+  if (hostStripeId) {
+    try {
+      const transfer = await stripe.transfers.create({
+        amount: Math.round(payment.amount * 100), // amount in cents
+        currency: "usd",
+        destination: hostStripeId,
+        metadata: {
+          paymentId: payment.id,
+          bookingId: payment.bookingId,
+        }
+      });
+      stripeTransferId = transfer.id;
+    } catch (err: any) {
+      throw new Error(`Stripe Transfer failed: ${err.message}`);
+    }
+  }
+
   const payout = await prisma.payout.create({
     data: {
       paymentId,
       amount: payment.amount,
       status: "CLEARED",
-      stripeTransferId: `tr_${crypto.randomBytes(12).toString("hex")}`,
+      stripeTransferId,
     },
   });
 

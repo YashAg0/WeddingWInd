@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { User, Calendar, MapPin, CheckCircle2, Clock, ShieldCheck, Heart, ArrowRight } from "lucide-react";
-import { formatCurrencyINR, formatSecondaryCurrency } from "@/lib/constants/financial-model";
+import { formatCurrencyINR } from "@/lib/constants/financial-model";
 
 interface GuestBooking {
   id: string;
@@ -45,7 +45,8 @@ export default function GuestAccountPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-warm-50/50 pt-28 pb-20">
+    <div className="px-5 sm:px-8 lg:px-12 xl:px-16">
+    <div className="min-h-screen bg-warm-50/50 pt-28 pb-20 rounded-[2.5rem]">
       <div className="container-luxury max-w-5xl mx-auto space-y-10">
         
         {/* Header */}
@@ -77,7 +78,7 @@ export default function GuestAccountPage() {
             </div>
             <h3 className="font-display font-bold text-xl text-charcoal-900">No Past Reservations Found</h3>
             <p className="text-xs text-charcoal-500 max-w-sm mx-auto">
-              You haven't booked an authentic Indian wedding experience yet. Explore our verified host listings to reserve your spot!
+              You haven&apos;t booked an authentic Indian wedding experience yet. Explore our verified verified celebrations to reserve your spot!
             </p>
             <div className="pt-2">
               <Link href="/weddings" className="btn btn-primary px-6 py-2.5 text-xs font-bold">
@@ -148,5 +149,6 @@ export default function GuestAccountPage() {
 
       </div>
     </div>
-  );
+  
+    </div>);
 }

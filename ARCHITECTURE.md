@@ -37,7 +37,7 @@ This document provides a comprehensive technical overview of the system architec
 
 ### B. Application & API Layer
 - **Edge Routing**: `proxy.ts` middleware enforcing authentication and RBAC checks.
-- **Server Actions**: Mutations handling booking creation, listing updates, review submissions, and verification processing (`lib/actions/*.ts`).
+- **Server Actions**: Mutations handling booking creation, celebration updates, review submissions, and verification processing (`lib/actions/*.ts`).
 - **Validation**: Zod schema validation on all incoming Server Action payloads.
 
 ### C. Data & Persistence Layer

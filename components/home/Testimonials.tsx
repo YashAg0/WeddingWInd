@@ -47,7 +47,7 @@ function TestimonialCard({ testimonial }: { testimonial: Testimonial }) {
       </div>
 
       {/* Content */}
-      <blockquote className="text-charcoal-700 text-base leading-relaxed flex-1">
+      <blockquote className="text-charcoal-900 text-base font-medium leading-relaxed flex-1">
         &ldquo;{testimonial.content}&rdquo;
       </blockquote>
 
@@ -71,10 +71,10 @@ function TestimonialCard({ testimonial }: { testimonial: Testimonial }) {
           />
         </div>
         <div>
-          <div className="font-semibold text-charcoal-900 text-sm">
+          <div className="font-bold text-charcoal-900 text-base">
             {testimonial.name}
           </div>
-          <div className="text-xs text-charcoal-400">
+          <div className="text-sm font-medium text-charcoal-600 mt-0.5">
             {testimonial.role} · {testimonial.date}
           </div>
         </div>
@@ -85,23 +85,21 @@ function TestimonialCard({ testimonial }: { testimonial: Testimonial }) {
 
 export function Testimonials({ testimonials }: TestimonialsProps) {
   return (
-    <section
-      id="testimonials"
-      className="section-padding"
-      style={{
-        background:
-          "linear-gradient(160deg, #fdf2f4 0%, #fdfaf7 60%, #fffbeb 100%)",
-      }}
-      aria-labelledby="testimonials-heading"
-    >
+    <>
+      <section
+        id="testimonials"
+        className="section-padding"
+        aria-labelledby="testimonials-heading"
+      >
       <div className="container-luxury">
         <SectionHeader
           id="testimonials-heading"
           label="Guest Stories"
-          title="What our guests say"
-          highlightedWord="guests"
+          title="What Our Guests Say"
+          highlightedWord="Guests"
           description="Real experiences from travellers who stepped into a celebration they'll never forget."
           className="mb-14"
+          theme="dark"
         />
 
         <div
@@ -118,10 +116,7 @@ export function Testimonials({ testimonials }: TestimonialsProps) {
 
         {/* Trust stats bar */}
         <div
-          className="mt-14 rounded-2xl p-6 sm:p-8 grid grid-cols-2 sm:grid-cols-4 gap-6 text-center"
-          style={{
-            background: "linear-gradient(135deg, #6b1026 0%, #8b1630 100%)",
-          }}
+          className="mt-14 grid grid-cols-2 sm:grid-cols-4 gap-6 text-center"
           aria-label="Platform trust statistics"
         >
           {[
@@ -142,11 +137,12 @@ export function Testimonials({ testimonials }: TestimonialsProps) {
               >
                 {value}
               </div>
-              <div className="text-white/70 text-sm">{label}</div>
+              <div className="text-white/90 text-sm font-medium">{label}</div>
             </div>
           ))}
         </div>
       </div>
-    </section>
+      </section>
+    </>
   );
 }

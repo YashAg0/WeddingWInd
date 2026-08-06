@@ -32,7 +32,21 @@ export function SectionHeader({
     return (
       <>
         {parts[0]}
-        <span className="text-gradient-brand">{highlightedWord}</span>
+        <span
+          className={cn(isDark ? "" : "text-gradient-brand")}
+          style={
+            isDark
+              ? {
+                  background: "linear-gradient(135deg, #fcd34d 0%, #c9972a 100%)",
+                  WebkitBackgroundClip: "text",
+                  backgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                }
+              : undefined
+          }
+        >
+          {highlightedWord}
+        </span>
         {parts[1]}
       </>
     );
@@ -76,7 +90,7 @@ export function SectionHeader({
         <p
           className={cn(
             "text-base sm:text-lg leading-relaxed",
-            isDark ? "text-charcoal-300" : "text-charcoal-500"
+            isDark ? "text-white/90" : "text-charcoal-700"
           )}
         >
           {description}

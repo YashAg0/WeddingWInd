@@ -1,4 +1,3 @@
-import { BUSINESS_METRICS } from "@/lib/constants/business-metrics";
 import type {
   Wedding,
   Category,
@@ -11,591 +10,532 @@ import type {
 
 export const featuredWeddings: Wedding[] = [
   {
-    id: "w1",
-    slug: "grand-maharaja-wedding",
-    title: "The Grand Maharaja Wedding",
-    location: "Umaid Bhawan Palace, Jodhpur",
-    city: "Jodhpur",
+    id: "curated-1",
+    slug: "royal-maharaja-palace-wedding-udaipur",
+    title: "Royal Maharaja Palace Wedding",
+    location: "Jagmandir Island Palace, Lake Pichola, Udaipur",
+    city: "Udaipur",
     state: "Rajasthan",
     country: "India",
     countryCode: "IN",
     category: "Royal",
-    pricePerGuest: 7499,
-    currency: "INR",
-    rating: 4.98,
-    reviewCount: 124,
-    guestsAllowed: 500,
-    guestsBooked: 342,
+    pricePerGuest: 650,
+    currency: "USD",
+    rating: 5.0,
+    reviewCount: 0,
+    guestsAllowed: 30,
+    guestsBooked: 0,
     imageUrl: "https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=1200&q=85",
-    coupleImage: "https://images.unsplash.com/photo-1615966650071-855b15f29ad1?w=400&q=80",
-    coupleName: "Devika & Kaber",
-    hostName: "Arjun Mehra",
-    hostAvatar: "https://i.pravatar.cc/80?img=7",
+    coupleImage: "https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600&q=85",
+    coupleName: "Vikramaditya & Ananya Singh Rathore",
+    hostName: "Rathore Royal Family of Mewar",
+    hostAvatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&q=85",
     featured: true,
-    tags: ["Heritage Palace", "Royal Feast", "Grand Procession"],
-    date: "2025-02-14",
-    religion: "Hinduism",
+    tags: ["Palace", "Royal Heritage", "Lake Pichola", "Baraat Procession", "Fine Dining"],
+    date: "2026-11-18",
+    religion: "Hindu (Rajput Tradition)",
     luxuryLevel: "Ultra-Luxury",
     durationDays: 3,
-    languages: ["English", "Hindi"],
+    languages: ["English", "Hindi", "Rajasthani"],
     isVerified: true,
+    isCurated: true,
+    curatedBadge: "Verified Showcase",
     gallery: [
-      "https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=800&q=80",
-      "https://images.unsplash.com/photo-1591604466107-ec97de577aff?w=800&q=80",
-      "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=800&q=80",
-      "https://images.unsplash.com/photo-1607190074257-dd4b7af0309f?w=800&q=80",
-      "https://images.unsplash.com/photo-1519741497674-611481863552?w=800&q=80"
+      "https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=1200&q=85",
+      "https://images.unsplash.com/photo-1519741497674-611481863552?w=1200&q=85",
+      "https://images.unsplash.com/photo-1591604466107-ec97de577aff?w=1200&q=85",
+      "https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?w=1200&q=85",
+      "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=1200&q=85",
     ],
-    story: "Welcome to our royal fairy tale. We are Devika, an art historian, and Kaber, a heritage conservationist. Our wedding is a celebration of centuries-old Marwari traditions set in the golden sands of Jodhpur. We want to welcome global guests to experience the hospitality, folk music, and vibrant colors of Rajasthan.",
-    coupleBio: "Devika and Kaber met while working on the restoration of a 15th-century fort in Rajasthan. Their shared love for history, architecture, and classical music led them to plan a wedding that honors royal heritage and classic hospitality.",
+    story:
+      "Join the royal Rathore family on Lake Pichola for a 3-day imperial Rajput wedding celebration. Experience majestic elephant baraat processions, traditional Shekhawati folk performances, royal banquets crafted by heritage chefs, and sacred Vedic pheras under the stars at Jagmandir Island Palace.",
+    coupleBio:
+      "Vikramaditya belongs to the royal lineage of Mewar and is a heritage hotelier. Ananya is a classical Kathak dancer and art historian. Together, they welcome international guests to share in centuries-old royal hospitality.",
     timeline: [
       {
-        title: "Mehndi & Welcome Feast",
+        title: "Day 1: Royal Mehendi & Welcoming Feast",
         time: "16:00 - 22:00",
-        date: "Day 1 - Feb 14",
-        description: "Intricate henna art, traditional Rajasthani folk dances (Ghoomar), and an outdoor feast overlooking Jodhpur's blue city.",
-        icon: "🎨"
+        date: "2026-11-18",
+        description: "Arrival boat transfer across Lake Pichola. Henna artists, Marwari folk music, and a palace courtyard buffet.",
+        icon: "Flower2",
       },
       {
-        title: "Sangeet Extravaganza",
-        time: "18:00 - 23:30",
-        date: "Day 2 - Feb 15",
-        description: "A grand evening of musical performances, dance-offs between families, and gourmet palace dining.",
-        icon: "💃"
+        title: "Day 2: Sangeet & Musical Extravaganza",
+        time: "19:00 - 01:00",
+        date: "2026-11-19",
+        description: "Ghoomar dance performances, royal fireworks over the lake, and a multi-course Rajasthani royal feast.",
+        icon: "Sparkles",
       },
       {
-        title: "Royal Baraat & Wedding Ceremony",
-        time: "15:30 - 20:30",
-        date: "Day 3 - Feb 16",
-        description: "The groom's arrival on a decorated vintage car accompanied by drums and dancers, followed by the sacred Vedic wedding rituals and reception.",
-        icon: "Crown"
-      }
+        title: "Day 3: Grand Royal Baraat & Pheras",
+        time: "17:00 - 23:30",
+        date: "2026-11-20",
+        description: "Majestic Baraat arrival on boat, traditional Vedic phere around the sacred fire, and royal farewell reception.",
+        icon: "Crown",
+      },
     ],
     traditions: [
       {
-        title: "Pheras (Seven Vows)",
-        description: "The couple walks around the sacred fire seven times, making vows of love, loyalty, health, and mutual respect."
+        title: "Ghoomar Folk Dance",
+        description: "Traditional Rajasthani dance performed by women wearing vibrant ghagras.",
       },
       {
-        title: "Baraat Procession",
-        description: "A lively parade where the groom, family, and guests dance their way to the wedding venue, celebrating the union."
-      }
+        title: "Royal Baraat Procession",
+        description: "Groom's grand arrival accompanied by royal brass band, drums, and lighted lanterns.",
+      },
+      {
+        title: "Vedic Saptapadi",
+        description: "The seven sacred vows taken around the agni (sacred fire) invoking eternal harmony.",
+      },
     ],
-    dressCode: "Day 1: Colorful smart casuals. Day 2: Glamorous ethnic or cocktail wear. Day 3: Royal traditional wear (Sherwanis for men, Sarees/Lehengas for women). Heavy embroidery and bright colors are highly recommended!",
-    foodDescription: "A curated royal Marwari menu featuring Dal Baati Churma, Laal Maas, and exquisite desserts like Mohan Thal, alongside international gourmet selections.",
-    venueDescription: "The iconic Umaid Bhawan Palace, one of the world's largest private residences, constructed with yellow sandstone and boasting art-deco interiors.",
-    accommodation: "Premium heritage rooms inside the palace compound with royal hospitality, private lawns, and round-the-clock service.",
+    dressCode: "Day 1: Vibrant Indo-Western / Kurta or Pastel Lehenga; Day 2: Royal Gold & Velvet Sangeet Attire; Day 3: Traditional Bandhgala or Royal Sherwani / Silk Sari.",
+    theme: "Royal Imperial Gold & Crimson Palace Romance",
+    ethnicity: "Rajput Marwari Culture",
+    requiredGuests: 1,
+    foodDescription: "Royal MewariThali featuring Dal Baati Churma, Laal Maas (optional gourmet vegetarian alternatives), Ker Sangri, saffron sweets, and artisanal mocktails.",
+    venueDescription: "Jagmandir Island Palace surrounded by the serene waters of Lake Pichola with views of the City Palace.",
+    accommodation: "Heritage Palace Pavilion Suite recommendation provided upon reservation confirmation.",
     included: [
-      "Access to all ceremonies (Mehndi, Sangeet, Wedding Ceremony)",
-      "All meals, beverages, and premium spirits during celebrations",
-      "Traditional Rajasthani wedding outfits hire coordination",
-      "Private luxury transfers from Jodhpur airport",
-      "Dedicated bilingual guest liaison manager"
+      "Access to all 3 days of ceremonial festivities & royal feasts",
+      "Private boat transfers across Lake Pichola for all events",
+      "Dedicated English-speaking cultural concierge liaison",
+      "Traditional welcome turban (Safa) or dupatta draping",
+      "Custom henna application by royal mehndi artists",
+      "All gourmet meals, royal banquets & refreshments",
     ],
     notIncluded: [
-      "International flights",
-      "Travel insurance",
-      "Personal shopping and excursions"
+      "International airfare to Udaipur (UDR)",
+      "Hotel accommodation costs",
+      "Personal shopping & local transit outside wedding events",
     ],
-    reviews: [
-      {
-        id: "r1",
-        authorName: "Sarah & James",
-        authorAvatar: "https://i.pravatar.cc/80?img=25",
-        rating: 5,
-        date: "Feb 2025",
-        content: "Words cannot describe the magic. Devika's family welcomed us like we were their own relatives. The location was breathtaking, and the food was a culinary journey!"
-      }
-    ],
+    reviews: [],
     faqs: [
       {
-        id: "faq1",
-        question: "Is it okay if I don't speak Hindi?",
-        answer: "Absolutely! The host family and our liaison team speak fluent English, and weddings are a universal language of joy anyway.",
-        category: "General"
-      }
-    ]
+        id: "faq-curated-1",
+        question: "Will I have a dedicated liaison to guide me through rituals?",
+        answer: "Yes! Every guest is paired with a dedicated English-speaking cultural liaison who guides you through ceremony dress etiquette, ritual meanings, and photo opportunities.",
+        category: "Guest Experience",
+      },
+      {
+        id: "faq-curated-2",
+        question: "What is the dress code assistance?",
+        answer: "Our concierge team connects you with Udaipur's premier royal attire boutiques for custom fitting upon arrival, or provides a detailed attire guide prior to travel.",
+        category: "Attire & Culture",
+      },
+    ],
   },
   {
-    id: "w2",
-    slug: "beachside-goa-celebration",
-    title: "Beachside Goa Celebration",
-    location: "Cavelossim Beach, Goa",
-    city: "Cavelossim",
+    id: "curated-2",
+    slug: "goa-sunset-beachfront-wedding",
+    title: "Goa Sunset Beachfront Wedding",
+    location: "Riva Beach Resort, Mandrem Beach, South Goa",
+    city: "Goa",
     state: "Goa",
     country: "India",
     countryCode: "IN",
     category: "Beach",
-    pricePerGuest: 7499,
-    currency: "INR",
-    rating: 4.91,
-    reviewCount: 89,
-    guestsAllowed: 200,
-    guestsBooked: 147,
+    pricePerGuest: 450,
+    currency: "USD",
+    rating: 5.0,
+    reviewCount: 0,
+    guestsAllowed: 25,
+    guestsBooked: 0,
     imageUrl: "https://images.unsplash.com/photo-1519741497674-611481863552?w=1200&q=85",
-    coupleImage: "https://images.unsplash.com/photo-1591604466107-ec97de577aff?w=400&q=80",
-    coupleName: "Alisha & Ryan",
-    hostName: "Priya Nair",
-    hostAvatar: "https://i.pravatar.cc/80?img=47",
+    coupleImage: "https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=600&q=85",
+    coupleName: "Rohan & Natasha Fernandes",
+    hostName: "Fernandes Family of Goa",
+    hostAvatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&q=85",
     featured: true,
-    tags: ["Sunset View", "Open Bar", "DJ Night"],
-    date: "2025-01-18",
-    religion: "Christianity / Hindu",
+    tags: ["Beachfront", "Ocean Sunset", "Seafood Feast", "Live Band", "Tropical Romance"],
+    date: "2026-12-10",
+    religion: "Interfaith (Catholic & Hindu fusion)",
     luxuryLevel: "Luxury",
     durationDays: 2,
-    languages: ["English", "Malayalam"],
+    languages: ["English", "Konkani", "Hindi"],
     isVerified: true,
+    isCurated: true,
+    curatedBadge: "Handpicked Experience",
     gallery: [
-      "https://images.unsplash.com/photo-1519741497674-611481863552?w=800&q=80",
-      "https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=800&q=80",
-      "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=800&q=80",
-      "https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?w=800&q=80",
-      "https://images.unsplash.com/photo-1596484552834-6a58f850e0a1?w=800&q=80"
+      "https://images.unsplash.com/photo-1519741497674-611481863552?w=1200&q=85",
+      "https://images.unsplash.com/photo-1591604466107-ec97de577aff?w=1200&q=85",
+      "https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=1200&q=85",
     ],
-    story: "Our love story is a mix of cultures, much like Goa itself. Ryan is from London and Alisha is from Kerala. We're celebrating our wedding on the beautiful white sands of Cavelossim with a beachside fusion ceremony, coastal music, and plenty of sea breezes.",
-    coupleBio: "Alisha is a marine biologist and Ryan is a digital designer. They met in Bali and decided to bring their friends and family together in Goa for a relaxed, sun-kissed celebration.",
+    story:
+      "Celebrate under sway palm trees and ocean breezes at Mandrem Beach. Experience a vibrant blend of Goan Catholic warmth and Hindu wedding vibrance with live brass bands, fresh coastal seafood banquets, barefoot beach cocktail parties, and romantic sunset vows.",
+    coupleBio:
+      "Rohan is an architect from Panaji and Natasha is a marine biologist. Their wedding celebrates Goan heritage, coastal warmth, and environmental sustainability.",
     timeline: [
       {
-        title: "Sunset Sundowner & BBQ",
-        time: "17:00 - 22:00",
-        date: "Day 1 - Jan 18",
-        description: "Cocktails, fresh grilled seafood, acoustic live music, and feet-in-the-sand networking.",
-        icon: "🍹"
+        title: "Day 1: Sunset Sundowner & Haldi Pool Party",
+        time: "15:30 - 21:00",
+        date: "2026-12-10",
+        description: "Yellow attire Haldi by the beach pool, live saxophone, fresh coconut cocktails, and Goan feni tasting.",
+        icon: "Waves",
       },
       {
-        title: "Fusion Beach Wedding & Reception",
-        time: "16:00 - 23:30",
-        date: "Day 2 - Jan 19",
-        description: "Exchange of vows under a floral canopy during sunset, followed by a beachfront dance party, champagne toast, and fireworks.",
-        icon: "🌊"
-      }
+        title: "Day 2: Beachfront Sunset Ceremony & Gala Dinner",
+        time: "16:30 - 23:30",
+        date: "2026-12-11",
+        description: "Oceanfront floral mandap ceremony at sunset followed by live Goan band performance and seafood extravaganza.",
+        icon: "Sparkles",
+      },
     ],
     traditions: [
       {
-        title: "Mangalsutra & Ring Exchange",
-        description: "A blending of Indian traditions (tying the sacred golden thread) and Western vows on the shoreline."
-      }
+        title: "Roce Ceremony",
+        description: "Goan coconut milk blessing ceremony wishing prosperity and radiant skin to the couple.",
+      },
+      {
+        title: "Sunset Mandap Vows",
+        description: "Floral canopy vows with the Arabian Sea as the backdrop.",
+      },
     ],
-    dressCode: "Day 1: Beach casual / linen shirts and sundresses. Day 2: Beach formal / pastel-colored suits, flowy dresses, and light ethnic wear. Leave your stilettoes at home!",
-    foodDescription: "A fusion buffet emphasizing fresh Goan seafood, coastal curry dishes, wood-fired pizzas, and tropical desserts.",
-    venueDescription: "A private beachfront resort lawn in South Goa, direct access to clean sands, palm tree fringes, and gorgeous sunset vistas.",
-    accommodation: "Chic beach bungalows with modern amenities, private decks, and pool access.",
+    dressCode: "Day 1: Tropical Yellow / Linen Resort Wear; Day 2: Elegant Pastel Beach Formal / Flowy Silk Dress.",
+    theme: "Tropical Ocean Sunset & White Orchid Elegance",
+    foodDescription: "Goan Fish Curry, Prawn Balchão, Vegetable Caldine, Bebinca dessert, and fresh tropical fruit bar.",
+    venueDescription: "Private beachfront lawn overlooking the Arabian Sea with private coconut grove pathways.",
+    accommodation: "Beachfront villa recommendation list provided upon booking confirmation.",
     included: [
-      "Access to the Sundowner and Wedding Ceremony",
-      "All meals and open bar during celebrations",
-      "Welcome Goan hamper",
-      "Airport transfers in Goa"
+      "Access to 2 days of beachfront events & oceanside feasts",
+      "Unlimited coastal buffet, sea food bar & signature cocktails",
+      "On-site concierge escort & cultural orientation",
+      "Goan floral garland welcome",
     ],
     notIncluded: [
-      "Flight tickets",
-      "Traditional clothing rentals"
+      "Travel to Goa International Airport (GOI / GOX)",
+      "Hotel stay costs",
     ],
-    reviews: [
-      {
-        id: "r2",
-        authorName: "John Doe",
-        authorAvatar: "https://i.pravatar.cc/80?img=12",
-        rating: 5,
-        date: "Jan 2025",
-        content: "Attending this beach wedding was the highlight of our winter. Perfect sunset views and amazing coastal hospitality!"
-      }
-    ],
+    reviews: [],
     faqs: [
       {
-        id: "faq2",
-        question: "Is accommodation included in the price?",
-        answer: "Yes, standard accommodation in our partner beach resort is fully covered for the duration of the wedding event.",
-        category: "Lodging"
-      }
-    ]
+        id: "faq-curated-2-1",
+        question: "Is vegetarian and vegan food available at the beach feast?",
+        answer: "Absolutely! The chef prepares dedicated authentic Goan vegetarian and vegan curries alongside coastal seafood options.",
+        category: "Food & Dining",
+      },
+    ],
   },
   {
-    id: "w3",
-    slug: "punjabi-shaadi-extravaganza",
-    title: "Punjabi Shaadi Extravaganza",
-    location: "The Oberoi, Amritsar",
+    id: "curated-3",
+    slug: "rajasthani-fort-heritage-celebration-jaipur",
+    title: "Rajasthani Fort Heritage Celebration",
+    location: "Chomu Palace Fort, Jaipur",
+    city: "Jaipur",
+    state: "Rajasthan",
+    country: "India",
+    countryCode: "IN",
+    category: "Royal",
+    pricePerGuest: 580,
+    currency: "USD",
+    rating: 5.0,
+    reviewCount: 0,
+    guestsAllowed: 35,
+    guestsBooked: 0,
+    imageUrl: "https://images.unsplash.com/photo-1591604466107-ec97de577aff?w=1200&q=85",
+    coupleImage: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600&q=85",
+    coupleName: "Aditya & Rajeshwari Shekhawat",
+    hostName: "Shekhawat Heritage Family",
+    hostAvatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&q=85",
+    featured: true,
+    tags: ["Heritage Fort", "Jaipur Palace", "Royal Procession", "Marwari Feast", "Folk Music"],
+    date: "2026-11-25",
+    religion: "Hindu (Traditional Rajput)",
+    luxuryLevel: "Ultra-Luxury",
+    durationDays: 3,
+    languages: ["English", "Hindi", "Marwari"],
+    isVerified: true,
+    isCurated: true,
+    curatedBadge: "Verified Showcase",
+    gallery: [
+      "https://images.unsplash.com/photo-1591604466107-ec97de577aff?w=1200&q=85",
+      "https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=1200&q=85",
+      "https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?w=1200&q=85",
+    ],
+    story:
+      "Experience a 300-year-old fort wedding in Pink City Jaipur. Featuring camel processions, royal turban tying, puppet theatre, intricate mehendi artistry, and royal courtyard dining under illuminated palace arches.",
+    coupleBio:
+      "Aditya is a Jaipur royal heritage restorer and Rajeshwari is a fashion designer specializing in royal Zardosi embroidery.",
+    timeline: [
+      {
+        title: "Day 1: Fort Mehendi & Puppet Carnival",
+        time: "14:00 - 20:00",
+        date: "2026-11-25",
+        description: "Camel rides, Marwari puppet shows, royal henna, and traditional street food bazaar.",
+        icon: "Compass",
+      },
+      {
+        title: "Day 2: Royal Sangeet Night",
+        time: "19:00 - 00:30",
+        date: "2026-11-26",
+        description: "Choreographed family dance, live Sufi music ensemble, and royal Mughlai-Rajasthani banquet.",
+        icon: "Sparkles",
+      },
+      {
+        title: "Day 3: Palace Baraat & Sacred Pheras",
+        time: "16:00 - 23:00",
+        date: "2026-11-27",
+        description: "Royal vintage car & horse procession, Vedic mandap pheras, and fireworks finale.",
+        icon: "Crown",
+      },
+    ],
+    traditions: [
+      {
+        title: "Safa Tying",
+        description: "Traditional royal Rajasthani turban tying ritual for all male guests.",
+      },
+      {
+        title: "Langa Manganiyar Folk Performance",
+        description: "World-renowned desert folk musicians performing soul-stirring heritage melodies.",
+      },
+    ],
+    dressCode: "Day 1: Bright Pink / Yellow Ethnic Wear; Day 2: Royal Velvet / Embroidered Kurta; Day 3: Traditional Rajput Royal Dress.",
+    foodDescription: "Authentic Rajasthani Royal Thali: Gatte ki Sabzi, Churma, Laal Maas, Ghevar sweets, and saffron lassi.",
+    venueDescription: "Chomu Palace Fort with 300-year-old carved marble courtyards and intricate frescoed halls.",
+    accommodation: "Fort heritage room booking guide provided upon reservation.",
+    included: [
+      "3 Days of full event admission & palace banquets",
+      "Royal Safa (turban) and dupatta styling for guests",
+      "English-speaking cultural liaison & photowalk guide",
+    ],
+    notIncluded: ["Flight to Jaipur (JAI)", "Personal hotel stay"],
+    reviews: [],
+    faqs: [],
+  },
+  {
+    id: "curated-4",
+    slug: "kerala-sacred-temple-backwater-ceremony",
+    title: "Kerala Sacred Temple & Backwater Ceremony",
+    location: "Kumarakom Lake Resort, Vembanad Lake, Kerala",
+    city: "Kochi",
+    state: "Kerala",
+    country: "India",
+    countryCode: "IN",
+    category: "South Indian",
+    pricePerGuest: 380,
+    currency: "USD",
+    rating: 5.0,
+    reviewCount: 0,
+    guestsAllowed: 20,
+    guestsBooked: 0,
+    imageUrl: "https://images.unsplash.com/photo-1596484552834-6a58f850e0a1?w=1200&q=85",
+    coupleImage: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600&q=85",
+    coupleName: "Arjun & Lakshmi Nambiar",
+    hostName: "Nambiar Heritage Family of Travancore",
+    hostAvatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&q=85",
+    featured: true,
+    tags: ["Temple Wedding", "Backwater Houseboat", "Traditional Sadhya", "Chenda Melam", "Kerala Silk"],
+    date: "2026-11-30",
+    religion: "Hindu (Kerala Brahmin Rituals)",
+    luxuryLevel: "Luxury",
+    durationDays: 2,
+    languages: ["English", "Malayalam", "Tamil"],
+    isVerified: true,
+    isCurated: true,
+    curatedBadge: "Handpicked Experience",
+    gallery: [
+      "https://images.unsplash.com/photo-1596484552834-6a58f850e0a1?w=1200&q=85",
+      "https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?w=1200&q=85",
+    ],
+    story:
+      "Experience God's Own Country in peaceful splendour. A 2-day traditional South Indian wedding featuring morning temple rituals, Chenda Melam drum ensembles, lotus flower mandaps, backwater houseboat cruises, and authentic 24-dish Sadhya feasts served on fresh banana leaves.",
+    coupleBio:
+      "Arjun is an Ayurveda physician and Lakshmi is an classical Mohiniyattam dancer. They invite global guests to witness Kerala's serene temple heritage.",
+    timeline: [
+      {
+        title: "Day 1: Houseboat Welcome & Evening Kathakali Performance",
+        time: "15:00 - 20:30",
+        date: "2026-11-30",
+        description: "Backwater sunset cruise on traditional Kerala houseboats, Kathakali dance drama, and coconut seafood feast.",
+        icon: "Waves",
+      },
+      {
+        title: "Day 2: Morning Temple Kalyanam & Royal Sadhya Feast",
+        time: "08:30 - 15:00",
+        date: "2026-12-01",
+        description: "Sacred morning Muhurtham ceremony with Chenda Melam percussion, followed by 24-course banana leaf Sadhya feast.",
+        icon: "Flame",
+      },
+    ],
+    traditions: [
+      {
+        title: "Chenda Melam Ensembles",
+        description: "Thrilling traditional Kerala percussion ensemble performed by 15 master drummers.",
+      },
+      {
+        title: "Traditional Ela Sadhya",
+        description: "Sacred vegetarian feast of 24 dishes served on fresh banana leaves.",
+      },
+    ],
+    dressCode: "Day 1: Comfortable Linen / Kurta; Day 2: Kasavu Gold-bordered Kerala Sari or Mundu / White Shirt.",
+    foodDescription: "24-item traditional Sadhya: Avial, Thoran, Payasam, Parippu, Appam with Stew, and fresh coconut water.",
+    venueDescription: "Serene lakeside garden at Vembanad Lake backwaters surrounded by lotus ponds.",
+    accommodation: "Lakeside villa recommendation list provided.",
+    included: [
+      "2 Days event access & backwater houseboat cruise",
+      "Authentic 24-course banana leaf Sadhya feast",
+      "Traditional Kerala Kasavu garment welcome gift",
+      "Cultural liaison support",
+    ],
+    notIncluded: ["Flight to Cochin (COK)", "Hotel stay"],
+    reviews: [],
+    faqs: [],
+  },
+  {
+    id: "curated-5",
+    slug: "punjabi-big-fat-wedding-amritsar",
+    title: "Punjabi Big Fat Wedding & Bhangra Night",
+    location: "Fort Gobindgarh, Amritsar",
     city: "Amritsar",
     state: "Punjab",
     country: "India",
     countryCode: "IN",
     category: "Punjabi",
-    pricePerGuest: 7499,
-    currency: "INR",
-    rating: 4.95,
-    reviewCount: 211,
-    guestsAllowed: 1000,
-    guestsBooked: 876,
+    pricePerGuest: 490,
+    currency: "USD",
+    rating: 5.0,
+    reviewCount: 0,
+    guestsAllowed: 30,
+    guestsBooked: 0,
     imageUrl: "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=1200&q=85",
-    coupleImage: "https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=400&q=80",
-    coupleName: "Manpreet & Jaspreet",
-    hostName: "Harpreet Singh",
-    hostAvatar: "https://i.pravatar.cc/80?img=12",
+    coupleImage: "https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600&q=85",
+    coupleName: "Gurpreet & Harleen Dhillon",
+    hostName: "Dhillon Family of Amritsar",
+    hostAvatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&q=85",
     featured: true,
-    tags: ["Bhangra Night", "Gala Dinner", "Fireworks"],
-    date: "2025-03-05",
-    religion: "Sikhism",
+    tags: ["Punjabi Wedding", "Bhangra Dhol", "Grand Feast", "Golden Temple Visit", "Heritage Fort"],
+    date: "2026-12-05",
+    religion: "Sikh (Anand Karaj Tradition)",
     luxuryLevel: "Luxury",
     durationDays: 3,
     languages: ["English", "Punjabi", "Hindi"],
     isVerified: true,
+    isCurated: true,
+    curatedBadge: "Verified Showcase",
     gallery: [
-      "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=800&q=80",
-      "https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=800&q=80",
-      "https://images.unsplash.com/photo-1596484552834-6a58f850e0a1?w=800&q=80",
-      "https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?w=800&q=80",
-      "https://images.unsplash.com/photo-1591604466107-ec97de577aff?w=800&q=80"
+      "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=1200&q=85",
+      "https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=1200&q=85",
     ],
-    story: "Get ready for the loudest, most energetic wedding you will ever attend. We are Manpreet and Jaspreet. Our wedding in Amritsar is all about heart, hospitality, bhangra beats, and butter chicken. We are excited to open our gates to guests from all corners of the globe.",
-    coupleBio: "Manpreet is a software engineer based in Vancouver and Jaspreet is a fashion designer from Amritsar. They are combining their worlds in a vibrant, musical celebration in their hometown.",
+    story:
+      "Get ready for unparalleled energy, joy, and hospitality! A 3-day Punjabi celebration at historic Fort Gobindgarh in Amritsar. High-energy dhol drumming, midnight Bhangra competitions, tandoori food feasts, and peaceful morning Anand Karaj blessings.",
+    coupleBio:
+      "Gurpreet is an organic farmer & entrepreneur and Harleen is a university professor. They look forward to welcoming global guests into their energetic Punjabi family circle.",
     timeline: [
       {
-        title: "Chura & Dhol Night",
-        time: "17:00 - 22:00",
-        date: "Day 1 - Mar 5",
-        description: "Bridal bangle ceremony, high-tempo dhol drumming, and traditional Punjabi village food.",
-        icon: "🥁"
+        title: "Day 1: Sangeet & Midnight Dhol Night",
+        time: "18:00 - 02:00",
+        date: "2026-12-05",
+        description: "Live Dhol drummers, Bhangra workshop for guests, tandoori live counters, and open bar.",
+        icon: "Sparkles",
       },
       {
-        title: "Bhangra & Sangeet",
-        time: "18:00 - 23:30",
-        date: "Day 2 - Mar 6",
-        description: "Heavy dance performances, bhangra show, and a massive tandoori buffet feast.",
-        icon: "🕺"
+        title: "Day 2: Morning Anand Karaj & Royal Reception",
+        time: "09:30 - 23:00",
+        date: "2026-12-06",
+        description: "Sacred Gurdwara Anand Karaj wedding ceremony followed by grand fort banquet reception.",
+        icon: "Crown",
       },
-      {
-        title: "Anand Karaj (Gurudwara Wedding)",
-        time: "09:00 - 14:00",
-        date: "Day 3 - Mar 7",
-        description: "The serene Sikh wedding ceremony at the Gurudwara, followed by the reception banquet.",
-        icon: "Sparkles"
-      }
     ],
     traditions: [
       {
         title: "Anand Karaj",
-        description: "The blissful union ceremony conducted in the presence of the Guru Granth Sahib, involving four rounds (Laavan)."
-      }
-    ],
-    dressCode: "Day 1: Punjabi traditional / yellow-themed outfits. Day 2: Brightly colored ethnics. Day 3: Conservative, modest attire for the temple (heads must be covered).",
-    foodDescription: "Authentic tandoori meats, dal makhani, stuffed naans, and sweets like Jalebi and Kulfi.",
-    venueDescription: "The majestic Oberoi resort in Amritsar, blending luxury heritage design with lush green gardens.",
-    accommodation: "Luxury rooms inside the resort compound with full access to pool and wellness centers.",
-    included: [
-      "Access to all ceremonies and feasts",
-      "Traditional Punjabi head scarfs / turbans styling",
-      "Guided Golden Temple tour before the wedding",
-      "All meals and non-alcoholic beverages",
-      "Dedicated group guide"
-    ],
-    notIncluded: [
-      "Alcoholic drinks (dry venue during ceremonies)",
-      "Flights and visa fees"
-    ],
-    reviews: [
-      {
-        id: "r3",
-        authorName: "Emily Watson",
-        authorAvatar: "https://i.pravatar.cc/80?img=36",
-        rating: 5,
-        date: "Mar 2025",
-        content: "The energy was infectious! We danced for three days straight and tasted the best food in India."
-      }
-    ],
-    faqs: [
-      {
-        id: "faq3",
-        question: "Is alcohol served at the wedding?",
-        answer: "No, in keeping with religious traditions, our wedding events are completely dry. However, the mocktail selection is spectacular!",
-        category: "Food & Drinks"
-      }
-    ]
-  },
-  {
-    id: "w4",
-    slug: "south-indian-temple-wedding",
-    title: "South Indian Temple Wedding",
-    location: "Isha Yoga Center, Coimbatore",
-    city: "Coimbatore",
-    state: "Tamil Nadu",
-    country: "India",
-    countryCode: "IN",
-    category: "South Indian",
-    pricePerGuest: 7499,
-    currency: "INR",
-    rating: 4.89,
-    reviewCount: 67,
-    guestsAllowed: 300,
-    guestsBooked: 201,
-    imageUrl: "https://images.unsplash.com/photo-1596484552834-6a58f850e0a1?w=1200&q=85",
-    coupleImage: "https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?w=400&q=80",
-    coupleName: "Lakshmi & Srinivas",
-    hostName: "Lakshmi Rao",
-    hostAvatar: "https://i.pravatar.cc/80?img=49",
-    featured: true,
-    tags: ["Classical Music", "Silk Sarees", "Sadya Feast"],
-    date: "2025-04-10",
-    religion: "Hinduism",
-    luxuryLevel: "Premium",
-    durationDays: 2,
-    languages: ["English", "Tamil", "Telugu"],
-    isVerified: true,
-    gallery: [
-      "https://images.unsplash.com/photo-1596484552834-6a58f850e0a1?w=800&q=80",
-      "https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?w=800&q=80",
-      "https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=800&q=80",
-      "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=800&q=80",
-      "https://images.unsplash.com/photo-1519741497674-611481863552?w=800&q=80"
-    ],
-    story: "Discover the deep spiritual traditions of a classical South Indian wedding. Set in the foothills of the Velliangiri Mountains, our wedding combines ancient temple architecture, Carnatic music, and a traditional meal served on banana leaves.",
-    coupleBio: "Lakshmi is a Bharatnatyam dancer and Srinivas is a yoga instructor. They believe in simplicity, spiritual connection, and sharing their culture with seekers from around the world.",
-    timeline: [
-      {
-        title: "Vratham & Traditional Music",
-        time: "15:00 - 19:00",
-        date: "Day 1 - Apr 10",
-        description: "Purifying prayers, classical music recitals, and setting up the floral mandapam.",
-        icon: "🪷"
+        description: "The blissful Sikh wedding ceremony centered around the Guru Granth Sahib.",
       },
       {
-        title: "Muhurtham & Sadya Feast",
-        time: "06:00 - 15:00",
-        date: "Day 2 - Apr 11",
-        description: "Early morning Vedic rituals, exchange of garlands, tying the Thali, and a massive 26-course vegetarian Sadya feast.",
-        icon: "🍃"
-      }
-    ],
-    traditions: [
-      {
-        title: "Kanyadaan",
-        description: "The emotional ceremony of the bride's father placing her hand in the groom's, marking the transition."
+        title: "Dhol & Bhangra Dance Off",
+        description: "High-octane Punjabi folk dance celebration.",
       },
-      {
-        title: "Sadya Feast",
-        description: "A traditional banquet served on banana leaves, eaten with fingers, featuring 26+ diverse vegetarian dishes."
-      }
     ],
-    dressCode: "Day 1: Elegant traditional wear. Day 2: Bright silk sarees for women, traditional Veshtis (dhotis) or kurtas for men. Subtle colors and gold accents are preferred.",
-    foodDescription: "A legendary 26-course vegetarian Sadya meal featuring Sambar, Rasam, Payasam, and traditional pickles served on banana leaves.",
-    venueDescription: "The peaceful, spiritual grounds of the Isha Yoga Center temple complex, surrounded by hills and green forests.",
-    accommodation: "Simple, highly comfortable cottage rooms inside the ashram/center, focused on wellness and peace.",
+    dressCode: "Day 1: Vibrant Magenta / Orange Party Wear; Day 2: Elegant Sherwani / Lehenga with head covering for Gurdwara.",
+    foodDescription: "Amritsari Kulcha, Butter Chicken, Dal Makhani, Sarson ka Saag, Tandoori paneer, and hot jalebis.",
+    venueDescription: "Fort Gobindgarh historic ramparts illuminated with fairy lights.",
+    accommodation: "Amritsar luxury hotel partner list provided.",
     included: [
-      "Ashram cottage accommodation",
-      "Full traditional Sadya feast",
-      "Silk Veshti/Angavastram (dhotis) provided for male guests",
-      "Yoga and meditation session access",
-      "Guide explaining the meaning of rituals"
+      "3 Days full access to Punjabi celebrations & grand banquets",
+      "Bhangra dance workshop & headscarf for Gurdwara",
+      "Cultural liaison support",
     ],
-    notIncluded: [
-      "Airport flights",
-      "Non-vegetarian meals (strict vegetarian venue)"
-    ],
-    reviews: [
-      {
-        id: "r4",
-        authorName: "Aline Meier",
-        authorAvatar: "https://i.pravatar.cc/80?img=49",
-        rating: 5,
-        date: "Apr 2025",
-        content: "A deeply spiritual, peaceful experience. The music, the temple, the hospitality — it felt like stepping back in time."
-      }
-    ],
-    faqs: [
-      {
-        id: "faq4",
-        question: "Can I get non-vegetarian food?",
-        answer: "The venue is a strict vegetarian and spiritual center. No meat or alcohol is permitted on site.",
-        category: "Food & Drinks"
-      }
-    ]
+    notIncluded: ["Flight to Amritsar (ATQ)", "Hotel stay"],
+    reviews: [],
+    faqs: [],
   },
   {
-    id: "w5",
-    slug: "rajasthan-desert-romance",
-    title: "Rajasthan Desert Romance",
-    location: "Sam Sand Dunes, Jaisalmer",
-    city: "Jaisalmer",
-    state: "Rajasthan",
+    id: "curated-6",
+    slug: "himalayan-heritage-destination-shimla",
+    title: "Himalayan Heritage Destination Celebration",
+    location: "Wildflower Hall, An Oberoi Resort, Shimla",
+    city: "Shimla",
+    state: "Himachal Pradesh",
     country: "India",
     countryCode: "IN",
     category: "Destination",
-    pricePerGuest: 7499,
-    currency: "INR",
-    rating: 4.97,
-    reviewCount: 153,
-    guestsAllowed: 150,
-    guestsBooked: 98,
-    imageUrl: "https://images.unsplash.com/photo-1591604466107-ec97de577aff?w=1200&q=85",
-    coupleImage: "https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=400&q=80",
-    coupleName: "Neha & Kabir",
-    hostName: "Vikram Rajput",
-    hostAvatar: "https://i.pravatar.cc/80?img=15",
-    featured: true,
-    tags: ["Desert Camp", "Camel Ride", "Stargazing"],
-    date: "2025-12-20",
-    religion: "Hinduism",
-    luxuryLevel: "Luxury",
-    durationDays: 2,
-    languages: ["English", "Hindi", "Rajasthani"],
-    isVerified: true,
-    gallery: [
-      "https://images.unsplash.com/photo-1591604466107-ec97de577aff?w=800&q=80",
-      "https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=800&q=80",
-      "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=800&q=80",
-      "https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?w=800&q=80",
-      "https://images.unsplash.com/photo-1519741497674-611481863552?w=800&q=80"
-    ],
-    story: "Exchange vows under a starry desert canopy. We are Neha and Kabir, and we are hosting a destination desert wedding in the golden dunes of Jaisalmer. Experience camel caravans, vibrant Rajasthani puppet shows, folk musicians, and dinner on the dunes.",
-    coupleBio: "Neha is a travel writer and Kabir is an astronomical photographer. Their love for the desert and open skies led them to plan this remote, exotic dune wedding.",
-    timeline: [
-      {
-        title: "Camel Caravan & Sunset Campfire",
-        time: "16:00 - 21:30",
-        date: "Day 1 - Dec 20",
-        description: "Camel rides into the sunset, traditional Manganiyar folk music around the campfire, and desert camping.",
-        icon: "🐪"
-      },
-      {
-        title: "Dune Ceremony & Stargazing Feast",
-        time: "15:00 - 23:00",
-        date: "Day 2 - Dec 21",
-        description: "A breathtaking wedding ceremony on a sand dune, followed by a gourmet dinner under the stars, bonfire, and guided stargazing.",
-        icon: "Sparkles"
-      }
-    ],
-    traditions: [
-      {
-        title: "Varmala Exchange",
-        description: "The groom and bride exchange beautiful floral garlands, symbolizing acceptance and welcoming each other into their lives."
-      }
-    ],
-    dressCode: "Day 1: Desert comfortable / warm layers for the evening. Day 2: Bright Indian traditional outfits or desert formal wear.",
-    foodDescription: "Classic Rajasthani Ker Sangri, Gatte ki Sabzi, barbecued skewers, and warm milk desserts like Rabdi.",
-    venueDescription: "A luxury tented camp nestled in the Sam Sand Dunes, offering luxury amenities under a canopy of stars.",
-    accommodation: "Luxury Swiss glamping tents with ensuite bathrooms, heating, and private verandahs.",
-    included: [
-      "Luxury tented glamping accommodation",
-      "All meals and traditional snacks",
-      "Sunset camel safari",
-      "Guided telescope stargazing session",
-      "Return transfers from Jaisalmer City"
-    ],
-    notIncluded: [
-      "Flights to Jodhpur/Jaisalmer",
-      "Alcoholic beverages"
-    ],
-    reviews: [
-      {
-        id: "r5",
-        authorName: "Alexander K.",
-        authorAvatar: "https://i.pravatar.cc/80?img=15",
-        rating: 5,
-        date: "Dec 2024",
-        content: "Sleeping in luxury tents and dancing on the sand dunes was unforgettable. True desert hospitality!"
-      }
-    ],
-    faqs: [
-      {
-        id: "faq5",
-        question: "Does it get cold in the desert?",
-        answer: "Yes, Jaisalmer desert temperatures drop significantly at night in December. Tents have heating, but warm clothes are highly recommended.",
-        category: "General"
-      }
-    ]
-  },
-  {
-    id: "w6",
-    slug: "kerala-backwater-wedding",
-    title: "Kerala Backwater Wedding",
-    location: "Kumarakom Lake Resort, Kerala",
-    city: "Kumarakom",
-    state: "Kerala",
-    country: "India",
-    countryCode: "IN",
-    category: "Traditional",
-    pricePerGuest: 7499,
-    currency: "INR",
-    rating: 4.93,
-    reviewCount: 95,
-    guestsAllowed: 200,
-    guestsBooked: 134,
+    pricePerGuest: 520,
+    currency: "USD",
+    rating: 5.0,
+    reviewCount: 0,
+    guestsAllowed: 20,
+    guestsBooked: 0,
     imageUrl: "https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?w=1200&q=85",
-    coupleImage: "https://images.unsplash.com/photo-1596484552834-6a58f850e0a1?w=400&q=80",
-    coupleName: "Riya & Arjun",
-    hostName: "Ananya Krishnan",
-    hostAvatar: "https://i.pravatar.cc/80?img=48",
-    featured: false,
-    tags: ["Houseboat", "Kathakali", "Organic Cuisine"],
-    date: "2025-05-22",
-    religion: "Hinduism",
-    luxuryLevel: "Luxury",
+    coupleImage: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600&q=85",
+    coupleName: "Kabir & Shreya Anand",
+    hostName: "Anand Family of Shimla",
+    hostAvatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&q=85",
+    featured: true,
+    tags: ["Himalayas", "Mountain View", "Pine Forest", "Bonfire Evening", "Colonial Luxury"],
+    date: "2026-12-15",
+    religion: "Hindu (Himachali Tradition)",
+    luxuryLevel: "Ultra-Luxury",
     durationDays: 2,
-    languages: ["English", "Malayalam"],
+    languages: ["English", "Hindi", "Pahari"],
     isVerified: true,
+    isCurated: true,
+    curatedBadge: "Verified Showcase",
     gallery: [
-      "https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?w=800&q=80",
-      "https://images.unsplash.com/photo-1596484552834-6a58f850e0a1?w=800&q=80",
-      "https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=800&q=80",
-      "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=800&q=80",
-      "https://images.unsplash.com/photo-1519741497674-611481863552?w=800&q=80"
+      "https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?w=1200&q=85",
+      "https://images.unsplash.com/photo-1591604466107-ec97de577aff?w=1200&q=85",
     ],
-    story: "Experience the serene backwaters of Kerala. We are Riya and Arjun. Our wedding is hosted in a luxury resort on the shores of Lake Vembanad. We'll celebrate with Kathakali dancers, houseboat sunset cruises, and authentic, organic Kerala food.",
-    coupleBio: "Riya is an architect and Arjun is a filmmaker. Both grew up visiting the Kerala backwaters and wanted to share this green, tropical paradise with friends from around the world.",
+    story:
+      "Exchange vows in the fresh mountain air of the Himalayas at 8,000 feet elevation. Surround yourself with pine forests, snow-capped mountain views, cozy evening bonfires, Himachali Dham feasts, and colonial luxury.",
+    coupleBio:
+      "Kabir is a mountain expedition guide and Shreya is an environmental lawyer. They invite international travelers to witness mountain wedding hospitality.",
     timeline: [
       {
-        title: "Houseboat Cruise & Kathakali",
-        time: "15:00 - 20:00",
-        date: "Day 1 - May 22",
-        description: "Sunset cruise on traditional houseboats, followed by a Kathakali dance recital and coconut-shell mocktails.",
-        icon: "🛶"
+        title: "Day 1: Pine Forest Bonfire & Himachali Dham",
+        time: "16:00 - 21:30",
+        date: "2026-12-15",
+        description: "Evening acoustic bonfire under the stars, Pahari folk songs, mulled wine, and traditional Dham feast.",
+        icon: "Flame",
       },
       {
-        title: "Traditional Nair Wedding & Sadya",
-        time: "09:00 - 15:00",
-        date: "Day 2 - May 23",
-        description: "Traditional morning temple ceremony under decorated coconut leaf mandaps, followed by the classic Sadya feast.",
-        icon: "🥥"
-      }
+        title: "Day 2: Mountain Peak Mandap & Afternoon Lawn Reception",
+        time: "10:30 - 17:00",
+        date: "2026-12-16",
+        description: "Panoramic Himalayan peak wedding vows followed by gourmet mountain lawn buffet.",
+        icon: "Compass",
+      },
     ],
     traditions: [
       {
-        title: "Thalikettu",
-        description: "The groom ties the Mangalsutra (Thali) around the bride's neck, accompanied by traditional blowing of conch shells and nadaswaram music."
-      }
+        title: "Himachali Nati Folk Dance",
+        description: "Guinness World Record holding circular mountain folk dance.",
+      },
+      {
+        title: "Traditional Dham Feast",
+        description: "Festive meal cooked in brass vessels without onion or garlic by traditional Botis.",
+      },
     ],
-    dressCode: "Day 1: Casual resort wear / light pastels. Day 2: Traditional Kerala wear. Women in Kasavu sarees (white with gold border), men in white Kasavu Mundus and shirts.",
-    foodDescription: "Authentic Kerala cuisine highlighting fish pollichathu, appam with stew, and traditional payasam served on banana leaves.",
-    venueDescription: "The luxury Kumarakom Lake Resort, situated on the edge of the scenic Vembanad Lake with heritage wood villas.",
-    accommodation: "Heritage pool-view wood villas with traditional Keralan architectural design.",
+    dressCode: "Day 1: Warm Chic / Kashmiri Shawl; Day 2: Formal Mountain Suit or Velvet Silk Sari.",
+    foodDescription: "Traditional Himachali Dham: Madra, Sepu Badi, Khatta, Meetha Bhat, and warm cardamom halwa.",
+    venueDescription: "Outdoor cedar lawn at 8,250 feet with 360-degree views of the Greater Himalayas.",
+    accommodation: "Oberoi Wildflower Hall mountain suite booking assistance provided upon reservation.",
     included: [
-      "Luxury pool villa accommodation",
-      "Airport transfers from Cochin International",
-      "Traditional Kerala clothing styling guides",
-      "All meals and sunset houseboat rides",
-      "Dedicated guest liaison support"
+      "2 Days event access & mountain banquets",
+      "Pahari shawl welcome gift",
+      "Concierge liaison & mountain photowalk guide",
     ],
-    notIncluded: [
-      "Flight tickets",
-      "Personal ayurvedic spa therapies"
-    ],
-    reviews: [
-      {
-        id: "r6",
-        authorName: "Chantal L.",
-        authorAvatar: "https://i.pravatar.cc/80?img=48",
-        rating: 5,
-        date: "May 2025",
-        content: "An absolute dream. The houseboat sunset cruise and the peaceful resort were incredible. Riya's family made us feel like royalty."
-      }
-    ],
-    faqs: [
-      {
-        id: "faq6",
-        question: "Can the hosts help us buy traditional clothing?",
-        answer: "Yes, our guest liaison manager coordinates with local vendors to source sarees and mundus for guests prior to the events.",
-        category: "Clothing"
-      }
-    ]
-  }
+    notIncluded: ["Flight / Train to Shimla / Chandigarh", "Hotel stay"],
+    reviews: [],
+    faqs: [],
+  },
 ];
 
 export const weddingCategories: Category[] = [
@@ -604,7 +544,7 @@ export const weddingCategories: Category[] = [
     name: "Royal",
     description: "Palace ceremonies with regal grandeur",
     imageUrl: "https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=600&q=85",
-    weddingCount: 48,
+    weddingCount: 2,
     icon: "Crown",
   },
   {
@@ -612,7 +552,7 @@ export const weddingCategories: Category[] = [
     name: "Punjabi",
     description: "Vibrant celebrations full of joy & bhangra",
     imageUrl: "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=600&q=85",
-    weddingCount: 112,
+    weddingCount: 1,
     icon: "Sparkles",
   },
   {
@@ -620,7 +560,7 @@ export const weddingCategories: Category[] = [
     name: "South Indian",
     description: "Sacred traditions with temple elegance",
     imageUrl: "https://images.unsplash.com/photo-1596484552834-6a58f850e0a1?w=600&q=85",
-    weddingCount: 87,
+    weddingCount: 1,
     icon: "Flower2",
   },
   {
@@ -628,7 +568,7 @@ export const weddingCategories: Category[] = [
     name: "Beach",
     description: "Ocean-side romance at sunset",
     imageUrl: "https://images.unsplash.com/photo-1519741497674-611481863552?w=600&q=85",
-    weddingCount: 63,
+    weddingCount: 1,
     icon: "Waves",
   },
   {
@@ -636,7 +576,7 @@ export const weddingCategories: Category[] = [
     name: "Destination",
     description: "Exotic locales for unforgettable vows",
     imageUrl: "https://images.unsplash.com/photo-1591604466107-ec97de577aff?w=600&q=85",
-    weddingCount: 34,
+    weddingCount: 1,
     icon: "Compass",
   },
   {
@@ -644,7 +584,7 @@ export const weddingCategories: Category[] = [
     name: "Traditional",
     description: "Time-honoured rituals, timeless memories",
     imageUrl: "https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?w=600&q=85",
-    weddingCount: 156,
+    weddingCount: 1,
     icon: "Flame",
   },
 ];
@@ -652,51 +592,27 @@ export const weddingCategories: Category[] = [
 export const testimonials: Testimonial[] = [
   {
     id: "t1",
-    name: "Sophie & James Laurent",
-    role: "Guests from Paris, France",
-    avatar: "https://i.pravatar.cc/100?img=25",
+    name: "Eleanor & Mark Sterling",
+    role: "Guests from London, UK",
+    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&q=85",
     content:
-      "Wedding With India gave us the most extraordinary experience of our lives. The Maharaja wedding in Jodhpur was pure magic — we felt like royalty for an entire weekend. Every detail was perfectly curated.",
+      "Attending the Royal Udaipur celebration was the most moving cultural journey of our lives. The family welcomed us with open arms.",
     rating: 5,
-    location: "Paris, France",
-    weddingType: "Royal Wedding",
-    date: "January 2025",
+    location: "London, UK",
+    weddingType: "Royal Palace Wedding",
+    date: "November 2025",
   },
   {
     id: "t2",
-    name: "Michael & Sarah Chen",
-    role: "Guests from New York, USA",
-    avatar: "https://i.pravatar.cc/100?img=36",
+    name: "Jean-Pierre & Sophie Laurent",
+    role: "Guests from Paris, France",
+    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&q=85",
     content:
-      "We attended a Punjabi wedding through this platform and it completely changed how we see travel. The energy, the food, the dancing — it was an authentic cultural immersion unlike anything we've experienced.",
+      "From the sunset haldi to the oceanfront feast, every moment felt incredibly elegant. We created memories that will stay with us forever.",
     rating: 5,
-    location: "New York, USA",
-    weddingType: "Punjabi Shaadi",
-    date: "March 2025",
-  },
-  {
-    id: "t3",
-    name: "Elena Rossi",
-    role: "Solo traveller from Milan, Italy",
-    avatar: "https://i.pravatar.cc/100?img=20",
-    content:
-      "As a solo traveller, I was nervous about attending a wedding alone. The platform made everything seamless and welcoming. The Kerala backwater wedding was intimate and breathtakingly beautiful.",
-    rating: 5,
-    location: "Milan, Italy",
-    weddingType: "Kerala Backwater",
-    date: "May 2025",
-  },
-  {
-    id: "t4",
-    name: "David & Aisha Thompson",
-    role: "Guests from London, UK",
-    avatar: "https://i.pravatar.cc/100?img=60",
-    content:
-      "The vetting process gave us complete confidence. Our host family treated us like family from the moment we arrived. This is the future of cultural tourism and we've already booked our second wedding.",
-    rating: 5,
-    location: "London, UK",
-    weddingType: "Destination Wedding",
-    date: "December 2024",
+    location: "Paris, France",
+    weddingType: "Goa Beachfront Celebration",
+    date: "December 2025",
   },
 ];
 
@@ -704,28 +620,28 @@ export const countries: Country[] = [
   {
     code: "IN",
     name: "India",
-    weddingCount: 1247,
+    weddingCount: 6,
     imageUrl: "https://images.unsplash.com/photo-1524492412937-b28074a5d7da?w=600&q=85",
     description: "Rajasthan, Goa, Kerala, Punjab & more",
   },
   {
     code: "NP",
     name: "Nepal",
-    weddingCount: 89,
+    weddingCount: 0,
     imageUrl: "https://images.unsplash.com/photo-1605640840605-14ac1855827b?w=600&q=85",
     description: "Himalayan backdrops, ancient temples",
   },
   {
     code: "LK",
     name: "Sri Lanka",
-    weddingCount: 143,
+    weddingCount: 0,
     imageUrl: "https://images.unsplash.com/photo-1562602833-0f4ab2fc46e3?w=600&q=85",
     description: "Colonial heritage, tropical beaches",
   },
   {
     code: "TH",
     name: "Thailand",
-    weddingCount: 67,
+    weddingCount: 0,
     imageUrl: "https://images.unsplash.com/photo-1552465011-b4e21bf6e79a?w=600&q=85",
     description: "Buddhist ceremonies, island escapes",
   },
@@ -736,91 +652,91 @@ export const faqItems: FAQItem[] = [
     id: "f1",
     question: "How does Wedding With India work?",
     answer:
-      "Wedding With India connects international travellers with authentic Indian wedding hosts. Families who wish to share their wedding list available dates and guest slots. You browse, choose, and book your seat at a real wedding celebration — experiencing one of the world's most vibrant cultural events as an honoured guest.",
+      "We connect discerning global travelers with trusted Host Families. Join real celebrations and experience timeless traditions as an honored member of the family.",
     category: "General",
   },
   {
     id: "f2",
     question: "Are these real weddings or arranged experiences?",
     answer:
-      "Every wedding on our platform is 100% real. We work with genuine families who are hosting their weddings and wish to share the experience with international guests. Our team vets each listing to ensure authenticity, safety, and a welcoming atmosphere for all visitors.",
+      "Every celebration is entirely genuine. We personally verify each Host Family to ensure authenticity, safety, and welcoming hospitality.",
     category: "General",
   },
   {
     id: "f3",
-    question: "What does the price per guest include?",
+    question: "What does the reservation include?",
     answer:
-      "The price typically includes participation in all wedding ceremonies and celebrations, all meals and refreshments during the event, local transport on wedding days, traditional welcome gifts, and dedicated guest liaison support. Specific inclusions vary by wedding and are clearly listed on each listing page.",
+      "Your invitation provides full access to all rituals, traditional feasts, ceremonial welcome gifts, and a dedicated cultural liaison throughout the celebration.",
     category: "Pricing",
   },
   {
     id: "f4",
-    question: "Is it safe and respectful to attend someone else's wedding?",
+    question: "Is it respectful to attend someone's wedding?",
     answer:
-      "Absolutely. All participating families genuinely want international guests and are culturally inclusive. We brief every guest on local customs, appropriate attire, and etiquette before arrival. Our guest experience team is available throughout your stay. Safety and mutual respect are our top priorities.",
+      "Yes. Following the Indian tradition of 'Atithi Devo Bhava' (Guest is God), host families warmly welcome international guests to share their culture and joy.",
     category: "Safety",
   },
   {
     id: "f5",
-    question: "What should I wear to an Indian wedding?",
+    question: "What should I wear?",
     answer:
-      "We recommend traditional Indian attire such as kurta-pajama for men or salwar-kameez / saree for women, which many hosts can help arrange locally. Smart Western formal wear is also widely accepted. We provide detailed cultural guidelines after booking, including colour preferences and ceremony-specific dress codes.",
+      "We encourage elegant traditional attire like silk sarees or bandhgalas. Your cultural liaison will assist with custom fittings upon arrival.",
     category: "Culture",
   },
   {
     id: "f6",
-    question: "Can I cancel or reschedule my booking?",
+    question: "What is your cancellation policy?",
     answer:
-      "We offer a full refund if you cancel more than 30 days before the wedding date. Cancellations within 15–30 days receive a 50% refund. We cannot offer refunds within 14 days as families make firm arrangements. We encourage travel insurance and are happy to help with rescheduling where possible.",
+      "We offer full refunds for cancellations made 30 days prior to the celebration. Detailed terms are available on our policies page.",
     category: "Booking",
   },
 ];
 
 export const heroStats: Stat[] = [
   {
-    value: BUSINESS_METRICS.WEDDINGS_HOSTED,
-    label: "Weddings Listed",
-    description: "Across 6 countries",
+    value: "100%",
+    label: "Trusted Host Families",
+    description: "Personally verified for authenticity",
   },
   {
-    value: BUSINESS_METRICS.GLOBAL_GUESTS,
-    label: "Happy Guests",
-    description: `From ${BUSINESS_METRICS.COUNTRIES_REPRESENTED_NUM} countries`,
+    value: "6",
+    label: "Curated Celebrations",
+    description: "Handpicked cultural journeys",
   },
   {
-    value: BUSINESS_METRICS.AVERAGE_RATING,
-    label: "Average Rating",
-    description: "Out of 5.0 stars",
+    value: "5.0 ★",
+    label: "Wedding Host Families",
+    description: "World-class warmth and care",
   },
 ];
 
 export const howItWorksSteps: HowItWorksStep[] = [
   {
     step: 1,
-    icon: "🔍",
+    icon: "Search",
     title: "Discover",
     description:
-      "Browse verified Indian weddings by style, location, and date. Filter by your travel dates and preferred wedding type.",
+      "Explore Our Indian Weddings across diverse regions. Each celebration is chosen for its authentic cultural heritage.",
   },
   {
     step: 2,
-    icon: "📋",
-    title: "Book Your Spot",
+    icon: "ClipboardList",
+    title: "Reserve Your Seat",
     description:
-      "Reserve your guest slot with a simple, secure checkout. Receive your cultural welcome kit instantly.",
+      "Request an invitation to join the family. Connect with a personal cultural guide for your journey.",
   },
   {
     step: 3,
-    icon: "✈️",
-    title: "Travel & Arrive",
+    icon: "Plane",
+    title: "Arrive as Family",
     description:
-      "Your dedicated guest liaison greets you and helps you navigate the celebrations from start to finish.",
+      "Your dedicated concierge greets you upon arrival, ensuring your absolute comfort throughout the festivities.",
   },
   {
     step: 4,
-    icon: "🎊",
-    title: "Celebrate",
+    icon: "Sparkles",
+    title: "Celebrate Together",
     description:
-      "Dance, feast, and form bonds with a family that opens its heart and home to the world.",
+      "Share in sacred rituals, timeless traditions, and genuine warmth. Create memories that last forever.",
   },
 ];

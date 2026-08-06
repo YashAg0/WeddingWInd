@@ -15,10 +15,10 @@ The platform connects host Indian families seeking to share their culture with g
 ### Key Performance & Financial Highlights
 - **Gross Booking Value (GBV)**: Supported in USD ($), EUR (€), and INR (₹).
 - **Revenue Model**:
-  - **72% Host Payout Share** (disbursed directly to host family in INR).
-  - **28% Platform Commission Fee** (funding platform operations, insurance, cultural guides, and city coordinators).
-  - **7% Single-Tier Agent Referral Share** (incentivizing freelance travel agents and partners).
-- **Listing Portfolio**: 6 Core Demonstration Weddings spanning Jodhpur, Udaipur, Kerala, Goa, Amritsar, and Jaipur.
+  - **78% Host Payout Share** (disbursed directly to host family in INR).
+  - **22% Platform Commission Fee** (funding platform operations, insurance, cultural guides, and city coordinators).
+  - **Tiered Agent Referral Share (₹500-₹1800)** (incentivizing freelance travel agents and partners).
+- **Celebration Portfolio**: 6 Core Demonstration Weddings spanning Jodhpur, Udaipur, Kerala, Goa, Amritsar, and Jaipur.
 - **Platform Scale**: 43 Next.js static & dynamic routes compiled with 0 TypeScript/ESLint errors.
 
 ---
@@ -33,12 +33,12 @@ The platform connects host Indian families seeking to share their culture with g
 ### B. Indian Host Family Persona
 - **Evaluation**: *"Would I feel safe hosting international travelers at my family wedding?"*
 - **Verdict**: **YES**.
-- **Evidence**: Host verification queue (passport/ID + venue proof requirements), traveler background checks, approval/decline control over all booking requests, on-site city coordinator support, and 72% direct revenue payouts.
+- **Evidence**: Host verification queue (passport/ID + venue proof requirements), traveler background checks, approval/decline control over all booking requests, on-site city coordinator support, and 78% direct revenue payouts.
 
 ### C. Luxury Travel Agent Persona
 - **Evaluation**: *"Would I recommend WeddingWithIndia to my clients?"*
 - **Verdict**: **YES**.
-- **Evidence**: Dedicated Agent Portal (`/dashboard/referrals`), custom tracking links (`WWI-AGENT-XXXX`), real-time click and conversion analytics, and transparent 7% commission accounting.
+- **Evidence**: Dedicated Agent Portal (`/dashboard/referrals`), custom tracking links (`WWI-AGENT-XXXX`), real-time click and conversion analytics, and transparent tiered commission (₹500-₹500) accounting.
 
 ### D. Investor & CTO Persona
 - **Evaluation**: *"Is this codebase scalable, secure, and production-ready?"*

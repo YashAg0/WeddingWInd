@@ -1,87 +1,95 @@
-/**
- * lib/env.ts
- *
- * Central environment variable validation.
- * Validates at import time — fails fast with a clear error message
- * rather than mysterious runtime failures deep in the app.
- *
- * Usage: import "@/lib/env" at the top of server entry points.
- * It is automatically imported by lib/prisma.ts and lib/stripe.ts.
- */
+import { z } from "zod";
 
-const isBuildTime =
-  process.env.NEXT_PHASE === "phase-production-build" ||
-  process.env.NEXT_PHASE === "phase-export" ||
-  process.env.npm_lifecycle_event === "build" ||
-  process.env.npm_lifecycle_event === "vercel-build" ||
-  process.env.VERCEL === "1";
-
-/**
- * Validate a required environment variable.
- * In production at runtime, throws if missing.
- * During build time, returns a placeholder value when provided.
- */
-function requireEnv(key: string, defaultValueForBuild?: string): string {
-  let value = process.env[key];
-  if (!value) {
-    if (isBuildTime && defaultValueForBuild !== undefined) {
-      // Allow build to proceed with a placeholder — real value needed at runtime
-      value = defaultValueForBuild;
-      process.env[key] = value;
-      return value;
-    }
-    if (process.env.NODE_ENV === "production" && !isBuildTime) {
-      throw new Error(
-        `[env] Missing required environment variable: ${key}\n` +
-          `Set this in your deployment environment before starting the server.`
-      );
-    }
-    // In development, warn but don't throw
-    if (process.env.NODE_ENV === "development") {
-      console.warn(`[env] Warning: Missing environment variable: ${key}`);
-    }
-    value = defaultValueForBuild ?? "";
-    process.env[key] = value;
-    return value;
-  }
-  return value;
-}
-
-export const env = {
+const envSchema = z.object({
   // Database
-  DATABASE_URL: requireEnv("DATABASE_URL", "postgresql://localhost:5432/dev"),
+  DATABASE_URL: z.string().url().min(1, "DATABASE_URL is required").refine(
+    (url) => process.env.NODE_ENV !== "production" || url.includes("pgbouncer=true") || url.includes("pool_timeout="),
+    "DATABASE_URL must use connection pooling (pgbouncer=true) in production"
+  ),
 
   // Clerk Authentication
-  CLERK_SECRET_KEY: requireEnv("CLERK_SECRET_KEY", "sk_test_placeholder"),
-  NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ?? "",
+  NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string().min(1, "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY is required"),
+  CLERK_SECRET_KEY: z.string().min(1, "CLERK_SECRET_KEY is required"),
 
   // Stripe Payments
-  STRIPE_SECRET_KEY: requireEnv("STRIPE_SECRET_KEY", "sk_test_placeholder_build"),
-  STRIPE_WEBHOOK_SECRET: requireEnv("STRIPE_WEBHOOK_SECRET", "whsec_placeholder_build"),
-
-  // Guest Pass Encryption — dedicated 32-byte AES-256-GCM key (64 hex chars).
-  // Generate: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
-  // This key is validated independently by lib/security/guest-pass-crypto.ts at module load.
-  GUEST_PASS_ENCRYPTION_KEY: requireEnv("GUEST_PASS_ENCRYPTION_KEY", ""),
+  STRIPE_SECRET_KEY: z.string().min(1, "STRIPE_SECRET_KEY is required"),
+  STRIPE_WEBHOOK_SECRET: z.string().min(1, "STRIPE_WEBHOOK_SECRET is required"),
 
   // Resend Email
-  RESEND_API_KEY: requireEnv("RESEND_API_KEY", "re_placeholder"),
+  RESEND_API_KEY: z.string().min(1, "RESEND_API_KEY is required"),
 
   // UploadThing
-  UPLOADTHING_SECRET: requireEnv("UPLOADTHING_SECRET", "sk_placeholder"),
-  UPLOADTHING_APP_ID: requireEnv("UPLOADTHING_APP_ID", "placeholder"),
+  UPLOADTHING_SECRET: z.string().min(1, "UPLOADTHING_SECRET is required"),
+  UPLOADTHING_APP_ID: z.string().min(1, "UPLOADTHING_APP_ID is required"),
 
+  // Security
+  GUEST_PASS_ENCRYPTION_KEY: z.string().length(64, "GUEST_PASS_ENCRYPTION_KEY must be exactly 64 hex characters"),
+  
   // App URL
-  NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
+  NEXT_PUBLIC_APP_URL: z.string().url().min(1, "NEXT_PUBLIC_APP_URL is required").refine(
+    (url) => {
+      // In production, do not allow localhost
+      if (process.env.NODE_ENV === "production") {
+        return !url.includes("localhost") && !url.includes("127.0.0.1");
+      }
+      return true;
+    },
+    { message: "NEXT_PUBLIC_APP_URL cannot be localhost in production" }
+  ),
 
   // Analytics (optional)
-  NEXT_PUBLIC_GA_ID: process.env.NEXT_PUBLIC_GA_ID ?? "",
-
+  NEXT_PUBLIC_GA_ID: z.string().optional(),
+  
   // Monitoring (optional)
-  SENTRY_DSN: process.env.SENTRY_DSN ?? "",
+  SENTRY_DSN: z.string().optional(),
 
-  // Node environment
-  NODE_ENV: process.env.NODE_ENV as "development" | "production" | "test",
-} as const;
+  // Environment
+  NODE_ENV: z.enum(["development", "production", "test"]).default("production"),
+});
 
-export type Env = typeof env;
+export type Env = z.infer<typeof envSchema>;
+
+// We construct processEnv manually to ensure we pull from process.env
+const processEnv = {
+  DATABASE_URL: process.env.DATABASE_URL,
+  NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
+  CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY,
+  STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
+  STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
+  RESEND_API_KEY: process.env.RESEND_API_KEY,
+  UPLOADTHING_SECRET: process.env.UPLOADTHING_SECRET,
+  UPLOADTHING_APP_ID: process.env.UPLOADTHING_APP_ID,
+  GUEST_PASS_ENCRYPTION_KEY: process.env.GUEST_PASS_ENCRYPTION_KEY,
+  NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+  NEXT_PUBLIC_GA_ID: process.env.NEXT_PUBLIC_GA_ID,
+  SENTRY_DSN: process.env.SENTRY_DSN,
+  NODE_ENV: process.env.NODE_ENV,
+};
+
+let _env: Env;
+try {
+  _env = envSchema.parse(processEnv);
+} catch (error: any) {
+  console.error("==================================================");
+  console.error("❌ CRITICAL: Environment Validation Failed");
+  console.error("==================================================");
+  console.error("The application cannot start because one or more required");
+  console.error("environment variables are missing or invalid.\n");
+  
+  if (error && typeof error === "object" && Array.isArray(error.issues)) {
+    for (const issue of error.issues) {
+      console.error(`  - ${String(issue.path[0])}: ${issue.message}`);
+    }
+  } else {
+    console.error(String(error));
+  }
+  
+  console.error("\nPlease check your deployment settings (Vercel, etc.) and");
+  console.error("ensure all production secrets are configured correctly.");
+  console.error("==================================================\n");
+
+  // Throw error so Next.js build or runtime fails gracefully
+  throw new Error("Invalid Environment Variables");
+}
+
+export const env = _env;

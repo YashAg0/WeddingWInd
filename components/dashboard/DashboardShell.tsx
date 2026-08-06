@@ -36,7 +36,8 @@ function DashboardShellContent({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="flex h-screen bg-warm-50 overflow-hidden font-sans">
+    <div className="px-5 sm:px-8 lg:px-12 xl:px-16">
+      <div className="flex h-screen bg-warm-50 overflow-hidden font-sans rounded-[2.5rem]">
       
       {/* Desktop Sidebar */}
       <div className="hidden lg:block h-full flex-shrink-0">
@@ -90,6 +91,7 @@ function DashboardShellContent({ children }: { children: React.ReactNode }) {
         </main>
       </div>
 
+      </div>
     </div>
   );
 }

@@ -9,7 +9,7 @@ import { env } from "./env";
  * fall back to a mock key that passes $0 charges.
  */
 export const stripe = new Stripe(env.STRIPE_SECRET_KEY, {
-  // Keep in sync with installed stripe package version (stripe@22.3.1)
+  // Keep in sync with installed stripe experience version (stripe@22.3.1)
   apiVersion: "2026-06-24.dahlia",
   typescript: true,
   maxNetworkRetries: 2,

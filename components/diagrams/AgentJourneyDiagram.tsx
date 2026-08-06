@@ -19,7 +19,7 @@ export function AgentJourneyDiagram() {
     {
       num: "03",
       title: "Share Link",
-      desc: "Introduce foreign travelers (7%) or Indian host families (4%).",
+      desc: "Introduce foreign travelers (Tiered Payout) or Indian host families (4%).",
       icon: Share2,
     },
     {
@@ -31,7 +31,7 @@ export function AgentJourneyDiagram() {
     {
       num: "05",
       title: "Receive Commission",
-      desc: "7% traveler or 4% host payout released to your account.",
+      desc: "tiered traveler or 4% host payout released to your account.",
       icon: Award,
     },
   ];

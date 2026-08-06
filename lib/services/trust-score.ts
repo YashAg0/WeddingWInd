@@ -14,7 +14,7 @@ export function getPublishedReviewWhere(extraWhere?: any) {
 
 
 /**
- * Calculates Jaccard/Wilson Jaccard or Bayesian rating for a wedding listing.
+ * Calculates Jaccard/Wilson Jaccard or Bayesian rating for a Indian Wedding Experience.
  * Prior average C = 4.5, prior weight m = 3.
  */
 export async function calculateBayesianRating(weddingId: string): Promise<{

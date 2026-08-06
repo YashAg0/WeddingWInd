@@ -1,4 +1,4 @@
-# Walkthrough: Phase 14.9 Complete Product Integration, UI, Route, Role & Runtime Recovery Audit
+# Walkthrough: Phase 14.9 Complete Experience Integration, UI, Route, Role & Runtime Recovery Audit
 
 ## 1. Complete Application Route Map
 The application's route landscape is structured as follows:
@@ -499,7 +499,7 @@ When an agent commission payout request is approved and processed, a `PAYOUT_COM
 
 ## 42. Migration SQL Audit
 Validated the following migration logs:
-*   `20260711180000`: Trust, safety, disputes.
+*   `2026071150000`: Trust, safety, disputes.
 *   `20260711181000`: Corrections.
 *   `20260711190000`: Reputation quality engine.
 *   `20260712030000`: Corrections (ReviewAppeal table).
@@ -533,7 +533,7 @@ There is no drift between migrations and database schema files. Schema formats v
 ---
 
 ## 47. E2E Result
-*   `npm run e2e`: **FAIL (exit code 1)** — Playwright test runner is not installed in the package.json devDependencies.
+*   `npm run e2e`: **FAIL (exit code 1)** — Playwright test runner is not installed in the experience.json devDependencies.
 
 ---
 
@@ -627,7 +627,7 @@ Fix `npm run build` failure and eliminate all HTTP 500 errors found in the indep
 - `/for-agents/apply` → `mockStore.addAgent()` (success screen updated to "Under Review")
 - `/coordinators/apply` → `coordinatorMockStore.addCoordinator()` (wired in prior session)
 
-**Numbers.pdf Pricing Fix** — `lib/data.ts`: All 6 `pricePerGuest` values changed from legacy USD to `7499 INR`. Budget filters updated to INR thresholds. `for-couples` earnings simulator converted to INR (₹7,499–₹29,999 tier range, 72% host split shown).
+**Numbers.pdf Pricing Fix** — `lib/data.ts`: All 6 `pricePerGuest` values changed from legacy USD to `9000 INR`. Budget filters updated to INR thresholds. `for-couples` earnings simulator converted to INR (₹7,499–₹29,999 tier range, 78% host split shown).
 
 **BookingSidebar Trust Signals** — Cancellation policy (30d/14d/0d tiers) + support email added.
 

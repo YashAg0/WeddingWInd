@@ -18,7 +18,7 @@ const milestones = [
   {
     year: "2023",
     title: "The Spark",
-    description: "Our founder Arjun attended a wedding in Rajasthan with foreign friends, witnessing their awe. The idea for cultural wedding tourism was born."
+    description: "Our founder Arjun attended a wedding in Rajasthan with foreign friends, witnessing their awe. The idea for cultural wedding immersion was born."
   },
   {
     year: "2024",
@@ -32,14 +32,15 @@ const milestones = [
   },
   {
     year: "2026",
-    title: "Marketplace Expansion",
-    description: `Onboarded ${BUSINESS_METRICS.WEDDINGS_HOSTED} weddings and welcomed travelers from ${BUSINESS_METRICS.COUNTRIES_REPRESENTED} countries, establishing the gold standard of cultural immersion.`
+    title: "Platform Expansion",
+    description: `Onboarded ${BUSINESS_METRICS.WEDDINGS_HOSTED} weddings and welcomed guests from ${BUSINESS_METRICS.COUNTRIES_REPRESENTED} countries, establishing the gold standard of cultural immersion.`
   }
 ];
 
 export default function AboutPage() {
   return (
-    <div className="min-h-screen bg-warm-50/50 pt-28 pb-20">
+    <div className="px-5 sm:px-8 lg:px-12 xl:px-16">
+    <div className="min-h-screen bg-warm-50/50 pt-28 pb-20 rounded-[2.5rem]">
       
       {/* Hero Section */}
       <section className="container-luxury text-center max-w-4xl mb-16 space-y-6">
@@ -68,7 +69,7 @@ export default function AboutPage() {
           transition={{ duration: 0.6, delay: 0.2 }}
           className="text-charcoal-500 text-base sm:text-lg leading-relaxed max-w-2xl mx-auto"
         >
-          We are the world&apos;s first marketplace connecting global travelers with genuine Indian families to attend authentic weddings as honored guests.
+          We are the world's most trusted platform connecting global guests with genuine Indian families to attend authentic weddings as honored guests.
         </motion.p>
       </section>
 
@@ -81,10 +82,10 @@ export default function AboutPage() {
             className="mb-0"
           />
           <p className="text-charcoal-600 text-sm sm:text-base leading-relaxed">
-            In 2023, while attending his cousin&apos;s grand wedding in Jodhpur, our founder noticed several foreign travelers standing outside the palace gate, fascinated by the colorful procession, the drums, and the joyful energy. He invited them inside to join the family.
+            In 2023, while attending his cousin&apos;s grand wedding in Jodhpur, our founder noticed several international guests standing outside the palace gate, fascinated by the colorful procession, the drums, and the joyful energy. He invited them inside to join the family.
           </p>
           <p className="text-charcoal-600 text-sm sm:text-base leading-relaxed">
-            That single evening transformed those travelers&apos; lives. They didn&apos;t just sightsee; they danced, tasted authentic recipes, and shared stories with the couple. We realized that weddings are the ultimate window into a culture&apos;s soul.
+            That single evening transformed those guests&apos; lives. They didn&apos;t just sightsee; they danced, tasted authentic recipes, and shared stories with the couple. We realized that weddings are the ultimate window into a culture&apos;s soul.
           </p>
           <p className="text-charcoal-600 text-sm sm:text-base leading-relaxed font-semibold">
             Wedding With India was built to make these life-changing cultural connections safe, respectful, and accessible to the world.
@@ -108,7 +109,7 @@ export default function AboutPage() {
           </div>
           <h3 className="font-display font-bold text-xl text-charcoal-900">Our Mission</h3>
           <p className="text-charcoal-600 text-sm leading-relaxed">
-            To bridge cultural gaps by offering travelers deep, respectful cultural immersion while empowering local families to share their heritage and celebrations with the world.
+            To bridge cultural gaps by offering guests deep, respectful cultural immersion while empowering local families to share their heritage and celebrations with the world.
           </p>
         </div>
 
@@ -118,7 +119,7 @@ export default function AboutPage() {
           </div>
           <h3 className="font-display font-bold text-xl text-charcoal-900">Our Vision</h3>
           <p className="text-charcoal-600 text-sm leading-relaxed">
-            To redefine experiential travel, transforming tourism into real human connections, mutual respect, and shared celebrations that guests will remember for a lifetime.
+            To redefine experiential travel, transforming the journey into real human connections, mutual respect, and shared celebrations that guests will remember for a lifetime.
           </p>
         </div>
       </section>
@@ -211,5 +212,6 @@ export default function AboutPage() {
       </section>
 
     </div>
-  );
+  
+    </div>);
 }

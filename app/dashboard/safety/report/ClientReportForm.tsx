@@ -91,7 +91,7 @@ export default function ClientReportForm({ bookings, weddings, subjects }: Clien
         >
           <option value="SAFETY">Physical Safety Concern</option>
           <option value="HARASSMENT">Harassment or Abuse</option>
-          <option value="MISREPRESENTATION">Listing Misrepresentation</option>
+          <option value="MISREPRESENTATION">Celebration Misrepresentation</option>
           <option value="PAYMENT">Payment or Billing Issue</option>
           <option value="REFUND">Disputed Cancellation Refund</option>
           <option value="HOST_CONDUCT">Host Couple Misconduct</option>

@@ -22,6 +22,7 @@ import {
   agentProfileSchema,
   weddingSchema
 } from "../validation";
+import { unstable_cache } from "next/cache";
 
 /**
  * 1. Action to update User Role during onboarding or settings.
@@ -234,7 +235,7 @@ export async function createWedding(data: any) {
   });
 
   revalidatePath("/weddings");
-  revalidatePath("/dashboard/listings");
+  revalidatePath("/dashboard/celebrations");
   return { success: true, wedding };
 }
 
@@ -272,7 +273,7 @@ export async function editWedding(weddingId: string, data: any) {
 
   revalidatePath(`/weddings/${wedding.slug}`);
   revalidatePath("/weddings");
-  revalidatePath("/dashboard/listings");
+  revalidatePath("/dashboard/celebrations");
   return { success: true, wedding };
 }
 
@@ -298,18 +299,18 @@ export async function deleteWedding(weddingId: string) {
   });
 
   revalidatePath("/weddings");
-  revalidatePath("/dashboard/listings");
+  revalidatePath("/dashboard/celebrations");
   return { success: true };
 }
 
 /**
- * Returns all wedding listings hosted by the currently authenticated couple,
+ * Returns all Our Indian Weddings hosted by the currently authenticated couple,
  * including live booking counts so the couple can track guest registrations.
  */
 export async function getMyWeddings() {
   const user = await requireAuth();
   if (user.role !== UserRole.COUPLE) {
-    throw new Error("Forbidden: Only host couples can view their wedding listings.");
+    throw new Error("Forbidden: Only host couples can view their Our Indian Weddings.");
   }
 
   const coupleProfile = await prisma.coupleProfile.findUnique({
@@ -1259,7 +1260,8 @@ export async function seedDatabaseIfNeeded() {
   }
 }
 
-export async function getWeddings() {
+export const getWeddings = unstable_cache(
+  async () => {
   try {
     const dbOk = await isDatabaseAvailable(300);
     if (!dbOk) {
@@ -1355,7 +1357,7 @@ export async function getWeddings() {
     const { featuredWeddings } = await import("../data");
     return featuredWeddings;
   }
-}
+}, ["published-weddings"], { revalidate: 3600, tags: ["weddings"] });
 
 /**
  * Maps a review record to a public data transfer object, stripping sensitive data.
@@ -1406,7 +1408,8 @@ function mapToPublicReviewDTO(review: any) {
   };
 }
 
-export async function getWeddingBySlug(slug: string) {
+export const getWeddingBySlug = unstable_cache(
+  async (slug: string) => {
   try {
     const dbOk = await isDatabaseAvailable(1500);
     if (!dbOk) {
@@ -1556,4 +1559,4 @@ export async function getWeddingBySlug(slug: string) {
     const { featuredWeddings } = await import("../data");
     return featuredWeddings.find((fw) => fw.slug === slug) || null;
   }
-}
+}, ["wedding-by-slug"], { revalidate: 3600, tags: ["weddings"] });
