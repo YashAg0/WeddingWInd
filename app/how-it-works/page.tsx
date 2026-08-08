@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Users, Heart, Award, Compass, ArrowRight, Sparkles, Search, Building2 } from "lucide-react";
+import { Heart, Award, Compass, ArrowRight, Sparkles, Building2 } from "lucide-react";
 import { GuestJourneyDiagram } from "@/components/diagrams/GuestJourneyDiagram";
 import { HostJourneyDiagram } from "@/components/diagrams/HostJourneyDiagram";
 import { AgentJourneyDiagram } from "@/components/diagrams/AgentJourneyDiagram";
@@ -17,7 +17,7 @@ export default function HowItWorksPage() {
     {
       id: "guest" as ActiveRoleTab,
       title: "For Global Guests",
-      tagline: "Book & Attend Live Weddings",
+      tagline: "Reserve & Attend Authentic Indian Weddings",
       targetAudience: "Travelers seeking authentic cultural immersion.",
       benefit: "Attend real celebrations with attire, meals, & 24/7 liaison included.",
       ctaHref: "/weddings",
@@ -27,11 +27,11 @@ export default function HowItWorksPage() {
     {
       id: "host" as ActiveRoleTab,
       title: "For Host Families",
-      tagline: "List Your Wedding & Earn 72%",
+      tagline: "Share Your Wedding & Earn 72%",
       targetAudience: "Indian couples & families hosting a wedding.",
       benefit: "Share sacred traditions, offset costs, & receive 72% direct payout.",
       ctaHref: "/list-wedding",
-      ctaText: "List Your Wedding",
+      ctaText: "Become a Host Family",
       icon: Building2,
     },
     {
@@ -66,10 +66,10 @@ export default function HowItWorksPage() {
           Platform Overview & Disambiguation
         </div>
         <h1 className="font-display font-bold text-3xl sm:text-4xl md:text-5xl text-charcoal-900 leading-tight">
-          How <span className="text-gradient-brand">WeddingWithIndia</span> Works
+          How <span className="text-gradient-brand">Wedding With India</span> Works
         </h1>
         <p className="text-charcoal-500 text-sm sm:text-base max-w-2xl mx-auto leading-relaxed">
-          WeddingWithIndia is a cultural marketplace connecting four distinct roles. Select a role below to explore how it works and where you fit in.
+          Wedding With India is a cultural marketplace connecting four distinct roles. Select a role below to explore how it works and where you fit in.
         </p>
       </section>
 
@@ -167,7 +167,7 @@ export default function HowItWorksPage() {
       <section className="container-luxury max-w-5xl bg-white border border-warm-200/60 rounded-[2.5rem] p-8 sm:p-12 shadow-sm text-center space-y-8">
         <div className="max-w-2xl mx-auto space-y-2">
           <h2 className="font-display font-bold text-2xl sm:text-3xl text-charcoal-900">
-            Ready to Join WeddingWithIndia?
+            Ready to Join Wedding With India?
           </h2>
           <p className="text-charcoal-500 text-sm">
             Whether you want to attend, host, refer, or coordinate, select your path below.
@@ -176,10 +176,10 @@ export default function HowItWorksPage() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <Link href="/weddings" className="btn btn-primary py-3.5 text-xs font-bold justify-center">
-            Explore Weddings (Guest)
+            Explore Our Indian Weddings
           </Link>
           <Link href="/list-wedding" className="btn btn-secondary py-3.5 text-xs font-bold justify-center">
-            List Your Wedding (Host)
+            Become a Host Family
           </Link>
           <Link href="/for-agents" className="btn btn-secondary py-3.5 text-xs font-bold justify-center">
             Become an Agent (7% Rate)

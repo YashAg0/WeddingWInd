@@ -13,7 +13,8 @@ interface OverviewData {
   totalBookingsCount: number;
   bookingsByStatus: Record<string, number>;
   totalVolume: number;
-  platformCommissionAccrued: number;
+  platformCommissionAccrued: number | null;
+  platformCommissionAvailable: boolean;
   agentCommissionAccrued: number;
 }
 
@@ -80,10 +81,10 @@ export default function AdminOverviewPage() {
         <div className="bg-white border border-warm-200/60 p-6 rounded-3xl shadow-sm space-y-2">
           <span className="text-xs font-bold text-charcoal-400 uppercase tracking-widest block">Platform Revenue Accrued (22%)</span>
           <div className="font-display font-bold text-2xl text-[var(--color-brand-primary)]">
-            {loading ? "…" : formatCurrencyINR(data?.platformCommissionAccrued ?? 0)}
+            {loading ? "…" : data?.platformCommissionAvailable ? formatCurrencyINR(data.platformCommissionAccrued ?? 0) : "Not recorded"}
           </div>
           <span className="text-[0.6875rem] text-charcoal-500 font-medium">
-            {formatSecondaryCurrency(data?.platformCommissionAccrued ?? 0)}
+            {data?.platformCommissionAvailable ? formatSecondaryCurrency(data.platformCommissionAccrued ?? 0) : "Configure a platform-fee ledger to report this value."}
           </span>
         </div>
 

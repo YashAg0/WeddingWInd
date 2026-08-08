@@ -692,6 +692,8 @@ export const faqItems: FAQItem[] = [
   },
 ];
 
+import { BUSINESS_METRICS } from "./constants/business-metrics";
+
 export const heroStats: Stat[] = [
   {
     value: "100%",
@@ -699,12 +701,12 @@ export const heroStats: Stat[] = [
     description: "Personally verified for authenticity",
   },
   {
-    value: "6",
+    value: String(BUSINESS_METRICS.WEDDINGS_HOSTED_NUM),
     label: "Curated Celebrations",
     description: "Handpicked cultural journeys",
   },
   {
-    value: "5.0 ★",
+    value: String(BUSINESS_METRICS.AVERAGE_RATING_NUM) + " ★",
     label: "Wedding Host Families",
     description: "World-class warmth and care",
   },

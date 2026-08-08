@@ -77,8 +77,8 @@ export function SectionHeader({
       <h2
         id={id}
         className={cn(
-          "font-display font-bold leading-[1.12] tracking-tight mb-5",
-          "text-3xl sm:text-4xl lg:text-[2.875rem]",
+          "font-display font-bold leading-[1.1] tracking-tight mb-5",
+          "text-[clamp(1.75rem,4vw,2.875rem)]",
           isDark ? "text-white" : "text-[var(--color-charcoal-900)]",
           titleClassName
         )}
@@ -90,7 +90,7 @@ export function SectionHeader({
         <p
           className={cn(
             "text-base sm:text-lg leading-relaxed",
-            isDark ? "text-white/90" : "text-charcoal-700"
+            isDark ? "text-white/85" : "text-charcoal-600"
           )}
         >
           {description}

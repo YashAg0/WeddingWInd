@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { isAdmin } from "@/lib/auth";
+import { requireRole } from "@/lib/auth";
+import { UserRole } from "@prisma/client";
 
 // GET /api/admin/agents — list all agent applications
 export async function GET() {
   try {
-    if (!(await isAdmin())) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+    await requireRole([UserRole.ADMIN]);
 
     const agents = await prisma.agentProfile.findMany({
       include: {
@@ -28,9 +27,7 @@ export async function GET() {
 // PATCH /api/admin/agents — approve or reject an agent
 export async function PATCH(req: NextRequest) {
   try {
-    if (!(await isAdmin())) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+    const admin = await requireRole([UserRole.ADMIN]);
 
     const body = await req.json();
     const { agentProfileId, action } = body;
@@ -66,8 +63,8 @@ export async function PATCH(req: NextRequest) {
           action: "ADMIN_AGENT_APPROVE",
           entity: "AgentProfile",
           entityId: agentProfileId,
-          userId: "admin",
-          userName: "Platform Admin",
+          userId: admin.id,
+          userName: admin.name || admin.email,
           details: `Agent ${agentProfile.user.name} approved. Referral code: ${agentProfile.referralCode}`,
         }
       });
@@ -92,8 +89,8 @@ export async function PATCH(req: NextRequest) {
           action: "ADMIN_AGENT_REJECT",
           entity: "AgentProfile",
           entityId: agentProfileId,
-          userId: "admin",
-          userName: "Platform Admin",
+          userId: admin.id,
+          userName: admin.name || admin.email,
           details: `Agent ${agentProfile.user.name} application declined.`,
         }
       });

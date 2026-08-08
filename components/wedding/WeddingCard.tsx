@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { Star, MapPin, Users, Heart } from "lucide-react";
+import { Star, MapPin, Users, Heart, Calendar } from "lucide-react";
 import type { Wedding } from "@/types";
 import { cn } from "@/lib/utils";
 import { useCurrency } from "@/context/CurrencyContext";
@@ -39,16 +39,17 @@ export function WeddingCard({ wedding, className }: WeddingCardProps) {
   );
   const isAlmostFull = availableSlots <= 30;
 
-  const displayPriceINR = wedding.pricePerGuest || PRICING_TIERS.CULTURAL_GUEST.priceINR;
+  const displayPriceINR = wedding.pricePerGuest || PRICING_TIERS.PREMIUM.priceINR;
   const isWishlisted = wishlist.includes(wedding.id);
 
   return (
     <article
-      className={cn("card group h-full flex flex-col", className)}
+      className={cn("card-luxury group h-full flex flex-col bg-white", className)}
       aria-labelledby={`wedding-title-${wedding.id}`}
+      data-testid="wedding-card"
     >
-      {/* Image */}
-      <div className="relative h-56 sm:h-60 overflow-hidden bg-warm-100 flex-shrink-0">
+      {/* Image — consistent 4:3 ratio for perfect grid alignment */}
+      <div className="relative overflow-hidden bg-warm-100 flex-shrink-0" style={{ aspectRatio: "4/3" }}>
         <Image
           src={imgSrc}
           alt={`${wedding.title} wedding in ${wedding.location}`}
@@ -59,9 +60,9 @@ export function WeddingCard({ wedding, className }: WeddingCardProps) {
           onError={() => setImgSrc(FALLBACK_IMAGE)}
         />
 
-        {/* Gradient overlay */}
+        {/* Rich gradient overlay — readable text at all times */}
         <div
-          className="absolute inset-0 bg-gradient-to-t from-maroon-900/80 via-maroon-900/20 to-transparent"
+          className="absolute inset-0 bg-gradient-to-t from-maroon-950/85 via-maroon-950/20 to-transparent"
           aria-hidden="true"
         />
 
@@ -88,10 +89,10 @@ export function WeddingCard({ wedding, className }: WeddingCardProps) {
             toggleWishlist(wedding.id);
           }}
           className={cn(
-            "absolute top-3 right-3 z-10 w-8 h-8 rounded-full backdrop-blur-sm flex items-center justify-center transition-colors shadow-sm",
+            "absolute top-3 right-3 z-10 w-9 h-9 rounded-full backdrop-blur-sm flex items-center justify-center transition-all duration-200 shadow-sm border",
             isWishlisted
-              ? "bg-[var(--color-brand-primary)] text-white"
-              : "bg-white/90 text-charcoal-400 hover:text-[var(--color-brand-primary)]"
+              ? "bg-[var(--color-brand-primary)] text-white border-transparent"
+              : "bg-white/90 text-charcoal-400 hover:text-[var(--color-brand-primary)] border-white/60 hover:scale-110"
           )}
           aria-label={
             isWishlisted
@@ -99,21 +100,20 @@ export function WeddingCard({ wedding, className }: WeddingCardProps) {
               : `Save ${wedding.title} to wishlist`
           }
         >
-          <Heart size={15} className={isWishlisted ? "fill-current" : ""} aria-hidden="true" />
+          <Heart size={16} className={isWishlisted ? "fill-current" : ""} aria-hidden="true" />
         </button>
 
-        {/* Location overlay */}
+        {/* Location overlay at bottom of image */}
         <div className="absolute bottom-4 left-4 right-4 flex items-center gap-1.5 z-10">
-          <MapPin size={14} className="text-white flex-shrink-0" aria-hidden="true" />
+          <MapPin size={14} className="text-gold-300 flex-shrink-0" aria-hidden="true" />
           <span className="text-white text-sm font-medium truncate drop-shadow-md">
             {wedding.location}
           </span>
         </div>
       </div>
 
-      {/* Content — flex-1 makes this fill whatever space is left in the card,
-          so the footer below can be pinned to the bottom */}
-      <div className="p-4 flex flex-col gap-3 flex-1">
+      {/* Content — flex-1 fills remaining space so footer stays pinned */}
+      <div className="p-5 flex flex-col gap-3.5 flex-1">
         {/* Title + Rating row */}
         <div className="flex items-start justify-between gap-2">
           <h3
@@ -133,15 +133,15 @@ export function WeddingCard({ wedding, className }: WeddingCardProps) {
               <span className="text-[0.625rem] text-charcoal-400">({wedding.reviewCount})</span>
             </div>
           ) : (
-            <span className="flex-shrink-0 text-[0.625rem] font-semibold text-charcoal-400 bg-warm-50 border border-warm-100 rounded-lg px-2 py-1">
-              New celebration
+            <span className="flex-shrink-0 text-[0.625rem] font-semibold text-[var(--color-brand-secondary)] bg-gold-50 border border-gold-100 rounded-lg px-2 py-1">
+              New
             </span>
           )}
         </div>
 
         {/* Host row */}
-        <div className="flex items-center gap-2">
-          <div className="relative w-7 h-7 rounded-full overflow-hidden flex-shrink-0 border border-warm-200 shadow-sm bg-warm-100">
+        <div className="flex items-center gap-2.5">
+          <div className="relative w-7 h-7 rounded-full overflow-hidden flex-shrink-0 border-2 border-[var(--color-brand-secondary)]/30 shadow-sm bg-warm-100">
             <Image
               src={avatarSrc}
               alt={wedding.hostName}
@@ -152,17 +152,31 @@ export function WeddingCard({ wedding, className }: WeddingCardProps) {
             />
           </div>
           <span className="text-sm text-charcoal-600 line-clamp-1">
-            Hosted by <span className="font-bold text-charcoal-900">{wedding.hostName}</span>
+            Hosted by <span className="font-semibold text-charcoal-900">{wedding.hostName}</span>
           </span>
         </div>
 
+        {/* Date if available */}
+        {wedding.date && (
+          <div className="flex items-center gap-2 text-xs text-charcoal-500">
+            <Calendar size={13} className="text-[var(--color-brand-secondary)]" aria-hidden="true" />
+            <span>
+              {new Date(wedding.date).toLocaleDateString("en-GB", {
+                day: "numeric",
+                month: "short",
+                year: "numeric",
+              })}
+            </span>
+          </div>
+        )}
+
         {/* Tags */}
         {tags.length > 0 && (
-          <div className="flex items-center gap-2 flex-wrap" aria-label="Wedding highlights">
+          <div className="flex items-center gap-1.5 flex-wrap" aria-label="Wedding highlights">
             {tags.slice(0, 3).map((tag) => (
               <span
                 key={tag}
-                className="text-[0.75rem] font-semibold text-charcoal-700 bg-warm-100/80 px-2.5 py-1 rounded-md border border-warm-200 shadow-sm"
+                className="text-[0.7rem] font-semibold text-charcoal-700 bg-warm-100/80 px-2.5 py-1 rounded-lg border border-warm-200"
               >
                 {tag}
               </span>
@@ -171,12 +185,12 @@ export function WeddingCard({ wedding, className }: WeddingCardProps) {
         )}
 
         {/* Availability bar */}
-        <div>
+        <div className="mt-auto">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-1.5 text-charcoal-600">
-              <Users size={14} aria-hidden="true" />
-              <span className="text-sm">
-                <span className="font-bold text-charcoal-900">{availableSlots}</span> slots left
+              <Users size={13} aria-hidden="true" />
+              <span className="text-xs">
+                <span className="font-bold text-charcoal-900">{availableSlots}</span> seats remaining
               </span>
             </div>
             {isAlmostFull && (
@@ -203,9 +217,8 @@ export function WeddingCard({ wedding, className }: WeddingCardProps) {
           </div>
         </div>
 
-        {/* Price + CTA — mt-auto pins this to the bottom of the card no matter
-            how much content (tags, title lines, badges) sits above it */}
-        <div className="mt-auto flex items-center justify-between pt-3 border-t border-warm-100">
+        {/* Price + CTA — pinned to card bottom */}
+        <div className="flex items-center justify-between pt-4 border-t border-warm-100">
           <div>
             <div className="flex items-baseline gap-1">
               <span className="font-display font-bold text-xl text-charcoal-900">
@@ -213,14 +226,14 @@ export function WeddingCard({ wedding, className }: WeddingCardProps) {
               </span>
               <span className="text-sm font-medium text-charcoal-500">/guest</span>
             </div>
-            <span className="text-xs font-medium text-charcoal-500">All inclusive</span>
+            <span className="text-xs font-medium text-charcoal-400">All inclusive</span>
           </div>
           <Link
             href={`/weddings/${wedding.slug}`}
             className="btn btn-primary btn-sm"
             aria-label={`Reserve your seat at ${wedding.title}`}
           >
-            Reserve Your Seat
+            Reserve Seat
           </Link>
         </div>
       </div>

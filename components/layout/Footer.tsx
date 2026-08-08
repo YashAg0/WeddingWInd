@@ -38,7 +38,7 @@ const footerLinks = {
     { label: "Guest Guide", href: "/for-travelers" },
   ],
   forHosts: [
-    { label: "Host Your Wedding", href: "/list-wedding" },
+    { label: "Become a Host Family", href: "/list-wedding" },
     { label: "For Couples", href: "/for-couples" },
     { label: "For Agents", href: "/for-agents" },
     { label: "Coordinators", href: "/coordinators" },
@@ -107,7 +107,7 @@ export default function Footer() {
             </Link>
 
             <p className="text-white/90 text-sm leading-relaxed mb-6 max-w-xs">
-              The world's most trusted platform to celebrate Our Indian Weddings.
+              The world&apos;s most trusted platform to celebrate Our Indian Weddings.
               Connecting Guest Families with authentic cultural celebrations.
             </p>
 
@@ -203,13 +203,13 @@ export default function Footer() {
             <div className="flex items-center gap-6">
               <Link
                 href="/privacy"
-                className="hover:text-charcoal-300 transition-colors"
+                className="hover:text-white transition-colors"
               >
                 Privacy
               </Link>
               <Link
                 href="/terms"
-                className="hover:text-charcoal-300 transition-colors"
+                className="hover:text-white transition-colors"
               >
                 Terms
               </Link>

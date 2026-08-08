@@ -8,7 +8,17 @@ import { getWeddingBySlug } from "@/lib/actions/index";
 import { prisma } from "@/lib/prisma";
 
 jest.mock("@/lib/auth", () => ({
-  requireAuth: jest.fn(),
+  __esModule: true,
+  requireAuth: jest.fn().mockResolvedValue({ id: "user-id", role: "TRAVELER" }),
+  syncAndGetDbUser: jest.fn().mockResolvedValue({ id: "user-id", role: "TRAVELER" }),
+  requireRole: jest.fn().mockResolvedValue(true),
+}));
+
+jest.mock("../../lib/auth", () => ({
+  __esModule: true,
+  requireAuth: jest.fn().mockResolvedValue({ id: "user-id", role: "TRAVELER" }),
+  syncAndGetDbUser: jest.fn().mockResolvedValue({ id: "user-id", role: "TRAVELER" }),
+  requireRole: jest.fn().mockResolvedValue(true),
 }));
 
 jest.mock("@/lib/services/trust-score", () => ({
@@ -22,6 +32,12 @@ jest.mock("@/lib/services/trust-score", () => ({
     deletedAt: null,
     ...extraWhere
   })),
+}));
+
+jest.mock("next/cache", () => ({
+  unstable_cache: (fn: any) => fn,
+  revalidatePath: jest.fn(),
+  revalidateTag: jest.fn(),
 }));
 
 jest.mock("@/lib/prisma", () => ({

@@ -3,6 +3,15 @@ import { requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { UserRole } from "@prisma/client";
 
+const escapeHtml = (value: string | number) => String(value)
+  .replace(/&/g, "&amp;")
+  .replace(/</g, "&lt;")
+  .replace(/>/g, "&gt;")
+  .replace(/\"/g, "&quot;")
+  .replace(/'/g, "&#39;");
+
+const formatInr = (amount: number) => `₹${amount.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ bookingId: string }> }
@@ -24,11 +33,12 @@ export async function GET(
       return NextResponse.json({ error: "Booking invoice not found." }, { status: 404 });
     }
 
-    // Ownership Check: Traveler who booked, Host family, or Admin
+    // Invoices contain personal billing data. Host operations receive the
+    // privacy-minimized guest register instead, so only the traveler or an
+    // administrator may download an invoice.
     if (
       user.role !== UserRole.ADMIN &&
-      booking.traveler.userId !== user.id &&
-      booking.wedding.hostCouple.userId !== user.id
+      booking.traveler.userId !== user.id
     ) {
       return NextResponse.json({ error: "Forbidden: You do not own this invoice." }, { status: 403 });
     }
@@ -40,7 +50,7 @@ export async function GET(
     <html lang="en">
     <head>
       <meta charset="UTF-8">
-      <title>Invoice - ${booking.id}</title>
+      <title>Invoice - ${escapeHtml(booking.id)}</title>
       <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #faf8f5; color: #2b2627; margin: 0; padding: 40px; }
         .invoice-card { max-width: 800px; margin: 0 auto; background: #ffffff; padding: 40px; border-radius: 24px; border: 1px solid #e8e2d9; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
@@ -66,28 +76,28 @@ export async function GET(
             <p style="margin: 4px 0 0 0; font-size: 12px; color: #8f8585;">Official Tax Invoice & Guest Reservation Pass</p>
           </div>
           <div>
-            <span class="badge">${booking.status}</span>
+            <span class="badge">${escapeHtml(booking.status)}</span>
           </div>
         </div>
 
         <div class="details-grid">
           <div>
             <div class="section-title">Billed To (Honored Guest)</div>
-            <div class="meta-val">${booking.traveler.fullName}</div>
-            <div style="font-size: 13px; color: #574f50; margin-top: 4px;">${booking.traveler.user.email}</div>
+            <div class="meta-val">${escapeHtml(booking.traveler.fullName)}</div>
+            <div style="font-size: 13px; color: #574f50; margin-top: 4px;">${escapeHtml(booking.traveler.user.email)}</div>
           </div>
           <div>
             <div class="section-title">Invoice Meta</div>
-            <div><strong>Invoice ID:</strong> INV-${booking.id.slice(0, 8).toUpperCase()}</div>
+            <div><strong>Invoice ID:</strong> INV-${escapeHtml(booking.id.slice(0, 8).toUpperCase())}</div>
             <div><strong>Date Issued:</strong> ${new Date(booking.createdAt).toLocaleDateString()}</div>
-            <div><strong>Transaction Ref:</strong> ${paidPayment?.stripePaymentIntentId || "TXN-" + booking.id.slice(0, 10)}</div>
+            <div><strong>Transaction Ref:</strong> ${escapeHtml(paidPayment?.stripePaymentIntentId || "TXN-" + booking.id.slice(0, 10))}</div>
           </div>
         </div>
 
         <div style="margin-bottom: 32px; padding: 20px; background: #fdfaf7; border-radius: 16px; border: 1px solid #f2ece4;">
           <div class="section-title">Wedding Celebration</div>
-          <div style="font-size: 16px; font-weight: 700; color: #6b1026;">${booking.wedding.title}</div>
-          <div style="font-size: 13px; color: #574f50; margin-top: 4px;">Venue: ${booking.wedding.location} | Date: ${new Date(booking.wedding.date).toLocaleDateString()}</div>
+          <div style="font-size: 16px; font-weight: 700; color: #6b1026;">${escapeHtml(booking.wedding.title)}</div>
+          <div style="font-size: 13px; color: #574f50; margin-top: 4px;">Venue: ${escapeHtml(booking.wedding.location)} | Date: ${new Date(booking.wedding.date).toLocaleDateString()}</div>
         </div>
 
         <table>
@@ -103,8 +113,8 @@ export async function GET(
             <tr>
               <td><strong>Guest Reservation Pass</strong><br/><span style="font-size: 12px; color: #8f8585;">Full ceremonial access, feasts, welcome gifts & liaison</span></td>
               <td>${booking.guestsCount} Guest(s)</td>
-              <td>$${booking.pricePerGuest.toFixed(2)} USD</td>
-              <td style="text-align: right;">$${(booking.guestsCount * booking.pricePerGuest).toFixed(2)} USD</td>
+              <td>${formatInr(booking.pricePerGuest)}</td>
+              <td style="text-align: right;">${formatInr(booking.guestsCount * booking.pricePerGuest)}</td>
             </tr>
             <tr>
               <td><strong>Platform Concierge & Safety Hold Fee</strong></td>
@@ -114,7 +124,7 @@ export async function GET(
             </tr>
             <tr class="total-row">
               <td colspan="3" style="text-align: right;">Total Amount Paid</td>
-              <td style="text-align: right;">$${booking.totalAmount.toFixed(2)} USD</td>
+              <td style="text-align: right;">${formatInr(booking.totalAmount)}</td>
             </tr>
           </tbody>
         </table>

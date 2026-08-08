@@ -84,11 +84,11 @@ function DashboardShellContent({ children }: { children: React.ReactNode }) {
             </button>
           </div>
         )}
-        <main className="flex-1 overflow-y-auto bg-warm-50 p-4 sm:p-6 md:p-8 focus:outline-none">
+        <div className="flex-1 overflow-y-auto bg-warm-50 p-4 sm:p-6 md:p-8 focus:outline-none" role="region" aria-label="Dashboard Content">
           <div className="max-w-6xl mx-auto w-full">
             {children}
           </div>
-        </main>
+        </div>
       </div>
 
       </div>

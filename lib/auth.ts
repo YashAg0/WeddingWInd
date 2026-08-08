@@ -81,7 +81,9 @@ export async function syncAndGetDbUser() {
 
     const email = clerkUser.emailAddresses[0]?.emailAddress || `${clerkUser.id}@guest.weddingwithindia.com`;
     const name = `${clerkUser.firstName || ""} ${clerkUser.lastName || ""}`.trim() || email.split("@")[0];
-    const avatar = clerkUser.imageUrl || `https://i.pravatar.cc/80?img=${Math.floor(Math.random() * 70)}`;
+    const crypto = require('crypto');
+    const randomAvatarImg = crypto.randomBytes(1).readUInt8(0) % 70;
+    const avatar = clerkUser.imageUrl || `https://i.pravatar.cc/80?img=${randomAvatarImg}`;
 
     // 3. Create user and default TravelerProfile in transaction
     dbUser = await prisma.$transaction(async (tx) => {

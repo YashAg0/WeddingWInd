@@ -39,8 +39,7 @@ const milestones = [
 
 export default function AboutPage() {
   return (
-    <div className="px-5 sm:px-8 lg:px-12 xl:px-16">
-    <div className="min-h-screen bg-warm-50/50 pt-28 pb-20 rounded-[2.5rem]">
+    <div className="min-h-screen bg-warm-50/50 pt-28 pb-20">
       
       {/* Hero Section */}
       <section className="container-luxury text-center max-w-4xl mb-16 space-y-6">
@@ -69,7 +68,7 @@ export default function AboutPage() {
           transition={{ duration: 0.6, delay: 0.2 }}
           className="text-charcoal-500 text-base sm:text-lg leading-relaxed max-w-2xl mx-auto"
         >
-          We are the world's most trusted platform connecting global guests with genuine Indian families to attend authentic weddings as honored guests.
+          We are the world&apos;s most trusted platform connecting global guests with genuine Indian families to attend Our Indian Weddings as honored guests.
         </motion.p>
       </section>
 
@@ -212,6 +211,5 @@ export default function AboutPage() {
       </section>
 
     </div>
-  
-    </div>);
+  );
 }

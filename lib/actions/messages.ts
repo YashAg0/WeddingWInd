@@ -8,7 +8,6 @@ import { realtime } from "../realtime";
 import { sendNewMessageEmail } from "../email";
 import {
   detectProhibitedContactInfo,
-  isContactSharingAllowedForBooking,
 } from "../services/contact-moderation";
 import { rateLimit } from "../rate-limit";
 
@@ -60,6 +59,30 @@ export async function createConversation(
     throw new Error("A conversation must have at least 2 participants.");
   }
 
+  const otherIds = uniqueIds.filter((id) => id !== user.id);
+  if (user.role !== UserRole.ADMIN) {
+    const otherUsers = await prisma.user.findMany({ where: { id: { in: otherIds } }, select: { id: true, role: true } });
+    if (otherUsers.length !== otherIds.length) throw new Error("One or more message participants do not exist.");
+
+    if (user.role === UserRole.AGENT) {
+      if (!otherUsers.every((participant) => participant.role === UserRole.ADMIN)) {
+        throw new Error("Agents can message WeddingWithIndia operations only.");
+      }
+    } else if (bookingId) {
+      const booking = await prisma.booking.findUnique({
+        where: { id: bookingId },
+        select: { traveler: { select: { userId: true } }, wedding: { select: { hostCouple: { select: { userId: true } } } } }
+      });
+      if (!booking) throw new Error("Booking not found.");
+      const permittedIds = new Set([booking.traveler.userId, booking.wedding.hostCouple.userId]);
+      if (!permittedIds.has(user.id) || !otherUsers.every((participant) => participant.role === UserRole.ADMIN || permittedIds.has(participant.id))) {
+        throw new Error("Conversation participants are not authorized for this booking.");
+      }
+    } else if (!otherUsers.every((participant) => participant.role === UserRole.ADMIN)) {
+      throw new Error("Start a booking conversation or contact WeddingWithIndia operations.");
+    }
+  }
+
   // Find existing conversation with exact participant match
   const existing = await prisma.conversation.findFirst({
     where: {
@@ -73,7 +96,7 @@ export async function createConversation(
     include: {
       participants: {
         include: {
-          user: true,
+          user: { select: { id: true, name: true, avatar: true, role: true } },
         },
       },
     },
@@ -98,7 +121,7 @@ export async function createConversation(
     include: {
       participants: {
         include: {
-          user: true,
+          user: { select: { id: true, name: true, avatar: true, role: true } },
         },
       },
     },
@@ -120,7 +143,7 @@ export async function findConversation(conversationId: string) {
     include: {
       participants: {
         include: {
-          user: true,
+          user: { select: { id: true, name: true, avatar: true, role: true } },
         },
       },
       messages: {
@@ -128,10 +151,10 @@ export async function findConversation(conversationId: string) {
         orderBy: { createdAt: "asc" },
         take: 50,
         include: {
-          sender: true,
+          sender: { select: { id: true, name: true, avatar: true, role: true } },
           reactions: {
             include: {
-              user: true,
+              user: { select: { id: true, name: true, avatar: true, role: true } },
             },
           },
         },
@@ -180,7 +203,7 @@ export async function sendMessage(
       booking: true,
       participants: {
         include: {
-          user: true,
+          user: { select: { id: true, name: true, avatar: true, role: true } },
         },
       },
     },
@@ -199,19 +222,16 @@ export async function sendMessage(
     throw new Error("Archived: Cannot send messages into an archived conversation.");
   }
 
-  // Enforce pre-booking contact leak prevention rule if not admin
+  // No booking state permits off-platform contact exchange.
   if (!isAdmin && text) {
-    const isConfirmedBooking = isContactSharingAllowedForBooking(conversation.booking?.status);
-    if (!isConfirmedBooking) {
-      const contactCheck = detectProhibitedContactInfo(text);
-      if (contactCheck.hasProhibitedContact) {
-        await logMessageAudit(
-          "CONTACT_INFO_BLOCKED",
-          conversationId,
-          `Blocked off-platform contact sharing attempt: ${contactCheck.detectedTypes.join(", ")}`
-        );
-        throw new Error(contactCheck.reason);
-      }
+    const contactCheck = detectProhibitedContactInfo(text);
+    if (contactCheck.hasProhibitedContact) {
+      await logMessageAudit(
+        "CONTACT_INFO_BLOCKED",
+        conversationId,
+        `Blocked off-platform contact sharing attempt: ${contactCheck.detectedTypes.join(", ")}`
+      );
+      throw new Error(contactCheck.reason);
     }
   }
 
@@ -226,7 +246,7 @@ export async function sendMessage(
       type,
     },
     include: {
-      sender: true,
+      sender: { select: { id: true, name: true, avatar: true, role: true } },
       reactions: true,
     },
   });
@@ -288,10 +308,12 @@ export async function sendMessage(
       createdAt: dbNotification.createdAt,
     });
 
-    // Email alert
-    if (participant.user.email) {
+    // Email alert uses a private server-side lookup; participant data returned
+    // by messaging actions remains privacy-minimized.
+    const recipient = await prisma.user.findUnique({ where: { id: participant.userId }, select: { email: true } });
+    if (recipient?.email) {
       await sendNewMessageEmail(
-        participant.user.email,
+        recipient.email,
         senderName,
         conversation.title || "Wedding Chat",
         summary
@@ -315,6 +337,8 @@ export async function editMessage(messageId: string, text: string) {
 
   if (!message) throw new Error("Message not found.");
   if (message.senderId !== user.id) throw new Error("Unauthorized: Only the sender can edit this message.");
+  const contactCheck = detectProhibitedContactInfo(text);
+  if (contactCheck.hasProhibitedContact) throw new Error(contactCheck.reason);
 
   const updated = await prisma.message.update({
     where: { id: messageId },
@@ -581,10 +605,10 @@ export async function fetchConversation(conversationId: string, limit: number = 
     cursor: cursor ? { id: cursor } : undefined,
     orderBy: { createdAt: "desc" },
     include: {
-      sender: true,
+      sender: { select: { id: true, name: true, avatar: true, role: true } },
       reactions: {
         include: {
-          user: true,
+          user: { select: { id: true, name: true, avatar: true, role: true } },
         },
       },
     },
@@ -683,22 +707,16 @@ export async function fetchUnreadCount() {
 export async function fetchEligibleUsers() {
   const user = await requireAuth();
 
-  const rolesFilter: UserRole[] = [UserRole.ADMIN];
-  if (user.role === UserRole.TRAVELER) {
-    rolesFilter.push(UserRole.COUPLE, UserRole.AGENT);
-  } else if (user.role === UserRole.COUPLE) {
-    rolesFilter.push(UserRole.TRAVELER, UserRole.AGENT);
-  } else if (user.role === UserRole.AGENT) {
-    rolesFilter.push(UserRole.TRAVELER, UserRole.COUPLE);
-  } else if (user.role === UserRole.ADMIN) {
-    rolesFilter.push(UserRole.TRAVELER, UserRole.COUPLE, UserRole.AGENT);
-  }
+  const rolesFilter: UserRole[] = user.role === UserRole.ADMIN
+    ? [UserRole.ADMIN, UserRole.TRAVELER, UserRole.COUPLE, UserRole.AGENT]
+    : [UserRole.ADMIN];
 
   const eligible = await prisma.user.findMany({
     where: {
       id: { not: user.id },
       role: { in: rolesFilter },
     },
+    select: { id: true, name: true, avatar: true, role: true },
     orderBy: { name: "asc" },
   });
 
@@ -734,7 +752,7 @@ export async function adminGetConversations(filters: {
     include: {
       participants: {
         include: {
-          user: true,
+          user: { select: { id: true, name: true, avatar: true, role: true } },
         },
       },
       messages: {

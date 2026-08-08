@@ -9,7 +9,11 @@ export async function GET(req: Request) {
   try {
     // Authenticate cron secret
     const authHeader = req.headers.get("authorization");
-    const cronSecret = process.env.CRON_SECRET || "wwi_fallback_cron_secret";
+    const cronSecret = process.env.CRON_SECRET;
+    if (!cronSecret) {
+      logger.error("[cron/reminders] CRON_SECRET is not configured");
+      return new NextResponse("Service unavailable", { status: 503 });
+    }
     if (authHeader !== `Bearer ${cronSecret}`) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
@@ -90,6 +94,6 @@ export async function GET(req: Request) {
     return NextResponse.json({ success: true });
   } catch (err: any) {
     logger.error("[cron/reminders] Cron processing failure:", err);
-    return new NextResponse(`Error: ${err.message}`, { status: 500 });
+    return new NextResponse("Internal server error", { status: 500 });
   }
 }

@@ -166,7 +166,7 @@ export default function AgentDashboardPage() {
               <label className="text-xs font-bold text-charcoal-700 block">Pre-Formatted Social Share Message</label>
               <div className="flex flex-col sm:flex-row gap-2">
                 <div className="p-3 bg-warm-50 border border-warm-200 rounded-xl text-xs text-charcoal-700 flex-1 italic">
-                  "{preformattedShareMessage}"
+                  &quot;{preformattedShareMessage}&quot;
                 </div>
                 <button
                   onClick={handleCopyMessage}

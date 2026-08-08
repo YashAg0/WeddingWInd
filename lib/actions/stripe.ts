@@ -180,17 +180,16 @@ export async function processFullRefundAction(paymentId: string, reason: string)
     throw new Error(`Cannot refund payment in status: ${payment.status}`);
   }
 
-  let stripeRefundId = `ref_mock_${Date.now()}`;
+  let stripeRefundId: string | null = null;
   if (payment.stripePaymentIntentId && !payment.stripePaymentIntentId.startsWith("mock_")) {
-    try {
-      const refund = await stripe.refunds.create({
-        payment_intent: payment.stripePaymentIntentId,
-        reason: "requested_by_customer",
-      });
-      stripeRefundId = refund.id;
-    } catch (err: any) {
-      console.warn("Stripe live refund API notice:", err.message);
-    }
+    const refund = await stripe.refunds.create({
+      payment_intent: payment.stripePaymentIntentId,
+      reason: "requested_by_customer",
+    });
+    stripeRefundId = refund.id;
+  } else {
+    // Only allow mock refunds for mock test payments ($0 bypasses)
+    stripeRefundId = `ref_mock_${Date.now()}`;
   }
 
   await prisma.$transaction(async (tx) => {
@@ -236,17 +235,16 @@ export async function processPartialRefundAction(paymentId: string, partialAmoun
     throw new Error("Partial refund amount must be greater than $0 and less than total paid.");
   }
 
-  let stripeRefundId = `ref_part_${Date.now()}`;
+  let stripeRefundId: string | null = null;
   if (payment.stripePaymentIntentId && !payment.stripePaymentIntentId.startsWith("mock_")) {
-    try {
-      const refund = await stripe.refunds.create({
-        payment_intent: payment.stripePaymentIntentId,
-        amount: Math.round(partialAmount * 100),
-      });
-      stripeRefundId = refund.id;
-    } catch (err: any) {
-      console.warn("Stripe partial refund API notice:", err.message);
-    }
+    const refund = await stripe.refunds.create({
+      payment_intent: payment.stripePaymentIntentId,
+      amount: Math.round(partialAmount * 100),
+    });
+    stripeRefundId = refund.id;
+  } else {
+    // Only allow mock refunds for mock test payments
+    stripeRefundId = `ref_part_${Date.now()}`;
   }
 
   await prisma.refund.create({

@@ -41,7 +41,7 @@ function LoginContent() {
     : "/signup";
 
   return (
-    <div className="min-h-screen bg-warm-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-warm-50 flex items-center justify-center p-4 rounded-[2.5rem]">
       <div className="w-full max-w-md bg-white border border-warm-200/50 rounded-[2.5rem] p-6 sm:p-8 shadow-luxury space-y-6 flex flex-col items-center">
         
         {/* Brand Header */}

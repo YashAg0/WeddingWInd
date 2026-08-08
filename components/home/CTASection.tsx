@@ -7,9 +7,8 @@ export function CTASection() {
       id="cta"
       className="section-padding relative overflow-hidden"
       aria-labelledby="cta-heading"
+      style={{ background: "var(--color-charcoal-950)" }}
     >
-
-
       <style>{`
         @keyframes ctaGlowDriftA {
           0%, 100% { transform: translate(0, 0) scale(1); }
@@ -34,6 +33,33 @@ export function CTASection() {
           .cta-rise { animation: none; opacity: 1; transform: none; }
         }
       `}</style>
+
+      {/* Animated glow orbs — brand warmth in dark environment */}
+      <div
+        className="cta-glow-a pointer-events-none absolute -top-32 -left-32 w-[500px] h-[500px] rounded-full opacity-[0.12]"
+        style={{
+          background: "radial-gradient(circle, var(--color-brand-primary) 0%, transparent 70%)",
+        }}
+        aria-hidden="true"
+      />
+      <div
+        className="cta-glow-b pointer-events-none absolute -bottom-32 -right-32 w-[600px] h-[600px] rounded-full opacity-[0.09]"
+        style={{
+          background: "radial-gradient(circle, var(--color-gold-500) 0%, transparent 70%)",
+        }}
+        aria-hidden="true"
+      />
+
+      {/* Subtle grid pattern */}
+      <div
+        className="pointer-events-none absolute inset-0 opacity-[0.035]"
+        style={{
+          backgroundImage:
+            "linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)",
+          backgroundSize: "60px 60px",
+        }}
+        aria-hidden="true"
+      />
 
       <div className="relative z-10 container-luxury">
         <div className="max-w-3xl mx-auto text-center">
@@ -105,9 +131,9 @@ export function CTASection() {
             aria-label="Social proof"
           >
             {[
-              { icon: <Globe size={16} />, text: "Hand-vetted Host Families" },
-              { icon: <Star size={16} />, text: "Verified guest passes" },
-              { icon: <Lock size={16} />, text: "AES-256 encrypted security" },
+              { icon: <Globe size={16} aria-hidden="true" />, text: "Hand-vetted Host Families" },
+              { icon: <Star size={16} aria-hidden="true" />, text: "Verified guest passes" },
+              { icon: <Lock size={16} aria-hidden="true" />, text: "AES-256 encrypted security" },
             ].map(({ icon, text }) => (
               <div key={text} className="flex items-center gap-2 text-white/60 text-sm">
                 <span className="text-white/40" aria-hidden="true">
@@ -120,7 +146,7 @@ export function CTASection() {
         </div>
       </div>
 
-      {/* Bottom ornament */}
+      {/* Bottom gold ornament line */}
       <div
         className="absolute bottom-0 left-0 right-0 h-1"
         style={{

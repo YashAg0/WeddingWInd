@@ -8,7 +8,6 @@
  * - NO contact exchange before a booking is PAID / CONFIRMED
  */
 
-import { BookingStatus } from "@prisma/client";
 
 export interface ContactDetectionResult {
   hasProhibitedContact: boolean;
@@ -24,24 +23,7 @@ const PHONE_REGEX = /(?:\+?\d{1,4}[-.\s]?)?\(?\d{2,5}\)?[-.\s]?\d{3,4}[-.\s]?\d{
 
 const SPAL_PHONE_REGEX = /(?:zero|one|two|three|four|five|six|seven|eight|nine|\d)[\s._-]{1,3}(?:zero|one|two|three|four|five|six|seven|eight|nine|\d)[\s._-]{1,3}(?:zero|one|two|three|four|five|six|seven|eight|nine|\d)[\s._-]{1,3}(?:zero|one|two|three|four|five|six|seven|eight|nine|\d)[\s._-]{1,3}(?:zero|one|two|three|four|five|six|seven|eight|nine|\d)/i;
 
-const SOCIAL_WHATSAPP_REGEX = /(?:wa\.me|whatsapp|wsp|t\.me|telegram|insta|instagram|facebook|fb\.com|twitter|x\.com|linkedin|snapchat|tiktok|discord|dm\s+me|message\s+me\s+on)/i;
-
-const CONFIRMED_BOOKING_STATUSES: BookingStatus[] = [
-  BookingStatus.PAID,
-  BookingStatus.CONFIRMED,
-  BookingStatus.READY_FOR_EVENT,
-  BookingStatus.CHECKED_IN,
-  BookingStatus.ATTENDED,
-  BookingStatus.COMPLETED,
-];
-
-/**
- * Checks whether a booking status permits sharing official contact details for logistics.
- */
-export function isContactSharingAllowedForBooking(status?: BookingStatus | null): boolean {
-  if (!status) return false;
-  return CONFIRMED_BOOKING_STATUSES.includes(status);
-}
+const SOCIAL_WHATSAPP_REGEX = /(?:wa\.me|whatsapp|wsp|t\.me|telegram|insta|instagram|facebook|fb\.com|twitter|x\.com|linkedin|snapchat|tiktok|discord|dm\s+me|message\s+me|call\s+me|contact\s+me|reach\s+me|reach\s+out|my\s+number\s+is)/i;
 
 /**
  * Evaluates message text for prohibited off-platform contact information.
@@ -68,7 +50,7 @@ export function detectProhibitedContactInfo(text: string): ContactDetectionResul
       hasProhibitedContact: true,
       detectedTypes,
       reason:
-        "For your safety and protection, sharing direct phone numbers, email addresses, WhatsApp, or social links before a confirmed booking is strictly prohibited. All communication must occur within WeddingWithIndia.",
+        "For your safety and protection, sharing direct phone numbers, email addresses, WhatsApp, or social links is not permitted. All communication must occur within WeddingWithIndia.",
     };
   }
 

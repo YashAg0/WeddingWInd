@@ -31,24 +31,24 @@ export function StickyBookingCard({ wedding }: StickyBookingCardProps) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const availableSlots = wedding.guestsAllowed - wedding.guestsBooked;
-  const activeTier: PricingTier = PRICING_TIERS[selectedTierKey] || PRICING_TIERS.CULTURAL_GUEST;
+  const activeTier: PricingTier = PRICING_TIERS[selectedTierKey] || PRICING_TIERS.PREMIUM;
   const subtotalINR = activeTier.priceINR * guestsCount;
 
   return (
     <>
       {/* Bottom Floating Bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-xl border-t border-warm-200/60 p-4 shadow-[0_-10px_32px_-12px_rgba(0,0,0,0.1)] flex items-center justify-between md:hidden">
+      <section data-testid="booking-form" className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-xl border-t border-warm-200/60 p-4 shadow-[0_-10px_32px_-12px_rgba(0,0,0,0.1)] flex items-center justify-between md:hidden">
         <div>
           <span className="text-[0.625rem] text-charcoal-400 font-semibold uppercase tracking-wider block">From</span>
           <div className="flex items-baseline gap-1">
             <span className="font-display font-black text-lg text-[var(--color-brand-primary)]">
-              {formatPrice(PRICING_TIERS.CULTURAL_GUEST.priceINR).primary}
+              {formatPrice(PRICING_TIERS.PREMIUM.priceINR).primary}
             </span>
             <span className="text-[0.625rem] text-charcoal-400 font-semibold">/guest</span>
           </div>
-          {formatPrice(PRICING_TIERS.CULTURAL_GUEST.priceINR).secondary && (
-            <span className="text-[0.625rem] text-charcoal-500 font-medium block">
-              {formatPrice(PRICING_TIERS.CULTURAL_GUEST.priceINR).secondary}
+          {formatPrice(PRICING_TIERS.PREMIUM.priceINR).secondary && (
+            <span className="text-[0.625rem] text-charcoal-400 font-medium block">
+              {formatPrice(PRICING_TIERS.PREMIUM.priceINR).secondary}
             </span>
           )}
         </div>
@@ -59,7 +59,7 @@ export function StickyBookingCard({ wedding }: StickyBookingCardProps) {
         >
           Reserve Invitation
         </button>
-      </div>
+      </section>
 
       {/* Mobile Booking Bottom Drawer */}
       <AnimatePresence>

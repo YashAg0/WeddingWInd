@@ -33,6 +33,22 @@ export interface User {
   country?: string;
   bio?: string;
   phone?: string;
+  // Traveler-specific
+  language?: string;
+  budget?: string;
+  preferences?: string;
+  foodPreferences?: string;
+  accessibility?: string;
+  // Host-specific
+  weddingLocation?: string;
+  traditions?: string;
+  languagesSpoken?: string;
+  expectedGuests?: number;
+  photographyRules?: string;
+  // Agent-specific
+  organization?: string;
+  experienceYears?: number;
+  targetAudience?: string;
 }
 
 export interface Booking {
@@ -146,7 +162,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         avatar: dbUser.avatar || "",
         country: dbUser.travelerProfile?.country || dbUser.agentProfile?.country || "",
         bio: dbUser.travelerProfile?.interests || dbUser.coupleProfile?.familyBio || dbUser.agentProfile?.targetAudience || "",
-        phone: ""
+        phone: "",
+        // Traveler fields
+        language: dbUser.travelerProfile?.language,
+        budget: dbUser.travelerProfile?.budget,
+        preferences: dbUser.travelerProfile?.preferences,
+        foodPreferences: dbUser.travelerProfile?.foodPreferences,
+        accessibility: dbUser.travelerProfile?.accessibility,
+        // Host fields
+        weddingLocation: dbUser.coupleProfile?.weddingLocation || "",
+        traditions: dbUser.coupleProfile?.traditions || "",
+        languagesSpoken: dbUser.coupleProfile?.languagesSpoken || "",
+        expectedGuests: dbUser.coupleProfile?.expectedGuests,
+        photographyRules: dbUser.coupleProfile?.photographyRules,
+        // Agent fields
+        organization: dbUser.agentProfile?.organization || "",
+        experienceYears: dbUser.agentProfile?.experienceYears,
+        targetAudience: dbUser.agentProfile?.targetAudience || ""
       });
 
       try {
@@ -226,10 +258,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setLoading(true);
     await updateProfileDetails({
       name: profileData.name,
-      email: profileData.email,
-      phone: profileData.phone,
       country: profileData.country,
-      bio: profileData.bio
+      bio: profileData.bio,
+      language: profileData.language,
+      budget: profileData.budget,
+      preferences: profileData.preferences,
+      foodPreferences: profileData.foodPreferences,
+      accessibility: profileData.accessibility,
+      weddingLocation: profileData.weddingLocation,
+      traditions: profileData.traditions,
+      languagesSpoken: profileData.languagesSpoken,
+      expectedGuests: profileData.expectedGuests,
+      photographyRules: profileData.photographyRules,
+      organization: profileData.organization,
+      experienceYears: profileData.experienceYears,
+      targetAudience: profileData.targetAudience
     });
     await refreshData();
   };
@@ -243,8 +286,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setLoading(true);
     await createBookingAction({
       weddingId: bookingData.weddingId,
-      date: bookingData.date,
       guestsCount: bookingData.guestsCount,
+      date: bookingData.date,
       pricePerGuest: bookingData.pricePerGuest,
       totalAmount: bookingData.pricePerGuest * bookingData.guestsCount
     });

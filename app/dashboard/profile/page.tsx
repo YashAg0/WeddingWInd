@@ -16,7 +16,23 @@ export default function ProfilePage() {
     email: user?.email || "",
     phone: user?.phone || "",
     country: user?.country || "",
-    bio: user?.bio || ""
+    bio: user?.bio || "",
+    // Traveler fields
+    language: user?.language || "",
+    budget: user?.budget || "",
+    preferences: user?.preferences || "",
+    foodPreferences: user?.foodPreferences || "",
+    accessibility: user?.accessibility || "",
+    // Host fields
+    weddingLocation: user?.weddingLocation || "",
+    traditions: user?.traditions || "",
+    languagesSpoken: user?.languagesSpoken || "",
+    expectedGuests: user?.expectedGuests || 200,
+    photographyRules: user?.photographyRules || "",
+    // Agent fields
+    organization: user?.organization || "",
+    experienceYears: user?.experienceYears || 2,
+    targetAudience: user?.targetAudience || ""
   });
 
   const handleSave = (e: React.FormEvent) => {
@@ -144,6 +160,69 @@ export default function ProfilePage() {
                 </div>
               </div>
 
+              {user?.role === "traveler" && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="flex flex-col gap-1.5">
+                    <label htmlFor="edit-language" className="text-[0.625rem] font-bold text-charcoal-500 uppercase tracking-widest">Language</label>
+                    <input id="edit-language" type="text" value={formData.language} onChange={(e) => setFormData({ ...formData, language: e.target.value })} className="input-luxury" />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label htmlFor="edit-budget" className="text-[0.625rem] font-bold text-charcoal-500 uppercase tracking-widest">Budget</label>
+                    <select id="edit-budget" value={formData.budget} onChange={(e) => setFormData({ ...formData, budget: e.target.value })} className="input-luxury bg-white">
+                      <option value="1000">Up to $1,000</option>
+                      <option value="2500">$1,000 - $3,000</option>
+                      <option value="5000">Above $3,000</option>
+                    </select>
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label htmlFor="edit-food" className="text-[0.625rem] font-bold text-charcoal-500 uppercase tracking-widest">Food Preferences</label>
+                    <input id="edit-food" type="text" value={formData.foodPreferences} onChange={(e) => setFormData({ ...formData, foodPreferences: e.target.value })} className="input-luxury" />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label htmlFor="edit-accessibility" className="text-[0.625rem] font-bold text-charcoal-500 uppercase tracking-widest">Accessibility Needs</label>
+                    <input id="edit-accessibility" type="text" value={formData.accessibility} onChange={(e) => setFormData({ ...formData, accessibility: e.target.value })} className="input-luxury" />
+                  </div>
+                </div>
+              )}
+
+              {user?.role === "couple" && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="flex flex-col gap-1.5">
+                    <label htmlFor="edit-location" className="text-[0.625rem] font-bold text-charcoal-500 uppercase tracking-widest">Wedding Location</label>
+                    <input id="edit-location" type="text" value={formData.weddingLocation} onChange={(e) => setFormData({ ...formData, weddingLocation: e.target.value })} className="input-luxury" />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label htmlFor="edit-traditions" className="text-[0.625rem] font-bold text-charcoal-500 uppercase tracking-widest">Traditions</label>
+                    <input id="edit-traditions" type="text" value={formData.traditions} onChange={(e) => setFormData({ ...formData, traditions: e.target.value })} className="input-luxury" />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label htmlFor="edit-expectedGuests" className="text-[0.625rem] font-bold text-charcoal-500 uppercase tracking-widest">Expected Guests</label>
+                    <input id="edit-expectedGuests" type="number" value={formData.expectedGuests} onChange={(e) => setFormData({ ...formData, expectedGuests: Number(e.target.value) })} className="input-luxury" />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label htmlFor="edit-photoRules" className="text-[0.625rem] font-bold text-charcoal-500 uppercase tracking-widest">Photography Rules</label>
+                    <select id="edit-photoRules" value={formData.photographyRules} onChange={(e) => setFormData({ ...formData, photographyRules: e.target.value })} className="input-luxury bg-white">
+                      <option value="Allowed">Allowed freely</option>
+                      <option value="Restricted">Restricted (Ceremonies only)</option>
+                      <option value="Prohibited">Prohibited entirely</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+
+              {user?.role === "agent" && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="flex flex-col gap-1.5">
+                    <label htmlFor="edit-organization" className="text-[0.625rem] font-bold text-charcoal-500 uppercase tracking-widest">Organization</label>
+                    <input id="edit-organization" type="text" value={formData.organization} onChange={(e) => setFormData({ ...formData, organization: e.target.value })} className="input-luxury" />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label htmlFor="edit-exp" className="text-[0.625rem] font-bold text-charcoal-500 uppercase tracking-widest">Experience (Years)</label>
+                    <input id="edit-exp" type="number" value={formData.experienceYears} onChange={(e) => setFormData({ ...formData, experienceYears: Number(e.target.value) })} className="input-luxury" />
+                  </div>
+                </div>
+              )}
+
               {/* Bio */}
               <div className="flex flex-col gap-1.5">
                 <label htmlFor="edit-bio" className="text-[0.625rem] font-bold text-charcoal-500 uppercase tracking-widest">Biography</label>
@@ -196,6 +275,50 @@ export default function ProfilePage() {
                   <span className="text-[0.625rem] font-bold text-charcoal-400 uppercase tracking-widest block mb-0.5">Phone Number</span>
                   <span className="font-semibold text-charcoal-800">{user?.phone || "Not specified"}</span>
                 </div>
+                {user?.role === "traveler" && (
+                  <>
+                    <div>
+                      <span className="text-[0.625rem] font-bold text-charcoal-400 uppercase tracking-widest block mb-0.5">Language</span>
+                      <span className="font-semibold text-charcoal-800">{user?.language || "Not specified"}</span>
+                    </div>
+                    <div>
+                      <span className="text-[0.625rem] font-bold text-charcoal-400 uppercase tracking-widest block mb-0.5">Food Preferences</span>
+                      <span className="font-semibold text-charcoal-800">{user?.foodPreferences || "None"}</span>
+                    </div>
+                    <div>
+                      <span className="text-[0.625rem] font-bold text-charcoal-400 uppercase tracking-widest block mb-0.5">Accessibility</span>
+                      <span className="font-semibold text-charcoal-800">{user?.accessibility || "None"}</span>
+                    </div>
+                  </>
+                )}
+                {user?.role === "couple" && (
+                  <>
+                    <div>
+                      <span className="text-[0.625rem] font-bold text-charcoal-400 uppercase tracking-widest block mb-0.5">Wedding Location</span>
+                      <span className="font-semibold text-charcoal-800">{user?.weddingLocation || "Not specified"}</span>
+                    </div>
+                    <div>
+                      <span className="text-[0.625rem] font-bold text-charcoal-400 uppercase tracking-widest block mb-0.5">Traditions</span>
+                      <span className="font-semibold text-charcoal-800">{user?.traditions || "Not specified"}</span>
+                    </div>
+                    <div>
+                      <span className="text-[0.625rem] font-bold text-charcoal-400 uppercase tracking-widest block mb-0.5">Expected Guests</span>
+                      <span className="font-semibold text-charcoal-800">{user?.expectedGuests || 0}</span>
+                    </div>
+                  </>
+                )}
+                {user?.role === "agent" && (
+                  <>
+                    <div>
+                      <span className="text-[0.625rem] font-bold text-charcoal-400 uppercase tracking-widest block mb-0.5">Organization</span>
+                      <span className="font-semibold text-charcoal-800">{user?.organization || "Not specified"}</span>
+                    </div>
+                    <div>
+                      <span className="text-[0.625rem] font-bold text-charcoal-400 uppercase tracking-widest block mb-0.5">Experience</span>
+                      <span className="font-semibold text-charcoal-800">{user?.experienceYears || 0} Years</span>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           )}

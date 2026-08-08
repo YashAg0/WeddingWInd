@@ -59,14 +59,14 @@ export default async function CoupleListingsPage({
     } else {
       await createWedding(payload);
     }
-    redirect("/dashboard/celebrations");
+    redirect("/dashboard/listings");
   }
 
   async function handleDelete(formData: FormData) {
     "use server";
     const id = formData.get("id") as string;
     await deleteWedding(id);
-    redirect("/dashboard/celebrations");
+    redirect("/dashboard/listings");
   }
 
   return (
@@ -83,7 +83,7 @@ export default async function CoupleListingsPage({
         </div>
         {!action && (
           <Link
-            href="/dashboard/celebrations?action=create"
+            href="/dashboard/listings?action=create"
             className="inline-flex items-center gap-2 bg-[var(--color-brand-primary)] text-white text-xs font-bold uppercase tracking-wider px-4 py-2.5 rounded-xl hover:opacity-90 transition-opacity"
           >
             <Plus size={14} />
@@ -100,7 +100,7 @@ export default async function CoupleListingsPage({
               {editListing ? `Edit "${editListing.title}"` : "List a New Wedding"}
             </h3>
             <Link
-              href="/dashboard/celebrations"
+              href="/dashboard/listings"
               className="text-xs font-bold text-charcoal-400 hover:text-charcoal-600 transition-colors"
             >
               Cancel
@@ -282,7 +282,7 @@ export default async function CoupleListingsPage({
 
             <div className="flex gap-3 justify-end pt-4 border-t border-warm-100">
               <Link
-                href="/dashboard/celebrations"
+                href="/dashboard/listings"
                 className="px-5 py-2.5 rounded-xl border border-warm-200 text-charcoal-600 text-xs font-bold hover:bg-warm-50 transition-colors"
               >
                 Cancel

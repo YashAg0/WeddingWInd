@@ -1,8 +1,4 @@
-import {
-  detectProhibitedContactInfo,
-  isContactSharingAllowedForBooking,
-} from "../../lib/services/contact-moderation";
-import { BookingStatus } from "@prisma/client";
+import { detectProhibitedContactInfo } from "../../lib/services/contact-moderation";
 
 describe("Contact Moderation Service", () => {
   describe("detectProhibitedContactInfo", () => {
@@ -44,18 +40,11 @@ describe("Contact Moderation Service", () => {
     });
   });
 
-  describe("isContactSharingAllowedForBooking", () => {
-    it("should disallow contact sharing for null or unconfirmed booking statuses", () => {
-      expect(isContactSharingAllowedForBooking(null)).toBe(false);
-      expect(isContactSharingAllowedForBooking(BookingStatus.PENDING)).toBe(false);
-      expect(isContactSharingAllowedForBooking(BookingStatus.REJECTED)).toBe(false);
-      expect(isContactSharingAllowedForBooking(BookingStatus.AWAITING_PAYMENT)).toBe(false);
-    });
-
-    it("should allow contact sharing for confirmed and paid bookings", () => {
-      expect(isContactSharingAllowedForBooking(BookingStatus.PAID)).toBe(true);
-      expect(isContactSharingAllowedForBooking(BookingStatus.CONFIRMED)).toBe(true);
-      expect(isContactSharingAllowedForBooking(BookingStatus.COMPLETED)).toBe(true);
+  describe("platform contact policy", () => {
+    it("blocks contact info regardless of booking context (always-on moderation)", () => {
+      const res = detectProhibitedContactInfo("Reach me at guest@example.com after payment");
+      expect(res.hasProhibitedContact).toBe(true);
+      expect(res.detectedTypes).toContain("EMAIL_ADDRESS");
     });
   });
 });

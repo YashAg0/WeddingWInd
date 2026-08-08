@@ -1,13 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireRole } from "@/lib/auth";
+import { UserRole } from "@prisma/client";
 
 // POST /api/host-application — submit a new host celebration application
 // Creates User + CoupleProfile + Wedding (DRAFT status awaiting admin verification)
 export async function POST(req: NextRequest) {
   try {
+    const user = await requireRole([UserRole.COUPLE]);
     const body = await req.json();
     const {
-      hostName, email, phone, coupleNames, city, state,
+      hostName, email, phone: _phone, coupleNames, city, state,
       venue, weddingDate, durationDays, religion, story,
       photoUrl, intlGuestCapacity
     } = body;
@@ -16,20 +19,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    // Check if user already exists with this email
-    let user = await prisma.user.findUnique({ where: { email } });
-    
-    if (!user) {
-      // Create a new guest user record for this host application
-      user = await prisma.user.create({
-        data: {
-          clerkUserId: `host_app_${Date.now()}_${Math.random().toString(36).slice(2)}`,
-          email,
-          name: hostName,
-          role: "COUPLE",
-          status: "ONBOARDING"
-        }
-      });
+    // Applications belong to the authenticated host; never create a synthetic
+    // account from an email supplied in the request.
+    if (email.trim().toLowerCase() !== user.email.toLowerCase()) {
+      return NextResponse.json({ error: "Use the email on your signed-in account." }, { status: 400 });
     }
 
     // Ensure couple profile exists
@@ -66,13 +59,15 @@ export async function POST(req: NextRequest) {
     });
 
     // Create verification record
-    await prisma.verification.create({
-      data: {
+    await prisma.verification.upsert({
+      where: { userId: user.id },
+      create: {
         userId: user.id,
         status: "PENDING",
         submissionDate: new Date(),
-        notes: `Host application submitted. Contact: ${phone}. Duration: ${durationDays} days.`
-      }
+        notes: `Host application submitted. Duration: ${durationDays} days.`
+      },
+      update: { status: "PENDING", submissionDate: new Date(), notes: `Host application submitted. Duration: ${durationDays} days.` }
     });
 
     // AuditLog
@@ -83,7 +78,7 @@ export async function POST(req: NextRequest) {
         entityId: wedding.id,
         userId: user.id,
         userName: hostName,
-        details: `New host application for ${coupleNames} in ${city}. Email: ${email}.`
+        details: `New host application for ${coupleNames} in ${city}.`
       }
     });
 

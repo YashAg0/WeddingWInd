@@ -144,7 +144,7 @@ export function HowItWorks({ steps }: HowItWorksProps) {
           highlightedWord="Our Indian Weddings"
           description="From Discovery to Celebration, Four steps carry you from stranger to guest of honour."
           className="mb-8"
-          theme="dark"
+          theme="light"
         />
 
         {/* Procession */}
@@ -341,7 +341,7 @@ export function HowItWorks({ steps }: HowItWorksProps) {
         {/* Trust badges */}
         <div className="hiw-trust-row mt-20 flex flex-wrap items-center justify-center gap-x-10 gap-y-4 border-t pt-10">
           {TRUST_BADGES.map((label) => (
-            <div key={label} className="flex items-center gap-2 text-sm font-medium text-white/70">
+            <div key={label} className="flex items-center gap-2 text-sm font-medium text-charcoal-700">
               <span style={{ color: C.gold300 }}>{TRUST_ICONS[label]}</span>
               {label}
             </div>
@@ -358,10 +358,10 @@ export function HowItWorks({ steps }: HowItWorksProps) {
       */}
       <style>{`
         .hiw-section {
-          background: transparent;
+          background: linear-gradient(180deg, #fff 0%, var(--color-warm-50) 40%, var(--color-warm-100) 70%, var(--color-warm-50) 100%);
         }
         .hiw-trust-row {
-          border-color: rgba(255,255,255,0.1);
+          border-color: rgba(0,0,0,0.1);
         }
         .hiw-procession-card {
           opacity: 0;

@@ -39,6 +39,9 @@ export function Categories({ categories }: CategoriesProps) {
         id="categories"
         className="relative section-padding overflow-hidden"
         aria-labelledby="categories-heading"
+        style={{
+          background: "linear-gradient(180deg, var(--color-warm-50) 0%, #fff 100%)",
+        }}
       >
           {/* Faint dotted lattice texture — a quiet nod to palace jali screenwork */}
           <div
@@ -86,7 +89,7 @@ export function Categories({ categories }: CategoriesProps) {
               highlightedWord="Perfect Celebration"
               description="From royal palaces to golden shores, choose the celebration that speaks to your soul."
               className="mb-14"
-              theme="dark"
+              theme="light"
             />
 
             <div

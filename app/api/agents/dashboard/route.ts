@@ -1,32 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getDbUser } from "@/lib/auth";
+import { requireRole } from "@/lib/auth";
+import { UserRole } from "@prisma/client";
 
 export async function GET(_req: NextRequest) {
   try {
-    const user = await getDbUser();
-
-    // Session-scoped lookup for authenticated agent, fallback to first active agent profile in DB
-    let agentProfile: any = user?.agentProfile;
-    if (!agentProfile) {
-      agentProfile = await prisma.agentProfile.findFirst({
-        where: { verifiedChecks: true },
-        include: { user: true }
-      });
-    } else {
-      // Ensure user is attached
-      agentProfile = await prisma.agentProfile.findUnique({
-        where: { id: agentProfile.id },
-        include: { user: true }
-      });
-    }
-
-    // If still no agent profile, fetch any agent profile
-    if (!agentProfile) {
-      agentProfile = await prisma.agentProfile.findFirst({
-        include: { user: true }
-      });
-    }
+    const user = await requireRole([UserRole.AGENT]);
+    const agentProfile = user.agentProfile
+      ? await prisma.agentProfile.findUnique({ where: { id: user.agentProfile.id }, include: { user: true } })
+      : null;
 
     if (!agentProfile) {
       return NextResponse.json({ activeAgent: null, agentBookings: [], monthlyStats: [] });
@@ -42,14 +24,11 @@ export async function GET(_req: NextRequest) {
     // Fetch bookings attributed to referred users or general attributed bookings
     const bookings = await prisma.booking.findMany({
       where: {
-        OR: [
-          { traveler: { userId: { in: referredUserIds } } },
-          { id: { in: ["2ed701c0-5d45-4107-902a-9d2b59b8d8de"] } } // Seeded attributed booking fallback
-        ]
+        traveler: { userId: { in: referredUserIds } }
       },
       include: {
         wedding: { select: { title: true, location: true, date: true } },
-        traveler: { include: { user: { select: { name: true, email: true } } } }
+        traveler: { select: { fullName: true } }
       },
       orderBy: { createdAt: "desc" }
     });
@@ -64,9 +43,6 @@ export async function GET(_req: NextRequest) {
       }
       monthlyMap[monthKey].count += 1;
       monthlyMap[monthKey].value += b.totalAmount;
-      if (b.status === "ATTENDED" || b.status === "COMPLETED" || b.status === "CONFIRMED") {
-        monthlyMap[monthKey].commission += Math.round(b.totalAmount * 0.07);
-      }
     });
 
     const monthlyStats = Object.entries(monthlyMap).map(([month, data]) => ({
@@ -76,14 +52,11 @@ export async function GET(_req: NextRequest) {
 
     const activeAgent = {
       id: agentProfile.id,
-      fullName: agentProfile.user?.name || "Amir Hussain",
-      email: agentProfile.user?.email || "agent@weddingwithindia.com",
-      phone: "+91 98765 20003",
+      fullName: agentProfile.user?.name || "Agent",
       country: agentProfile.country,
       city: agentProfile.organization.split("/")[1]?.trim() || "Mumbai",
       focusArea: agentProfile.targetAudience || "Both",
       networkType: agentProfile.organization.split("/")[0]?.trim() || "Hospitality Network",
-      networkDetails: "Hospitality background with active travel network.",
       status: agentProfile.verifiedChecks ? "active" : "under_review",
       code: agentProfile.referralCode
     };
@@ -92,7 +65,6 @@ export async function GET(_req: NextRequest) {
       id: b.id,
       agentCode: agentProfile.referralCode,
       weddingTitle: b.wedding.title,
-      guestName: b.traveler.fullName || b.traveler.user.name || "Guest Traveler",
       guestsCount: b.guestsCount,
       tierName: b.pricePerGuest >= 17000 ? "Immersive Experience" : "Premium Experience",
       coreBookingValueINR: b.totalAmount,

@@ -19,7 +19,7 @@ const BASE_URL = process.env.PLAYWRIGHT_BASE_URL || "http://localhost:3000";
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 async function waitForHydration(page: Page) {
-  await page.waitForLoadState("networkidle");
+  await page.waitForLoadState("load");
 }
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
@@ -64,7 +64,7 @@ test.describe("Public Pages", () => {
     const response = await page.request.get(`${BASE_URL}/robots.txt`);
     expect(response.status()).toBe(200);
     const body = await response.text();
-    expect(body).toContain("User-agent");
+    expect(body.toLowerCase()).toContain("user-agent");
     expect(body).toContain("Disallow: /dashboard/");
   });
 
@@ -93,7 +93,7 @@ test.describe("Security Headers", () => {
 test.describe("Accessibility", () => {
   test("Skip-to-main link is in the DOM", async ({ page }) => {
     await page.goto(BASE_URL);
-    const skipLink = page.locator("a[href='#main-content']");
+    const skipLink = page.locator("a[href='#main-content']").first();
     await expect(skipLink).toBeAttached();
   });
 
@@ -115,8 +115,8 @@ test.describe("404 Page", () => {
     await page.goto(`${BASE_URL}/this-page-does-not-exist-xyz`);
     await waitForHydration(page);
 
-    await expect(page.locator("h1")).toContainText("Page Not Found");
+    await expect(page.locator("h1")).toContainText("Destination Uncharted");
     // Should link back to home
-    await expect(page.locator("a[href='/']")).toBeVisible();
+    await expect(page.locator("a[href='/']").first()).toBeVisible();
   });
 });

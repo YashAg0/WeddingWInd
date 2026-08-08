@@ -1,9 +1,7 @@
 "use client";
 
 import { useAuth } from "@/context/AuthContext";
-import { getWeddings, editWedding } from "@/lib/actions";
-import { issueGuestPassAction } from "@/lib/actions/event-operations";
-import { toast } from "sonner";
+import { getWeddings } from "@/lib/actions";
 import {
   getPersonalizedRecommendations,
   fetchRecentlyViewed,

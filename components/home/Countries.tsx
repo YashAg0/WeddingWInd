@@ -15,8 +15,11 @@ export function Countries({ countries }: CountriesProps) {
     <>
       <section
         id="countries"
-        className="section-padding"
+        className="section-padding relative overflow-hidden"
         aria-labelledby="countries-heading"
+        style={{
+          background: "linear-gradient(180deg, var(--color-warm-50) 0%, var(--color-warm-100) 50%, var(--color-warm-50) 100%)",
+        }}
       >
       <div className="container-luxury">
         <SectionHeader
@@ -26,7 +29,7 @@ export function Countries({ countries }: CountriesProps) {
           highlightedWord="celebrate"
           description="Explore weddings from iconic Indian regions and surrounding South Asian destinations."
           className="mb-14"
-          theme="dark"
+          theme="light"
         />
 
         {/* Asymmetric grid: big card + 3 smaller */}
@@ -63,15 +66,7 @@ export function Countries({ countries }: CountriesProps) {
                 </h3>
                 <p className="text-white/90 text-sm mb-4 drop-shadow-sm font-medium">{featured.description}</p>
                 <div className="flex items-center justify-between">
-                  <span
-                    className="font-bold text-lg"
-                    style={{
-                      background: "linear-gradient(135deg, #fcd34d, #c9972a)",
-                      WebkitBackgroundClip: "text",
-                      backgroundClip: "text",
-                      WebkitTextFillColor: "transparent",
-                    }}
-                  >
+                  <span className="font-bold text-lg text-[var(--color-gold-300)]">
                     {featured.weddingCount.toLocaleString()} weddings
                   </span>
                   <span className="flex items-center gap-1.5 text-white text-sm font-semibold opacity-0 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0 transition-all duration-300">

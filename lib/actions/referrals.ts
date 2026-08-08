@@ -41,7 +41,8 @@ const payoutReviewSchema = z.object({
  */
 export async function generateReferralCode(agentName: string): Promise<string> {
   const cleanName = agentName.toUpperCase().replace(/[^A-Z0-9]/g, "").substring(0, 10);
-  const randomSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
+  const crypto = require('crypto');
+  const randomSuffix = crypto.randomBytes(2).toString('hex').toUpperCase();
   const code = `WWI-${cleanName || "AGENT"}-${randomSuffix}`;
   
   // Verify uniqueness
@@ -85,7 +86,8 @@ export async function trackReferralVisitAction(
     }
 
     // Set first-party secure cookie
-    const visitorId = Math.random().toString(36).substring(2, 15);
+    const crypto = require('crypto');
+    const visitorId = crypto.randomBytes(8).toString('hex');
     const _attribution = await setAttributionCookie({
       referralCode: validatedCode,
       visitorId,

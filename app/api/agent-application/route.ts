@@ -1,47 +1,35 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireRole } from "@/lib/auth";
+import { UserRole } from "@prisma/client";
 
 // POST /api/agent-application — submit a new agent application
 // Creates User + AgentProfile (not verified yet — admin reviews)
 export async function POST(req: NextRequest) {
   try {
+    const user = await requireRole([UserRole.AGENT]);
     const body = await req.json();
-    const { fullName, email, phone, country, city, focusArea, networkType, networkDetails } = body;
+    const { fullName, email, phone: _phone, country, city, focusArea, networkType, networkDetails } = body;
 
     if (!fullName || !email || !city) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
     // Generate a referral code (pending — admin activates)
-    const shortcode = Math.random().toString(36).substring(2, 7).toUpperCase();
+    const crypto = require('crypto');
+    const shortcode = crypto.randomBytes(3).toString('hex').toUpperCase();
     const referralCode = `WWI-AGENT-${shortcode}`;
 
-    // Check if this email already applied
-    const existingUser = await prisma.user.findUnique({
-      where: { email },
-      include: { agentProfile: true }
-    });
-    if (existingUser?.agentProfile) {
-      return NextResponse.json({ error: "An application already exists for this email address." }, { status: 409 });
+    if (email.trim().toLowerCase() !== user.email.toLowerCase()) {
+      return NextResponse.json({ error: "Use the email on your signed-in account." }, { status: 400 });
     }
-
-    let userId = existingUser?.id;
-    if (!userId) {
-      const newUser = await prisma.user.create({
-        data: {
-          clerkUserId: `agent_app_${Date.now()}_${Math.random().toString(36).slice(2)}`,
-          email,
-          name: fullName,
-          role: "AGENT",
-          status: "ONBOARDING"
-        }
-      });
-      userId = newUser.id;
+    if (user.agentProfile) {
+      return NextResponse.json({ error: "An application already exists for this email address." }, { status: 409 });
     }
 
     const agentProfile = await prisma.agentProfile.create({
       data: {
-        userId,
+        userId: user.id,
         organization: `${networkType} / ${city}`,
         country: country || "India",
         experienceYears: 0,
@@ -52,13 +40,15 @@ export async function POST(req: NextRequest) {
     });
 
     // Create a verification record for admin review
-    await prisma.verification.create({
-      data: {
-        userId,
+    await prisma.verification.upsert({
+      where: { userId: user.id },
+      create: {
+        userId: user.id,
         status: "PENDING",
         submissionDate: new Date(),
-        notes: `Agent application. Network: ${networkDetails}. Focus: ${focusArea}. Phone: ${phone}.`
-      }
+        notes: `Agent application. Network: ${networkDetails}. Focus: ${focusArea}.`
+      },
+      update: { status: "PENDING", submissionDate: new Date(), notes: `Agent application. Network: ${networkDetails}. Focus: ${focusArea}.` }
     });
 
     // AuditLog
@@ -67,9 +57,9 @@ export async function POST(req: NextRequest) {
         action: "AGENT_APPLICATION_SUBMITTED",
         entity: "AgentProfile",
         entityId: agentProfile.id,
-        userId,
+        userId: user.id,
         userName: fullName,
-        details: `Agent application from ${fullName} (${email}) in ${city}, ${country}.`
+        details: `Agent application from ${fullName} in ${city}, ${country}.`
       }
     });
 

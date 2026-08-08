@@ -58,6 +58,8 @@
   --color-brand-muted:     var(--color-charcoal-500);
 
   /* Fonts */
+  --font-inter: "Inter", sans-serif;
+  --font-playfair: "Playfair Display", serif;
   --font-display: var(--font-playfair), Georgia, "Times New Roman", serif;
   --font-sans:    var(--font-inter), system-ui, -apple-system, sans-serif;
 
@@ -379,7 +381,17 @@
 
 @keyframes shimmer {
   0%   { background-position: -200% center; }
-  100% { background-position: 200% center; }
+  100% { background-position:  200% center; }
+}
+
+@keyframes shimmerText {
+  0%   { background-position: -200% auto; }
+  100% { background-position:  200% auto; }
+}
+
+.animate-shimmer {
+  animation: shimmerText 3.5s linear infinite;
+  background-size: 200% auto;
 }
 
 @keyframes float {
@@ -494,3 +506,101 @@
   height: 1px;
   background: linear-gradient(90deg, transparent, var(--color-gold-300), transparent);
 }
+
+/* ─────────────────────────────────────────────
+   SECTION BACKGROUND SYSTEM
+   Provides rhythmic background alternation across homepage sections.
+   ───────────────────────────────────────────── */
+
+/* Warm ivory — for light sections */
+.section-warm {
+  background: linear-gradient(
+    180deg,
+    var(--color-warm-50)  0%,
+    var(--color-warm-100) 60%,
+    var(--color-warm-50)  100%
+  );
+}
+
+/* Pale cream — subtle variant */
+.section-cream {
+  background: linear-gradient(
+    180deg,
+    #ffffff              0%,
+    var(--color-warm-50) 100%
+  );
+}
+
+/* Dark luxury */
+.section-dark {
+  background: var(--color-charcoal-950);
+  color: #fff;
+}
+
+/* Brand maroon — for premium emphasis */
+.section-brand {
+  background: linear-gradient(
+    135deg,
+    var(--color-maroon-900) 0%,
+    var(--color-maroon-800) 50%,
+    var(--color-maroon-950) 100%
+  );
+  color: #fff;
+}
+
+/* ─────────────────────────────────────────────
+   IMAGE UTILITIES
+   ───────────────────────────────────────────── */
+
+/* Uniform card image aspect ratios */
+.img-wedding-card {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+}
+
+.img-wedding-hero {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+}
+
+/* ─────────────────────────────────────────────
+   FOCUS RING CONSISTENCY
+   ───────────────────────────────────────────── */
+
+:focus-visible {
+  outline: 2.5px solid var(--color-brand-secondary);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* Override for pill/rounded shapes */
+button:focus-visible,
+a:focus-visible {
+  border-radius: 9999px;
+}
+
+/* ─────────────────────────────────────────────
+   REDUCED-MOTION GLOBAL OVERRIDE
+   ───────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  /* Keep opacity-based reveals visible */
+  .animate-fade-in-up,
+  .animate-fade-in-down,
+  .animate-fade-in,
+  .animate-scale-in {
+    opacity: 1;
+    transform: none;
+  }
+}
+

@@ -9,9 +9,10 @@ import {
   Calendar,
   Sparkles,
   ChevronDown,
-  PlayCircle,
   ShieldCheck,
   Check,
+  Star,
+  ArrowRight,
 } from "lucide-react";
 import {
   motion,
@@ -19,7 +20,6 @@ import {
   useTransform,
   useMotionValue,
   useSpring,
-  animate,
   useReducedMotion,
 } from "framer-motion";
 import type { Stat } from "@/types";
@@ -37,44 +37,8 @@ const fadeUp = {
   }),
 };
 
-/** Animates a stat's numeric value counting up into view, preserving any
- *  non-numeric prefix/suffix (e.g. "500+", "4.9★", "$2.3M"). */
-function AnimatedStatValue({ value }: { value: string }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const prefersReducedMotion = useReducedMotion();
-  const match = value.match(/^([^\d]*)([\d,]+\.?\d*)(.*)$/);
-
-  useEffect(() => {
-    if (!match || !ref.current) return;
-    const [, prefix, numStr, suffix] = match;
-
-    if (prefersReducedMotion) {
-      ref.current.textContent = value;
-      return;
-    }
-
-    const target = parseFloat(numStr.replace(/,/g, ""));
-    const decimals = numStr.includes(".") ? numStr.split(".")[1].length : 0;
-    const node = ref.current;
-
-    const controls = animate(0, target, {
-      duration: 1.4,
-      delay: 0.3,
-      ease: "easeOut",
-      onUpdate(v) {
-        const formatted = decimals
-          ? v.toFixed(decimals)
-          : Math.round(v).toLocaleString();
-        node.textContent = `${prefix}${formatted}${suffix}`;
-      },
-    });
-    return () => controls.stop();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [value, prefersReducedMotion]);
-
-  if (!match) return <>{value}</>;
-  return <div ref={ref}>{value}</div>;
-}
+// AnimatedStatValue removed — Hero now uses qualitative TRUST_STATS
+// rather than animating numeric metrics that are 0 pre-launch.
 
 /** Floating ornament particles — each has a genuinely distinct size and blur,
  *  so nearer/larger particles read as closer and farther/smaller ones recede,
@@ -110,7 +74,31 @@ function FieldChevron() {
   );
 }
 
-export function Hero({ stats }: HeroProps) {
+/** Pre-launch trust stats — qualitative trust signals rather than zeroes,
+ *  so the hero reads as confident rather than empty. Once real metrics exist
+ *  these should be replaced with live data from BUSINESS_METRICS. */
+const TRUST_STATS = [
+  {
+    icon: <ShieldCheck size={22} strokeWidth={1.75} aria-hidden="true" />,
+    value: "100%",
+    label: "Verified Hosts",
+    description: "Every family personally vetted",
+  },
+  {
+    icon: <Star size={22} strokeWidth={1.75} aria-hidden="true" />,
+    value: "Curated",
+    label: "Celebrations Only",
+    description: "Every wedding hand-selected",
+  },
+  {
+    icon: <Check size={22} strokeWidth={1.75} aria-hidden="true" />,
+    value: "Secure",
+    label: "Transparent Payments",
+    description: "AES-256 encrypted & protected",
+  },
+];
+
+export function Hero({ stats: _stats }: HeroProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedMonth, setSelectedMonth] = useState("");
@@ -121,8 +109,6 @@ export function Hero({ stats }: HeroProps) {
   // builds the real query string, using "destination" as the param name to
   // match the SearchAction URL template already declared in layout.tsx's
   // WebSite JSON-LD (so Google Sitelinks Search and this button agree).
-  // NOTE: "category" and "month" aren't confirmed against the /weddings
-  // page's actual param names — verify those once that file is available.
   const searchHref = (() => {
     const params = new URLSearchParams();
     if (searchQuery.trim()) params.set("destination", searchQuery.trim());
@@ -139,16 +125,11 @@ export function Hero({ stats }: HeroProps) {
   });
 
   // Layered parallax: background drifts most, particles drift a little less
-  // (reads as "farther away"), foreground content barely moves at all. This
-  // relative-speed difference is what actually creates a sense of depth —
-  // a single moving background layer alone doesn't.
   const bgY = useTransform(scrollYProgress, [0, 1], ["0%", "14%"]);
   const particlesY = useTransform(scrollYProgress, [0, 1], ["0%", "8%"]);
   const contentY = useTransform(scrollYProgress, [0, 1], ["0%", "3%"]);
 
-  // Subtle, tasteful tilt on the search card only — driven by pointer
-  // position, capped to a few degrees, and fully inert on touch devices and
-  // for anyone with prefers-reduced-motion set.
+  // Subtle, tasteful tilt on the search card only
   const cardRef = useRef<HTMLDivElement>(null);
   const [tiltEnabled, setTiltEnabled] = useState(false);
   const rawRotateX = useMotionValue(0);
@@ -183,8 +164,7 @@ export function Hero({ stats }: HeroProps) {
       className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden"
       aria-label="Hero — Experience Our Indian Weddings"
     >
-      {/* Background image layer — moves most on scroll (appears closest to
-          the "camera" of the parallax stack, farthest in actual depth) */}
+      {/* Background image layer */}
       <motion.div
         className="absolute inset-0 z-0 will-change-transform"
         style={{ y: prefersReducedMotion ? 0 : bgY }}
@@ -199,19 +179,13 @@ export function Hero({ stats }: HeroProps) {
           sizes="100vw"
           className="object-cover scale-110"
         />
-        {/* Base gradient — deliberately darker than before at every stop.
-            IMPORTANT: this alone is NOT relied on for text contrast anymore.
-            A positional gradient assumes even photo brightness at each
-            height, which this specific photo violates (a bright white dress
-            sits right where the headline lands) — so text contrast below is
-            guaranteed via its own local scrim (see headlineScrim), not by
-            tuning these percentages against one photo's content. */}
-        <div className="absolute inset-0 bg-gradient-to-b from-charcoal-950/90 via-charcoal-950/72 to-charcoal-950/94" />
+        {/* Rich layered overlay: dark at top for text, deep maroon at bottom for brand warmth */}
+        <div className="absolute inset-0 bg-gradient-to-b from-charcoal-950/88 via-charcoal-950/68 to-maroon-950/92" />
+        {/* Warm brand fade into the next section */}
         <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-[var(--color-warm-50)] to-transparent" />
       </motion.div>
 
-      {/* Floating ornament particles — own parallax speed, distinct sizes and
-          blur amounts for genuine depth-of-field rather than four identical dots */}
+      {/* Floating ornament particles */}
       <motion.div
         className="absolute inset-0 z-0 overflow-hidden pointer-events-none will-change-transform"
         style={{ y: prefersReducedMotion ? 0 : particlesY }}
@@ -249,20 +223,12 @@ export function Hero({ stats }: HeroProps) {
         ))}
       </motion.div>
 
-      {/* Foreground content — barely moves on scroll, staying "closest" and
-          stable while the layers behind it drift, which is what actually
-          reads as depth rather than the whole scene moving uniformly */}
+      {/* Foreground content */}
       <motion.div
         style={{ y: prefersReducedMotion ? 0 : contentY }}
         className="relative z-10 container-luxury pt-32 pb-24 flex flex-col items-center text-center"
       >
-        {/* Deterministic text scrim: a soft, feathered dark ellipse sized to
-            roughly cover the eyebrow + headline + subtitle block, independent
-            of what's in the photo behind it. This is the actual fix for
-            contrast — not the base gradient above, which cannot guarantee
-            darkness at one specific point in an unpredictable photo. The
-            radial falloff keeps the effect invisible at the edges, so the
-            photo still reads as full-bleed everywhere outside the text zone. */}
+        {/* Deterministic text scrim behind eyebrow + headline block */}
         <div
           className="pointer-events-none absolute left-1/2 top-[8%] -translate-x-1/2 w-[min(56rem,92vw)] h-[26rem] sm:h-[30rem] -z-[1]"
           style={{
@@ -272,41 +238,32 @@ export function Hero({ stats }: HeroProps) {
           aria-hidden="true"
         />
 
+        {/* EYEBROW — trust/category pill */}
         <motion.div
           custom={0}
           variants={fadeUp}
           initial="hidden"
           animate="visible"
-          className="relative inline-flex items-center gap-2 bg-white/15 backdrop-blur-md border border-white/25 text-white text-xs font-semibold uppercase tracking-widest px-4 py-2 rounded-full mb-4"
+          className="relative inline-flex items-center gap-2 bg-white/15 backdrop-blur-md border border-white/25 text-white text-xs font-semibold uppercase tracking-widest px-4 py-2 rounded-full mb-6"
         >
           <span className="relative flex h-1.5 w-1.5 flex-shrink-0" aria-hidden="true">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--color-brand-secondary)] opacity-75" />
             <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--color-brand-secondary)]" />
           </span>
-          The World's Most Trusted Indian Wedding Platform
+          The World&apos;s Most Trusted Indian Wedding Platform
         </motion.div>
 
-        {/* Secondary CTA */}
-        <motion.div custom={0.6} variants={fadeUp} initial="hidden" animate="visible" className="mb-8">
-          <Link
-            href="/#how-it-works"
-            className="inline-flex items-center gap-1.5 text-white/85 hover:text-white text-sm font-medium underline-offset-4 hover:underline transition-colors duration-200"
-          >
-            <PlayCircle size={16} aria-hidden="true" />
-            Explore the journey
-          </Link>
-        </motion.div>
-
+        {/* H1 — FIRST, commanding, emotional */}
         <motion.h1
           custom={1}
           variants={fadeUp}
           initial="hidden"
           animate="visible"
-          className="relative font-display font-bold leading-[1.06] tracking-tight mb-6 max-w-4xl text-balance [text-wrap:balance] drop-shadow-[0_3px_30px_rgba(0,0,0,0.65)]"
-          style={{ fontSize: "clamp(2.5rem, 6.5vw, 5.5rem)" }}
+          className="relative font-display font-bold leading-[1.06] tracking-tight mb-4 max-w-4xl [text-wrap:balance] drop-shadow-[0_3px_30px_rgba(0,0,0,0.65)]"
+          style={{ fontSize: "clamp(2.75rem, 6.5vw, 5.5rem)" }}
         >
           <span
-            className="relative inline bg-[length:200%_auto] animate-shimmer"
+            className="relative inline bg-[length:200%_auto]"
             style={{
               backgroundImage:
                 "linear-gradient(110deg, #c9972a 0%, #fcd34d 30%, #fff4d6 45%, #ffffff 50%, #fff4d6 55%, #fcd34d 70%, #c9972a 100%)",
@@ -314,30 +271,62 @@ export function Hero({ stats }: HeroProps) {
               backgroundClip: "text",
               WebkitTextFillColor: "transparent",
               color: "#fcd34d",
-              textShadow: "0 2px 20px rgba(0,0,0,0.35)",
+              animation: "shimmer 3.5s linear infinite",
+              backgroundSize: "200% auto",
             }}
           >
             Experience Our Indian Weddings
           </span>
         </motion.h1>
 
+        {/* Supporting copy */}
         <motion.p
           custom={2}
           variants={fadeUp}
           initial="hidden"
           animate="visible"
-          className="relative text-white/95 text-lg sm:text-xl leading-relaxed max-w-2xl mb-10 text-balance drop-shadow-[0_2px_16px_rgba(0,0,0,0.55)]"
+          className="relative text-white/95 text-lg sm:text-xl leading-relaxed max-w-2xl mb-8 [text-wrap:balance] drop-shadow-[0_2px_16px_rgba(0,0,0,0.55)]"
         >
-          Beyond travel lies belonging. Join Host Families in Rajasthan, Goa,
-          and Kerala as an honored guest. Become part of the celebration.
+          Join Host Families in Rajasthan, Goa, and Kerala as an honored guest.
+          Beyond travel lies belonging — become part of the celebration.
         </motion.p>
 
+        {/* PRIMARY CTA — most prominent action above the search */}
+        <motion.div
+          custom={2.5}
+          variants={fadeUp}
+          initial="hidden"
+          animate="visible"
+          className="flex flex-col sm:flex-row items-center gap-3 mb-8"
+        >
+          <Link
+            href="/weddings"
+            className="btn btn-secondary btn-lg group"
+            aria-label="Explore all Indian wedding celebrations"
+          >
+            <span>Explore Celebrations</span>
+            <ArrowRight
+              size={18}
+              className="group-hover:translate-x-0.5 transition-transform"
+              aria-hidden="true"
+            />
+          </Link>
+          <Link
+            href="/#how-it-works"
+            className="btn btn-ghost-white group"
+            aria-label="Learn how Wedding With India works"
+          >
+            How It Works
+          </Link>
+        </motion.div>
+
+        {/* SEARCH CARD — discovery tool */}
         <motion.div
           custom={3}
           variants={fadeUp}
           initial="hidden"
           animate="visible"
-          className="w-full max-w-3xl mb-10"
+          className="w-full max-w-3xl mb-6"
           style={{ perspective: 1200 }}
         >
           <motion.div
@@ -426,32 +415,9 @@ export function Hero({ stats }: HeroProps) {
           </motion.div>
         </motion.div>
 
-        {/* Booking-policy trust line, placed at the exact decision point
-            (right under the search card) rather than buried in a footer —
-            this is what a hesitant first-time visitor checks before typing
-            anything in. */}
+        {/* Trending quick-searches */}
         <motion.div
           custom={3.4}
-          variants={fadeUp}
-          initial="hidden"
-          animate="visible"
-          className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-white/70 text-xs sm:text-sm mb-6"
-        >
-          <span className="inline-flex items-center gap-1.5">
-            <ShieldCheck size={14} className="text-gold-400 flex-shrink-0" aria-hidden="true" />
-            Trusted Host Families
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <Check size={14} className="text-gold-400 flex-shrink-0" aria-hidden="true" />
-            Secure and transparent
-          </span>
-        </motion.div>
-
-        {/* Trending destination quick-searches — a first-time visitor with
-            no fixed destination in mind gets a fast path into real results
-            instead of staring at an empty "Where" field. */}
-        <motion.div
-          custom={3.7}
           variants={fadeUp}
           initial="hidden"
           animate="visible"
@@ -476,6 +442,7 @@ export function Hero({ stats }: HeroProps) {
           ))}
         </motion.div>
 
+        {/* Trust stats — qualitative signals that don't display as zeroes */}
         <motion.div
           custom={4.3}
           variants={fadeUp}
@@ -483,9 +450,9 @@ export function Hero({ stats }: HeroProps) {
           animate="visible"
           className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full max-w-2xl"
           role="list"
-          aria-label="Platform statistics"
+          aria-label="Platform trust signals"
         >
-          {stats.map((stat, i) => (
+          {TRUST_STATS.map((stat, i) => (
             <motion.div
               key={stat.label}
               initial={{ opacity: 0, y: 16 }}
@@ -495,7 +462,17 @@ export function Hero({ stats }: HeroProps) {
               role="listitem"
             >
               <div
-                className="font-display font-bold text-2xl leading-none mb-1 tabular-nums"
+                className="mb-2 flex items-center justify-center"
+                style={{
+                  color: "#fde68a",
+                  filter: "drop-shadow(0 0 8px rgba(201,151,42,0.4))",
+                }}
+                aria-hidden="true"
+              >
+                {stat.icon}
+              </div>
+              <div
+                className="font-display font-bold text-xl leading-none mb-1 tabular-nums"
                 style={{
                   background: "linear-gradient(135deg, #fde68a 0%, #d4a336 100%)",
                   WebkitBackgroundClip: "text",
@@ -504,7 +481,7 @@ export function Hero({ stats }: HeroProps) {
                   color: "#fde68a",
                 }}
               >
-                <AnimatedStatValue value={stat.value} />
+                {stat.value}
               </div>
               <div className="text-white text-sm font-semibold mb-0.5">{stat.label}</div>
               <div className="text-white/75 text-xs">{stat.description}</div>
@@ -513,6 +490,7 @@ export function Hero({ stats }: HeroProps) {
         </motion.div>
       </motion.div>
 
+      {/* Scroll indicator */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}

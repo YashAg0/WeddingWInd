@@ -24,7 +24,7 @@ export const revalidate = 3600;
 export const metadata: Metadata = {
   title: "Wedding With India — Attend Authentic Indian Weddings",
   description:
-    `The world's most trusted platform to attend authentic Indian weddings. Join real celebrations in Rajasthan, Goa, Punjab, and Kerala as an honoured guest. Browse ${BUSINESS_METRICS.WEDDINGS_HOSTED} curated celebrations.`,
+    `The world's most trusted platform to attend authentic Indian weddings. Join authentic celebrations in Rajasthan, Goa, Punjab, and Kerala as an honoured guest. Browse ${BUSINESS_METRICS.WEDDINGS_HOSTED} curated celebrations.`,
   alternates: {
     canonical: "https://weddingwithindia.com",
   },
@@ -35,24 +35,14 @@ export default async function HomePage() {
 
   return (
     <>
-
       <Hero stats={heroStats} />
-
-      <main id="main-content">
-        <FeaturedWeddings weddings={weddings} />
-
-        <HowItWorks steps={howItWorksSteps} />
-
-        <Categories categories={weddingCategories} />
-
-        <Testimonials testimonials={testimonials} />
-
-        <Countries countries={countries} />
-
-        <FAQ items={faqItems} />
-
-        <CTASection />
-      </main>
+      <FeaturedWeddings weddings={weddings} />
+      <HowItWorks steps={howItWorksSteps} />
+      <Categories categories={weddingCategories} />
+      <Testimonials testimonials={testimonials} />
+      <Countries countries={countries} />
+      <FAQ items={faqItems} />
+      <CTASection />
     </>
   );
 }

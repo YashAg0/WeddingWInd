@@ -84,7 +84,7 @@ export async function adminGetDashboardStatsAction() {
     amount,
   }));
 
-  // Stripe Statistics Mock calculations matching real system volumes
+  // Stripe Statistics Estimated calculations based on standard 2.9% + $0.30 fee structure
   const stripeVolume = totalRevenue;
   const stripeFees = totalRevenue * 0.029 + allPayments.length * 0.3;
   const netRevenue = stripeVolume - stripeFees;
@@ -151,7 +151,9 @@ export async function adminCreateWeddingAction(data: any) {
   let slug = parsed.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)+/g, "");
   const existing = await prisma.wedding.findUnique({ where: { slug } });
   if (existing) {
-    slug = `${slug}-${Math.floor(Math.random() * 1000)}`;
+    const crypto = require('crypto');
+    const randomSuffix = crypto.randomBytes(2).readUInt16LE(0) % 1000;
+    slug = `${slug}-${randomSuffix}`;
   }
 
   const wedding = await prisma.wedding.create({
@@ -673,7 +675,9 @@ export async function adminUpsertBlogPostAction(blogId: string | null, data: any
   let slug = parsed.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)+/g, "");
   const existing = await prisma.blogPost.findFirst({ where: { slug, NOT: blogId ? { id: blogId } : undefined } });
   if (existing) {
-    slug = `${slug}-${Math.floor(Math.random() * 1000)}`;
+    const crypto = require('crypto');
+    const randomSuffix = crypto.randomBytes(2).readUInt16LE(0) % 1000;
+    slug = `${slug}-${randomSuffix}`;
   }
 
   let post;

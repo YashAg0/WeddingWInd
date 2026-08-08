@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { isAdmin } from "@/lib/auth";
+import { requireRole } from "@/lib/auth";
+import { UserRole } from "@prisma/client";
 
 // GET /api/admin/bookings — list all bookings with financials
 export async function GET() {
   try {
-    if (!(await isAdmin())) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+    await requireRole([UserRole.ADMIN]);
 
     const bookings = await prisma.booking.findMany({
       include: {
@@ -30,9 +29,7 @@ export async function GET() {
 // PATCH /api/admin/bookings — update booking status
 export async function PATCH(req: NextRequest) {
   try {
-    if (!(await isAdmin())) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+    const admin = await requireRole([UserRole.ADMIN]);
 
     const body = await req.json();
     const { bookingId, status } = body;
@@ -62,8 +59,8 @@ export async function PATCH(req: NextRequest) {
         action: "ADMIN_BOOKING_STATUS_CHANGE",
         entity: "Booking",
         entityId: bookingId,
-        userId: "admin",
-        userName: "Platform Admin",
+        userId: admin.id,
+        userName: admin.name || admin.email,
         details: `Booking ${bookingId} status changed to ${status}. Wedding: ${updated.wedding.title}. Guest: ${updated.traveler.user.name}.`,
       }
     });

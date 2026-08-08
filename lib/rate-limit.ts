@@ -14,6 +14,8 @@
  *   if (!success) throw new Error("Too many requests. Try again later.");
  */
 
+import crypto from "crypto";
+
 interface RateLimitWindow {
   count: number;
   resetAt: number;
@@ -50,7 +52,7 @@ export async function rateLimit(
   store.set(storeKey, entry);
 
   // Cleanup old entries every ~1000 calls to prevent memory leaks
-  if (Math.random() < 0.001) {
+  if (crypto.randomInt(0, 1000) === 0) {
     for (const [k, v] of store.entries()) {
       if (v.resetAt < now) store.delete(k);
     }

@@ -52,8 +52,24 @@ jest.mock("@/lib/prisma", () => ({
   },
 }));
 
+jest.mock("next/cache", () => ({
+  unstable_cache: (cb: any) => cb,
+  revalidatePath: jest.fn(),
+  revalidateTag: jest.fn(),
+}));
+
 jest.mock("@/lib/auth", () => ({
+  __esModule: true,
   requireAuth: jest.fn().mockResolvedValue({ id: "user-id", role: "TRAVELER" }),
+  syncAndGetDbUser: jest.fn().mockResolvedValue({ id: "user-id", role: "TRAVELER" }),
+  requireRole: jest.fn().mockResolvedValue(true),
+}));
+
+jest.mock("../../lib/auth", () => ({
+  __esModule: true,
+  requireAuth: jest.fn().mockResolvedValue({ id: "user-id", role: "TRAVELER" }),
+  syncAndGetDbUser: jest.fn().mockResolvedValue({ id: "user-id", role: "TRAVELER" }),
+  requireRole: jest.fn().mockResolvedValue(true),
 }));
 
 describe("Authoritative Review Validity Policy", () => {

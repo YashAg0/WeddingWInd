@@ -168,7 +168,7 @@ export default async function WeddingDetailPage({ params }: PageProps) {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 lg:gap-16">
 
           {/* LEFT: Story + Details */}
-          <main className="lg:col-span-2 space-y-12" role="main">
+          <div className="lg:col-span-2 space-y-12">
 
             {/* ─── COUPLE PORTRAIT & STORY — restoring to live site layout ─── */}
             <section
@@ -366,7 +366,7 @@ export default async function WeddingDetailPage({ params }: PageProps) {
               />
             </section>
 
-          </main>
+          </div>
 
           {/* RIGHT: Sticky Booking Sidebar (desktop) */}
           <div className="hidden lg:block lg:col-span-1">

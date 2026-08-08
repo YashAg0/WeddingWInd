@@ -1,7 +1,7 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
 // Public routes accessible without authentication
-const isPublicRoute = createRouteMatcher([
+const _isPublicRoute = createRouteMatcher([
   "/",
   "/weddings(.*)",
   "/list-wedding(.*)",
@@ -41,11 +41,6 @@ const isProtectedRoute = createRouteMatcher([
 export default clerkMiddleware(async (auth, req) => {
   // 1. Enforce protection on private user & dashboard routes
   if (isProtectedRoute(req) || isAdminRoute(req)) {
-    await auth.protect();
-  }
-
-  // 2. Default protection for any non-public route
-  if (!isPublicRoute(req)) {
     await auth.protect();
   }
 });

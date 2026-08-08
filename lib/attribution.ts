@@ -38,7 +38,8 @@ export async function setAttributionCookie(incoming: Partial<AttributionData> & 
   const existing = await getAttributionCookie();
   
   const now = new Date().toISOString();
-  const visitorId = existing?.visitorId || incoming.visitorId || Math.random().toString(36).substring(2, 15);
+  const crypto = require('crypto');
+  const visitorId = existing?.visitorId || incoming.visitorId || crypto.randomBytes(8).toString('hex');
 
   let merged: AttributionData;
 

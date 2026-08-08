@@ -31,7 +31,7 @@ export const metadata: Metadata = {
     template: "%s | Wedding With India",
   },
   description:
-    "The world's first marketplace to attend authentic Indian weddings. Join real celebrations in Rajasthan, Goa, Punjab, and Kerala as an honoured guest. Book your spot today.",
+    "The world's first marketplace to attend authentic Indian weddings. Join authentic celebrations in Rajasthan, Goa, Punjab, and Kerala as an honoured guest. Reserve your seat today.",
   keywords: [
     "Indian wedding tourism",
     "attend Indian wedding",
@@ -50,7 +50,7 @@ export const metadata: Metadata = {
     siteName: "Wedding With India",
     title: "Wedding With India — Attend Authentic Indian Weddings",
     description:
-      `Experience the magic of authentic Indian weddings as an honoured guest. Browse ${BUSINESS_METRICS.WEDDINGS_HOSTED} verified Our Indian Weddings across India.`,
+      `Experience the magic of authentic Indian weddings as an honoured guest. Browse our exclusive collection of ${BUSINESS_METRICS.WEDDINGS_HOSTED} verified celebrations across India.`,
     images: [
       {
         url: "/og-image.jpg",
@@ -64,7 +64,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Wedding With India — Attend Authentic Indian Weddings",
     description:
-      "Experience the magic of authentic Indian weddings. Browse verified celebrations across India.",
+      "Experience the magic of authentic Indian weddings. Browse our exclusive collection of verified celebrations across India.",
     images: ["/og-image.jpg"],
     creator: "@weddingwithindia",
   },
@@ -172,7 +172,7 @@ export default function RootLayout({
                 zIndex: 9999,
               }}
             >
-              JavaScript is required for Wedding With India to function correctly. Please enable JavaScript in your browser.
+              For the complete Wedding With India experience, please enable JavaScript in your browser.
             </div>
           </noscript>
 

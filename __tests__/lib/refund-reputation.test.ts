@@ -16,6 +16,15 @@ jest.mock("@/lib/services/reputation", () => ({
   logReputationEvent: jest.fn().mockResolvedValue(true),
 }));
 
+jest.mock("@/lib/env", () => ({
+  env: {
+    STRIPE_SECRET_KEY: "sk_test_123",
+    STRIPE_WEBHOOK_SECRET: "whsec_123",
+    NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: "pk_test_123",
+    DATABASE_URL: "postgres://mock",
+  }
+}));
+
 jest.mock("@/lib/prisma", () => ({
   prisma: {
     refund: {

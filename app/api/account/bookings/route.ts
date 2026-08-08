@@ -1,20 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getDbUser } from "@/lib/auth";
+import { requireRole } from "@/lib/auth";
+import { UserRole } from "@prisma/client";
 
 export async function GET(_req: NextRequest) {
   try {
-    const user = await getDbUser();
-
-    let travelerProfile = user?.travelerProfile;
-    if (!travelerProfile) {
-      travelerProfile = await prisma.travelerProfile.findFirst({
-        include: { user: true }
-      });
-    }
+    const user = await requireRole([UserRole.TRAVELER]);
+    const travelerProfile = user.travelerProfile;
 
     if (!travelerProfile) {
-      return NextResponse.json({ bookings: [] });
+      return NextResponse.json({ error: "Traveler profile not found" }, { status: 404 });
     }
 
     const bookings = await prisma.booking.findMany({

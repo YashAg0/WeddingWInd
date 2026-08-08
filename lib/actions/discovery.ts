@@ -530,7 +530,8 @@ export async function updateWishlistDetails(
   // Generate shareable token if it's set to public and does not have one
   let shareableToken = item.shareableToken;
   if (data.isPublic && !shareableToken) {
-    shareableToken = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    const crypto = require('crypto');
+    shareableToken = crypto.randomBytes(16).toString('hex');
   }
 
   const updated = await prisma.wishlist.update({

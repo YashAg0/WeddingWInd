@@ -134,13 +134,28 @@ export async function completeOnboardingAction(data: any) {
 /**
  * 3. Update User Profile Settings details.
  */
-export async function updateProfileDetails(data: {
+export interface UpdateProfileInput {
   name?: string;
   email?: string;
   phone?: string;
   country?: string;
   bio?: string;
-}) {
+  language?: string;
+  budget?: string | number;
+  preferences?: string | string[];
+  foodPreferences?: string | string[];
+  accessibility?: string | string[];
+  weddingLocation?: string;
+  traditions?: string | string[];
+  languagesSpoken?: string | string[];
+  expectedGuests?: number;
+  photographyRules?: string;
+  organization?: string;
+  experienceYears?: number;
+  targetAudience?: string;
+}
+
+export async function updateProfileDetails(data: UpdateProfileInput) {
   const dbUser = await requireAuth();
 
   await prisma.$transaction(async (tx) => {
@@ -160,15 +175,24 @@ export async function updateProfileDetails(data: {
         data: {
           fullName: data.name ?? dbUser.travelerProfile.fullName,
           country: data.country ?? dbUser.travelerProfile.country,
-          interests: data.bio ?? dbUser.travelerProfile.interests
+          language: data.language ?? dbUser.travelerProfile.language,
+          interests: data.bio ?? dbUser.travelerProfile.interests,
+          budget: data.budget !== undefined ? String(data.budget) : dbUser.travelerProfile.budget,
+          preferences: Array.isArray(data.preferences) ? data.preferences.join(", ") : (data.preferences ?? dbUser.travelerProfile.preferences),
+          foodPreferences: Array.isArray(data.foodPreferences) ? data.foodPreferences.join(", ") : (data.foodPreferences ?? dbUser.travelerProfile.foodPreferences),
+          accessibility: Array.isArray(data.accessibility) ? data.accessibility.join(", ") : (data.accessibility ?? dbUser.travelerProfile.accessibility)
         }
       });
     } else if (dbUser.role === UserRole.COUPLE && dbUser.coupleProfile) {
       await tx.coupleProfile.update({
         where: { userId: dbUser.id },
         data: {
-          weddingLocation: data.country ?? dbUser.coupleProfile.weddingLocation,
-          familyBio: data.bio ?? dbUser.coupleProfile.familyBio
+          weddingLocation: data.weddingLocation ?? data.country ?? dbUser.coupleProfile.weddingLocation,
+          familyBio: data.bio ?? dbUser.coupleProfile.familyBio,
+          expectedGuests: data.expectedGuests ?? dbUser.coupleProfile.expectedGuests,
+          traditions: Array.isArray(data.traditions) ? data.traditions.join(", ") : (data.traditions ?? dbUser.coupleProfile.traditions),
+          languagesSpoken: Array.isArray(data.languagesSpoken) ? data.languagesSpoken.join(", ") : (data.languagesSpoken ?? dbUser.coupleProfile.languagesSpoken),
+          photographyRules: data.photographyRules ?? dbUser.coupleProfile.photographyRules
         }
       });
     } else if (dbUser.role === UserRole.AGENT && dbUser.agentProfile) {
@@ -176,7 +200,9 @@ export async function updateProfileDetails(data: {
         where: { userId: dbUser.id },
         data: {
           country: data.country ?? dbUser.agentProfile.country,
-          targetAudience: data.bio ?? dbUser.agentProfile.targetAudience
+          organization: data.organization ?? dbUser.agentProfile.organization,
+          experienceYears: data.experienceYears ?? dbUser.agentProfile.experienceYears,
+          targetAudience: data.targetAudience ?? data.bio ?? dbUser.agentProfile.targetAudience
         }
       });
     }
@@ -196,13 +222,15 @@ function slugifyTitle(title: string) {
     .replace(/(^-|-$)+/g, "");
 }
 
+import crypto from "crypto";
+
 async function generateUniqueWeddingSlug(title: string, excludeWeddingId?: string) {
   const base = slugifyTitle(title) || "wedding";
   let slug = base;
   for (let attempt = 0; attempt < 20; attempt++) {
     const existing = await prisma.wedding.findUnique({ where: { slug } });
     if (!existing || existing.id === excludeWeddingId) return slug;
-    slug = `${base}-${Math.floor(Math.random() * 10000)}`;
+    slug = `${base}-${crypto.randomInt(1000, 10000)}`;
   }
   return `${base}-${Date.now()}`;
 }
@@ -968,7 +996,7 @@ export async function markNotificationsReadAction() {
 export async function fetchDashboardDataAction() {
   const dbUser = await requireAuth();
 
-  if (!(await isDatabaseAvailable())) {
+  if (typeof isDatabaseAvailable === "function" && !(await isDatabaseAvailable())) {
     return {
       notifications: [],
       verification: null,
@@ -1263,7 +1291,7 @@ export async function seedDatabaseIfNeeded() {
 export const getWeddings = unstable_cache(
   async () => {
   try {
-    const dbOk = await isDatabaseAvailable(300);
+    const dbOk = typeof isDatabaseAvailable === "function" ? await isDatabaseAvailable(300) : true;
     if (!dbOk) {
       console.info("[getWeddings] Database unavailable. Fast-fallback to featuredWeddings.");
       const { featuredWeddings } = await import("../data");
@@ -1411,7 +1439,7 @@ function mapToPublicReviewDTO(review: any) {
 export const getWeddingBySlug = unstable_cache(
   async (slug: string) => {
   try {
-    const dbOk = await isDatabaseAvailable(1500);
+    const dbOk = typeof isDatabaseAvailable === "function" ? await isDatabaseAvailable(1500) : true;
     if (!dbOk) {
       console.info(`[getWeddingBySlug] Database unavailable. Serving static fallback for slug '${slug}'.`);
       const { featuredWeddings } = await import("../data");

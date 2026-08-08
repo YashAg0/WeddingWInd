@@ -1,12 +1,11 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { isAdmin } from "@/lib/auth";
+import { requireRole } from "@/lib/auth";
+import { BookingStatus, CommissionStatus, UserRole } from "@prisma/client";
 
 export async function GET() {
   try {
-    if (!(await isAdmin())) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+    await requireRole([UserRole.ADMIN]);
 
     const [
       pendingHostsCount,
@@ -14,19 +13,25 @@ export async function GET() {
       totalWeddingsCount,
       totalAgentsCount,
       bookingAggregates,
-      statusGroups
+      statusGroups,
+      agentCommission
     ] = await Promise.all([
       prisma.wedding.count({ where: { status: "DRAFT" } }),
       prisma.agentProfile.count({ where: { verifiedChecks: false } }),
       prisma.wedding.count(),
       prisma.agentProfile.count(),
       prisma.booking.aggregate({
+        where: { status: { in: [BookingStatus.PAID, BookingStatus.CONFIRMED, BookingStatus.READY_FOR_EVENT, BookingStatus.CHECKED_IN, BookingStatus.ATTENDED, BookingStatus.COMPLETED] } },
         _sum: { totalAmount: true },
         _count: { _all: true }
       }),
       prisma.booking.groupBy({
         by: ["status"],
         _count: { _all: true }
+      }),
+      prisma.commission.aggregate({
+        where: { status: { in: [CommissionStatus.APPROVED, CommissionStatus.PAYABLE, CommissionStatus.PAID] } },
+        _sum: { commissionAmount: true }
       })
     ]);
 
@@ -36,8 +41,10 @@ export async function GET() {
     }, {});
 
     const totalVolume = bookingAggregates._sum.totalAmount || 0;
-    const platformCommissionAccrued = Math.round(totalVolume * 0.28);
-    const agentCommissionAccrued = Math.round(totalVolume * 0.07);
+    // The current ledger has no platform-fee column. Return an explicit
+    // unavailable value rather than manufacturing a percentage of GMV.
+    const platformCommissionAccrued = null;
+    const agentCommissionAccrued = agentCommission._sum.commissionAmount || 0;
 
     return NextResponse.json({
       pendingHostsCount,
@@ -48,6 +55,7 @@ export async function GET() {
       bookingsByStatus,
       totalVolume,
       platformCommissionAccrued,
+      platformCommissionAvailable: false,
       agentCommissionAccrued
     });
   } catch (error: any) {

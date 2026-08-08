@@ -24,9 +24,9 @@ const navItems: NavItem[] = [
       { label: "Royal Ceremonies", href: "/weddings?category=royal", description: "Palace grandeur & royal rituals" },
       { label: "Punjabi Weddings", href: "/weddings?category=punjabi", description: "Dhol rhythms & vibrant joy" },
       { label: "South Indian Weddings", href: "/weddings?category=south-indian", description: "Temple traditions & sacred customs" },
-      { label: "Coastal Weddings", href: "/weddings?category=beach", description: "Sunset Weddings by the sea" },
+      { label: "Coastal Weddings", href: "/weddings?category=beach", description: "Sunset weddings by the sea" },
       { label: "Destination Weddings", href: "/weddings?category=destination", description: "Exotic heritage locales" },
-      { label: "Traditional Ceremonies", href: "/weddings?category=traditional", description: "Generations of timeless ritual" },
+      { label: "Traditional Ceremonies", href: "/weddings?category=traditional", description: "Generations of timeless rituals" },
     ],
   },
   { label: "How It Works?", href: "/#how-it-works" },
@@ -34,11 +34,21 @@ const navItems: NavItem[] = [
   { label: "Host Your Wedding", href: "/list-wedding" },
 ];
 
+const CURRENCIES = ["INR", "USD", "EUR"] as const;
+type CurrencyCode = (typeof CURRENCIES)[number];
+
+const FOCUS_RING =
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-secondary)] focus-visible:ring-offset-2";
+
 /** A same-page anchor (e.g. "/#how-it-works") isn't a distinct "page," so it
  *  never counts as the active nav item — only real routes do. */
 function isActiveHref(pathname: string, href: string): boolean {
   if (href.includes("#")) return false;
   return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+function currencySymbol(code: CurrencyCode) {
+  return code === "INR" ? "₹" : code === "USD" ? "$" : "€";
 }
 
 function UserAvatar({
@@ -89,6 +99,63 @@ function UserAvatar({
   );
 }
 
+/** Segmented pick-one control with a sliding highlight — reused by the
+ *  desktop currency popover and the mobile drawer footer so both stay
+ *  in sync visually and behaviorally. */
+function CurrencySwitcher({
+  value,
+  onChange,
+  reducedMotion,
+  compact = false,
+  tabbable = true,
+}: {
+  value: CurrencyCode;
+  onChange: (c: CurrencyCode) => void;
+  reducedMotion: boolean;
+  compact?: boolean;
+  tabbable?: boolean;
+}) {
+  const activeIndex = CURRENCIES.indexOf(value);
+  return (
+    <div
+      role="radiogroup"
+      aria-label="Select currency"
+      className={cn(
+        "relative flex items-center bg-warm-50 border border-warm-200 rounded-full p-1",
+        compact ? "w-full" : "w-[180px]"
+      )}
+    >
+      <span
+        aria-hidden="true"
+        className={cn(
+          "absolute top-1 bottom-1 left-1 rounded-full bg-[var(--color-brand-primary)] shadow-sm",
+          !reducedMotion && "transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]"
+        )}
+        style={{
+          width: "calc((100% - 0.5rem) / 3)",
+          transform: `translateX(${activeIndex * 100}%)`,
+        }}
+      />
+      {CURRENCIES.map((c) => (
+        <button
+          key={c}
+          type="button"
+          role="radio"
+          aria-checked={value === c}
+          tabIndex={tabbable ? 0 : -1}
+          onClick={() => onChange(c)}
+          className={cn(
+            "relative z-10 flex-1 px-2 py-1.5 rounded-full text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-1",
+            value === c ? "text-white" : "text-charcoal-600 hover:text-charcoal-900"
+          )}
+        >
+          {currencySymbol(c)} {c}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
@@ -96,12 +163,26 @@ export default function Navbar() {
   const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
   const [hideOnScroll, setHideOnScroll] = useState(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  const [hoveredKey, setHoveredKey] = useState<string | null>(null);
+  const [indicatorRect, setIndicatorRect] = useState({ left: 0, width: 0, visible: false });
+
   const pathname = usePathname();
   const { user, loading, notifications } = useAuth();
   const { currency, setCurrency } = useCurrency();
+
   const currencyPickerRef = useRef<HTMLDivElement>(null);
   const mobileToggleRef = useRef<HTMLButtonElement>(null);
   const lastScrollY = useRef(0);
+  const scrollTicking = useRef(false);
+  const itemRefs = useRef<Map<string, HTMLElement>>(new Map());
+
+  const setItemRef = useCallback(
+    (label: string) => (el: HTMLElement | null) => {
+      if (el) itemRefs.current.set(label, el);
+      else itemRefs.current.delete(label);
+    },
+    []
+  );
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -150,17 +231,26 @@ export default function Navbar() {
   const unreadCount = notifications.filter((n) => !n.read).length;
   const isHomepage = pathname === "/";
   const isExploreActive = pathname === "/weddings" || pathname.startsWith("/weddings/");
+  const activeKey =
+    navItems.find((item) => (item.children ? isExploreActive : isActiveHref(pathname, item.href)))?.label ?? null;
 
+  // Scroll state is coalesced through rAF so fast scrolling triggers at
+  // most one re-render per frame instead of one per scroll event.
   const handleScroll = useCallback(() => {
-    const currentY = window.scrollY;
-    setIsScrolled(currentY > 20);
+    if (scrollTicking.current) return;
+    scrollTicking.current = true;
+    requestAnimationFrame(() => {
+      const currentY = window.scrollY;
+      setIsScrolled(currentY > 20);
 
-    // Hide the header on the way down past the fold, reveal it on the way
-    // up — but only once there's real distance from the top, so it doesn't
-    // flicker while someone's just nudging the page under the hero.
-    const scrollingDown = currentY > lastScrollY.current;
-    setHideOnScroll(scrollingDown && currentY > 160);
-    lastScrollY.current = currentY;
+      // Hide the header on the way down past the fold, reveal it on the way
+      // up — but only once there's real distance from the top, so it doesn't
+      // flicker while someone's just nudging the page under the hero.
+      const scrollingDown = currentY > lastScrollY.current;
+      setHideOnScroll(scrollingDown && currentY > 160);
+      lastScrollY.current = currentY;
+      scrollTicking.current = false;
+    });
   }, []);
 
   useEffect(() => {
@@ -191,6 +281,29 @@ export default function Navbar() {
     setHideOnScroll(false);
   }, [isMobileOpen]);
 
+  // Sliding spotlight indicator — tracks whichever nav item is hovered,
+  // falling back to whichever one is active. Recomputed on hover/route
+  // change and on resize, since item widths can shift with the viewport.
+  const updateIndicator = useCallback(() => {
+    const key = hoveredKey ?? activeKey;
+    const el = key ? itemRefs.current.get(key) : undefined;
+    if (el) {
+      setIndicatorRect({ left: el.offsetLeft, width: el.offsetWidth, visible: true });
+    } else {
+      setIndicatorRect((prev) => ({ ...prev, visible: false }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hoveredKey, activeKey]);
+
+  useEffect(() => {
+    updateIndicator();
+  }, [updateIndicator]);
+
+  useEffect(() => {
+    window.addEventListener("resize", updateIndicator);
+    return () => window.removeEventListener("resize", updateIndicator);
+  }, [updateIndicator]);
+
   function toggleDropdown(label: string) {
     setActiveDropdown((prev) => (prev === label ? null : label));
   }
@@ -219,29 +332,51 @@ export default function Navbar() {
 
       <header
         className={cn(
-          "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
+          "fixed top-0 left-0 right-0 z-50 transition-transform duration-500 will-change-transform",
           isHeaderHidden && "-translate-y-full",
-          isTransparent
-            ? "bg-transparent py-6"
-            : "bg-white/80 backdrop-blur-md py-4 border-b border-white/20"
+          isTransparent ? "pt-6 pb-2" : "pt-3 pb-3"
         )}
         role="banner"
       >
         <div className="container-luxury">
-          <div className="flex items-center justify-between">
+          {/* Floating glass capsule — a flat top-of-page bar on the
+              transparent hero, condensing into a rounded, blurred pill
+              once scrolled or on any non-transparent page. */}
+          <div
+            style={{ paddingLeft: "24px", paddingRight: "36px" }}
+            className={cn(
+              "flex items-center justify-between w-full min-w-0 h-16 rounded-[2rem] transition-all duration-500",
+              isTransparent
+                ? "bg-transparent"
+                : "bg-white/90 backdrop-blur-xl border border-white/60 shadow-[0_8px_32px_0_rgba(122,31,43,0.14)]"
+            )}
+          >
             {/* Logo */}
             <Link
               href="/"
-              className="flex items-center gap-3 group"
+              className={cn("flex items-center gap-2.5 group flex-shrink-0 rounded-xl", FOCUS_RING)}
               aria-label="Wedding With India — Home"
             >
-              <div className="w-10 h-10 rounded-xl bg-[var(--color-brand-primary)] flex items-center justify-center transition-transform group-hover:scale-105">
-                <Sparkles size={20} className="text-white" aria-hidden="true" />
+              <div className="relative w-10 h-10 flex-shrink-0">
+                {!prefersReducedMotion && (
+                  <div
+                    className="absolute inset-[-3px] rounded-xl opacity-70 animate-spin"
+                    style={{
+                      background:
+                        "conic-gradient(from 0deg, var(--color-brand-primary), var(--color-brand-secondary), var(--color-brand-primary))",
+                      animationDuration: "6s",
+                    }}
+                    aria-hidden="true"
+                  />
+                )}
+                <div className="relative w-10 h-10 rounded-xl bg-[var(--color-brand-primary)] flex items-center justify-center transition-transform duration-300 group-hover:scale-105 group-hover:rotate-6">
+                  <Sparkles size={20} className="text-white" aria-hidden="true" />
+                </div>
               </div>
-              <div className="flex flex-col">
+              <div className="hidden sm:flex flex-col justify-center leading-none">
                 <span
                   className={cn(
-                    "font-display font-bold text-xl tracking-tight transition-colors",
+                    "font-display font-bold text-[1.05rem] leading-tight tracking-tight whitespace-nowrap transition-colors",
                     isTransparent ? "text-white" : "text-[var(--color-brand-primary)]"
                   )}
                 >
@@ -249,8 +384,8 @@ export default function Navbar() {
                 </span>
                 <span
                   className={cn(
-                    "text-[0.65rem] font-medium uppercase tracking-widest transition-colors",
-                    isTransparent ? "text-white/80" : "text-[var(--color-brand-secondary)]"
+                    "text-[0.625rem] font-semibold uppercase tracking-wider whitespace-nowrap mt-0.5 transition-colors",
+                    isTransparent ? "text-white/75" : "text-[var(--color-brand-secondary)]"
                   )}
                 >
                   Attend Indian Weddings
@@ -260,16 +395,38 @@ export default function Navbar() {
 
             {/* Desktop Nav */}
             <nav
-              className="hidden lg:flex items-center gap-2"
+              className="relative hidden lg:flex items-center gap-0.5 flex-shrink-0"
               aria-label="Primary navigation"
+              onMouseLeave={() => setHoveredKey(null)}
             >
+              {/* Signature element: a soft gradient spotlight that glides
+                  beneath whichever nav item is hovered or active. */}
+              <span
+                aria-hidden="true"
+                className={cn(
+                  "absolute inset-y-0 left-0 rounded-full",
+                  isTransparent ? "bg-white/15" : "bg-maroon-50",
+                  !prefersReducedMotion &&
+                    "transition-[transform,width,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
+                  indicatorRect.visible ? "opacity-100" : "opacity-0"
+                )}
+                style={{
+                  width: indicatorRect.width,
+                  transform: `translateX(${indicatorRect.left}px)`,
+                }}
+              />
+
               {navItems.map((item) =>
                 item.children ? (
                   <div
                     key={item.label}
+                    ref={setItemRef(item.label)}
                     data-nav-dropdown
                     className="relative"
-                    onMouseEnter={() => setActiveDropdown(item.label)}
+                    onMouseEnter={() => {
+                      setActiveDropdown(item.label);
+                      setHoveredKey(item.label);
+                    }}
                     onMouseLeave={() => setActiveDropdown(null)}
                     onBlur={(e) => handleDropdownBlur(e, item.label)}
                   >
@@ -277,14 +434,15 @@ export default function Navbar() {
                       type="button"
                       onClick={() => toggleDropdown(item.label)}
                       className={cn(
-                        "flex items-center gap-1 px-4 py-2.5 rounded-xl font-medium text-sm transition-all duration-200",
+                        "relative z-10 flex items-center h-10 gap-1 px-3 rounded-full font-medium text-sm whitespace-nowrap transition-colors duration-200",
+                        FOCUS_RING,
                         isTransparent
-                          ? "text-white/90 hover:text-white hover:bg-white/10"
-                          : "text-charcoal-700 hover:text-[var(--color-brand-primary)] hover:bg-maroon-50",
+                          ? "text-white/90 hover:text-white"
+                          : "text-charcoal-700 hover:text-[var(--color-brand-primary)]",
                         isExploreActive &&
                           (isTransparent
-                            ? "text-white bg-white/15 font-semibold"
-                            : "text-[var(--color-brand-primary)] bg-maroon-50 font-semibold")
+                            ? "text-white font-semibold"
+                            : "text-[var(--color-brand-primary)] font-semibold")
                       )}
                       aria-haspopup="true"
                       aria-expanded={activeDropdown === item.label}
@@ -295,7 +453,7 @@ export default function Navbar() {
                         size={14}
                         className={cn(
                           "transition-transform duration-200",
-                          activeDropdown === item.label && "rotate-50"
+                          activeDropdown === item.label && "rotate-180"
                         )}
                         aria-hidden="true"
                       />
@@ -304,29 +462,46 @@ export default function Navbar() {
                     {/* Dropdown — a plain disclosure of nav links, not an
                         application "menu": there's no arrow-key roving focus
                         here, so role="menu"/"menuitem" would promise
-                        keyboard behaviour this doesn't implement. Tab order
-                        through the links themselves is the real interaction. */}
+                        keyboard behaviour this doesn't implement. Visibility
+                        (not just opacity) is toggled so closed links drop
+                        out of the tab order instead of staying invisibly
+                        focusable. */}
                     <div
                       className={cn(
-                        "absolute top-full left-0 mt-2 w-64 rounded-2xl bg-white shadow-[0_8px_40px_0_rgba(0,0,0,0.14)] border border-warm-200/60 overflow-hidden transition-all duration-200 origin-top-left",
+                        "absolute top-full left-0 mt-2 w-64 rounded-2xl bg-white shadow-[0_8px_40px_0_rgba(0,0,0,0.14)] border border-warm-200/60 overflow-hidden origin-top-left transition-[opacity,transform,visibility] duration-200",
                         activeDropdown === item.label
-                          ? "opacity-100 scale-100 pointer-events-auto"
-                          : "opacity-0 scale-95 pointer-events-none"
+                          ? "visible opacity-100 scale-100"
+                          : "invisible opacity-0 scale-95"
                       )}
+                      aria-hidden={activeDropdown !== item.label}
                     >
                       <div className="p-2">
-                        {item.children.map((child) => (
+                        {item.children.map((child, i) => (
                           <Link
                             key={child.href}
                             href={child.href}
-                            className="flex flex-col px-3 py-2.5 rounded-xl hover:bg-maroon-50 transition-colors duration-150 group"
+                            tabIndex={activeDropdown === item.label ? 0 : -1}
+                            style={
+                              !prefersReducedMotion
+                                ? {
+                                    transitionDelay:
+                                      activeDropdown === item.label ? `${i * 30}ms` : "0ms",
+                                  }
+                                : undefined
+                            }
+                            className={cn(
+                              "flex flex-col px-3 py-2.5 rounded-xl hover:bg-maroon-50 transition-all duration-200 group",
+                              FOCUS_RING,
+                              !prefersReducedMotion &&
+                                (activeDropdown === item.label
+                                  ? "opacity-100 translate-y-0"
+                                  : "opacity-0 -translate-y-1")
+                            )}
                           >
                             <span className="text-sm font-semibold text-charcoal-800 group-hover:text-[var(--color-brand-primary)] transition-colors">
                               {child.label}
                             </span>
-                            <span className="text-xs text-charcoal-400 mt-0.5">
-                              {child.description}
-                            </span>
+                            <span className="text-xs text-charcoal-500 mt-0.5">{child.description}</span>
                           </Link>
                         ))}
                       </div>
@@ -335,17 +510,18 @@ export default function Navbar() {
                 ) : (
                   <Link
                     key={item.label}
+                    ref={setItemRef(item.label)}
                     href={item.href}
+                    onMouseEnter={() => setHoveredKey(item.label)}
                     aria-current={isActiveHref(pathname, item.href) ? "page" : undefined}
                     className={cn(
-                      "px-4 py-2.5 rounded-xl font-medium text-sm transition-all duration-200",
+                      "relative z-10 flex items-center h-10 px-3 rounded-full font-medium text-sm whitespace-nowrap transition-colors duration-200",
+                      FOCUS_RING,
                       isTransparent
-                        ? "text-white/90 hover:text-white hover:bg-white/10"
-                        : "text-charcoal-700 hover:text-[var(--color-brand-primary)] hover:bg-maroon-50",
+                        ? "text-white/90 hover:text-white"
+                        : "text-charcoal-700 hover:text-[var(--color-brand-primary)]",
                       isActiveHref(pathname, item.href) &&
-                        (isTransparent
-                          ? "text-white bg-white/15 font-semibold"
-                          : "text-[var(--color-brand-primary)] bg-maroon-50 font-semibold")
+                        (isTransparent ? "text-white font-semibold" : "text-[var(--color-brand-primary)] font-semibold")
                     )}
                   >
                     {item.label}
@@ -354,36 +530,42 @@ export default function Navbar() {
               )}
             </nav>
 
-            <div className="hidden lg:flex items-center gap-3">
+            <div className="hidden lg:flex items-center gap-3 ml-4 flex-shrink-0">
               <div className="relative" ref={currencyPickerRef}>
                 <button
                   type="button"
-                  onClick={() => setShowCurrencyPicker(!showCurrencyPicker)}
-                  className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-warm-100 transition-colors text-charcoal-600"
+                  onClick={() => setShowCurrencyPicker((v) => !v)}
+                  className={cn(
+                    "h-10 w-10 rounded-full flex items-center justify-center flex-shrink-0 transition-colors",
+                    FOCUS_RING,
+                    isTransparent ? "text-white/90 hover:bg-white/10" : "text-charcoal-600 hover:bg-warm-100"
+                  )}
                   aria-label="Change currency"
+                  aria-haspopup="true"
                   aria-expanded={showCurrencyPicker}
                 >
                   <Globe size={18} aria-hidden="true" />
                 </button>
-                {showCurrencyPicker && (
-                  <div className="absolute right-0 top-full mt-2 bg-white border border-warm-200 rounded-xl shadow-lg p-2 min-w-[140px] z-50">
-                    {(["INR", "USD", "EUR"] as const).map((c) => (
-                      <button
-                        key={c}
-                        type="button"
-                        onClick={() => { setCurrency(c); setShowCurrencyPicker(false); }}
-                        className={cn(
-                          "w-full text-left px-3 py-2 rounded-lg text-sm font-semibold transition-colors",
-                          currency === c
-                            ? "bg-maroon-50 text-[var(--color-brand-primary)]"
-                            : "text-charcoal-600 hover:bg-warm-50"
-                        )}
-                      >
-                        {c === "INR" ? "₹ INR" : c === "USD" ? "$ USD" : "€ EUR"}
-                      </button>
-                    ))}
-                  </div>
-                )}
+                <div
+                  className={cn(
+                    "absolute right-0 top-full mt-2 bg-white border border-warm-200 rounded-2xl shadow-[0_8px_40px_0_rgba(0,0,0,0.14)] p-3 min-w-[210px] z-50 origin-top-right transition-[opacity,transform,visibility] duration-200",
+                    showCurrencyPicker ? "visible opacity-100 scale-100" : "invisible opacity-0 scale-95"
+                  )}
+                  aria-hidden={!showCurrencyPicker}
+                >
+                  <p className="text-[0.6875rem] font-bold uppercase tracking-wider text-charcoal-400 px-1 mb-2">
+                    Currency
+                  </p>
+                  <CurrencySwitcher
+                    value={currency}
+                    onChange={(c) => {
+                      setCurrency(c);
+                      setShowCurrencyPicker(false);
+                    }}
+                    reducedMotion={prefersReducedMotion}
+                    tabbable={showCurrencyPicker}
+                  />
+                </div>
               </div>
 
               {loading ? (
@@ -399,21 +581,26 @@ export default function Navbar() {
                   <Link
                     href="/dashboard/notifications"
                     className={cn(
-                      "relative p-2 rounded-xl transition-all duration-200",
+                      "relative h-10 w-10 flex items-center justify-center rounded-full transition-colors duration-200",
+                      FOCUS_RING,
                       isTransparent
                         ? "text-white/80 hover:text-white hover:bg-white/10"
                         : "text-charcoal-500 hover:text-charcoal-900 hover:bg-charcoal-100"
                     )}
-                    aria-label={
-                      unreadCount > 0
-                        ? `${unreadCount} unread notifications`
-                        : "Notifications"
-                    }
+                    aria-label={unreadCount > 0 ? `${unreadCount} unread notifications` : "Notifications"}
                   >
                     <Bell size={18} aria-hidden="true" />
                     {unreadCount > 0 && (
-                      <span className="absolute top-1 right-1 w-4 h-4 rounded-full bg-[var(--color-brand-primary)] text-white text-[0.5rem] font-bold flex items-center justify-center leading-none">
-                        {unreadCount > 9 ? "9+" : unreadCount}
+                      <span className="absolute top-1 right-1 flex h-4 w-4">
+                        {!prefersReducedMotion && (
+                          <span
+                            className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--color-brand-primary)] opacity-60"
+                            aria-hidden="true"
+                          />
+                        )}
+                        <span className="relative inline-flex items-center justify-center rounded-full h-4 w-4 bg-[var(--color-brand-primary)] text-white text-[0.5rem] font-bold leading-none">
+                          {unreadCount > 9 ? "9+" : unreadCount}
+                        </span>
                       </span>
                     )}
                   </Link>
@@ -422,17 +609,18 @@ export default function Navbar() {
                   <Link
                     href="/dashboard"
                     className={cn(
-                      "flex items-center gap-2 px-3 py-1.5 rounded-full font-semibold text-sm transition-all duration-200",
+                      "flex items-center gap-2 h-10 pl-1.5 pr-3 rounded-full font-semibold text-sm whitespace-nowrap transition-all duration-200",
+                      FOCUS_RING,
                       isTransparent
                         ? "text-white hover:bg-white/10 border border-white/30"
                         : "text-charcoal-700 hover:bg-maroon-50 hover:text-[var(--color-brand-primary)] border border-warm-200"
                     )}
                     aria-label="Go to your dashboard"
                   >
-                    <UserAvatar avatar={user.avatar} name={user.name} size={24} />
-                    <span className="hidden xl:inline max-w-[100px] truncate">
-                      {user.name.split(" ")[0]}
-                    </span>
+                    <div className="rounded-full p-[2px] bg-[image:var(--gradient-brand)]">
+                      <UserAvatar avatar={user.avatar} name={user.name} size={24} />
+                    </div>
+                    <span className="hidden xl:inline max-w-[100px] truncate">{user.name.split(" ")[0]}</span>
                     <LayoutDashboard size={14} aria-hidden="true" />
                   </Link>
                 </div>
@@ -441,7 +629,8 @@ export default function Navbar() {
                   <Link
                     href="/login"
                     className={cn(
-                      "text-sm font-semibold px-5 py-2.5 rounded-full transition-all duration-200",
+                      "flex items-center justify-center h-10 px-5 text-sm font-semibold rounded-full whitespace-nowrap transition-colors duration-200",
+                      FOCUS_RING,
                       isTransparent
                         ? "text-white/90 hover:text-white hover:bg-white/10"
                         : "text-[var(--color-brand-primary)] hover:bg-maroon-50"
@@ -451,7 +640,12 @@ export default function Navbar() {
                   </Link>
                   <Link
                     href="/weddings"
-                    className="btn btn-primary btn-sm"
+                    style={{ marginRight: "8px" }}
+                    className={cn(
+                      "flex items-center justify-center gap-1.5 h-10 px-5 text-sm font-semibold rounded-2xl whitespace-nowrap transition-all duration-200",
+                      FOCUS_RING,
+                      "text-white bg-[var(--color-brand-primary)] hover:bg-[var(--color-brand-primary)]/90 shadow-sm"
+                    )}
                   >
                     <Heart size={15} aria-hidden="true" />
                     Attend a Wedding
@@ -465,43 +659,33 @@ export default function Navbar() {
               ref={mobileToggleRef}
               type="button"
               className={cn(
-                "lg:hidden p-2 rounded-xl transition-all duration-200",
-                isTransparent
-                  ? "text-white hover:bg-white/10"
-                  : "text-charcoal-700 hover:bg-charcoal-100"
+                "lg:hidden h-10 w-10 flex items-center justify-center rounded-full transition-colors duration-200",
+                FOCUS_RING,
+                isTransparent ? "text-white hover:bg-white/10" : "text-charcoal-700 hover:bg-charcoal-100"
               )}
               onClick={() => setIsMobileOpen((prev) => !prev)}
               aria-label={isMobileOpen ? "Close menu" : "Open menu"}
               aria-expanded={isMobileOpen}
               aria-controls="mobile-menu"
             >
-              {isMobileOpen ? (
-                <X size={22} aria-hidden="true" />
-              ) : (
-                <Menu size={22} aria-hidden="true" />
-              )}
+              {isMobileOpen ? <X size={22} aria-hidden="true" /> : <Menu size={22} aria-hidden="true" />}
             </button>
           </div>
         </div>
       </header>
 
-      {/* Mobile Menu Overlay — deliberately stacked ABOVE the header (z-60 >
-          header's z-50). Previously both shared roughly the same top-right
-          corner at nearly the same z-index band, so the header's own close
-          (X) button and the drawer's separate close button could occupy the
-          same visual space at once. Stacking the whole overlay above the
-          header removes the ambiguity: while it's open, the drawer's own
-          close button is the only one in play. */}
+      {/* Mobile Menu Overlay — visibility (not just opacity/pointer-events)
+          is toggled so the whole drawer drops out of the tab order the
+          instant it's closed, while still playing its slide/fade-out
+          transition first. */}
       <div
         id="mobile-menu"
         role="dialog"
         aria-modal="true"
         aria-label="Navigation menu"
         className={cn(
-          "fixed inset-0 z-[60] lg:hidden transition-all duration-300",
-          isMobileOpen
-            ? "opacity-100 pointer-events-auto"
-            : "opacity-0 pointer-events-none"
+          "fixed inset-0 z-[60] lg:hidden transition-[opacity,visibility] duration-300",
+          isMobileOpen ? "visible opacity-100" : "invisible opacity-0"
         )}
       >
         {/* Backdrop */}
@@ -514,17 +698,13 @@ export default function Navbar() {
         {/* Drawer */}
         <div
           className={cn(
-            "absolute top-0 right-0 bottom-0 w-80 max-w-[90vw] bg-white flex flex-col shadow-2xl transition-transform duration-300",
+            "absolute top-0 right-0 bottom-0 w-80 max-w-[90vw] bg-white flex flex-col shadow-2xl transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
             isMobileOpen ? "translate-x-0" : "translate-x-full"
           )}
         >
           {/* Drawer header */}
           <div className="flex items-center justify-between p-5 border-b border-warm-200">
-            <Link
-              href="/"
-              className="flex items-center gap-2.5"
-              onClick={() => setIsMobileOpen(false)}
-            >
+            <Link href="/" className="flex items-center gap-2.5" onClick={() => setIsMobileOpen(false)}>
               <div className="w-8 h-8 rounded-lg bg-[var(--color-brand-primary)] flex items-center justify-center">
                 <Sparkles size={16} className="text-white" aria-hidden="true" />
               </div>
@@ -535,23 +715,39 @@ export default function Navbar() {
             <button
               type="button"
               onClick={() => setIsMobileOpen(false)}
-              className="p-1.5 rounded-lg hover:bg-charcoal-100 transition-colors"
+              className={cn(
+                "p-1.5 rounded-lg hover:bg-charcoal-100 transition-colors",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-1"
+              )}
               aria-label="Close menu"
             >
               <X size={20} aria-hidden="true" />
             </button>
           </div>
 
-          {/* Nav links */}
-          <nav className="flex-1 overflow-y-auto p-4 space-y-1">
-            {navItems.map((item) => (
-              <div key={item.label}>
+          {/* Nav links — each row's entrance is staggered slightly for a
+              coordinated reveal instead of everything popping in at once. */}
+          <nav className="flex-1 overflow-y-auto p-4 space-y-1" aria-label="Mobile navigation">
+            {navItems.map((item, index) => (
+              <div
+                key={item.label}
+                style={
+                  !prefersReducedMotion
+                    ? { transitionDelay: isMobileOpen ? `${index * 40 + 80}ms` : "0ms" }
+                    : undefined
+                }
+                className={cn(
+                  "transition-all duration-300",
+                  !prefersReducedMotion && (isMobileOpen ? "opacity-100 translate-x-0" : "opacity-0 translate-x-4")
+                )}
+              >
                 <Link
                   href={item.href}
                   onClick={() => setIsMobileOpen(false)}
                   aria-current={isActiveHref(pathname, item.href) ? "page" : undefined}
                   className={cn(
                     "flex items-center gap-3 px-4 py-3.5 rounded-xl font-semibold transition-colors",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-1",
                     isActiveHref(pathname, item.href)
                       ? "bg-maroon-50 text-[var(--color-brand-primary)]"
                       : "text-charcoal-800 hover:bg-maroon-50 hover:text-[var(--color-brand-primary)]"
@@ -566,7 +762,10 @@ export default function Navbar() {
                         key={child.href}
                         href={child.href}
                         onClick={() => setIsMobileOpen(false)}
-                        className="block px-3 py-2 rounded-lg text-sm text-charcoal-500 hover:text-[var(--color-brand-primary)] hover:bg-maroon-50 transition-colors"
+                        className={cn(
+                          "block px-3 py-2 rounded-lg text-sm text-charcoal-500 hover:text-[var(--color-brand-primary)] hover:bg-maroon-50 transition-colors",
+                          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-1"
+                        )}
                       >
                         {child.label}
                       </Link>
@@ -579,82 +778,65 @@ export default function Navbar() {
 
           {/* CTA area */}
           <div className="p-5 border-t border-warm-200 space-y-3">
-            {/* Currency selector for mobile */}
-            <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-warm-50 border border-warm-200 text-xs font-semibold text-charcoal-700 mb-1">
+            <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-warm-50 border border-warm-200 text-xs font-semibold text-charcoal-700">
               <span className="flex items-center gap-2">
                 <Globe size={15} className="text-charcoal-500" aria-hidden="true" />
                 Currency
               </span>
-              <div className="flex gap-1">
-                {(["INR", "USD", "EUR"] as const).map((c) => (
-                  <button
-                    key={c}
-                    type="button"
-                    onClick={() => setCurrency(c)}
-                    className={cn(
-                      "px-2.5 py-1 rounded-lg text-xs font-bold transition-colors",
-                      currency === c
-                        ? "bg-[var(--color-brand-primary)] text-white shadow-xs"
-                        : "text-charcoal-600 hover:bg-warm-100"
-                    )}
-                  >
-                    {c}
-                  </button>
-                ))}
-              </div>
             </div>
-             {user ? (
-               <>
-                 {/* User info row */}
-                 <Link
-                   href="/dashboard"
-                   onClick={() => setIsMobileOpen(false)}
-                   className="flex items-center gap-3 px-4 py-3 rounded-xl bg-maroon-50 border border-maroon-100 hover:bg-maroon-100 transition-colors"
-                   aria-label="Open dashboard"
-                 >
-                   <UserAvatar avatar={user.avatar} name={user.name} size={36} />
-                   <div className="min-w-0 flex-1">
-                     <div className="font-semibold text-charcoal-900 text-sm truncate">
-                       {user.name}
-                     </div>
-                     <div className="text-xs text-charcoal-500 capitalize">
-                       {user.role ?? "Guest"} · Dashboard
-                     </div>
-                   </div>
-                   {unreadCount > 0 && (
-                     <span className="flex-shrink-0 w-5 h-5 rounded-full bg-[var(--color-brand-primary)] text-white text-[0.5625rem] font-bold flex items-center justify-center">
-                       {unreadCount > 9 ? "9+" : unreadCount}
-                     </span>
-                   )}
-                 </Link>
-                 <Link
-                   href="/weddings"
-                   onClick={() => setIsMobileOpen(false)}
-                   className="btn btn-primary w-full justify-center"
-                 >
-                   <Heart size={16} aria-hidden="true" />
-                   Attend a Wedding
-                 </Link>
-               </>
-             ) : (
-               <>
-                 <Link
-                   href="/weddings"
-                   onClick={() => setIsMobileOpen(false)}
-                   className="btn btn-primary w-full justify-center"
-                 >
-                   <Heart size={16} aria-hidden="true" />
-                   Attend a Wedding
-                 </Link>
-                 <Link
-                   href="/login"
-                   onClick={() => setIsMobileOpen(false)}
-                   className="btn btn-outline w-full justify-center"
-                 >
-                   Sign In
-                 </Link>
-               </>
-             )}
+            <CurrencySwitcher value={currency} onChange={setCurrency} reducedMotion={prefersReducedMotion} compact />
+
+            {user ? (
+              <>
+                {/* User info row */}
+                <Link
+                  href="/dashboard"
+                  onClick={() => setIsMobileOpen(false)}
+                  className={cn(
+                    "flex items-center gap-3 px-4 py-3 rounded-xl bg-maroon-50 border border-maroon-100 hover:bg-maroon-100 transition-colors",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-1"
+                  )}
+                  aria-label="Open dashboard"
+                >
+                  <UserAvatar avatar={user.avatar} name={user.name} size={36} />
+                  <div className="min-w-0 flex-1">
+                    <div className="font-semibold text-charcoal-900 text-sm truncate">{user.name}</div>
+                    <div className="text-xs text-charcoal-500 capitalize">{user.role ?? "Guest"} · Dashboard</div>
+                  </div>
+                  {unreadCount > 0 && (
+                    <span className="flex-shrink-0 w-5 h-5 rounded-full bg-[var(--color-brand-primary)] text-white text-[0.5625rem] font-bold flex items-center justify-center">
+                      {unreadCount > 9 ? "9+" : unreadCount}
+                    </span>
+                  )}
+                </Link>
+                <Link
+                  href="/weddings"
+                  onClick={() => setIsMobileOpen(false)}
+                  className="btn btn-primary w-full justify-center"
+                >
+                  <Heart size={16} aria-hidden="true" />
+                  Attend a Wedding
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/weddings"
+                  onClick={() => setIsMobileOpen(false)}
+                  className="btn btn-primary w-full justify-center"
+                >
+                  <Heart size={16} aria-hidden="true" />
+                  Attend a Wedding
+                </Link>
+                <Link
+                  href="/login"
+                  onClick={() => setIsMobileOpen(false)}
+                  className="btn btn-outline w-full justify-center"
+                >
+                  Sign In
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </div>

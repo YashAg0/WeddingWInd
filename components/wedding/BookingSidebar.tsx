@@ -33,7 +33,7 @@ export function BookingSidebar({ wedding }: BookingSidebarProps) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const availableSlots = wedding.guestsAllowed - wedding.guestsBooked;
-  const activeTier: PricingTier = PRICING_TIERS[selectedTierKey] || PRICING_TIERS.CULTURAL_GUEST;
+  const activeTier: PricingTier = PRICING_TIERS[selectedTierKey] || PRICING_TIERS.PREMIUM;
 
   const subtotalINR = activeTier.priceINR * guestsCount;
 
@@ -72,7 +72,7 @@ export function BookingSidebar({ wedding }: BookingSidebarProps) {
   };
 
   return (
-    <aside className="sticky top-28 bg-white border border-warm-200/60 rounded-3xl p-6 shadow-[0_16px_48px_-16px_rgba(107,16,38,0.08)] flex flex-col gap-6" aria-label="Booking widget">
+    <aside data-testid="booking-form" className="sticky top-28 bg-white border border-warm-200/60 rounded-3xl p-6 shadow-[0_16px_48px_-16px_rgba(107,16,38,0.08)] flex flex-col gap-6" aria-label="Booking widget">
       {/* Header & Verification */}
       <div className="flex justify-between items-center pb-4 border-b border-warm-200">
         <div>

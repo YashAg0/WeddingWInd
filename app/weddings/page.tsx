@@ -5,6 +5,7 @@ import { WeddingCard } from "@/components/wedding/WeddingCard";
 import { MarketplaceHeader } from "@/components/wedding/MarketplaceHeader";
 import { FilterSidebar } from "@/components/wedding/FilterSidebar";
 import { Flower2 } from "lucide-react";
+import { SortSelect } from "./SortSelect";
 
 export const metadata: Metadata = {
   title: "Browse Weddings",
@@ -155,7 +156,7 @@ export default async function WeddingsPage({ searchParams }: PageProps) {
           </div>
 
           {/* Marketplace Listing area */}
-          <main className="col-span-1 lg:col-span-3 flex flex-col gap-6" role="main">
+          <div className="col-span-1 lg:col-span-3 flex flex-col gap-6">
             {/* Top Toolbar / Counts & Sorting */}
             <div className="flex items-center justify-between bg-white border border-warm-200/40 px-5 py-3 rounded-2xl shadow-sm">
               <span className="text-xs font-semibold text-charcoal-500 uppercase tracking-widest">
@@ -192,7 +193,7 @@ export default async function WeddingsPage({ searchParams }: PageProps) {
                 </p>
               </div>
             )}
-          </main>
+          </div>
         </div>
         </div>
       </div>
@@ -206,7 +207,6 @@ function MarketplaceHeaderWrapper() {
 }
 
 // Client wrapper for Sort dropdown to update Search params
-import { SortSelect } from "./SortSelect";
 function SortDropdownWrapper({ activeSort }: { activeSort: string }) {
   return <SortSelect activeSort={activeSort} />;
 }

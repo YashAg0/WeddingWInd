@@ -1,7 +1,6 @@
 import Image from "next/image";
-import { Star, Quote, Sparkles } from "lucide-react";
+import { Star, Quote, Sparkles, Heart } from "lucide-react";
 import { SectionHeader } from "@/components/ui/SectionHeader";
-import { BUSINESS_METRICS } from "@/lib/constants/business-metrics";
 import type { Testimonial } from "@/types";
 
 interface TestimonialsProps {
@@ -11,31 +10,33 @@ interface TestimonialsProps {
 function TestimonialCard({ testimonial }: { testimonial: Testimonial }) {
   return (
     <article
-      className="card-luxury p-6 sm:p-8 flex flex-col gap-5"
+      className="card-luxury p-6 sm:p-8 flex flex-col gap-5 bg-white"
       aria-label={`Testimonial from ${testimonial.name}`}
     >
-      {/* Quote icon */}
+      {/* Large decorative quote mark */}
       <div
-        className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-        style={{ background: "linear-gradient(135deg, #fdf2f4 0%, #fbe6ea 100%)" }}
+        className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
+        style={{
+          background: "linear-gradient(135deg, var(--color-maroon-50) 0%, var(--color-warm-100) 100%)",
+        }}
         aria-hidden="true"
       >
         <Quote
-          size={18}
+          size={22}
           className="text-[var(--color-brand-primary)]"
         />
       </div>
 
       {/* Stars */}
       <div
-        className="flex items-center gap-0.5"
+        className="flex items-center gap-1"
         aria-label={`${testimonial.rating} out of 5 stars`}
         role="img"
       >
         {Array.from({ length: 5 }).map((_, i) => (
           <Star
             key={i}
-            size={14}
+            size={16}
             className={
               i < testimonial.rating
                 ? "text-[var(--color-brand-secondary)] fill-[var(--color-brand-secondary)]"
@@ -47,20 +48,20 @@ function TestimonialCard({ testimonial }: { testimonial: Testimonial }) {
       </div>
 
       {/* Content */}
-      <blockquote className="text-charcoal-900 text-base font-medium leading-relaxed flex-1">
+      <blockquote className="text-charcoal-900 text-base font-medium leading-relaxed flex-1 italic">
         &ldquo;{testimonial.content}&rdquo;
       </blockquote>
 
       {/* Wedding type tag */}
       <div>
-        <span className="inline-flex items-center text-xs font-semibold text-[var(--color-brand-primary)] bg-maroon-50 px-3 py-1 rounded-full border border-maroon-100">
+        <span className="inline-flex items-center text-xs font-semibold text-[var(--color-brand-primary)] bg-maroon-50 px-3 py-1.5 rounded-full border border-maroon-100">
           <Sparkles size={12} className="mr-1.5 text-[var(--color-brand-primary)]" aria-hidden="true" />
           {testimonial.weddingType}
         </span>
       </div>
 
       {/* Author */}
-      <footer className="flex items-center gap-3 pt-2 border-t border-warm-100">
+      <footer className="flex items-center gap-3 pt-4 border-t border-warm-100">
         <div className="relative w-11 h-11 rounded-full overflow-hidden flex-shrink-0 border-2 border-[var(--color-brand-secondary)]/30">
           <Image
             src={testimonial.avatar}
@@ -74,7 +75,7 @@ function TestimonialCard({ testimonial }: { testimonial: Testimonial }) {
           <div className="font-bold text-charcoal-900 text-base">
             {testimonial.name}
           </div>
-          <div className="text-sm font-medium text-charcoal-600 mt-0.5">
+          <div className="text-sm font-medium text-charcoal-500 mt-0.5">
             {testimonial.role} · {testimonial.date}
           </div>
         </div>
@@ -88,60 +89,67 @@ export function Testimonials({ testimonials }: TestimonialsProps) {
     <>
       <section
         id="testimonials"
-        className="section-padding"
+        className="section-padding relative overflow-hidden"
         aria-labelledby="testimonials-heading"
+        style={{
+          background: "linear-gradient(180deg, var(--color-warm-50) 0%, var(--color-warm-100) 50%, var(--color-warm-50) 100%)",
+        }}
       >
-      <div className="container-luxury">
-        <SectionHeader
-          id="testimonials-heading"
-          label="Guest Stories"
-          title="What Our Guests Say"
-          highlightedWord="Guests"
-          description="Real experiences from travellers who stepped into a celebration they'll never forget."
-          className="mb-14"
-          theme="dark"
+        {/* Subtle brand glow */}
+        <div
+          className="pointer-events-none absolute bottom-0 right-0 w-96 h-96 rounded-full blur-3xl opacity-[0.06]"
+          style={{ background: "var(--color-brand-primary)" }}
+          aria-hidden="true"
         />
 
-        <div
-          className="grid grid-cols-1 md:grid-cols-2 gap-6"
-          role="list"
-          aria-label="Guest testimonials"
-        >
-          {testimonials.map((testimonial) => (
-            <div key={testimonial.id} role="listitem">
-              <TestimonialCard testimonial={testimonial} />
-            </div>
-          ))}
-        </div>
+        <div className="container-luxury relative z-10">
+          <SectionHeader
+            id="testimonials-heading"
+            label="Guest Stories"
+            title="Voices from Our Celebrations"
+            highlightedWord="Celebrations"
+            description="Real experiences from travellers who stepped into an Indian family celebration they'll never forget."
+            className="mb-14"
+            theme="light"
+          />
 
-        {/* Trust stats bar */}
-        <div
-          className="mt-14 grid grid-cols-2 sm:grid-cols-4 gap-6 text-center"
-          aria-label="Platform trust statistics"
-        >
-          {[
-            { value: BUSINESS_METRICS.AVERAGE_RATING_LABEL, label: "Average Guest Rating" },
-            { value: `${BUSINESS_METRICS.WOULD_RECOMMEND_PERCENT}%`, label: "Would Recommend" },
-            { value: BUSINESS_METRICS.GUESTS_ATTENDED, label: "Experiences Delivered" },
-            { value: BUSINESS_METRICS.COUNTRIES_REPRESENTED, label: "Countries Represented" },
-          ].map(({ value, label }) => (
-            <div key={label}>
-              <div
-                className="font-display font-bold text-2xl sm:text-3xl mb-1"
-                style={{
-                  background: "linear-gradient(135deg, #fcd34d, #c9972a)",
-                  WebkitBackgroundClip: "text",
-                  backgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                }}
-              >
-                {value}
+          <div
+            className="grid grid-cols-1 md:grid-cols-2 gap-6"
+            role="list"
+            aria-label="Guest testimonials"
+          >
+            {testimonials.map((testimonial) => (
+              <div key={testimonial.id} role="listitem">
+                <TestimonialCard testimonial={testimonial} />
               </div>
-              <div className="text-white/90 text-sm font-medium">{label}</div>
+            ))}
+          </div>
+
+          {/* Pre-launch trust editorial note — honest and premium-feeling */}
+          <div
+            className="mt-14 rounded-2xl border border-warm-200 p-8 flex flex-col sm:flex-row items-center gap-6"
+            style={{
+              background: "linear-gradient(135deg, white 0%, var(--color-warm-50) 100%)",
+            }}
+          >
+            <div
+              className="flex-shrink-0 w-14 h-14 rounded-2xl flex items-center justify-center"
+              style={{ background: "linear-gradient(135deg, var(--color-maroon-50), var(--color-warm-100))" }}
+              aria-hidden="true"
+            >
+              <Heart size={24} className="text-[var(--color-brand-primary)]" />
             </div>
-          ))}
+            <div className="text-center sm:text-left">
+              <p className="font-bold text-charcoal-900 text-lg mb-1">
+                Be among the first to experience this
+              </p>
+              <p className="text-charcoal-500 text-sm leading-relaxed max-w-xl">
+                WeddingWithIndia is now welcoming its founding guests. Every review and story
+                shared here comes from a real celebration. Yours could be next.
+              </p>
+            </div>
+          </div>
         </div>
-      </div>
       </section>
     </>
   );
