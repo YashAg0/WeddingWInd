@@ -324,7 +324,7 @@ export default function BookingCard({ booking, onCancel }: BookingCardProps) {
                           <Star
                             size={14}
                             className={
-                              s <= (categoryRatings as any)[dim.key]
+                              s <= categoryRatings[dim.key as keyof typeof categoryRatings]
                                 ? "text-[var(--color-brand-secondary)] fill-[var(--color-brand-secondary)]"
                                 : "text-warm-200"
                             }

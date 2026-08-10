@@ -32,6 +32,9 @@ jest.mock("@/lib/prisma", () => ({
     caseTimelineEvent: {
       create: jest.fn(),
     },
+    auditLog: {
+      create: jest.fn(),
+    },
     $transaction: jest.fn().mockImplementation(async (callback) => {
       return await callback(prisma);
     }),

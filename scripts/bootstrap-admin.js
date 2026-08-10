@@ -14,14 +14,23 @@ async function main() {
     const targetEmail = email.trim().toLowerCase();
     console.log(`Connecting to database to lookup user: ${targetEmail}`);
 
-    const user = await prisma.user.findUnique({
+    let user = await prisma.user.findUnique({
       where: { email: targetEmail }
     });
 
     if (!user) {
-      console.error(`Error: User with email "${targetEmail}" not found in database.`);
-      console.error("Please ensure the user has signed up through Clerk and synced their account with the database first.");
-      process.exit(1);
+      console.warn(`User with email "${targetEmail}" not found in database.`);
+      console.log(`Creating initial admin record. The user MUST sign in with this exact email to link their Clerk account.`);
+      
+      user = await prisma.user.create({
+        data: {
+          email: targetEmail,
+          clerkUserId: `pending_admin_${Date.now()}`,
+          name: "Admin User",
+          role: "ADMIN",
+          status: "ACTIVE"
+        }
+      });
     }
 
     const updated = await prisma.user.update({

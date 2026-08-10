@@ -1,0 +1,905 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: homepage.spec.ts >> Phase 3: Homepage Verification >> Hero section renders and is above the fold
+- Location: e2e\homepage.spec.ts:12:7
+
+# Error details
+
+```
+Test timeout of 30000ms exceeded while running "beforeEach" hook.
+```
+
+```
+Error: page.goto: Test timeout of 30000ms exceeded.
+Call log:
+  - navigating to "http://localhost:3000/", waiting until "load"
+
+```
+
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - link "Skip to main content" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - link "Skip to main content" [ref=e3] [cursor=pointer]:
+    - /url: "#main-content"
+  - banner [ref=e4]:
+    - generic [ref=e6]:
+      - link "Wedding With India — Home" [ref=e7] [cursor=pointer]:
+        - /url: /
+        - img [ref=e11]
+        - generic [ref=e13]:
+          - generic [ref=e14]: Wedding With India
+          - generic [ref=e15]: Attend Indian Weddings
+      - navigation "Primary navigation" [ref=e16]:
+        - button "Explore Weddings" [ref=e18]:
+          - text: Explore Weddings
+          - img [ref=e19]
+        - link "How It Works?" [ref=e21] [cursor=pointer]:
+          - /url: /#how-it-works
+        - link "Destinations" [ref=e22] [cursor=pointer]:
+          - /url: /#countries
+        - link "Host Your Wedding" [ref=e23] [cursor=pointer]:
+          - /url: /list-wedding
+      - button "Change currency" [ref=e26]:
+        - img [ref=e27]
+  - main [ref=e33]:
+    - region "Hero — Experience Our Indian Weddings" [ref=e34]:
+      - img [ref=e37]
+      - generic:
+        - generic:
+          - img
+        - generic:
+          - img
+        - generic:
+          - img
+        - generic:
+          - img
+      - generic [ref=e40]:
+        - generic [ref=e41]: The World's Most Trusted Indian Wedding Platform
+        - heading "Experience Our Indian Weddings" [level=1] [ref=e45]
+        - paragraph [ref=e46]: Join Host Families in Rajasthan, Goa, and Kerala as an honored guest. Beyond travel lies belonging — become part of the celebration.
+        - generic [ref=e48]:
+          - generic [ref=e49]:
+            - img [ref=e50]
+            - generic [ref=e53]:
+              - generic [ref=e54]: Where
+              - textbox "Where" [ref=e55]:
+                - /placeholder: Rajasthan, Goa, Kerala…
+          - generic [ref=e57]:
+            - img [ref=e58]
+            - generic [ref=e60]:
+              - generic [ref=e61]: Wedding Style
+              - combobox "Select wedding style" [ref=e62] [cursor=pointer]:
+                - option "All styles" [selected]
+                - option "Royal"
+                - option "Punjabi"
+                - option "South Indian"
+                - option "Beach"
+                - option "Destination"
+                - option "Traditional"
+              - img
+          - generic [ref=e64]:
+            - img [ref=e65]
+            - generic [ref=e67]:
+              - generic [ref=e68]: When
+              - textbox "Select month" [ref=e69]
+          - link "Search weddings" [ref=e70] [cursor=pointer]:
+            - /url: /weddings
+            - img [ref=e71]
+            - generic [ref=e74]: Search
+        - generic [ref=e75]:
+          - generic [ref=e76]: Trending
+          - generic [ref=e77]:
+            - button "Search Rajasthan Royal Wedding" [ref=e78]: Rajasthan Royal Wedding
+            - generic [ref=e79]: ·
+          - generic [ref=e80]:
+            - button "Search Goa Beach Wedding" [ref=e81]: Goa Beach Wedding
+            - generic [ref=e82]: ·
+          - generic [ref=e83]:
+            - button "Search Punjabi Wedding" [ref=e84]: Punjabi Wedding
+            - generic [ref=e85]: ·
+          - button "Search South Indian Temple Wedding" [ref=e87]: South Indian Temple Wedding
+        - list "Platform trust signals" [ref=e88]:
+          - listitem [ref=e89]:
+            - img [ref=e91]
+            - generic [ref=e94]:
+              - generic [ref=e95]: 100% Verified Hosts
+              - generic [ref=e96]: Every family personally vetted
+          - listitem [ref=e97]:
+            - img [ref=e99]
+            - generic [ref=e101]:
+              - generic [ref=e102]: Curated Celebrations Only
+              - generic [ref=e103]: Every wedding hand-selected
+          - listitem [ref=e104]:
+            - img [ref=e106]
+            - generic [ref=e108]:
+              - generic [ref=e109]: Secure Transparent Payments
+              - generic [ref=e110]: AES-256 encrypted & protected
+      - generic [ref=e114]: Scroll
+    - region "Handpicked Celebrations" [ref=e115]:
+      - generic:
+        - img
+      - generic [ref=e117]:
+        - generic [ref=e118]:
+          - generic [ref=e119]:
+            - generic [ref=e120]: Featured Weddings
+            - heading "Handpicked Celebrations" [level=2] [ref=e121]
+            - paragraph [ref=e122]: Verified, curated, and ready to welcome you. Every listing meets our luxury standard.
+          - link "View all weddings" [ref=e123] [cursor=pointer]:
+            - /url: /weddings
+            - text: Explore All Weddings
+            - img [ref=e124]
+        - list "Featured wedding listings" [ref=e126]:
+          - listitem [ref=e127]:
+            - article "Royal Maharaja Palace Wedding" [ref=e128]:
+              - generic [ref=e129]:
+                - img "Royal Maharaja Palace Wedding wedding in Jagmandir Island Palace, Lake Pichola, Udaipur" [ref=e130]
+                - generic [ref=e132]:
+                  - generic [ref=e133]: Royal
+                  - generic [ref=e134]: Verified Showcase
+                - button "Save Royal Maharaja Palace Wedding to wishlist" [ref=e135]:
+                  - img [ref=e136]
+                - generic [ref=e138]:
+                  - img [ref=e139]
+                  - generic [ref=e142]: Jagmandir Island Palace, Lake Pichola, Udaipur
+              - generic [ref=e143]:
+                - generic [ref=e144]:
+                  - heading "Royal Maharaja Palace Wedding" [level=3] [ref=e145]
+                  - generic [ref=e146]: New
+                - generic [ref=e147]:
+                  - img "Rathore Royal Family of Mewar" [ref=e149]
+                  - generic [ref=e150]: Hosted by Rathore Royal Family of Mewar
+                - generic [ref=e151]:
+                  - img [ref=e152]
+                  - generic [ref=e154]: 18 Nov 2026
+                - generic "Wedding highlights" [ref=e155]:
+                  - generic [ref=e156]: Palace
+                  - generic [ref=e157]: Royal Heritage
+                  - generic [ref=e158]: Lake Pichola
+                - generic [ref=e159]:
+                  - generic [ref=e160]:
+                    - generic [ref=e161]:
+                      - img [ref=e162]
+                      - generic [ref=e167]: 30 seats remaining
+                    - generic [ref=e168]: Almost full!
+                  - progressbar "0% booked" [ref=e169]
+                - generic [ref=e170]:
+                  - generic [ref=e171]:
+                    - generic [ref=e172]:
+                      - generic [ref=e173]: $6.81
+                      - generic [ref=e174]: /guest
+                    - text: All inclusive
+                  - link "Reserve your seat at Royal Maharaja Palace Wedding" [ref=e175] [cursor=pointer]:
+                    - /url: /weddings/royal-maharaja-palace-wedding-udaipur
+                    - text: Reserve Seat
+          - listitem [ref=e176]:
+            - article "Goa Sunset Beachfront Wedding" [ref=e177]:
+              - generic [ref=e178]:
+                - img "Goa Sunset Beachfront Wedding wedding in Riva Beach Resort, Mandrem Beach, South Goa" [ref=e179]
+                - generic [ref=e181]:
+                  - generic [ref=e182]: Beach
+                  - generic [ref=e183]: Handpicked Experience
+                - button "Save Goa Sunset Beachfront Wedding to wishlist" [ref=e184]:
+                  - img [ref=e185]
+                - generic [ref=e187]:
+                  - img [ref=e188]
+                  - generic [ref=e191]: Riva Beach Resort, Mandrem Beach, South Goa
+              - generic [ref=e192]:
+                - generic [ref=e193]:
+                  - heading "Goa Sunset Beachfront Wedding" [level=3] [ref=e194]
+                  - generic [ref=e195]: New
+                - generic [ref=e196]:
+                  - img "Fernandes Family of Goa" [ref=e198]
+                  - generic [ref=e199]: Hosted by Fernandes Family of Goa
+                - generic [ref=e200]:
+                  - img [ref=e201]
+                  - generic [ref=e203]: 10 Dec 2026
+                - generic "Wedding highlights" [ref=e204]:
+                  - generic [ref=e205]: Beachfront
+                  - generic [ref=e206]: Ocean Sunset
+                  - generic [ref=e207]: Seafood Feast
+                - generic [ref=e208]:
+                  - generic [ref=e209]:
+                    - generic [ref=e210]:
+                      - img [ref=e211]
+                      - generic [ref=e216]: 25 seats remaining
+                    - generic [ref=e217]: Almost full!
+                  - progressbar "0% booked" [ref=e218]
+                - generic [ref=e219]:
+                  - generic [ref=e220]:
+                    - generic [ref=e221]:
+                      - generic [ref=e222]: $4.71
+                      - generic [ref=e223]: /guest
+                    - text: All inclusive
+                  - link "Reserve your seat at Goa Sunset Beachfront Wedding" [ref=e224] [cursor=pointer]:
+                    - /url: /weddings/goa-sunset-beachfront-wedding
+                    - text: Reserve Seat
+          - listitem [ref=e225]:
+            - article "Rajasthani Fort Heritage Celebration" [ref=e226]:
+              - generic [ref=e227]:
+                - img "Rajasthani Fort Heritage Celebration wedding in Chomu Palace Fort, Jaipur" [ref=e228]
+                - generic [ref=e230]:
+                  - generic [ref=e231]: Royal
+                  - generic [ref=e232]: Verified Showcase
+                - button "Save Rajasthani Fort Heritage Celebration to wishlist" [ref=e233]:
+                  - img [ref=e234]
+                - generic [ref=e236]:
+                  - img [ref=e237]
+                  - generic [ref=e240]: Chomu Palace Fort, Jaipur
+              - generic [ref=e241]:
+                - generic [ref=e242]:
+                  - heading "Rajasthani Fort Heritage Celebration" [level=3] [ref=e243]
+                  - generic [ref=e244]: New
+                - generic [ref=e245]:
+                  - img "Shekhawat Heritage Family" [ref=e247]
+                  - generic [ref=e248]: Hosted by Shekhawat Heritage Family
+                - generic [ref=e249]:
+                  - img [ref=e250]
+                  - generic [ref=e252]: 25 Nov 2026
+                - generic "Wedding highlights" [ref=e253]:
+                  - generic [ref=e254]: Heritage Fort
+                  - generic [ref=e255]: Jaipur Palace
+                  - generic [ref=e256]: Royal Procession
+                - generic [ref=e257]:
+                  - generic [ref=e259]:
+                    - img [ref=e260]
+                    - generic [ref=e265]: 35 seats remaining
+                  - progressbar "0% booked" [ref=e266]
+                - generic [ref=e267]:
+                  - generic [ref=e268]:
+                    - generic [ref=e269]:
+                      - generic [ref=e270]: $6.07
+                      - generic [ref=e271]: /guest
+                    - text: All inclusive
+                  - link "Reserve your seat at Rajasthani Fort Heritage Celebration" [ref=e272] [cursor=pointer]:
+                    - /url: /weddings/rajasthani-fort-heritage-celebration-jaipur
+                    - text: Reserve Seat
+          - listitem [ref=e273]:
+            - article "Kerala Sacred Temple & Backwater Ceremony" [ref=e274]:
+              - generic [ref=e275]:
+                - img "Kerala Sacred Temple & Backwater Ceremony wedding in Kumarakom Lake Resort, Vembanad Lake, Kerala" [ref=e276]
+                - generic [ref=e278]:
+                  - generic [ref=e279]: South Indian
+                  - generic [ref=e280]: Handpicked Experience
+                - button "Save Kerala Sacred Temple & Backwater Ceremony to wishlist" [ref=e281]:
+                  - img [ref=e282]
+                - generic [ref=e284]:
+                  - img [ref=e285]
+                  - generic [ref=e288]: Kumarakom Lake Resort, Vembanad Lake, Kerala
+              - generic [ref=e289]:
+                - generic [ref=e290]:
+                  - heading "Kerala Sacred Temple & Backwater Ceremony" [level=3] [ref=e291]
+                  - generic [ref=e292]: New
+                - generic [ref=e293]:
+                  - img "Nambiar Heritage Family of Travancore" [ref=e295]
+                  - generic [ref=e296]: Hosted by Nambiar Heritage Family of Travancore
+                - generic [ref=e297]:
+                  - img [ref=e298]
+                  - generic [ref=e300]: 30 Nov 2026
+                - generic "Wedding highlights" [ref=e301]:
+                  - generic [ref=e302]: Temple Wedding
+                  - generic [ref=e303]: Backwater Houseboat
+                  - generic [ref=e304]: Traditional Sadhya
+                - generic [ref=e305]:
+                  - generic [ref=e306]:
+                    - generic [ref=e307]:
+                      - img [ref=e308]
+                      - generic [ref=e313]: 20 seats remaining
+                    - generic [ref=e314]: Almost full!
+                  - progressbar "0% booked" [ref=e315]
+                - generic [ref=e316]:
+                  - generic [ref=e317]:
+                    - generic [ref=e318]:
+                      - generic [ref=e319]: $3.98
+                      - generic [ref=e320]: /guest
+                    - text: All inclusive
+                  - link "Reserve your seat at Kerala Sacred Temple & Backwater Ceremony" [ref=e321] [cursor=pointer]:
+                    - /url: /weddings/kerala-sacred-temple-backwater-ceremony
+                    - text: Reserve Seat
+          - listitem [ref=e322]:
+            - article "Punjabi Big Fat Wedding & Bhangra Night" [ref=e323]:
+              - generic [ref=e324]:
+                - img "Punjabi Big Fat Wedding & Bhangra Night wedding in Fort Gobindgarh, Amritsar" [ref=e325]
+                - generic [ref=e327]:
+                  - generic [ref=e328]: Punjabi
+                  - generic [ref=e329]: Verified Showcase
+                - button "Save Punjabi Big Fat Wedding & Bhangra Night to wishlist" [ref=e330]:
+                  - img [ref=e331]
+                - generic [ref=e333]:
+                  - img [ref=e334]
+                  - generic [ref=e337]: Fort Gobindgarh, Amritsar
+              - generic [ref=e338]:
+                - generic [ref=e339]:
+                  - heading "Punjabi Big Fat Wedding & Bhangra Night" [level=3] [ref=e340]
+                  - generic [ref=e341]: New
+                - generic [ref=e342]:
+                  - img "Dhillon Family of Amritsar" [ref=e344]
+                  - generic [ref=e345]: Hosted by Dhillon Family of Amritsar
+                - generic [ref=e346]:
+                  - img [ref=e347]
+                  - generic [ref=e349]: 5 Dec 2026
+                - generic "Wedding highlights" [ref=e350]:
+                  - generic [ref=e351]: Punjabi Wedding
+                  - generic [ref=e352]: Bhangra Dhol
+                  - generic [ref=e353]: Grand Feast
+                - generic [ref=e354]:
+                  - generic [ref=e355]:
+                    - generic [ref=e356]:
+                      - img [ref=e357]
+                      - generic [ref=e362]: 30 seats remaining
+                    - generic [ref=e363]: Almost full!
+                  - progressbar "0% booked" [ref=e364]
+                - generic [ref=e365]:
+                  - generic [ref=e366]:
+                    - generic [ref=e367]:
+                      - generic [ref=e368]: $5.13
+                      - generic [ref=e369]: /guest
+                    - text: All inclusive
+                  - link "Reserve your seat at Punjabi Big Fat Wedding & Bhangra Night" [ref=e370] [cursor=pointer]:
+                    - /url: /weddings/punjabi-big-fat-wedding-amritsar
+                    - text: Reserve Seat
+          - listitem [ref=e371]:
+            - article "Himalayan Heritage Destination Celebration" [ref=e372]:
+              - generic [ref=e373]:
+                - img "Himalayan Heritage Destination Celebration wedding in Wildflower Hall, An Oberoi Resort, Shimla" [ref=e374]
+                - generic [ref=e376]:
+                  - generic [ref=e377]: Destination
+                  - generic [ref=e378]: Verified Showcase
+                - button "Save Himalayan Heritage Destination Celebration to wishlist" [ref=e379]:
+                  - img [ref=e380]
+                - generic [ref=e382]:
+                  - img [ref=e383]
+                  - generic [ref=e386]: Wildflower Hall, An Oberoi Resort, Shimla
+              - generic [ref=e387]:
+                - generic [ref=e388]:
+                  - heading "Himalayan Heritage Destination Celebration" [level=3] [ref=e389]
+                  - generic [ref=e390]: New
+                - generic [ref=e391]:
+                  - img "Anand Family of Shimla" [ref=e393]
+                  - generic [ref=e394]: Hosted by Anand Family of Shimla
+                - generic [ref=e395]:
+                  - img [ref=e396]
+                  - generic [ref=e398]: 15 Dec 2026
+                - generic "Wedding highlights" [ref=e399]:
+                  - generic [ref=e400]: Himalayas
+                  - generic [ref=e401]: Mountain View
+                  - generic [ref=e402]: Pine Forest
+                - generic [ref=e403]:
+                  - generic [ref=e404]:
+                    - generic [ref=e405]:
+                      - img [ref=e406]
+                      - generic [ref=e411]: 20 seats remaining
+                    - generic [ref=e412]: Almost full!
+                  - progressbar "0% booked" [ref=e413]
+                - generic [ref=e414]:
+                  - generic [ref=e415]:
+                    - generic [ref=e416]:
+                      - generic [ref=e417]: $5.45
+                      - generic [ref=e418]: /guest
+                    - text: All inclusive
+                  - link "Reserve your seat at Himalayan Heritage Destination Celebration" [ref=e419] [cursor=pointer]:
+                    - /url: /weddings/himalayan-heritage-destination-shimla
+                    - text: Reserve Seat
+        - generic [ref=e420]:
+          - link "Explore Our Indian Weddings" [ref=e421] [cursor=pointer]:
+            - /url: /weddings
+            - text: Explore Our Indian Weddings
+            - img [ref=e422]
+          - paragraph [ref=e424]: Awaiting first verified celebration weddings across India and beyond
+    - region "Your Journey to Our Indian Weddings" [ref=e425]:
+      - generic:
+        - img
+      - generic [ref=e426]:
+        - generic [ref=e427]:
+          - generic [ref=e428]: The Invitation
+          - heading "Your Journey to Our Indian Weddings" [level=2] [ref=e429]
+          - paragraph [ref=e430]: From Discovery to Celebration, Four steps carry you from stranger to guest of honour.
+        - generic [ref=e431]:
+          - img
+          - generic [ref=e432]:
+            - generic [ref=e433]:
+              - img [ref=e439]
+              - 'generic "Step 1: Discover. Explore Our Indian Weddings across diverse regions. Each celebration is chosen for its authentic cultural heritage." [ref=e442]':
+                - generic [ref=e443]:
+                  - generic [ref=e444]:
+                    - img [ref=e445]
+                    - generic [ref=e447]: "01"
+                  - generic [ref=e448]:
+                    - heading "Discover" [level=3] [ref=e450]
+                    - paragraph [ref=e451]: Explore Our Indian Weddings across diverse regions. Each celebration is chosen for its authentic cultural heritage.
+                    - paragraph [ref=e453]: Browse by region, style, and season. Every listing carries real photos from the host family and honest words from past guests.
+                    - generic [ref=e454]:
+                      - text: Read more
+                      - img [ref=e455]
+                  - img [ref=e457]
+            - generic [ref=e459]:
+              - img [ref=e465]
+              - 'generic "Step 2: Reserve Your Seat. Request an invitation to join the family. Connect with a personal cultural guide for your journey." [ref=e468]':
+                - generic [ref=e469]:
+                  - generic [ref=e470]:
+                    - img [ref=e471]
+                    - generic [ref=e473]: "02"
+                  - generic [ref=e474]:
+                    - heading "Reserve Your Seat" [level=3] [ref=e476]
+                    - paragraph [ref=e477]: Request an invitation to join the family. Connect with a personal cultural guide for your journey.
+                    - paragraph [ref=e479]: Send your request and hear back within 48 hours. A cultural guide walks you through etiquette, gifting, and what the days will hold.
+                    - generic [ref=e480]:
+                      - text: Read more
+                      - img [ref=e481]
+                  - img [ref=e483]
+            - generic [ref=e485]:
+              - img [ref=e491]
+              - 'generic "Step 3: Arrive as Family. Your dedicated concierge greets you upon arrival, ensuring your absolute comfort throughout the festivities." [ref=e493]':
+                - generic [ref=e494]:
+                  - generic [ref=e495]:
+                    - img [ref=e496]
+                    - generic [ref=e498]: "03"
+                  - generic [ref=e499]:
+                    - heading "Arrive as Family" [level=3] [ref=e501]
+                    - paragraph [ref=e502]: Your dedicated concierge greets you upon arrival, ensuring your absolute comfort throughout the festivities.
+                    - paragraph [ref=e504]: Airport pickup, hotel coordination, and a concierge on call around the clock — so the only thing left to plan is what to wear.
+                    - generic [ref=e505]:
+                      - text: Read more
+                      - img [ref=e506]
+                  - img [ref=e508]
+            - generic [ref=e510]:
+              - img [ref=e516]
+              - 'generic "Step 4: Celebrate Together. Share in sacred rituals, timeless traditions, and genuine warmth. Create memories that last forever." [ref=e522]':
+                - generic [ref=e523]:
+                  - generic [ref=e524]:
+                    - img [ref=e525]
+                    - generic [ref=e527]: "04"
+                  - generic [ref=e528]:
+                    - heading "Celebrate Together" [level=3] [ref=e530]
+                    - paragraph [ref=e531]: Share in sacred rituals, timeless traditions, and genuine warmth. Create memories that last forever.
+                    - paragraph [ref=e533]: From the haldi to the last dance, you stand inside the ritual, not outside it — a guide beside you at every step.
+                    - generic [ref=e534]:
+                      - text: Read more
+                      - img [ref=e535]
+                  - img [ref=e537]
+        - generic [ref=e539]:
+          - generic [ref=e540]:
+            - img [ref=e542]
+            - text: Secure payments
+          - generic [ref=e545]:
+            - img [ref=e547]
+            - text: Verified Host Families
+          - generic [ref=e550]:
+            - img [ref=e552]
+            - text: Guest protection
+          - generic [ref=e554]:
+            - img [ref=e556]
+            - text: Concierge, day or night
+          - generic [ref=e560]:
+            - img [ref=e562]
+            - text: Satisfaction guarantee
+    - region "Find your Perfect Celebration" [ref=e565]:
+      - generic [ref=e566]:
+        - generic [ref=e567]:
+          - generic [ref=e568]: Wedding Styles
+          - heading "Find your Perfect Celebration" [level=2] [ref=e569]
+          - paragraph [ref=e570]: From royal palaces to golden shores, choose the celebration that speaks to your soul.
+        - list "Wedding categories" [ref=e571]:
+          - listitem "Royal weddings — 2 celebrations" [ref=e572] [cursor=pointer]:
+            - generic [ref=e573]:
+              - img "Royal wedding style" [ref=e574]
+              - generic [ref=e577]:
+                - img [ref=e579]
+                - heading "Royal" [level=3] [ref=e581]
+                - paragraph [ref=e583]: Palace ceremonies with regal grandeur
+                - generic [ref=e584]:
+                  - generic [ref=e585]: 2 celebrations
+                  - img [ref=e587]
+          - listitem "Punjabi weddings — 1 celebrations" [ref=e589] [cursor=pointer]:
+            - generic [ref=e590]:
+              - img "Punjabi wedding style" [ref=e591]
+              - generic [ref=e594]:
+                - img [ref=e596]
+                - heading "Punjabi" [level=3] [ref=e598]
+                - paragraph [ref=e600]: Vibrant celebrations full of joy & bhangra
+                - generic [ref=e601]:
+                  - generic [ref=e602]: 1 celebrations
+                  - img [ref=e604]
+          - listitem "South Indian weddings — 1 celebrations" [ref=e606] [cursor=pointer]:
+            - generic [ref=e607]:
+              - img "South Indian wedding style" [ref=e608]
+              - generic [ref=e611]:
+                - img [ref=e613]
+                - heading "South Indian" [level=3] [ref=e618]
+                - paragraph [ref=e620]: Sacred traditions with temple elegance
+                - generic [ref=e621]:
+                  - generic [ref=e622]: 1 celebrations
+                  - img [ref=e624]
+          - listitem "Beach weddings — 1 celebrations" [ref=e626] [cursor=pointer]:
+            - generic [ref=e627]:
+              - img "Beach wedding style" [ref=e628]
+              - generic [ref=e631]:
+                - img [ref=e633]
+                - heading "Beach" [level=3] [ref=e637]
+                - paragraph [ref=e639]: Ocean-side romance at sunset
+                - generic [ref=e640]:
+                  - generic [ref=e641]: 1 celebrations
+                  - img [ref=e643]
+          - listitem "Destination weddings — 1 celebrations" [ref=e645] [cursor=pointer]:
+            - generic [ref=e646]:
+              - img "Destination wedding style" [ref=e647]
+              - generic [ref=e650]:
+                - img [ref=e652]
+                - heading "Destination" [level=3] [ref=e655]
+                - paragraph [ref=e657]: Exotic locales for unforgettable vows
+                - generic [ref=e658]:
+                  - generic [ref=e659]: 1 celebrations
+                  - img [ref=e661]
+          - listitem "Traditional weddings — 1 celebrations" [ref=e663] [cursor=pointer]:
+            - generic [ref=e664]:
+              - img "Traditional wedding style" [ref=e665]
+              - generic [ref=e668]:
+                - img [ref=e670]
+                - heading "Traditional" [level=3] [ref=e672]
+                - paragraph [ref=e674]: Time-honoured rituals, timeless memories
+                - generic [ref=e675]:
+                  - generic [ref=e676]: 1 celebrations
+                  - img [ref=e678]
+    - region "Voices from Our Celebrations" [ref=e680]:
+      - generic [ref=e681]:
+        - generic [ref=e682]:
+          - generic [ref=e683]: Guest Stories
+          - heading "Voices from Our Celebrations" [level=2] [ref=e684]
+          - paragraph [ref=e685]: Real experiences from travellers who stepped into an Indian family celebration they'll never forget.
+        - list "Guest testimonials" [ref=e686]:
+          - listitem [ref=e687]:
+            - article "Testimonial from Eleanor & Mark Sterling" [ref=e688]:
+              - img [ref=e690]
+              - img "5 out of 5 stars" [ref=e693]:
+                - img [ref=e694]
+                - img [ref=e696]
+                - img [ref=e698]
+                - img [ref=e700]
+                - img [ref=e702]
+              - blockquote [ref=e704]: “Attending the Royal Udaipur celebration was the most moving cultural journey of our lives. The family welcomed us with open arms.”
+              - generic [ref=e706]:
+                - img [ref=e707]
+                - text: Royal Palace Wedding
+              - generic [ref=e709]:
+                - img "Eleanor & Mark Sterling" [ref=e711]
+                - generic [ref=e712]:
+                  - generic [ref=e713]: Eleanor & Mark Sterling
+                  - generic [ref=e714]: Guests from London, UK · November 2025
+          - listitem [ref=e715]:
+            - article "Testimonial from Jean-Pierre & Sophie Laurent" [ref=e716]:
+              - img [ref=e718]
+              - img "5 out of 5 stars" [ref=e721]:
+                - img [ref=e722]
+                - img [ref=e724]
+                - img [ref=e726]
+                - img [ref=e728]
+                - img [ref=e730]
+              - blockquote [ref=e732]: “From the sunset haldi to the oceanfront feast, every moment felt incredibly elegant. We created memories that will stay with us forever.”
+              - generic [ref=e734]:
+                - img [ref=e735]
+                - text: Goa Beachfront Celebration
+              - generic [ref=e737]:
+                - img "Jean-Pierre & Sophie Laurent" [ref=e739]
+                - generic [ref=e740]:
+                  - generic [ref=e741]: Jean-Pierre & Sophie Laurent
+                  - generic [ref=e742]: Guests from Paris, France · December 2025
+        - generic [ref=e743]:
+          - img [ref=e745]
+          - generic [ref=e747]:
+            - paragraph [ref=e748]: Be among the first to experience this
+            - paragraph [ref=e749]: WeddingWithIndia is now welcoming its founding guests. Every review and story shared here comes from a real celebration. Yours could be next.
+    - region "Where will you celebrate?" [ref=e750]:
+      - generic [ref=e751]:
+        - generic [ref=e752]:
+          - generic [ref=e753]: Destinations
+          - heading "Where will you celebrate?" [level=2] [ref=e754]
+          - paragraph [ref=e755]: Explore weddings from iconic Indian regions and surrounding South Asian destinations.
+        - list "Countries" [ref=e756]:
+          - listitem "Weddings in India — 6 listings" [ref=e757] [cursor=pointer]:
+            - img "India weddings" [ref=e758]
+            - generic [ref=e760]:
+              - generic [ref=e761]:
+                - img [ref=e762]
+                - generic [ref=e765]: Top Destination
+              - heading "India" [level=3] [ref=e766]
+              - paragraph [ref=e767]: Rajasthan, Goa, Kerala, Punjab & more
+              - generic [ref=e768]:
+                - generic [ref=e769]: 6 weddings
+                - generic [ref=e770]:
+                  - text: Explore
+                  - img [ref=e771]
+          - generic [ref=e773]:
+            - listitem "Weddings in Nepal — 0 listings" [ref=e774] [cursor=pointer]:
+              - img "Nepal weddings" [ref=e775]
+              - generic [ref=e777]:
+                - heading "Nepal" [level=3] [ref=e778]
+                - paragraph [ref=e779]: Himalayan backdrops, ancient temples
+                - generic [ref=e780]: 0 listings
+            - listitem "Weddings in Sri Lanka — 0 listings" [ref=e781] [cursor=pointer]:
+              - img "Sri Lanka weddings" [ref=e782]
+              - generic [ref=e784]:
+                - heading "Sri Lanka" [level=3] [ref=e785]
+                - paragraph [ref=e786]: Colonial heritage, tropical beaches
+                - generic [ref=e787]: 0 listings
+            - listitem "Weddings in Thailand — 0 listings" [ref=e788] [cursor=pointer]:
+              - img "Thailand weddings" [ref=e789]
+              - generic [ref=e791]:
+                - heading "Thailand" [level=3] [ref=e792]
+                - paragraph [ref=e793]: Buddhist ceremonies, island escapes
+                - generic [ref=e794]: 0 listings
+    - region "Everything You Need To Know" [ref=e795]:
+      - generic [ref=e797]:
+        - generic [ref=e798]:
+          - generic [ref=e799]:
+            - generic [ref=e800]: FAQ
+            - heading "Everything You Need To Know" [level=2] [ref=e801]
+            - paragraph [ref=e802]: Have more questions? Our team is ready to help you plan your perfect wedding experience.
+          - generic [ref=e803]:
+            - link "Email contact@weddingwithindia.com" [ref=e804] [cursor=pointer]:
+              - /url: mailto:contact@weddingwithindia.com
+              - img [ref=e806]
+              - generic [ref=e809]:
+                - generic [ref=e810]: Email us
+                - text: contact@weddingwithindia.com
+            - link "Call +91 91 1673 4675" [ref=e811] [cursor=pointer]:
+              - /url: tel:+919116734675
+              - img [ref=e813]
+              - generic [ref=e815]:
+                - generic [ref=e816]: Call us
+                - text: +91 91 1673 4675
+            - generic [ref=e817]:
+              - img [ref=e819]
+              - generic [ref=e821]:
+                - generic [ref=e822]: Response time
+                - text: We reply within 24 hours
+        - list "Frequently asked questions" [ref=e824]:
+          - listitem [ref=e825]:
+            - generic [ref=e826]:
+              - button "How does Wedding With India work?" [expanded] [ref=e827]:
+                - generic [ref=e828]: How does Wedding With India work?
+                - img [ref=e830]
+              - region "How does Wedding With India work?" [ref=e833]:
+                - paragraph [ref=e835]: We connect discerning global travelers with trusted Host Families. Join real celebrations and experience timeless traditions as an honored member of the family.
+          - listitem [ref=e836]:
+            - generic [ref=e837]:
+              - button "Are these real weddings or arranged experiences?" [ref=e838]:
+                - generic [ref=e839]: Are these real weddings or arranged experiences?
+                - img [ref=e841]
+              - region "Are these real weddings or arranged experiences?":
+                - paragraph [ref=e843]: Every celebration is entirely genuine. We personally verify each Host Family to ensure authenticity, safety, and welcoming hospitality.
+          - listitem [ref=e844]:
+            - generic [ref=e845]:
+              - button "What does the reservation include?" [ref=e846]:
+                - generic [ref=e847]: What does the reservation include?
+                - img [ref=e849]
+              - region "What does the reservation include?":
+                - paragraph [ref=e851]: Your invitation provides full access to all rituals, traditional feasts, ceremonial welcome gifts, and a dedicated cultural liaison throughout the celebration.
+          - listitem [ref=e852]:
+            - generic [ref=e853]:
+              - button "Is it respectful to attend someone's wedding?" [ref=e854]:
+                - generic [ref=e855]: Is it respectful to attend someone's wedding?
+                - img [ref=e857]
+              - region "Is it respectful to attend someone's wedding?":
+                - paragraph [ref=e859]: Yes. Following the Indian tradition of 'Atithi Devo Bhava' (Guest is God), host families warmly welcome international guests to share their culture and joy.
+          - listitem [ref=e860]:
+            - generic [ref=e861]:
+              - button "What should I wear?" [ref=e862]:
+                - generic [ref=e863]: What should I wear?
+                - img [ref=e865]
+              - region "What should I wear?":
+                - paragraph [ref=e867]: We encourage elegant traditional attire like silk sarees or bandhgalas. Your cultural liaison will assist with custom fittings upon arrival.
+          - listitem [ref=e868]:
+            - generic [ref=e869]:
+              - button "What is your cancellation policy?" [ref=e870]:
+                - generic [ref=e871]: What is your cancellation policy?
+                - img [ref=e873]
+              - region "What is your cancellation policy?":
+                - paragraph [ref=e875]: We offer full refunds for cancellations made 30 days prior to the celebration. Detailed terms are available on our policies page.
+    - region "Step into a celebration you'll remember forever." [ref=e876]:
+      - img
+      - generic [ref=e878]:
+        - generic [ref=e879]:
+          - img [ref=e880]
+          - img [ref=e882]
+        - generic [ref=e885]: A World of Sacred Hospitality
+        - heading "Step into a celebration you'll remember forever." [level=2] [ref=e887]
+        - paragraph [ref=e888]: Trade sightseeing for the warmth of a real family celebration. Your seat at the table is already waiting.
+        - generic [ref=e889]:
+          - link "Explore Celebrations" [ref=e890] [cursor=pointer]:
+            - /url: /weddings
+            - img [ref=e891]
+            - text: Explore Celebrations
+            - img [ref=e893]
+          - link "Host Your Wedding" [ref=e895] [cursor=pointer]:
+            - /url: /list-wedding
+        - generic "Trust and safety" [ref=e896]:
+          - generic [ref=e898]:
+            - img [ref=e900]
+            - generic [ref=e903]: 48 Countries
+            - generic [ref=e904]: Host families, hand-vetted
+          - generic [ref=e907]:
+            - img [ref=e909]
+            - generic [ref=e912]: 100% Verified
+            - generic [ref=e913]: Every guest pass checked
+          - generic [ref=e916]:
+            - img [ref=e918]
+            - generic [ref=e921]: AES-256
+            - generic [ref=e922]: Payments, fully encrypted
+  - contentinfo [ref=e927]:
+    - generic [ref=e930]:
+      - generic [ref=e931]:
+        - heading "Never miss a celebration" [level=2] [ref=e932]
+        - paragraph [ref=e933]: Get curated celebrations, cultural guides, and exclusive early access delivered to your inbox.
+      - form "Newsletter signup" [ref=e934]:
+        - generic [ref=e935]: Email address
+        - textbox "Email address" [ref=e936]:
+          - /placeholder: Enter your email
+        - button "Subscribe to newsletter" [ref=e937] [cursor=pointer]:
+          - text: Subscribe
+          - img [ref=e938]
+    - generic [ref=e941]:
+      - generic [ref=e942]:
+        - link "Wedding With India — Home" [ref=e943] [cursor=pointer]:
+          - /url: /
+          - img [ref=e945]
+          - generic [ref=e947]:
+            - generic [ref=e948]: Wedding With India
+            - generic [ref=e949]: Experience Our Indian Weddings
+        - paragraph [ref=e950]: The world's most trusted platform to celebrate Our Indian Weddings. Connecting Guest Families with authentic cultural celebrations.
+        - generic [ref=e951]:
+          - link "contact@weddingwithindia.com" [ref=e952] [cursor=pointer]:
+            - /url: mailto:contact@weddingwithindia.com
+            - img [ref=e953]
+            - text: contact@weddingwithindia.com
+          - link "+91 91 1673 4675" [ref=e956] [cursor=pointer]:
+            - /url: tel:+919116734675
+            - img [ref=e957]
+            - text: +91 91 1673 4675
+          - generic [ref=e959]:
+            - img [ref=e960]
+            - generic [ref=e963]: New Delhi, India · Remote-first
+        - list "Social media" [ref=e964]:
+          - listitem "Instagram" [ref=e965] [cursor=pointer]:
+            - img [ref=e966]
+          - listitem "Facebook" [ref=e968] [cursor=pointer]:
+            - img [ref=e969]
+          - listitem "Twitter / X" [ref=e971] [cursor=pointer]:
+            - img [ref=e972]
+          - listitem "YouTube" [ref=e974] [cursor=pointer]:
+            - img [ref=e975]
+      - generic [ref=e977]:
+        - heading "Company" [level=3] [ref=e978]
+        - list [ref=e979]:
+          - listitem [ref=e980]:
+            - link "About Us" [ref=e981] [cursor=pointer]:
+              - /url: /about
+          - listitem [ref=e982]:
+            - link "How It Works" [ref=e983] [cursor=pointer]:
+              - /url: /how-it-works
+          - listitem [ref=e984]:
+            - link "Our Story" [ref=e985] [cursor=pointer]:
+              - /url: /about#story
+      - generic [ref=e986]:
+        - heading "For Guests" [level=3] [ref=e987]
+        - list [ref=e988]:
+          - listitem [ref=e989]:
+            - link "Browse Weddings" [ref=e990] [cursor=pointer]:
+              - /url: /weddings
+          - listitem [ref=e991]:
+            - link "Guest Guide" [ref=e992] [cursor=pointer]:
+              - /url: /for-travelers
+      - generic [ref=e993]:
+        - heading "Our Host Families" [level=3] [ref=e994]
+        - list [ref=e995]:
+          - listitem [ref=e996]:
+            - link "Become a Host Family" [ref=e997] [cursor=pointer]:
+              - /url: /list-wedding
+          - listitem [ref=e998]:
+            - link "For Couples" [ref=e999] [cursor=pointer]:
+              - /url: /for-couples
+          - listitem [ref=e1000]:
+            - link "For Agents" [ref=e1001] [cursor=pointer]:
+              - /url: /for-agents
+          - listitem [ref=e1002]:
+            - link "Coordinators" [ref=e1003] [cursor=pointer]:
+              - /url: /coordinators
+      - generic [ref=e1004]:
+        - heading "Support" [level=3] [ref=e1005]
+        - list [ref=e1006]:
+          - listitem [ref=e1007]:
+            - link "Contact Us" [ref=e1008] [cursor=pointer]:
+              - /url: /contact
+          - listitem [ref=e1009]:
+            - link "Privacy Policy" [ref=e1010] [cursor=pointer]:
+              - /url: /privacy
+          - listitem [ref=e1011]:
+            - link "Terms of Service" [ref=e1012] [cursor=pointer]:
+              - /url: /terms
+    - generic [ref=e1015]:
+      - paragraph [ref=e1016]: © 2026 Wedding With India. All rights reserved.
+      - generic [ref=e1017]:
+        - link "Privacy" [ref=e1018] [cursor=pointer]:
+          - /url: /privacy
+        - link "Terms" [ref=e1019] [cursor=pointer]:
+          - /url: /terms
+        - generic [ref=e1020]:
+          - text: Made with
+          - generic "love" [ref=e1021]: ♥
+          - text: in India
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=e1027] [cursor=pointer]:
+    - img [ref=e1028]
+```
+
+# Test source
+
+```ts
+  1  | import { test, expect } from "@playwright/test";
+  2  | 
+  3  | const BASE_URL = process.env.BASE_URL || "http://localhost:3000";
+  4  | 
+  5  | test.describe("Phase 3: Homepage Verification", () => {
+  6  |   test.beforeEach(async ({ page }) => {
+> 7  |     await page.goto(BASE_URL);
+     |                ^ Error: page.goto: Test timeout of 30000ms exceeded.
+  8  |     // Wait for hydration by checking if the main element is interactive or fully loaded
+  9  |     await page.waitForLoadState("load");
+  10 |   });
+  11 | 
+  12 |   test("Hero section renders and is above the fold", async ({ page }) => {
+  13 |     // Look for the main hero section (often a header or section with an h1)
+  14 |     const heroSection = page.locator("section").first();
+  15 |     await expect(heroSection).toBeVisible();
+  16 |     
+  17 |     // Check if the hero section is in the viewport
+  18 |     const boundingBox = await heroSection.boundingBox();
+  19 |     expect(boundingBox?.y).toBeLessThanOrEqual(0); // Should start at the top
+  20 |     expect(boundingBox?.height).toBeGreaterThan(100); // Should have significant height
+  21 |   });
+  22 | 
+  23 |   test("Navbar is present and links work", async ({ page }) => {
+  24 |     const navbar = page.locator("nav").first();
+  25 |     await expect(navbar).toBeVisible();
+  26 | 
+  27 |     // Check for essential navigation links
+  28 |     const links = navbar.locator("a");
+  29 |     const count = await links.count();
+  30 |     expect(count).toBeGreaterThan(0);
+  31 | 
+  32 |     // Verify some expected links are in the DOM (case insensitive regex)
+  33 |     await expect(navbar).toContainText(/weddings/i);
+  34 |   });
+  35 | 
+  36 |   test("Call to Action exists", async ({ page }) => {
+  37 |     // Look for a prominent CTA link/button
+  38 |     const cta = page.locator("a, button").filter({ hasText: /(explore|reserve)/i }).first();
+  39 |     await expect(cta).toBeVisible();
+  40 |   });
+  41 | 
+  42 |   test("SEO and Meta elements are correct", async ({ page }) => {
+  43 |     // Verify title
+  44 |     await expect(page).toHaveTitle(/Wedding With India/i);
+  45 |     
+  46 |     // Verify meta description
+  47 |     const metaDescription = page.locator("meta[name='description']");
+  48 |     await expect(metaDescription).toHaveAttribute("content", /authentic Indian weddings/i);
+  49 | 
+  50 |     // Verify canonical URL
+  51 |     const canonical = page.locator("link[rel='canonical']");
+  52 |     await expect(canonical).toHaveAttribute("href", "https://weddingwithindia.com");
+  53 | 
+  54 |     // Verify H1 exists and there is exactly one
+  55 |     const h1Count = await page.locator("h1").count();
+  56 |     expect(h1Count).toBe(1);
+  57 |   });
+  58 | });
+  59 | 
+```

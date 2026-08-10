@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth";
-import { UserRole } from "@prisma/client";
+import { UserRole, BookingStatus } from "@prisma/client";
 
 // GET /api/admin/bookings — list all bookings with financials
 export async function GET() {
@@ -47,7 +47,7 @@ export async function PATCH(req: NextRequest) {
 
     const updated = await prisma.booking.update({
       where: { id: bookingId },
-      data: { status: status as any },
+      data: { status: status as BookingStatus },
       include: {
         wedding: { select: { title: true } },
         traveler: { include: { user: { select: { name: true } } } }

@@ -154,9 +154,9 @@ export default function VerificationForm({ initialVerification, userRole }: Veri
           <div className="bg-warm-50 border border-warm-200 p-4 rounded-2xl flex items-center gap-3">
             <ShieldCheck className="text-maroon-600 w-6 h-6 flex-shrink-0" />
             <div>
-              <h4 className="font-sans font-bold text-sm text-charcoal-900">Complete Trust Verification</h4>
+              <h4 className="font-sans font-bold text-sm text-charcoal-900">Verification Pending Request</h4>
               <p className="text-charcoal-500 text-xs mt-0.5">
-                Please submit the required government and identity documentation to unlock full platform features.
+                Your profile is being reviewed by our Trust & Safety team. You will be notified when you need to submit identity documentation.
               </p>
             </div>
           </div>
@@ -188,12 +188,25 @@ export default function VerificationForm({ initialVerification, userRole }: Veri
 
       <form onSubmit={handleSubmit} className="bg-white border border-warm-200/50 p-6 sm:p-8 rounded-[2rem] shadow-sm space-y-8">
         
-        {/* Common Identity Fields */}
-        <div className="space-y-4">
-          <h3 className="font-display font-bold text-lg text-charcoal-900 border-b border-warm-100 pb-3 flex items-center gap-2">
-            <UserCheck className="w-5 h-5 text-maroon-600" />
-            Core Government Identity
-          </h3>
+        {currentStatus === "NOT_SUBMITTED" && (
+          <div className="text-center py-10 space-y-4">
+            <ShieldCheck className="w-12 h-12 text-warm-400 mx-auto" />
+            <h3 className="font-display font-bold text-lg text-charcoal-900">Document Upload Locked</h3>
+            <p className="text-charcoal-500 text-xs max-w-md mx-auto">
+              You must wait for an Admin to request your verification documents. 
+              Once requested, you will be able to upload your ID and credentials here.
+            </p>
+          </div>
+        )}
+
+        {currentStatus !== "NOT_SUBMITTED" && (
+          <>
+            {/* Common Identity Fields */}
+            <div className="space-y-4">
+              <h3 className="font-display font-bold text-lg text-charcoal-900 border-b border-warm-100 pb-3 flex items-center gap-2">
+                <UserCheck className="w-5 h-5 text-maroon-600" />
+                Core Government Identity
+              </h3>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div className="space-y-2">
@@ -640,8 +653,8 @@ export default function VerificationForm({ initialVerification, userRole }: Veri
           </p>
           <button
             type="submit"
-            disabled={loading}
-            className="btn btn-primary btn-md shadow-sm flex items-center gap-2 cursor-pointer"
+            disabled={loading || currentStatus === "APPROVED" || currentStatus === "UNDER_REVIEW"}
+            className="btn btn-primary btn-md shadow-sm flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? (
               <span>Submitting Files...</span>
@@ -653,7 +666,8 @@ export default function VerificationForm({ initialVerification, userRole }: Veri
             )}
           </button>
         </div>
-
+          </>
+        )}
       </form>
     </div>
   );

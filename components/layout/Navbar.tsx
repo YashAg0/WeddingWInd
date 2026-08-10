@@ -284,7 +284,7 @@ export default function Navbar() {
   // Sliding spotlight indicator — tracks whichever nav item is hovered,
   // falling back to whichever one is active. Recomputed on hover/route
   // change and on resize, since item widths can shift with the viewport.
-  const updateIndicator = useCallback(() => {
+  function updateIndicator() {
     const key = hoveredKey ?? activeKey;
     const el = key ? itemRefs.current.get(key) : undefined;
     if (el) {
@@ -292,17 +292,18 @@ export default function Navbar() {
     } else {
       setIndicatorRect((prev) => ({ ...prev, visible: false }));
     }
+  }
+
+  useEffect(() => {
+    updateIndicator();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hoveredKey, activeKey]);
 
   useEffect(() => {
-    updateIndicator();
-  }, [updateIndicator]);
-
-  useEffect(() => {
     window.addEventListener("resize", updateIndicator);
     return () => window.removeEventListener("resize", updateIndicator);
-  }, [updateIndicator]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function toggleDropdown(label: string) {
     setActiveDropdown((prev) => (prev === label ? null : label));

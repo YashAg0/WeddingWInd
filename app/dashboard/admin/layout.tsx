@@ -1,88 +1,96 @@
 import { redirect } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
-import { isDatabaseAvailable } from "@/lib/prisma";
 import { prisma } from "@/lib/prisma";
-import { Lock } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 
 /**
  * Admin Route Guard — Server Component Layout
  *
- * Enforces RBAC for all /admin/* routes:
- * 1. Requires a valid Clerk session (redirects to sign-in if missing)
- * 2. Checks the database User.role === "ADMIN" 
- * 3. If the database is offline (e.g. DATABASE_URL not yet switched to Supabase
- *    Session Pooler), access is DENIED rather than silently passed through.
+ * Enforces RBAC for all /dashboard/admin/* routes:
+ * 1. Requires a valid Clerk session (redirects to /login if missing).
+ * 2. Performs a direct DB lookup to verify User.role === "ADMIN".
+ * 3. If the DB is unreachable, shows a clear service-unavailable screen
+ *    — NOT an "admin required" error, because DB failure ≠ authorization failure.
  *
- * UNBLOCK: Update DATABASE_URL in .env to the Supabase Session Pooler string
- * (format: postgresql://postgres.ref:[password]@aws-0-[region].pooler.supabase.com:5432/postgres)
- * to restore real RBAC.
+ * Security guarantees:
+ * - Admin access is NEVER granted on DB failure (fail-closed).
+ * - The redirect to /?error=admin_required is used ONLY when the user is
+ *   authenticated but their DB role is not ADMIN.
+ * - Database connectivity errors are reported separately.
  */
 export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const session = await auth();
+  let session: any = null;
+  try {
+    session = await auth();
+  } catch {
+    session = null;
+  }
 
-  // Not signed in → redirect to Clerk sign-in
+  // Not signed in → redirect to login
   if (!session?.userId) {
-    redirect("/sign-in?redirect_url=/dashboard/admin");
+    redirect("/login?redirect_url=/dashboard/admin");
   }
 
-  // Check database availability
-  const dbAvailable = await isDatabaseAvailable(500);
-
-  if (!dbAvailable) {
-    // DB offline — cannot verify admin role. Show a hard block.
-    return (
-      <div className="min-h-screen bg-warm-50/50 pt-28 pb-20 flex items-center justify-center">
-        <div className="container-luxury max-w-xl mx-auto">
-          <div className="bg-white border border-rose-200 rounded-3xl p-10 shadow-sm space-y-4 text-center">
-            <div className="w-14 h-14 rounded-2xl bg-rose-50 text-rose-700 flex items-center justify-center mx-auto text-2xl font-bold">
-              <Lock size={24} />
-            </div>
-            <h1 className="font-display font-bold text-xl text-charcoal-900">
-              Admin Access Requires Database
-            </h1>
-            <p className="text-charcoal-600 text-sm leading-relaxed">
-              The admin panel requires a live database connection to verify your role.
-              The Supabase database is currently unreachable — this is because{" "}
-              <code className="text-xs bg-warm-100 px-1.5 py-0.5 rounded font-mono">DATABASE_URL</code>{" "}
-              in <code className="text-xs bg-warm-100 px-1.5 py-0.5 rounded font-mono">.env</code>{" "}
-              still points to the direct connection host.
-            </p>
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-left text-xs text-amber-900 space-y-1">
-              <p className="font-bold">To restore access:</p>
-              <p>
-                1. Go to your Supabase dashboard → Project Settings → Database → Connection Pooling.
-              </p>
-              <p>
-                2. Copy the <strong>Session Pooler</strong> URI (port 5432, not Transaction Pooler).
-              </p>
-              <p>
-                3. Replace <code className="bg-amber-100 px-1 rounded">DATABASE_URL</code> in{" "}
-                <code className="bg-amber-100 px-1 rounded">.env</code> with that URI.
-              </p>
-              <p>4. Restart the dev server.</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // DB is available — verify the user's role is ADMIN
+  // Attempt direct DB role lookup with a generous timeout.
+  // We do NOT use a separate isDatabaseAvailable() pre-ping here because:
+  // 1. It would double the DB round-trips on cold start.
+  // 2. The role lookup IS the availability check — if it succeeds, DB is available.
   let userRole: string | null = null;
+  let dbError: Error | null = null;
+
   try {
     const dbUser = await prisma.user.findUnique({
       where: { clerkUserId: session.userId },
       select: { role: true }
     });
     userRole = dbUser?.role ?? null;
-  } catch {
-    userRole = null;
+  } catch (err: any) {
+    dbError = err;
+    console.error("[AdminLayout] Database error during role check:", err.name, err.code, err.message);
   }
 
+  // DB unreachable — cannot verify admin role. Show a service-unavailable screen.
+  // This is NOT an "admin required" error — it's a database connectivity issue.
+  if (dbError) {
+    return (
+      <div className="min-h-screen bg-warm-50/50 pt-28 pb-20 flex items-center justify-center">
+        <div className="container-luxury max-w-xl mx-auto">
+          <div className="bg-white border border-amber-200 rounded-3xl p-10 shadow-sm space-y-4 text-center">
+            <div className="w-14 h-14 rounded-2xl bg-amber-50 text-amber-700 flex items-center justify-center mx-auto text-2xl font-bold">
+              <RefreshCw size={24} />
+            </div>
+            <h1 className="font-display font-bold text-xl text-charcoal-900">
+              Admin Panel Temporarily Unavailable
+            </h1>
+            <p className="text-charcoal-600 text-sm leading-relaxed">
+              The admin panel requires a live database connection to verify your administrator role.
+              The database is temporarily unreachable — this is likely a brief connectivity issue
+              with the Supabase database. Your authentication is valid.
+            </p>
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-left text-xs text-amber-900 space-y-1">
+              <p className="font-bold">What to do:</p>
+              <p>1. Wait 10–30 seconds for the database connection to warm up.</p>
+              <p>2. Refresh this page to retry.</p>
+              <p>3. If the issue persists, check the Supabase project status dashboard.</p>
+            </div>
+            <a
+              href="/dashboard/admin"
+              className="inline-flex items-center gap-2 mt-4 px-6 py-2.5 bg-maroon-800 text-white text-sm font-semibold rounded-xl hover:bg-maroon-900 transition-colors"
+            >
+              <RefreshCw size={14} />
+              Retry
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // User found in DB but not ADMIN → redirect with clear admin-required error
   if (userRole !== "ADMIN") {
     redirect("/?error=admin_required");
   }

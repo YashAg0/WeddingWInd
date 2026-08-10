@@ -1613,3 +1613,63 @@ model ReviewAppeal {
   @@index([submittedById])
   @@index([reviewedById])
 }
+
+model SystemConfig {
+  id                          String   @id @default("global")
+  platformFeePercent          Float    @default(15.0)
+  agentCommissionPercent      Float    @default(10.0)
+  referralRewardPercent       Float    @default(5.0)
+  taxPercent                  Float    @default(18.0)
+  currencyCode                String   @default("USD")
+  secondaryCurrencies         String?
+  requireTravelerVerification Boolean  @default(false)
+  requireHostVerification     Boolean  @default(true)
+  requireAgentVerification    Boolean  @default(true)
+  autoApproveVerifiedHosts    Boolean  @default(false)
+  maintenanceMode             Boolean  @default(false)
+  maintenanceMessage          String?
+  enableCoupons               Boolean  @default(true)
+  enablePushNotifications     Boolean  @default(true)
+  createdAt                   DateTime @default(now())
+  updatedAt                   DateTime @updatedAt
+}
+
+model SiteCMS {
+  id                    String   @id @default("global")
+  heroEyebrow           String?
+  heroTitle             String?
+  heroSubtitle          String?  @db.Text
+  heroPrimaryCtaText    String?
+  heroPrimaryCtaUrl     String?
+  heroSecondaryCtaText  String?
+  heroSecondaryCtaUrl   String?
+  heroBgImageUrl        String?
+  heroBgVideoUrl        String?
+  siteTitle             String?
+  metaDescription       String?  @db.Text
+  ogImageUrl            String?
+  twitterHandle         String?
+  termsOfServiceContent String?  @db.Text
+  privacyPolicyContent  String?  @db.Text
+  cookiePolicyContent   String?  @db.Text
+  supportContactEmail   String?
+  supportContactPhone   String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+model Coupon {
+  id              String    @id @default(uuid())
+  code            String    @unique
+  discountPercent Float?
+  discountAmount  Float?
+  minSpend        Float     @default(0)
+  maxDiscount     Float?
+  expiresAt       DateTime?
+  maxUses         Int?
+  usesCount       Int       @default(0)
+  active          Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+

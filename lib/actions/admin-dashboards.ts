@@ -2,7 +2,7 @@
 
 import { prisma } from "../prisma";
 import { requireRole } from "../auth";
-import { UserRole } from "@prisma/client";
+import { UserRole, PaymentStatus } from "@prisma/client";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. Finance Executive Dashboard Data
@@ -98,7 +98,7 @@ export async function getSupportDashboardAction() {
     }),
     // DISPUTED isn't a valid PaymentStatus in schema.prisma, but we'll leave it as is if it's meant to be typed loosely
     prisma.payment.findMany({
-      where: { status: "FAILED" as any }, // adjusted from DISPUTED which caused schema error if strict
+      where: { status: PaymentStatus.FAILED },
       include: { booking: { include: { traveler: true, wedding: true } } },
     })
   ]);
@@ -183,21 +183,13 @@ export async function getGrowthDashboardAction() {
       include: { agent: { include: { user: true } } },
       orderBy: { createdAt: "desc" },
     }),
-    (prisma as any).searchAnalytics ? (prisma as any).searchAnalytics.findMany({
+    prisma.searchAnalytics.findMany({
       orderBy: { createdAt: "desc" },
       take: 30,
-    }) : Promise.resolve([])
+    })
   ]);
 
-  // Handle missing Coupon table from initial schema
-  let coupons: any[] = [];
-  try {
-    if ((prisma as any).coupon) {
-      coupons = await (prisma as any).coupon.findMany({ orderBy: { createdAt: "desc" } });
-    }
-  } catch {
-    // ignore
-  }
+  const coupons = await prisma.coupon.findMany({ orderBy: { createdAt: "desc" } });
 
   return {
     subscribersCount,

@@ -63,7 +63,8 @@ export default async function WeddingDetailPage({ params }: PageProps) {
     "@type": "Event",
     name: wedding.title,
     description: wedding.story,
-    startDate: new Date().toISOString(),
+    startDate: wedding.date ? new Date(wedding.date).toISOString() : undefined,
+
     eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
     eventStatus: "https://schema.org/EventScheduled",
     location: {
@@ -361,7 +362,7 @@ export default async function WeddingDetailPage({ params }: PageProps) {
               </h2>
               <WeddingDetailReviews
                 weddingId={wedding.id}
-                reviews={wedding.reviews as any}
+                reviews={wedding.reviews as unknown as Parameters<typeof WeddingDetailReviews>[0]["reviews"]}
                 userId={userId}
               />
             </section>

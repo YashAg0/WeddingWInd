@@ -11,7 +11,7 @@ test.describe("Phase 4: Authentication Verification", () => {
 
     // Clerk redirect adds ?redirect_url= or sends to accounts.clerk.com depending on config
     // In dev, usually redirects to sign-in path
-    await expect(page).toHaveURL(/sign-in/i);
+    await expect(page).toHaveURL(/sign-in|login/i);
   });
 
   test("Login routing correctly redirects to Clerk sign-in", async ({ page }) => {

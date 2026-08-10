@@ -6,8 +6,6 @@ import { requireRole } from "../auth";
 import { UserRole } from "@prisma/client";
 import { createAuditLog } from "./admin";
 
-const db = prisma as any;
-
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. Singleton System Config (Fees, Commissions, Verification, Features)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -15,7 +13,7 @@ const db = prisma as any;
 export async function getSystemConfigAction() {
   await requireRole([UserRole.ADMIN]);
 
-  const config = await db.systemConfig.upsert({
+  const config = await prisma.systemConfig.upsert({
     where: { id: "global" },
     create: { id: "global" },
     update: {},
@@ -42,7 +40,7 @@ export async function updateSystemConfigAction(data: {
 }) {
   await requireRole([UserRole.ADMIN]);
 
-  const updated = await db.systemConfig.upsert({
+  const updated = await prisma.systemConfig.upsert({
     where: { id: "global" },
     create: { id: "global", ...data },
     update: { ...data },
@@ -63,7 +61,9 @@ export async function updateSystemConfigAction(data: {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function getSiteCMSAction() {
-  const cms = await db.siteCMS.upsert({
+  await requireRole([UserRole.ADMIN]);
+
+  const cms = await prisma.siteCMS.upsert({
     where: { id: "global" },
     create: { id: "global" },
     update: {},
@@ -94,7 +94,7 @@ export async function updateSiteCMSAction(data: {
 }) {
   await requireRole([UserRole.ADMIN]);
 
-  const updated = await db.siteCMS.upsert({
+  const updated = await prisma.siteCMS.upsert({
     where: { id: "global" },
     create: { id: "global", ...data },
     update: { ...data },
@@ -119,7 +119,7 @@ export async function updateSiteCMSAction(data: {
 export async function getCouponsAction() {
   await requireRole([UserRole.ADMIN]);
 
-  const coupons = await db.coupon.findMany({
+  const coupons = await prisma.coupon.findMany({
     orderBy: { createdAt: "desc" },
   });
 
@@ -138,12 +138,12 @@ export async function createCouponAction(data: {
   await requireRole([UserRole.ADMIN]);
 
   const code = data.code.toUpperCase().trim();
-  const existing = await db.coupon.findUnique({ where: { code } });
+  const existing = await prisma.coupon.findUnique({ where: { code } });
   if (existing) {
     throw new Error(`Coupon code "${code}" already exists.`);
   }
 
-  const coupon = await db.coupon.create({
+  const coupon = await prisma.coupon.create({
     data: {
       code,
       discountPercent: data.discountPercent ? Number(data.discountPercent) : null,
@@ -164,7 +164,7 @@ export async function createCouponAction(data: {
 export async function toggleCouponAction(couponId: string, active: boolean) {
   await requireRole([UserRole.ADMIN]);
 
-  const updated = await db.coupon.update({
+  const updated = await prisma.coupon.update({
     where: { id: couponId },
     data: { active },
   });
@@ -178,7 +178,7 @@ export async function toggleCouponAction(couponId: string, active: boolean) {
 export async function deleteCouponAction(couponId: string) {
   await requireRole([UserRole.ADMIN]);
 
-  const deleted = await db.coupon.delete({
+  const deleted = await prisma.coupon.delete({
     where: { id: couponId },
   });
 

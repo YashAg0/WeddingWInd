@@ -40,7 +40,7 @@ export function WeddingTimeline({ timeline }: WeddingTimelineProps) {
             aria-hidden="true"
           >
             {(() => {
-              const Icon = IconMap[(event as any).icon || ""] || Sparkles;
+              const Icon = IconMap[event.icon || ""] || Sparkles;
               return <Icon size={14} className="text-[var(--color-brand-primary)]" />;
             })()}
           </span>

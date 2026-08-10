@@ -331,6 +331,87 @@ export async function adminGetVerificationsAction() {
   });
 }
 
+/**
+ * Admin-controlled verification request gate.
+ * Admin must explicitly request a user's verification before the user can upload KYC documents.
+ * This creates a Verification record with PENDING status (or updates NOT_SUBMITTED → PENDING).
+ * The `requiredDocuments` note tells the user exactly which documents to upload.
+ */
+export async function adminRequestVerificationAction(
+  userId: string,
+  requiredDocuments: string,
+  adminNotes?: string
+) {
+  const admin = await requireRole([UserRole.ADMIN]);
+
+  // Prevent admin from acting on themselves for verification purposes
+  if (userId === admin.id) {
+    throw new Error("Forbidden: Admins cannot request verification on themselves.");
+  }
+
+  const targetUser = await prisma.user.findUnique({
+    where: { id: userId },
+    include: { verification: true },
+  });
+
+  if (!targetUser) {
+    throw new Error("User not found.");
+  }
+
+  // Upsert: create if none exists, or update if still NOT_SUBMITTED
+  const existing = targetUser.verification;
+  let verification;
+
+  if (!existing) {
+    verification = await prisma.verification.create({
+      data: {
+        userId,
+        status: VerificationStatus.PENDING,
+        notes: `[VERIFICATION REQUESTED]\nRequired: ${requiredDocuments}${adminNotes ? `\n\nAdmin notes: ${adminNotes}` : ""}`,
+        submissionDate: null, // not yet submitted by user
+      },
+    });
+  } else if (
+    existing.status === VerificationStatus.NOT_SUBMITTED ||
+    existing.status === VerificationStatus.NEED_MORE_DOCUMENTS
+  ) {
+    verification = await prisma.verification.update({
+      where: { userId },
+      data: {
+        status: VerificationStatus.PENDING,
+        notes: `[VERIFICATION REQUESTED]\nRequired: ${requiredDocuments}${adminNotes ? `\n\nAdmin notes: ${adminNotes}` : ""}`,
+        submissionDate: null,
+      },
+    });
+  } else {
+    throw new Error(
+      `Cannot request verification: current status is ${existing.status}. ` +
+      "Use the review action to change status from an active verification state."
+    );
+  }
+
+  // Notify the user
+  await prisma.notification.create({
+    data: {
+      userId,
+      title: "Verification Documents Requested",
+      message: `Our trust team has reviewed your application and is requesting the following documents: ${requiredDocuments}. Please log in to your dashboard to upload them.`,
+      type: "REQUEST",
+    },
+  });
+
+  await createAuditLog(
+    "REQUEST_VERIFICATION",
+    "Verification",
+    verification.id,
+    `Admin requested verification for user ${targetUser.email}. Required: ${requiredDocuments}`
+  );
+
+  revalidatePath("/dashboard/admin/verifications");
+  revalidatePath("/dashboard/admin/users");
+  return { success: true, verificationId: verification.id };
+}
+
 export async function adminReviewVerificationAction(
   verificationId: string,
   status: VerificationStatus,

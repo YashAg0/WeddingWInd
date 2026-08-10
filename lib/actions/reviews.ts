@@ -6,7 +6,7 @@ import { evaluateReviewEligibility } from "@/lib/services/review-eligibility";
 import { evaluateReviewFraud } from "@/lib/services/review-fraud";
 import { logReputationEvent } from "@/lib/services/reputation";
 import { rateLimit } from "@/lib/rate-limit";
-import { ReviewType, ReviewReportReason, ReputationEntityType, ReputationEventType } from "@prisma/client";
+import { ReviewType, ReviewReportReason, ReviewStatus, AppealStatus, ReputationEntityType, ReputationEventType } from "@prisma/client";
 
 /**
  * Helper to adjust reputation scores dynamically based on review direction and action.
@@ -690,7 +690,7 @@ export async function adminModerateReviewAction(params: {
 
   await prisma.review.update({
     where: { id: params.reviewId },
-    data: { status: status as any, deletedAt }
+    data: { status: status as ReviewStatus, deletedAt }
   });
 
   // Re-evaluate trust score
@@ -814,7 +814,7 @@ export async function adminReviewReviewAppealAction(params: {
   await prisma.reviewAppeal.update({
     where: { id: params.appealId },
     data: {
-      status: params.action as any,
+      status: params.action as AppealStatus,
       reviewedById: adminUser.id,
       reviewNotes: params.notes,
       reviewedAt: new Date()

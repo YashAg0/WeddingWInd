@@ -1,22 +1,27 @@
 import { auth, currentUser } from "@clerk/nextjs/server";
-import { prisma, isDatabaseAvailable } from "./prisma";
+import { prisma } from "./prisma";
 import { UserRole, UserStatus } from "@prisma/client";
 
 /**
  * Gets the current authenticated Clerk user session.
  */
 export async function getSession() {
-  return await auth();
+  try {
+    return await auth();
+  } catch {
+    return null;
+  }
 }
 
 /**
  * Gets the detailed User model from PostgreSQL database using Clerk userId.
+ * Returns null if user is not authenticated or not found in DB.
+ * Returns null (not throws) on DB errors — callers should handle null gracefully.
  */
 export async function getDbUser() {
   try {
     const session = await getSession();
     if (!session?.userId) return null;
-    if (!(await isDatabaseAvailable())) return null;
 
     return await prisma.user.findUnique({
       where: { clerkUserId: session.userId },
@@ -34,7 +39,13 @@ export async function getDbUser() {
 
 /**
  * Syncs the current Clerk user into PostgreSQL if they do not exist.
- * Returns the matched/created database User details or a safe fallback when DB is offline.
+ * Returns the matched/created database User, or null if unauthenticated.
+ *
+ * SEC-002: Fail-closed on DB errors.
+ * - Does NOT pre-ping the database separately (avoids double-connections).
+ * - Attempts the operation directly; propagates DB errors as SERVICE_UNAVAILABLE.
+ * - Never returns a synthetic user with a granted role.
+ * - Never silently converts an authenticated user to TRAVELER on DB failure.
  */
 export async function syncAndGetDbUser() {
   let session: any = null;
@@ -47,37 +58,14 @@ export async function syncAndGetDbUser() {
 
   if (!session?.userId) return null;
 
-  if (!(await isDatabaseAvailable())) {
-    return {
-      id: `fallback-${session.userId}`,
-      clerkUserId: session.userId,
-      email: `${session.userId}@guest.weddingwithindia.com`,
-      name: "Guest User",
-      role: UserRole.TRAVELER,
-      status: UserStatus.ACTIVE,
-      avatarUrl: "https://i.pravatar.cc/80?img=12",
-      phone: null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-  }
-
   try {
-    // 1. Check if user already exists
-    let dbUser = await prisma.user.findUnique({
-      where: { clerkUserId: session.userId },
-      include: {
-        travelerProfile: true,
-        coupleProfile: true,
-        agentProfile: true
-      }
-    });
-
-    if (dbUser) return dbUser;
-
-    // 2. Fetch clerk user details from server
+    const startTime = Date.now();
+    console.log(`[AUTH DEBUG] STAGE 1 (Clerk user lookup) START`);
+    // 1. Fetch clerk user details from server
     const clerkUser = await currentUser();
     if (!clerkUser) return null;
+    
+    console.log(`[AUTH DEBUG] STAGE 1 (Clerk user lookup) SUCCESS durationMs=${Date.now() - startTime}`);
 
     const email = clerkUser.emailAddresses[0]?.emailAddress || `${clerkUser.id}@guest.weddingwithindia.com`;
     const name = `${clerkUser.firstName || ""} ${clerkUser.lastName || ""}`.trim() || email.split("@")[0];
@@ -85,79 +73,132 @@ export async function syncAndGetDbUser() {
     const randomAvatarImg = crypto.randomBytes(1).readUInt8(0) % 70;
     const avatar = clerkUser.imageUrl || `https://i.pravatar.cc/80?img=${randomAvatarImg}`;
 
-    // 3. Create user and default TravelerProfile in transaction
-    dbUser = await prisma.$transaction(async (tx) => {
-      const createdUser = await tx.user.create({
-        data: {
-          clerkUserId: clerkUser.id,
-          email,
-          name,
-          avatar,
-          role: "TRAVELER",
-          status: "ONBOARDING"
-        }
-      });
+    // 2. Resolve external cookies BEFORE entering the database transaction
+    let refCookie: any = null;
+    try {
+      const { getAttributionCookie } = require("./attribution");
+      refCookie = await getAttributionCookie();
+    } catch (err) {
+      console.warn("Failed to read attribution cookie prior to transaction:", err);
+    }
 
-      await tx.travelerProfile.create({
-        data: {
-          userId: createdUser.id,
+    // 3. Upsert the user record in an isolated transaction.
+    console.log(`[AUTH DEBUG] STAGE 3 (Transaction acquisition) START`);
+    const txStart = Date.now();
+    const dbUser = await prisma.$transaction(async (tx) => {
+      console.log(`[AUTH DEBUG] STAGE 3 (Transaction acquisition) SUCCESS durationMs=${Date.now() - txStart}`);
+      
+      console.log(`[AUTH DEBUG] STAGE 2 (Initial user lookup) START`);
+      const stage2Start = Date.now();
+      
+      const existingByClerkId = await tx.user.findUnique({ where: { clerkUserId: clerkUser.id } });
+      const existingByEmail = await tx.user.findUnique({ where: { email } });
+      
+      console.log(`[AUTH DEBUG] STAGE 2 (Initial user lookup) SUCCESS durationMs=${Date.now() - stage2Start}`);
+
+      let upsertedUser;
+      console.log(`[AUTH DEBUG] STAGE 4 (user.upsert) START`);
+      const stage4Start = Date.now();
+      
+      if (existingByClerkId) {
+        // Clerk ID is known. Update fields (in case they changed name/avatar/email).
+        // If email changed in Clerk, and the new email exists in DB under another user, it means 
+        // Clerk state vs DB state is heavily conflicted, but Clerk guarantees unique emails.
+        upsertedUser = await tx.user.update({
+          where: { id: existingByClerkId.id },
+          data: { email, name, avatar }
+        });
+      } else if (existingByEmail) {
+        // Clerk ID is NEW, but email is KNOWN.
+        // This happens if:
+        // 1. The account was pre-provisioned via a script with a placeholder like "pending_admin_..."
+        // 2. The developer deleted the user in the Clerk Dashboard and signed up again with the same email.
+        // We MUST link the existing DB row to the new Clerk ID to avoid P2002 Unique Constraint errors.
+        upsertedUser = await tx.user.update({
+          where: { id: existingByEmail.id },
+          data: {
+            clerkUserId: clerkUser.id,
+            name,
+            avatar
+          }
+        });
+      } else {
+        // Brand new user, neither Clerk ID nor Email exists in DB.
+        upsertedUser = await tx.user.create({
+          data: {
+            clerkUserId: clerkUser.id,
+            email,
+            name,
+            avatar,
+            role: "TRAVELER",
+            status: "ONBOARDING"
+          }
+        });
+      }
+      
+      console.log(`[AUTH DEBUG] STAGE 4 (user.upsert) SUCCESS durationMs=${Date.now() - stage4Start}`);
+
+      console.log(`[AUTH DEBUG] STAGE 5 (travelerProfile.upsert) START`);
+      const stage5Start = Date.now();
+      await tx.travelerProfile.upsert({
+        where: { userId: upsertedUser.id },
+        create: {
+          userId: upsertedUser.id,
           fullName: name,
           country: "United States",
           language: "English"
-        }
+        },
+        update: {}
       });
+      console.log(`[AUTH DEBUG] STAGE 5 (travelerProfile.upsert) SUCCESS durationMs=${Date.now() - stage5Start}`);
 
-      // Check for referral cookie details
-      try {
-        const { getAttributionCookie } = require("./attribution");
-        const { associateReferralOnSignup } = require("./actions/referrals");
-        
-        const refCookie = await getAttributionCookie();
-        if (refCookie && refCookie.referralCode) {
-          await associateReferralOnSignup(createdUser.id, refCookie);
-        }
-      } catch (err) {
-        console.error("Failed to link referral cookie on signup:", err);
-      }
-
-      return await tx.user.findUnique({
-        where: { id: createdUser.id },
+      console.log(`[AUTH DEBUG] STAGE 8 (final returned user) START`);
+      const stage8Start = Date.now();
+      const finalUser = await tx.user.findUnique({
+        where: { id: upsertedUser.id },
         include: {
           travelerProfile: true,
           coupleProfile: true,
           agentProfile: true
         }
       });
+      console.log(`[AUTH DEBUG] STAGE 8 (final returned user) SUCCESS durationMs=${Date.now() - stage8Start}`);
+      
+      console.log(`[AUTH DEBUG] STAGE 6 (Transaction commit) START`);
+      return finalUser;
+    }, {
+      maxWait: 10000,
+      timeout: 15000
     });
+    console.log(`[AUTH DEBUG] STAGE 6 (Transaction commit) SUCCESS durationMs=${Date.now() - txStart}`);
+
+    // 4. Link referral AFTER the transaction is safely committed
+    if (dbUser && dbUser.createdAt.getTime() === dbUser.updatedAt.getTime()) {
+      if (refCookie && refCookie.referralCode) {
+        try {
+          console.log(`[AUTH DEBUG] STAGE 7 (associateReferralOnSignup) START`);
+          const stage7Start = Date.now();
+          const { associateReferralOnSignup } = require("./actions/referrals");
+          await associateReferralOnSignup(dbUser.id, refCookie);
+          console.log(`[AUTH DEBUG] STAGE 7 (associateReferralOnSignup) SUCCESS durationMs=${Date.now() - stage7Start}`);
+        } catch (err) {
+          console.error("Failed to link referral cookie on signup:", err);
+        }
+      }
+    }
 
     return dbUser;
-  } catch (err) {
-    console.warn("[syncAndGetDbUser] Database error during sync. Returning transient fallback user.", err);
-    try {
-      const clerkUser = await currentUser();
-      if (!clerkUser) return null;
-      const email = clerkUser.emailAddresses[0]?.emailAddress || `${clerkUser.id}@guest.weddingwithindia.com`;
-      const name = `${clerkUser.firstName || ""} ${clerkUser.lastName || ""}`.trim() || email.split("@")[0];
-      const avatar = clerkUser.imageUrl || `https://i.pravatar.cc/80?img=1`;
-
-      return {
-        id: clerkUser.id,
-        clerkUserId: clerkUser.id,
-        email,
-        name,
-        avatar,
-        role: UserRole.TRAVELER,
-        status: UserStatus.ACTIVE,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        travelerProfile: null,
-        coupleProfile: null,
-        agentProfile: null,
-        dbOffline: true
-      } as any;
-    } catch {
-      return null;
-    }
+  } catch (err: any) {
+    // Extensive diagnostic logging as requested by user
+    console.error("[AUTH DEBUG] FATAL ERROR IN syncAndGetDbUser");
+    console.error(`[AUTH DEBUG] errorName=${err?.name}`);
+    console.error(`[AUTH DEBUG] errorCode=${err?.code}`);
+    console.error(`[AUTH DEBUG] message=${err?.message}`);
+    console.error(`[AUTH DEBUG] meta=${JSON.stringify(err?.meta)}`);
+    console.error(`[AUTH DEBUG] stack=${err?.stack}`);
+    
+    // SEC-002: Do not return a mock user with granted roles on DB errors.
+    throw new Error("SERVICE_UNAVAILABLE: Authentication service is temporarily unavailable. Please try again shortly.");
   }
 }
 
@@ -193,5 +234,3 @@ export async function isAdmin() {
   const user = await getDbUser();
   return user?.role === UserRole.ADMIN;
 }
-
-

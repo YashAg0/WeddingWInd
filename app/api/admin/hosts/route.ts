@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth";
-import { UserRole } from "@prisma/client";
+import { UserRole, WeddingStatus } from "@prisma/client";
 
 // GET /api/admin/hosts — list all host (couple) applications
 export async function GET() {
@@ -40,16 +40,16 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: "Missing weddingId or action" }, { status: 400 });
     }
 
-    let newStatus: string;
+    let newStatus: WeddingStatus;
     switch (action) {
       case "approve":
-        newStatus = "PUBLISHED";
+        newStatus = WeddingStatus.PUBLISHED;
         break;
       case "reject":
-        newStatus = "DRAFT";
+        newStatus = WeddingStatus.DRAFT;
         break;
       case "make_live":
-        newStatus = "PUBLISHED";
+        newStatus = WeddingStatus.PUBLISHED;
         break;
       default:
         return NextResponse.json({ error: "Invalid action" }, { status: 400 });
@@ -57,7 +57,7 @@ export async function PATCH(req: NextRequest) {
 
     const updated = await prisma.wedding.update({
       where: { id: weddingId },
-      data: { status: newStatus as any },
+      data: { status: newStatus },
       include: {
         hostCouple: { include: { user: true } }
       }

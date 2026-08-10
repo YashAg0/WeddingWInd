@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import {
   Search,
   MapPin,
@@ -12,7 +13,6 @@ import {
   ShieldCheck,
   Check,
   Star,
-  ArrowRight,
 } from "lucide-react";
 import {
   motion,
@@ -22,6 +22,7 @@ import {
   useSpring,
   useReducedMotion,
 } from "framer-motion";
+import { cn } from "@/lib/utils";
 import type { Stat } from "@/types";
 
 interface HeroProps {
@@ -50,10 +51,10 @@ const PARTICLES = [
   { top: "65%", right: "6%", delay: 0.4, duration: 9, drift: -16, size: 12, opacity: 0.2, blur: 1.5 },
 ] as const;
 
-/** Curated one-tap searches for the highest-intent destinations. These fill
- *  the "Where" field directly rather than linking out, so a first-time
- *  visitor with no fixed destination in mind still has a fast path into
- *  results instead of staring at an empty search bar. */
+/** Curated one-tap searches for the highest-intent destinations. Clicking one
+ *  fills the "Where" field and carries focus to it, so the choice is visibly
+ *  confirmed — a first-time visitor sees exactly what will be searched
+ *  before committing, rather than a silent state change off-screen. */
 const TRENDING_SEARCHES = [
   "Rajasthan Royal Wedding",
   "Goa Beach Wedding",
@@ -75,40 +76,64 @@ function FieldChevron() {
 }
 
 /** Pre-launch trust stats — qualitative trust signals rather than zeroes,
- *  so the hero reads as confident rather than empty. Once real metrics exist
+ *  so the hero reads as confident rather than empty. Rendered as a slim,
+ *  single-line trust bar (icon + claim) rather than heavy cards — the goal
+ *  is a quiet, editorial confirmation of credibility, not a second visual
+ *  centerpiece competing with the search card. Once real metrics exist
  *  these should be replaced with live data from BUSINESS_METRICS. */
 const TRUST_STATS = [
   {
-    icon: <ShieldCheck size={22} strokeWidth={1.75} aria-hidden="true" />,
+    icon: <ShieldCheck size={15} strokeWidth={2} aria-hidden="true" />,
     value: "100%",
     label: "Verified Hosts",
     description: "Every family personally vetted",
   },
   {
-    icon: <Star size={22} strokeWidth={1.75} aria-hidden="true" />,
+    icon: <Star size={15} strokeWidth={2} aria-hidden="true" />,
     value: "Curated",
     label: "Celebrations Only",
     description: "Every wedding hand-selected",
   },
   {
-    icon: <Check size={22} strokeWidth={1.75} aria-hidden="true" />,
+    icon: <Check size={15} strokeWidth={2} aria-hidden="true" />,
     value: "Secure",
     label: "Transparent Payments",
     description: "AES-256 encrypted & protected",
   },
 ];
 
+/** This month in "YYYY-MM" form, for the date field's floor — a wedding
+ *  search shouldn't let anyone pick a month that's already passed. */
+function currentMonthValue() {
+  return new Date().toISOString().slice(0, 7);
+}
+
 export function Hero({ stats: _stats }: HeroProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedMonth, setSelectedMonth] = useState("");
   const prefersReducedMotion = useReducedMotion();
+  const router = useRouter();
 
-  // The search card previously linked to a static "/weddings" regardless of
-  // what was typed — none of the three fields actually did anything. This
-  // builds the real query string, using "destination" as the param name to
-  // match the SearchAction URL template already declared in layout.tsx's
-  // WebSite JSON-LD (so Google Sitelinks Search and this button agree).
+  // Hydration guard: Framer Motion's `initial="hidden"` (opacity:0, y:32) is
+  // rendered by the server, but Framer Motion on the client immediately
+  // calculates the `animate="visible"` state before the first paint, causing
+  // React 19's strict hydration check to fail.
+  //
+  // Fix: render all motion elements with `initial={false}` on first paint
+  // (SSR HTML and first client HTML are identical — both show visible state).
+  // After hydration, `mounted` becomes true and subsequent renders use the
+  // real `initial="hidden"` so the animation plays on fresh page loads.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+  const isReducedMotion = mounted ? prefersReducedMotion : false;
+
+  // Helper: suppress initial variant before hydration to prevent SSR mismatch
+  const motionInitial = (variantName: string) =>
+    !mounted || isReducedMotion ? false : variantName;
+
+  // The search card builds a real query string using "destination" as the param name to
+  // match the SearchAction URL template declared in layout.tsx's WebSite JSON-LD.
   const searchHref = (() => {
     const params = new URLSearchParams();
     if (searchQuery.trim()) params.set("destination", searchQuery.trim());
@@ -117,6 +142,27 @@ export function Hero({ stats: _stats }: HeroProps) {
     const qs = params.toString();
     return qs ? `/weddings?${qs}` : "/weddings";
   })();
+
+  // Pressing Enter in any field should search, matching the muscle memory
+  // every visitor already has from every other search bar on the web.
+  // The visible action stays a real <Link> (good for SEO/right-click/open
+  // in new tab); this just adds the keyboard shortcut on top of it.
+  function handleFieldKeyDown(e: React.KeyboardEvent) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      router.push(searchHref);
+    }
+  }
+
+  const destinationInputRef = useRef<HTMLInputElement>(null);
+
+  function handleTrendingClick(label: string) {
+    setSearchQuery(label);
+    const el = destinationInputRef.current;
+    if (!el) return;
+    el.scrollIntoView({ behavior: isReducedMotion ? "auto" : "smooth", block: "center" });
+    el.focus();
+  }
 
   const sectionRef = useRef<HTMLElement>(null);
   const { scrollYProgress } = useScroll({
@@ -138,10 +184,10 @@ export function Hero({ stats: _stats }: HeroProps) {
   const rotateY = useSpring(rawRotateY, { stiffness: 200, damping: 20 });
 
   useEffect(() => {
-    if (prefersReducedMotion) return;
+    if (isReducedMotion) return;
     const canHover = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
     setTiltEnabled(canHover);
-  }, [prefersReducedMotion]);
+  }, [isReducedMotion]);
 
   function handleCardPointerMove(e: React.PointerEvent<HTMLDivElement>) {
     if (!tiltEnabled || !cardRef.current) return;
@@ -167,18 +213,33 @@ export function Hero({ stats: _stats }: HeroProps) {
       {/* Background image layer */}
       <motion.div
         className="absolute inset-0 z-0 will-change-transform"
-        style={{ y: prefersReducedMotion ? 0 : bgY }}
+        style={{ y: isReducedMotion ? 0 : bgY }}
         aria-hidden="true"
       >
-        <Image
-          src="https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=1920&q=90"
-          alt="Indian Wedding Celebration"
-          fill
-          priority
-          quality={90}
-          sizes="100vw"
-          className="object-cover scale-110"
-        />
+        {/* Ambient Ken Burns drift — a slow, near-imperceptible 26s breathing
+            zoom that keeps the frame alive without ever calling attention to
+            itself. This is the one place continuous motion is justified: a
+            static hero photo behind a luxury travel brand reads as a stock
+            photo, a barely-moving one reads as a living moment. */}
+        <motion.div
+          className="absolute inset-0"
+          animate={isReducedMotion ? { scale: 1.1 } : { scale: [1.1, 1.17, 1.1] }}
+          transition={
+            isReducedMotion
+              ? { duration: 0 }
+              : { duration: 26, repeat: Infinity, ease: "easeInOut" }
+          }
+        >
+          <Image
+            src="https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=1920&q=90"
+            alt="Indian Wedding Celebration"
+            fill
+            priority
+            quality={90}
+            sizes="100vw"
+            className="object-cover"
+          />
+        </motion.div>
         {/* Rich layered overlay: dark at top for text, deep maroon at bottom for brand warmth */}
         <div className="absolute inset-0 bg-gradient-to-b from-charcoal-950/88 via-charcoal-950/68 to-maroon-950/92" />
         {/* Warm brand fade into the next section */}
@@ -188,7 +249,7 @@ export function Hero({ stats: _stats }: HeroProps) {
       {/* Floating ornament particles */}
       <motion.div
         className="absolute inset-0 z-0 overflow-hidden pointer-events-none will-change-transform"
-        style={{ y: prefersReducedMotion ? 0 : particlesY }}
+        style={{ y: isReducedMotion ? 0 : particlesY }}
         aria-hidden="true"
       >
         {PARTICLES.map((pos, i) => (
@@ -203,7 +264,7 @@ export function Hero({ stats: _stats }: HeroProps) {
               filter: pos.blur ? `blur(${pos.blur}px)` : undefined,
             }}
             animate={
-              prefersReducedMotion
+              isReducedMotion
                 ? {}
                 : {
                     y: [0, -18, 0],
@@ -225,8 +286,8 @@ export function Hero({ stats: _stats }: HeroProps) {
 
       {/* Foreground content */}
       <motion.div
-        style={{ y: prefersReducedMotion ? 0 : contentY }}
-        className="relative z-10 container-luxury pt-32 pb-24 flex flex-col items-center text-center"
+        style={{ y: isReducedMotion ? 0 : contentY }}
+        className="relative z-10 container-luxury pt-32 pb-20 flex flex-col items-center text-center will-change-transform"
       >
         {/* Deterministic text scrim behind eyebrow + headline block */}
         <div
@@ -242,12 +303,17 @@ export function Hero({ stats: _stats }: HeroProps) {
         <motion.div
           custom={0}
           variants={fadeUp}
-          initial="hidden"
+          initial={motionInitial("hidden")}
           animate="visible"
           className="relative inline-flex items-center gap-2 bg-white/15 backdrop-blur-md border border-white/25 text-white text-xs font-semibold uppercase tracking-widest px-4 py-2 rounded-full mb-6"
         >
           <span className="relative flex h-1.5 w-1.5 flex-shrink-0" aria-hidden="true">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--color-brand-secondary)] opacity-75" />
+            <span
+              className={cn(
+                "absolute inline-flex h-full w-full rounded-full bg-[var(--color-brand-secondary)] opacity-75",
+                !isReducedMotion && "animate-ping"
+              )}
+            />
             <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--color-brand-secondary)]" />
           </span>
           The World&apos;s Most Trusted Indian Wedding Platform
@@ -257,7 +323,7 @@ export function Hero({ stats: _stats }: HeroProps) {
         <motion.h1
           custom={1}
           variants={fadeUp}
-          initial="hidden"
+          initial={motionInitial("hidden")}
           animate="visible"
           className="relative font-display font-bold leading-[1.06] tracking-tight mb-4 max-w-4xl [text-wrap:balance] drop-shadow-[0_3px_30px_rgba(0,0,0,0.65)]"
           style={{ fontSize: "clamp(2.75rem, 6.5vw, 5.5rem)" }}
@@ -271,7 +337,7 @@ export function Hero({ stats: _stats }: HeroProps) {
               backgroundClip: "text",
               WebkitTextFillColor: "transparent",
               color: "#fcd34d",
-              animation: "shimmer 3.5s linear infinite",
+              animation: isReducedMotion ? "none" : "shimmer 3.5s linear infinite",
               backgroundSize: "200% auto",
             }}
           >
@@ -283,52 +349,36 @@ export function Hero({ stats: _stats }: HeroProps) {
         <motion.p
           custom={2}
           variants={fadeUp}
-          initial="hidden"
+          initial={motionInitial("hidden")}
           animate="visible"
-          className="relative text-white/95 text-lg sm:text-xl leading-relaxed max-w-2xl mb-8 [text-wrap:balance] drop-shadow-[0_2px_16px_rgba(0,0,0,0.55)]"
+          className="relative text-white/95 text-lg sm:text-xl leading-relaxed max-w-2xl mb-10 [text-wrap:balance] drop-shadow-[0_2px_16px_rgba(0,0,0,0.55)]"
         >
           Join Host Families in Rajasthan, Goa, and Kerala as an honored guest.
           Beyond travel lies belonging — become part of the celebration.
         </motion.p>
 
-        {/* PRIMARY CTA — most prominent action above the search */}
+        {/* SEARCH CARD — the single, focused path into the site. No competing
+            buttons above it: one confident action reads as more considered
+            than a wall of choices, and every field feeds it directly. */}
         <motion.div
-          custom={2.5}
+          custom={2.6}
           variants={fadeUp}
-          initial="hidden"
+          initial={motionInitial("hidden")}
           animate="visible"
-          className="flex flex-col sm:flex-row items-center gap-3 mb-8"
-        >
-          <Link
-            href="/weddings"
-            className="btn btn-secondary btn-lg group"
-            aria-label="Explore all Indian wedding celebrations"
-          >
-            <span>Explore Celebrations</span>
-            <ArrowRight
-              size={18}
-              className="group-hover:translate-x-0.5 transition-transform"
-              aria-hidden="true"
-            />
-          </Link>
-          <Link
-            href="/#how-it-works"
-            className="btn btn-ghost-white group"
-            aria-label="Learn how Wedding With India works"
-          >
-            How It Works
-          </Link>
-        </motion.div>
-
-        {/* SEARCH CARD — discovery tool */}
-        <motion.div
-          custom={3}
-          variants={fadeUp}
-          initial="hidden"
-          animate="visible"
-          className="w-full max-w-3xl mb-6"
+          className="relative w-full max-w-3xl mb-8"
           style={{ perspective: 1200 }}
         >
+          {/* Soft ambient glow behind the card — reads as a quiet spotlight
+              rather than a hard drop-shadow, reinforcing the card as the
+              hero's one deliberate focal point. */}
+          <div
+            className="pointer-events-none absolute -inset-4 -z-[1] rounded-[2rem] opacity-60 blur-2xl"
+            style={{
+              background:
+                "radial-gradient(ellipse 60% 70% at 50% 50%, rgba(201,151,42,0.25) 0%, rgba(201,151,42,0) 72%)",
+            }}
+            aria-hidden="true"
+          />
           <motion.div
             ref={cardRef}
             onPointerMove={handleCardPointerMove}
@@ -338,9 +388,26 @@ export function Hero({ stats: _stats }: HeroProps) {
               rotateY: tiltEnabled ? rotateY : 0,
               transformStyle: "preserve-3d",
             }}
-            className="glass rounded-2xl p-2 flex flex-col sm:flex-row sm:items-stretch gap-2 shadow-[0_20px_70px_0_rgba(0,0,0,0.32)] border border-white/20"
+            className="relative overflow-hidden glass rounded-2xl p-2 flex flex-col sm:flex-row sm:items-stretch gap-2 shadow-[0_20px_70px_0_rgba(0,0,0,0.32)] border border-white/20"
           >
-            <div className="flex-1 flex items-center gap-3 bg-white rounded-xl px-4 py-3 min-w-0 transition-shadow duration-200 focus-within:ring-2 focus-within:ring-[var(--color-brand-primary)]/40">
+            {/* One-time gleam across the glass on arrival — a single,
+                non-repeating reveal rather than a loop, so it reads as
+                "this card just unlocked" instead of a nervous tic. */}
+            {!isReducedMotion && (
+              <motion.div
+                className="pointer-events-none absolute inset-y-0 left-0 w-1/3 z-20"
+                style={{
+                  background:
+                    "linear-gradient(115deg, transparent 0%, rgba(255,255,255,0.4) 45%, transparent 90%)",
+                }}
+                initial={{ x: "-120%" }}
+                animate={{ x: "420%" }}
+                transition={{ duration: 1.1, delay: 1.5, ease: "easeInOut" }}
+                aria-hidden="true"
+              />
+            )}
+
+            <div className="flex-1 flex items-center gap-3 bg-white rounded-xl px-4 py-2.5 min-w-0 transition-shadow duration-200 focus-within:ring-2 focus-within:ring-[var(--color-brand-primary)]/40">
               <MapPin size={18} className="text-[var(--color-brand-primary)] flex-shrink-0" aria-hidden="true" />
               <div className="flex flex-col min-w-0 flex-1 text-left">
                 <label htmlFor="hero-destination" className="text-[0.6875rem] font-semibold text-charcoal-500 uppercase tracking-wide">
@@ -348,9 +415,11 @@ export function Hero({ stats: _stats }: HeroProps) {
                 </label>
                 <input
                   id="hero-destination"
+                  ref={destinationInputRef}
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={handleFieldKeyDown}
                   placeholder="Rajasthan, Goa, Kerala…"
                   className="w-full text-sm text-charcoal-900 placeholder:text-charcoal-400 bg-transparent outline-none font-medium"
                   autoComplete="off"
@@ -360,7 +429,7 @@ export function Hero({ stats: _stats }: HeroProps) {
 
             <div className="hidden sm:block w-px my-1 bg-warm-200" aria-hidden="true" />
 
-            <div className="flex-1 flex items-center gap-3 bg-white rounded-xl px-4 py-3 min-w-0 transition-shadow duration-200 focus-within:ring-2 focus-within:ring-[var(--color-brand-primary)]/40">
+            <div className="flex-1 flex items-center gap-3 bg-white rounded-xl px-4 py-2.5 min-w-0 transition-shadow duration-200 focus-within:ring-2 focus-within:ring-[var(--color-brand-primary)]/40">
               <Sparkles size={18} className="text-[var(--color-brand-primary)] flex-shrink-0" aria-hidden="true" />
               <div className="relative flex flex-col min-w-0 flex-1 text-left">
                 <label htmlFor="hero-category" className="text-[0.6875rem] font-semibold text-charcoal-500 uppercase tracking-wide">
@@ -370,6 +439,7 @@ export function Hero({ stats: _stats }: HeroProps) {
                   id="hero-category"
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(e.target.value)}
+                  onKeyDown={handleFieldKeyDown}
                   className="w-full text-sm text-charcoal-900 bg-transparent outline-none font-medium appearance-none cursor-pointer pr-6"
                   aria-label="Select wedding style"
                 >
@@ -387,7 +457,7 @@ export function Hero({ stats: _stats }: HeroProps) {
 
             <div className="hidden sm:block w-px my-1 bg-warm-200" aria-hidden="true" />
 
-            <div className="flex-1 flex items-center gap-3 bg-white rounded-xl px-4 py-3 min-w-0 transition-shadow duration-200 focus-within:ring-2 focus-within:ring-[var(--color-brand-primary)]/40">
+            <div className="flex-1 flex items-center gap-3 bg-white rounded-xl px-4 py-2.5 min-w-0 transition-shadow duration-200 focus-within:ring-2 focus-within:ring-[var(--color-brand-primary)]/40">
               <Calendar size={18} className="text-[var(--color-brand-primary)] flex-shrink-0" aria-hidden="true" />
               <div className="flex flex-col min-w-0 flex-1 text-left">
                 <label htmlFor="hero-date" className="text-[0.6875rem] font-semibold text-charcoal-500 uppercase tracking-wide">
@@ -396,8 +466,10 @@ export function Hero({ stats: _stats }: HeroProps) {
                 <input
                   id="hero-date"
                   type="month"
+                  min={currentMonthValue()}
                   value={selectedMonth}
                   onChange={(e) => setSelectedMonth(e.target.value)}
+                  onKeyDown={handleFieldKeyDown}
                   className="w-full text-sm text-charcoal-700 bg-transparent outline-none font-medium"
                   aria-label="Select month"
                 />
@@ -406,10 +478,14 @@ export function Hero({ stats: _stats }: HeroProps) {
 
             <Link
               href={searchHref}
-              className="btn btn-primary flex-shrink-0 gap-2 px-6 rounded-xl transition-transform duration-200 hover:scale-[1.03] active:scale-[0.98] flex items-center justify-center"
+              className="group btn btn-primary flex-shrink-0 gap-2 px-6 rounded-xl transition-transform duration-200 hover:scale-[1.03] active:scale-[0.98] flex items-center justify-center"
               aria-label="Search weddings"
             >
-              <Search size={18} aria-hidden="true" />
+              <Search
+                size={18}
+                className="transition-transform duration-200 group-hover:rotate-12"
+                aria-hidden="true"
+              />
               <span className="hidden sm:inline">Search</span>
             </Link>
           </motion.div>
@@ -417,19 +493,26 @@ export function Hero({ stats: _stats }: HeroProps) {
 
         {/* Trending quick-searches */}
         <motion.div
-          custom={3.4}
+          custom={3}
           variants={fadeUp}
-          initial="hidden"
+          initial={motionInitial("hidden")}
           animate="visible"
-          className="flex flex-wrap items-center justify-center gap-x-1.5 gap-y-2 text-xs sm:text-sm mb-10"
+          className="flex flex-wrap items-center justify-center gap-x-1.5 gap-y-2 text-xs sm:text-sm mb-8"
         >
           <span className="text-white/50 uppercase tracking-widest mr-1.5">Trending</span>
           {TRENDING_SEARCHES.map((label, i) => (
             <span key={label} className="flex items-center">
               <button
                 type="button"
-                onClick={() => setSearchQuery(label)}
-                className="text-white/85 hover:text-gold-300 font-medium underline-offset-4 hover:underline transition-colors duration-200"
+                onClick={() => handleTrendingClick(label)}
+                aria-pressed={searchQuery === label}
+                aria-label={`Search ${label}`}
+                className={cn(
+                  "rounded-sm font-medium underline-offset-4 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-300 focus-visible:ring-offset-2 focus-visible:ring-offset-charcoal-950",
+                  searchQuery === label
+                    ? "text-gold-300 underline"
+                    : "text-white/85 hover:text-gold-300 hover:underline"
+                )}
               >
                 {label}
               </button>
@@ -442,52 +525,64 @@ export function Hero({ stats: _stats }: HeroProps) {
           ))}
         </motion.div>
 
-        {/* Trust stats — qualitative signals that don't display as zeroes */}
+        {/* Hairline divider — draws itself in as a quiet transition from
+            "explore" content above to "trust" content below, without the
+            visual weight of another card or rule. */}
         <motion.div
-          custom={4.3}
-          variants={fadeUp}
-          initial="hidden"
-          animate="visible"
-          className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full max-w-2xl"
+          initial={!mounted || isReducedMotion ? false : { scaleX: 0, opacity: 0 }}
+          animate={{ scaleX: 1, opacity: 1 }}
+          transition={{ duration: 0.9, delay: 1.1, ease: "easeOut" }}
+          className="h-px w-16 mb-6 origin-center bg-gradient-to-r from-transparent via-gold-400/60 to-transparent"
+          aria-hidden="true"
+        />
+
+        {/* Trust bar — a slim, single-line row of credibility signals.
+            Deliberately not a second set of cards: three quiet claims in
+            one line read as an editorial footnote of confidence rather
+            than a competing visual block. Each claim settles in with a
+            slight stagger, echoing the deliberate pace of the rest of the
+            reveal rather than arriving as one flat block. */}
+        <div
+          className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3"
           role="list"
           aria-label="Platform trust signals"
         >
           {TRUST_STATS.map((stat, i) => (
             <motion.div
               key={stat.label}
-              initial={{ opacity: 0, y: 16 }}
+              initial={!mounted || isReducedMotion ? false : { opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.5 + i * 0.12, ease: "easeOut" }}
-              className="rounded-2xl px-5 py-4 text-center transition-transform duration-300 hover:-translate-y-1 flex flex-col items-center justify-center bg-charcoal-950/40 backdrop-blur-md border border-white/15 hover:bg-charcoal-950/50"
+              transition={{ duration: 0.6, delay: 1.3 + i * 0.12, ease: "easeOut" }}
+              className="flex items-center gap-2.5"
               role="listitem"
             >
-              <div
-                className="mb-2 flex items-center justify-center"
-                style={{
-                  color: "#fde68a",
-                  filter: "drop-shadow(0 0 8px rgba(201,151,42,0.4))",
-                }}
+              <span
+                className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border border-gold-400/30 bg-white/5"
+                style={{ color: "#fde68a" }}
                 aria-hidden="true"
               >
                 {stat.icon}
+              </span>
+              <div className="text-left leading-tight whitespace-nowrap">
+                <div className="text-white text-xs sm:text-[0.8125rem] font-semibold">
+                  <span
+                    style={{
+                      background: "linear-gradient(135deg, #fde68a 0%, #d4a336 100%)",
+                      WebkitBackgroundClip: "text",
+                      backgroundClip: "text",
+                      WebkitTextFillColor: "transparent",
+                      color: "#fde68a",
+                    }}
+                  >
+                    {stat.value}
+                  </span>{" "}
+                  {stat.label}
+                </div>
+                <div className="text-white/60 text-[0.6875rem]">{stat.description}</div>
               </div>
-              <div
-                className="font-display font-bold text-xl leading-none mb-1 tabular-nums"
-                style={{
-                  background: "linear-gradient(135deg, #fde68a 0%, #d4a336 100%)",
-                  WebkitBackgroundClip: "text",
-                  backgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                  color: "#fde68a",
-                }}
-              >
-                {stat.value}
-              </div>
-              <div className="text-white text-sm font-semibold mb-0.5">{stat.label}</div>
-              <div className="text-white/75 text-xs">{stat.description}</div>
             </motion.div>
           ))}
-        </motion.div>
+        </div>
       </motion.div>
 
       {/* Scroll indicator */}
@@ -500,7 +595,7 @@ export function Hero({ stats: _stats }: HeroProps) {
       >
         <div className="w-5 h-8 rounded-full border-2 border-white/50 flex items-start justify-center pt-1.5">
           <motion.div
-            animate={prefersReducedMotion ? {} : { y: [0, 10, 0] }}
+            animate={isReducedMotion ? {} : { y: [0, 10, 0] }}
             transition={{ repeat: Infinity, duration: 1.8, ease: "easeInOut" }}
             className="w-1 h-2 rounded-full bg-white/70"
           />

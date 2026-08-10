@@ -1,11 +1,13 @@
 "use client";
 
 import React, { useState, Suspense } from "react";
+import Link from "next/link";
 import Sidebar from "./Sidebar";
 import DashboardHeader from "./DashboardHeader";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
+import { RefreshCw, WifiOff } from "lucide-react";
 
 function DashboardShellContent({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -13,12 +15,14 @@ function DashboardShellContent({ children }: { children: React.ReactNode }) {
   const searchParams = useSearchParams();
   const { user, loading, dbOffline, refreshData } = useAuth();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [retrying, setRetrying] = useState(false);
 
   // Router guards wrapped in useEffect
   React.useEffect(() => {
     if (!loading) {
       const fullUrl = searchParams.toString() ? `${pathname}?${searchParams.toString()}` : pathname;
       if (!user && !dbOffline) {
+        // Not authenticated and DB is fine → redirect to login
         router.replace(`/login?redirect_url=${encodeURIComponent(fullUrl)}`);
       } else if (user && !user.onboarded && !dbOffline) {
         router.replace(`/onboarding?redirect_url=${encodeURIComponent(fullUrl)}`);
@@ -26,11 +30,66 @@ function DashboardShellContent({ children }: { children: React.ReactNode }) {
     }
   }, [user, loading, dbOffline, router, pathname, searchParams]);
 
-  if (loading || (!user && !dbOffline)) {
+  // Loading state: auth/DB sync in progress
+  if (loading) {
     return (
       <div className="min-h-screen bg-warm-50 flex items-center justify-center flex-col gap-3">
         <div className="w-8 h-8 rounded-full border-4 border-maroon-100 border-t-maroon-800 animate-spin" />
         <span className="text-xs font-bold text-charcoal-400 uppercase tracking-widest">Loading Dashboard...</span>
+      </div>
+    );
+  }
+
+  // DB is offline AND user is null: the session may be valid but we can't verify it.
+  // Show a DB-unavailable screen — NOT a "guest user" fallback.
+  // This correctly communicates: "You may be authenticated, but we can't confirm it."
+  if (dbOffline && !user) {
+    const handleRetry = async () => {
+      setRetrying(true);
+      await refreshData();
+      setRetrying(false);
+    };
+
+    return (
+      <div className="min-h-screen bg-warm-50 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white border border-amber-200 rounded-3xl p-10 shadow-sm space-y-5 text-center">
+          <div className="w-14 h-14 rounded-2xl bg-amber-50 text-amber-700 flex items-center justify-center mx-auto">
+            <WifiOff size={24} />
+          </div>
+          <h1 className="font-display font-bold text-xl text-charcoal-900">
+            Dashboard Temporarily Unavailable
+          </h1>
+          <p className="text-charcoal-600 text-sm leading-relaxed">
+            We&apos;re having trouble connecting to the database to verify your session.
+            This is a temporary connectivity issue — your login is not affected.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <button
+              onClick={handleRetry}
+              disabled={retrying}
+              className="inline-flex items-center gap-2 px-6 py-2.5 bg-maroon-800 text-white text-sm font-semibold rounded-xl hover:bg-maroon-900 transition-colors disabled:opacity-60"
+            >
+              <RefreshCw size={14} className={retrying ? "animate-spin" : ""} />
+              {retrying ? "Retrying..." : "Retry Connection"}
+            </button>
+            <Link
+              href="/"
+              className="inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-warm-100 text-charcoal-700 text-sm font-semibold rounded-xl hover:bg-warm-200 transition-colors"
+            >
+              Return to Home
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Loading after DB failure — redirect is pending
+  if (!user && !dbOffline) {
+    return (
+      <div className="min-h-screen bg-warm-50 flex items-center justify-center flex-col gap-3">
+        <div className="w-8 h-8 rounded-full border-4 border-maroon-100 border-t-maroon-800 animate-spin" />
+        <span className="text-xs font-bold text-charcoal-400 uppercase tracking-widest">Redirecting...</span>
       </div>
     );
   }
@@ -73,14 +132,15 @@ function DashboardShellContent({ children }: { children: React.ReactNode }) {
       {/* Main viewport */}
       <div className="flex flex-col flex-1 overflow-hidden min-w-0">
         <DashboardHeader onOpenMobileSidebar={() => setMobileSidebarOpen(true)} />
-        {dbOffline && (
+        {dbOffline && user && (
+          // DB went offline AFTER the user was already synced — show a non-blocking banner
           <div className="bg-amber-500 text-white text-xs px-4 py-2 flex items-center justify-between font-semibold">
-            <span>⚠️ Database Server Offline — Viewing restricted mode.</span>
+            <span>⚠️ Database connection interrupted — some data may be stale.</span>
             <button
               onClick={() => refreshData()}
               className="bg-white text-amber-900 px-3 py-1 rounded font-bold hover:bg-amber-100 transition"
             >
-              Retry Connection
+              Retry
             </button>
           </div>
         )}

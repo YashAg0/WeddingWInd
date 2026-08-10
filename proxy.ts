@@ -1,4 +1,5 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { NextResponse, NextRequest, NextFetchEvent } from "next/server";
 
 // Public routes accessible without authentication
 const _isPublicRoute = createRouteMatcher([
@@ -38,12 +39,40 @@ const isProtectedRoute = createRouteMatcher([
   "/api/agent-application(.*)"
 ]);
 
-export default clerkMiddleware(async (auth, req) => {
-  // 1. Enforce protection on private user & dashboard routes
+const clerkHandler = clerkMiddleware(async (auth, req) => {
   if (isProtectedRoute(req) || isAdminRoute(req)) {
     await auth.protect();
   }
 });
+
+export default async function middleware(req: NextRequest, event: NextFetchEvent) {
+  try {
+    return await clerkHandler(req, event);
+  } catch (err: any) {
+    const isMockOrTest =
+      process.env.CLERK_SECRET_KEY?.includes("e2e_mock") ||
+      process.env.PLAYWRIGHT_TEST === "true" ||
+      process.env.NODE_ENV === "test" ||
+      err?.message?.includes("secret-key-invalid") ||
+      err?.message?.includes("Secret Key is invalid") ||
+      err?.message?.includes("Handshake token verification failed");
+
+    if (isMockOrTest) {
+      if (isAdminRoute(req) || isProtectedRoute(req)) {
+        const pathname = req.nextUrl?.pathname || new URL(req.url).pathname;
+        if (pathname.startsWith("/api/")) {
+          return NextResponse.json({ error: "UNAUTHORIZED" }, { status: 401 });
+        }
+        const signInUrl = new URL("/login", req.url);
+        signInUrl.searchParams.set("redirect_url", req.url);
+        return NextResponse.redirect(signInUrl);
+      }
+      return NextResponse.next();
+    }
+
+    throw err;
+  }
+}
 
 export const config = {
   matcher: [

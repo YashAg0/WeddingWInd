@@ -43,7 +43,7 @@ export async function GET(
         const count = b.guestsCount;
         const amount = b.totalAmount;
         const status = b.status;
-        const notes = (b.traveler as any).foodPreferences || "None";
+        const notes = b.traveler.foodPreferences || "None";
         const date = new Date(b.createdAt).toISOString().split("T")[0];
         return [b.id, guestName, count, amount, status, notes, date].map(escapeCsv).join(",");
       })
@@ -57,7 +57,8 @@ export async function GET(
         "Content-Disposition": `attachment; filename="Guest_Register_${wedding.slug}.csv"`,
       },
     });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message || "Failed to export guest report." }, { status: 500 });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Failed to export guest report.";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

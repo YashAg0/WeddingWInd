@@ -3,29 +3,29 @@
 import React, { Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
-import { SignUp } from "@clerk/nextjs";
+import { SignIn } from "@clerk/nextjs";
 import { Compass } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { sanitizeRedirectUrl } from "@/lib/utils";
 
-function SignupContent() {
+function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, loading } = useAuth();
 
-  const redirectUrl = searchParams.get("redirect_url") || searchParams.get("returnTo") || null;
+  const rawRedirect = searchParams.get("redirect_url") || searchParams.get("returnTo") || null;
+  const redirectTarget = sanitizeRedirectUrl(rawRedirect);
 
   React.useEffect(() => {
     if (!loading && user) {
       if (!user.onboarded) {
-        const onboardingTarget = redirectUrl
-          ? `/onboarding?redirect_url=${encodeURIComponent(redirectUrl)}`
-          : "/onboarding";
+        const onboardingTarget = `/onboarding?redirect_url=${encodeURIComponent(redirectTarget)}`;
         router.replace(onboardingTarget);
       } else {
-        router.replace(redirectUrl || "/dashboard");
+        router.replace(redirectTarget);
       }
     }
-  }, [user, loading, router, redirectUrl]);
+  }, [user, loading, router, redirectTarget]);
 
   if (loading && user) {
     return (
@@ -36,13 +36,9 @@ function SignupContent() {
     );
   }
 
-  const clerkSignInUrl = redirectUrl
-    ? `/login?redirect_url=${encodeURIComponent(redirectUrl)}`
-    : "/login";
-
-  const fallbackOnboardingUrl = redirectUrl
-    ? `/onboarding?redirect_url=${encodeURIComponent(redirectUrl)}`
-    : "/onboarding";
+  const clerkSignUpUrl = rawRedirect
+    ? `/signup?redirect_url=${encodeURIComponent(redirectTarget)}`
+    : "/signup";
 
   return (
     <div className="min-h-screen bg-warm-50 flex items-center justify-center p-4 rounded-[2.5rem]">
@@ -55,18 +51,19 @@ function SignupContent() {
             Wedding With India
           </Link>
           <h1 className="font-display font-bold text-2xl text-charcoal-900 leading-tight">
-            Create account
+            Welcome back
           </h1>
           <p className="text-charcoal-400 text-xs sm:text-sm">
-            Join the world&apos;s leading wedding discovery experience
+            Sign in to access your wedding discovery experience
           </p>
         </div>
 
-        {/* Clerk Sign Up component */}
+        {/* Clerk Sign In component */}
         <div className="w-full flex justify-center">
-          <SignUp 
-            signInUrl={clerkSignInUrl}
-            fallbackRedirectUrl={fallbackOnboardingUrl}
+          <SignIn 
+            signUpUrl={clerkSignUpUrl}
+            fallbackRedirectUrl={redirectTarget}
+            forceRedirectUrl={redirectTarget}
           />
         </div>
 
@@ -75,16 +72,16 @@ function SignupContent() {
   );
 }
 
-export default function SignupPage() {
+export default function LoginPage() {
   return (
     <div className="px-5 sm:px-8 lg:px-12 xl:px-16">
-    <Suspense fallback={
-      <div className="min-h-screen bg-warm-50 flex items-center justify-center flex-col gap-3 rounded-[2.5rem]">
-        <div className="w-8 h-8 rounded-full border-4 border-maroon-100 border-t-maroon-800 animate-spin" />
-      </div>
-    }>
-      <SignupContent />
-    </Suspense>
-  
-    </div>);
+      <Suspense fallback={
+        <div className="min-h-screen bg-warm-50 flex items-center justify-center flex-col gap-3 rounded-[2.5rem]">
+          <div className="w-8 h-8 rounded-full border-4 border-maroon-100 border-t-maroon-800 animate-spin" />
+        </div>
+      }>
+        <LoginContent />
+      </Suspense>
+    </div>
+  );
 }

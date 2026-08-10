@@ -33,7 +33,7 @@ interface ReviewData {
   ratingValue: number | null;
   ratingCommunication: number | null;
   status: string;
-  traveler: {
+  traveler?: {
     fullName: string;
     user: {
       name: string | null;
@@ -41,7 +41,11 @@ interface ReviewData {
       status: string;
     };
   };
-  repliesList: ReviewReplyData[];
+  authorAvatar?: string;
+  authorName?: string;
+  date?: string;
+  content?: string;
+  repliesList?: ReviewReplyData[];
 }
 
 interface WeddingDetailReviewsProps {
@@ -229,7 +233,7 @@ export function WeddingDetailReviews({ weddingId: _weddingId, reviews, userId }:
           </span>
           <select
             value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as any)}
+            onChange={(e) => setSortBy(e.target.value as "recent" | "helpful")}
             className="bg-white border border-warm-200 rounded-lg text-xs font-bold text-charcoal-700 px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-maroon-500 cursor-pointer"
           >
             <option value="recent">Most Recent</option>
@@ -254,8 +258,8 @@ export function WeddingDetailReviews({ weddingId: _weddingId, reviews, userId }:
                 {/* Author Info */}
                 <div className="flex items-center gap-3">
                   <Image
-                    src={rev.traveler?.user?.avatar || (rev as any).authorAvatar || "https://i.pravatar.cc/80?img=4"}
-                    alt={rev.traveler?.fullName || (rev as any).authorName || "Anonymous Guest"}
+                    src={rev.traveler?.user?.avatar || rev.authorAvatar || "https://i.pravatar.cc/80?img=4"}
+                    alt={rev.traveler?.fullName || rev.authorName || "Anonymous Guest"}
                     width={40}
                     height={40}
                     className="w-10 h-10 rounded-full object-cover border border-warm-100 flex-shrink-0"
@@ -263,7 +267,7 @@ export function WeddingDetailReviews({ weddingId: _weddingId, reviews, userId }:
                   />
                   <div>
                     <div className="font-bold text-charcoal-900 text-sm flex items-center gap-1.5">
-                      <span>{rev.traveler?.fullName || (rev as any).authorName || "Anonymous Guest"}</span>
+                      <span>{rev.traveler?.fullName || rev.authorName || "Anonymous Guest"}</span>
                       {rev.traveler?.user?.status === "VERIFIED" && (
                         <span className="inline-flex items-center text-[0.625rem] bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded font-bold uppercase tracking-wider border border-emerald-100">
                           <Award size={10} className="mr-0.5 fill-emerald-500" />
@@ -276,7 +280,7 @@ export function WeddingDetailReviews({ weddingId: _weddingId, reviews, userId }:
                         month: "short",
                         day: "numeric",
                         year: "numeric"
-                      }) : ((rev as any).date || "Recent")}
+                      }) : (rev.date || "Recent")}
                     </div>
                   </div>
                 </div>
@@ -299,7 +303,7 @@ export function WeddingDetailReviews({ weddingId: _weddingId, reviews, userId }:
 
               {/* Review Comment */}
               <p className="text-charcoal-600 text-sm leading-relaxed whitespace-pre-line">
-                &ldquo;{rev.comment || (rev as any).content || ""}&rdquo;
+                &ldquo;{rev.comment || rev.content || ""}&rdquo;
               </p>
 
               {/* Action Buttons */}
@@ -374,7 +378,7 @@ export function WeddingDetailReviews({ weddingId: _weddingId, reviews, userId }:
                 </label>
                 <select
                   value={reportReason}
-                  onChange={(e) => setReportReason(e.target.value as any)}
+                  onChange={(e) => setReportReason(e.target.value as ReviewReportReason)}
                   className="w-full bg-white border border-warm-200 rounded-xl text-xs font-semibold text-charcoal-850 px-3.5 py-2.5 outline-none focus:ring-1 focus:ring-maroon-500 cursor-pointer"
                 >
                   <option value={ReviewReportReason.SPAM}>Spam or Duplicate Post</option>

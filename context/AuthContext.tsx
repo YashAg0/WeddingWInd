@@ -122,35 +122,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [adminStats, setAdminStats] = useState<any>(null);
   const [verification, setVerification] = useState<any>(null);
 
-  // Function to refresh state data from Postgres
+  // Function to refresh state data from Postgres.
+  // SEC-002: When the DB is unreachable (syncAndGetDbUser throws), user stays null
+  // and dbOffline=true. We NEVER grant a role or set user state from stale/mock data.
   const refreshData = useCallback(async () => {
     setLoading(true);
     try {
       const dbUser = await syncAndGetDbUser();
       if (!dbUser) {
+        // Not authenticated (Clerk session absent or user not found)
         setUser(null);
         setDbOffline(false);
         setLoading(false);
         return;
       }
 
-      if ((dbUser as any).dbOffline) {
-        setDbOffline(true);
-        setUser({
-          id: dbUser.id,
-          name: dbUser.name || dbUser.email.split("@")[0],
-          email: dbUser.email,
-          role: "traveler",
-          onboarded: true,
-          avatar: dbUser.avatar || "",
-          country: "",
-          bio: "",
-          phone: ""
-        });
-        setLoading(false);
-        return;
-      }
-
+      // DB is available and returned a real user record
       setDbOffline(false);
       const roleStr = dbUser.role.toLowerCase() as UserRole;
       setUser({
@@ -194,11 +181,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setVerification(dashData.verification || null);
         }
       } catch (err) {
-        console.warn("Dashboard data fetch warning (DB offline?):", err);
+        // Dashboard data fetch failed after user sync succeeded.
+        // Mark DB offline but do NOT clear the user record — user is still authenticated.
+        console.warn("Dashboard data fetch warning (transient DB error?):", err);
         setDbOffline(true);
       }
     } catch (err) {
-      console.error("Failed to sync and load database user session details:", err);
+      // syncAndGetDbUser() threw — DB is unavailable.
+      // SEC-002: user stays null (do not set to stale/mock data), mark DB offline.
+      // The DashboardShell will show the DB-offline banner and a retry button.
+      console.error("[AuthContext] DB unavailable during user sync:", err);
+      setUser(null);
       setDbOffline(true);
     } finally {
       setLoading(false);
@@ -288,8 +281,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       weddingId: bookingData.weddingId,
       guestsCount: bookingData.guestsCount,
       date: bookingData.date,
-      pricePerGuest: bookingData.pricePerGuest,
-      totalAmount: bookingData.pricePerGuest * bookingData.guestsCount
+      // pricePerGuest and totalAmount are intentionally omitted — the server
+      // calculates authoritative pricing from the wedding's DB record.
     });
     await refreshData();
   };

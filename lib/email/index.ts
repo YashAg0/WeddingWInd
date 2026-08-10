@@ -247,7 +247,7 @@ export async function sendNewMessageEmail(to: string, senderName: string, conver
         "${messageText}"
       </div>
       <div style="margin: 28px 0; text-align: center;">
-        <a href="${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/dashboard/messages" style="background-color: #6b1026; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 600; display: inline-block;">Reply in Dashboard</a>
+        <a href="${process.env.NEXT_PUBLIC_APP_URL || "https://weddingwithindia.com"}/dashboard/messages" style="background-color: #6b1026; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 600; display: inline-block;">Reply in Dashboard</a>
       </div>
     </div>
   `;
@@ -261,7 +261,7 @@ export async function sendBookingUpdateEmail(to: string, userName: string, weddi
       <p style="line-height: 1.6; color: #44403c;">Dear ${userName},</p>
       <p style="line-height: 1.6; color: #44403c;">Your reservation status for <strong>${weddingTitle}</strong> has been updated to: <strong>${status.toUpperCase()}</strong>.</p>
       <div style="margin: 28px 0; text-align: center;">
-        <a href="${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/dashboard/bookings" style="background-color: #6b1026; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 600; display: inline-block;">View Reservation</a>
+        <a href="${process.env.NEXT_PUBLIC_APP_URL || "https://weddingwithindia.com"}/dashboard/bookings" style="background-color: #6b1026; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 600; display: inline-block;">View Reservation</a>
       </div>
     </div>
   `;
@@ -276,7 +276,7 @@ export async function sendPaymentReminderEmail(to: string, userName: string, wed
       <p style="line-height: 1.6; color: #44403c;">This is a reminder to complete your reservation for <strong>${weddingTitle}</strong>.</p>
       <p style="line-height: 1.6; color: #44403c;">Amount pending: <strong>$${amount.toLocaleString()} USD</strong></p>
       <div style="margin: 28px 0; text-align: center;">
-        <a href="${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/dashboard/bookings" style="background-color: #6b1026; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 600; display: inline-block;">Complete Payment</a>
+        <a href="${process.env.NEXT_PUBLIC_APP_URL || "https://weddingwithindia.com"}/dashboard/bookings" style="background-color: #6b1026; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 600; display: inline-block;">Complete Payment</a>
       </div>
     </div>
   `;
@@ -291,7 +291,7 @@ export async function sendVerificationReminderEmail(to: string, userName: string
       <p style="line-height: 1.6; color: #44403c;">Your verification profile status is currently: <strong>${currentStatus.toUpperCase()}</strong>.</p>
       <p style="line-height: 1.6; color: #44403c;">Please upload clear document copies to unlock full platform access.</p>
       <div style="margin: 28px 0; text-align: center;">
-        <a href="${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/dashboard/profile" style="background-color: #6b1026; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 600; display: inline-block;">Complete Verification</a>
+        <a href="${process.env.NEXT_PUBLIC_APP_URL || "https://weddingwithindia.com"}/dashboard/profile" style="background-color: #6b1026; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 600; display: inline-block;">Complete Verification</a>
       </div>
     </div>
   `;
@@ -305,7 +305,7 @@ export async function sendUnreadConversationReminderEmail(to: string, userName: 
       <p style="line-height: 1.6; color: #44403c;">Dear ${userName},</p>
       <p style="line-height: 1.6; color: #44403c;">You have <strong>${count} unread conversation(s)</strong> waiting for your reply on Wedding With India.</p>
       <div style="margin: 28px 0; text-align: center;">
-        <a href="${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/dashboard/messages" style="background-color: #6b1026; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 600; display: inline-block;">Open Inbox</a>
+        <a href="${process.env.NEXT_PUBLIC_APP_URL || "https://weddingwithindia.com"}/dashboard/messages" style="background-color: #6b1026; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 600; display: inline-block;">Open Inbox</a>
       </div>
     </div>
   `;

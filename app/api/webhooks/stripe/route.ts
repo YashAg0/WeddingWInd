@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
+import type Stripe from "stripe";
 import { stripe } from "@/lib/stripe";
 import { env } from "@/lib/env";
 import { prisma } from "@/lib/prisma";
@@ -68,7 +69,7 @@ export async function POST(req: Request) {
   try {
     switch (event.type) {
       case "checkout.session.completed": {
-        const session = event.data.object as any;
+        const session = event.data.object as Stripe.Checkout.Session;
         const bookingId = session.client_reference_id || session.metadata?.bookingId;
 
         if (!bookingId) {
@@ -88,17 +89,29 @@ export async function POST(req: Request) {
 
           if (!booking) throw new Error(`Booking not found: ${bookingId}`);
 
+          // Guard: reject payment if booking is in a terminal/cancelled state
+          if (
+            booking.status === BookingStatus.CANCELLED ||
+            booking.status === BookingStatus.REJECTED ||
+            booking.status === BookingStatus.REFUNDED
+          ) {
+            logger.warn("[webhook/stripe] Payment received for cancelled/rejected booking — ignoring", { bookingId, status: booking.status });
+            return;
+          }
+
           if (booking.status === BookingStatus.PAID || booking.payments.length > 0) {
             logger.info("[webhook/stripe] Booking already processed — skipping", { bookingId });
             return;
           }
+
+          const paymentIntentId = (typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id) ?? session.id;
 
           const payment = await tx.payment.create({
             data: {
               bookingId: booking.id,
               amount: booking.totalAmount,
               currency: session.currency?.toUpperCase() || "USD",
-              stripePaymentIntentId: session.payment_intent ?? session.id,
+              stripePaymentIntentId: paymentIntentId,
               stripeChargeId: session.id,
               status: PaymentStatus.PAID,
             },
@@ -120,7 +133,7 @@ export async function POST(req: Request) {
               type: "CHARGE",
               amount: booking.totalAmount,
               status: "SUCCESS",
-              referenceId: session.payment_intent ?? session.id,
+              referenceId: paymentIntentId,
               metadata: JSON.stringify(session.metadata ?? {}),
             },
           });
@@ -190,7 +203,7 @@ export async function POST(req: Request) {
       }
 
       case "payment_intent.payment_failed": {
-        const intent = event.data.object as any;
+        const intent = event.data.object as Stripe.PaymentIntent;
         logger.warn("[webhook/stripe] Payment intent failed", { intentId: intent.id, error: intent.last_payment_error?.message });
 
         const bookingId = intent.metadata?.bookingId;
@@ -204,10 +217,10 @@ export async function POST(req: Request) {
       }
 
       case "charge.dispute.created": {
-        const dispute = event.data.object as any;
+        const dispute = event.data.object as Stripe.Dispute;
         logger.error("[webhook/stripe] Chargeback Dispute Created!", { disputeId: dispute.id, amount: dispute.amount });
 
-        const paymentIntentId = dispute.payment_intent;
+        const paymentIntentId = typeof dispute.payment_intent === "string" ? dispute.payment_intent : dispute.payment_intent?.id;
         if (paymentIntentId) {
           const payment = await prisma.payment.findFirst({
             where: { stripePaymentIntentId: paymentIntentId }
@@ -215,7 +228,7 @@ export async function POST(req: Request) {
           if (payment) {
             await prisma.payment.update({
               where: { id: payment.id },
-              data: { status: "DISPUTED" as any }
+              data: { status: PaymentStatus.FAILED }
             });
           }
         }
@@ -223,13 +236,14 @@ export async function POST(req: Request) {
       }
 
       case "charge.refunded": {
-        const charge = event.data.object as any;
+        const charge = event.data.object as Stripe.Charge;
         const stripeRefundId = charge.refunds?.data[0]?.id;
         logger.info("[webhook/stripe] Charge refunded event received", { chargeId: charge.id, stripeRefundId });
 
         if (stripeRefundId) {
           const { handleStripeRefundSucceeded } = require("@/lib/services/refunds");
-          await handleStripeRefundSucceeded(stripeRefundId, charge.payment_intent);
+          const paymentIntentId = typeof charge.payment_intent === "string" ? charge.payment_intent : charge.payment_intent?.id;
+          await handleStripeRefundSucceeded(stripeRefundId, paymentIntentId);
         }
         break;
       }

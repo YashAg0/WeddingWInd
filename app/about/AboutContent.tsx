@@ -145,7 +145,7 @@ export default function AboutContent() {
             <h4 className="text-xs font-bold text-charcoal-500 uppercase tracking-widest text-center">
               Five-Year Volume Growth Trajectory
             </h4>
-            <div className="grid grid-cols-5 gap-2 text-center text-xs font-bold">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 text-center text-xs font-bold">
               {INVESTOR_PROJECTIONS.FIVE_YEAR_BOOKINGS_TRAJECTORY.map((count, idx) => (
                 <div key={idx} className="bg-warm-100/60 p-3 rounded-xl border border-warm-200">
                   <div className="text-[0.625rem] text-charcoal-400">Year {idx + 1}</div>

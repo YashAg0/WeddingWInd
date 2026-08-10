@@ -1,8 +1,8 @@
 import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { UserRole } from "@prisma/client";
-import { adminUpdateUserRoleAction, adminDeleteUserAction } from "@/lib/actions/admin";
-import { User, Shield, Briefcase, Heart, Trash2 } from "lucide-react";
+import { UserRole, VerificationStatus } from "@prisma/client";
+import { adminUpdateUserRoleAction, adminDeleteUserAction, adminRequestVerificationAction } from "@/lib/actions/admin";
+import { User, Shield, Briefcase, Heart, Trash2, ShieldCheck } from "lucide-react";
 import { redirect } from "next/navigation";
 import Image from "next/image";
 
@@ -12,12 +12,13 @@ export default async function AdminUsersPage() {
   // 1. Authorize Admin
   const admin = await requireRole([UserRole.ADMIN]);
 
-  // 2. Fetch all users
+  // 2. Fetch all users with verification status
   const users = await prisma.user.findMany({
     include: {
       travelerProfile: true,
       coupleProfile: true,
       agentProfile: true,
+      verification: { select: { id: true, status: true, submissionDate: true } },
     },
     orderBy: { createdAt: "desc" },
   });
@@ -35,6 +36,14 @@ export default async function AdminUsersPage() {
     "use server";
     const uId = formData.get("id") as string;
     await adminDeleteUserAction(uId);
+    redirect("/dashboard/admin/users");
+  }
+
+  async function handleRequestVerification(formData: FormData) {
+    "use server";
+    const uId = formData.get("userId") as string;
+    const requiredDocs = formData.get("requiredDocs") as string;
+    await adminRequestVerificationAction(uId, requiredDocs || "Government ID + Selfie");
     redirect("/dashboard/admin/users");
   }
 
@@ -69,6 +78,7 @@ export default async function AdminUsersPage() {
                   <th className="p-3">Email Address</th>
                   <th className="p-3">Profile Info</th>
                   <th className="p-3">Current Role</th>
+                  <th className="p-3">Verification</th>
                   <th className="p-3 text-right pr-4 rounded-tr-xl">Actions</th>
                 </tr>
               </thead>
@@ -133,6 +143,58 @@ export default async function AdminUsersPage() {
                           <Icon size={11} />
                           {u.role}
                         </span>
+                      </td>
+
+                      {/* Verification Status */}
+                      <td className="p-3">
+                        {u.verification ? (
+                          <div className="space-y-1.5">
+                            <span className={`inline-flex items-center gap-1 text-[0.6875rem] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full border ${
+                              u.verification.status === VerificationStatus.APPROVED ? 'text-emerald-700 bg-emerald-50 border-emerald-200' :
+                              u.verification.status === VerificationStatus.REJECTED ? 'text-rose-700 bg-rose-50 border-rose-200' :
+                              u.verification.status === VerificationStatus.PENDING ? 'text-amber-700 bg-amber-50 border-amber-200' :
+                              u.verification.status === VerificationStatus.UNDER_REVIEW ? 'text-purple-700 bg-purple-50 border-purple-200' :
+                              u.verification.status === VerificationStatus.NEED_MORE_DOCUMENTS ? 'text-orange-700 bg-orange-50 border-orange-200' :
+                              'text-charcoal-500 bg-charcoal-50 border-charcoal-200'
+                            }`}>
+                              <ShieldCheck size={10} />
+                              {u.verification.status.replace(/_/g, ' ')}
+                            </span>
+                            {/* Request Verification button for NOT_SUBMITTED or NEED_MORE_DOCS */}
+                            {(u.verification.status === VerificationStatus.NOT_SUBMITTED ||
+                              u.verification.status === VerificationStatus.NEED_MORE_DOCUMENTS) && !isSelf && (
+                              <form action={handleRequestVerification} className="flex gap-1">
+                                <input type="hidden" name="userId" value={u.id} />
+                                <input
+                                  type="text"
+                                  name="requiredDocs"
+                                  defaultValue={u.role === 'TRAVELER' ? 'Passport + Government ID' : u.role === 'COUPLE' ? 'Wedding Invitation + Venue Confirmation' : 'Business Registration + LinkedIn'}
+                                  className="input-luxury text-[0.625rem] h-6 py-0 px-2 bg-white rounded-md border border-warm-200 w-28"
+                                  placeholder="Required docs..."
+                                />
+                                <button type="submit" className="px-2 py-0.5 rounded-md bg-sky-50 text-sky-700 border border-sky-200 hover:bg-sky-600 hover:text-white text-[0.5625rem] font-bold uppercase tracking-wider cursor-pointer transition-colors whitespace-nowrap">
+                                  Request
+                                </button>
+                              </form>
+                            )}
+                          </div>
+                        ) : (
+                          !isSelf && (
+                            <form action={handleRequestVerification} className="flex gap-1 items-center">
+                              <input type="hidden" name="userId" value={u.id} />
+                              <input
+                                type="text"
+                                name="requiredDocs"
+                                defaultValue={u.role === 'TRAVELER' ? 'Passport + Government ID' : u.role === 'COUPLE' ? 'Wedding Invitation + Venue Confirmation' : 'Business Registration + LinkedIn'}
+                                className="input-luxury text-[0.625rem] h-6 py-0 px-2 bg-white rounded-md border border-warm-200 w-28"
+                                placeholder="Required docs..."
+                              />
+                              <button type="submit" className="px-2 py-0.5 rounded-md bg-maroon-50 text-maroon-700 border border-maroon-200 hover:bg-maroon-600 hover:text-white text-[0.5625rem] font-bold uppercase tracking-wider cursor-pointer transition-colors whitespace-nowrap">
+                                Request Verification
+                              </button>
+                            </form>
+                          )
+                        )}
                       </td>
 
                       {/* Actions */}

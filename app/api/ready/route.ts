@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import Stripe from "stripe";
+import { stripe } from "@/lib/stripe";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -21,9 +21,6 @@ export async function GET() {
   // Check Stripe (only if configured)
   try {
     if (process.env.STRIPE_SECRET_KEY) {
-      const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-        apiVersion: "2023-10-16" as any,
-      });
       // Just fetching the balance is a good way to verify the API key
       await stripe.balance.retrieve();
       stripeHealthy = true;

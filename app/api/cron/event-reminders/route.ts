@@ -48,7 +48,7 @@ export async function GET(req: Request) {
             "7 days"
           );
         } catch (emailErr) {
-          logger.error("[cron/reminders] Failed sending 7-day email", emailErr as any);
+          logger.error("[cron/reminders] Failed sending 7-day email", {}, emailErr);
         }
       }
     }
@@ -81,7 +81,7 @@ export async function GET(req: Request) {
             "24 hours"
           );
         } catch (emailErr) {
-          logger.error("[cron/reminders] Failed sending 24-hour email", emailErr as any);
+          logger.error("[cron/reminders] Failed sending 24-hour email", {}, emailErr);
         }
       }
     }
@@ -92,8 +92,8 @@ export async function GET(req: Request) {
     });
 
     return NextResponse.json({ success: true });
-  } catch (err: any) {
-    logger.error("[cron/reminders] Cron processing failure:", err);
+  } catch (err) {
+    logger.error("[cron/reminders] Cron processing failure:", {}, err);
     return new NextResponse("Internal server error", { status: 500 });
   }
 }

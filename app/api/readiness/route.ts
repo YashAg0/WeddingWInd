@@ -12,8 +12,8 @@ export const dynamic = "force-dynamic";
  * to accept traffic.
  */
 export async function GET() {
-  // Use a fast timeout for readiness probe (e.g., 500ms)
-  const isReady = await isDatabaseAvailable(500);
+  // Check database availability using standard timeout
+  const isReady = await isDatabaseAvailable();
 
   if (isReady) {
     return NextResponse.json({ status: "ready" }, { status: 200 });

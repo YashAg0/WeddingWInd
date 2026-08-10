@@ -12,7 +12,7 @@ export async function register() {
     try {
       // Lazy load prisma to avoid top-level await issues
       const { isDatabaseAvailable } = await import("@/lib/prisma");
-      const dbAlive = await isDatabaseAvailable(2000);
+      const dbAlive = await isDatabaseAvailable();
       
       if (dbAlive) {
         logger.info("✅ Database connection verified on startup.");

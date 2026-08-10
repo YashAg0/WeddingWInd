@@ -33,6 +33,58 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import { UploadButton } from "@/lib/uploadthing";
+
+
+
+/** File upload field using UploadThing's button.
+ * The onUpload callback receives the real UploadThing CDN URL, not a local filename.
+ * Must be defined at module scope (not inside render) to prevent state reset.
+ */
+function FileUploadField({
+  label,
+  url,
+  onUpload,
+}: {
+  label: string;
+  url: string;
+  onUpload: (url: string) => void;
+}) {
+  return (
+    <div>
+      <label className="text-[0.6875rem] font-bold text-charcoal-400 uppercase tracking-wider block mb-1">{label}</label>
+      {url ? (
+        <div className="border-2 border-emerald-200 bg-emerald-50/30 rounded-xl p-3 flex items-center gap-2 text-xs">
+          <Check size={13} className="text-emerald-500 shrink-0" />
+          <span className="text-emerald-600 truncate font-semibold">Uploaded successfully</span>
+          <button
+            type="button"
+            onClick={() => onUpload("")}
+            className="ml-auto text-charcoal-400 hover:text-red-500 transition-colors"
+            aria-label="Remove file"
+          >
+            <X size={12} />
+          </button>
+        </div>
+      ) : (
+        <UploadButton
+          endpoint="verificationDocument"
+          onClientUploadComplete={(res) => {
+            if (res?.[0]?.url) onUpload(res[0].url);
+          }}
+          onUploadError={(error: Error) => {
+            console.error("[VerificationWidget] Upload error:", error);
+          }}
+          appearance={{
+            button: "ut-ready:bg-maroon-800 ut-ready:text-ivory-50 ut-uploading:bg-maroon-600 text-xs font-semibold rounded-xl px-4 py-2 w-full",
+            container: "border-2 border-dashed border-warm-200 hover:border-maroon-300 rounded-xl p-3 text-center bg-warm-50/30 transition-colors",
+            allowedContent: "text-[0.6rem] text-charcoal-400",
+          }}
+        />
+      )}
+    </div>
+  );
+}
 
 function VerificationWidget({ role, verification, submitVerification }: { role: string; verification: any; submitVerification: any }) {
   const [passportUrl, setPassportUrl] = useState("");
@@ -46,7 +98,8 @@ function VerificationWidget({ role, verification, submitVerification }: { role: 
   const [linkedinUrl, setLinkedinUrl] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  const status = verification?.status || "not_submitted";
+  const status = (verification?.status || "NOT_SUBMITTED").toLowerCase().replace(/_/g, "_");
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -86,7 +139,7 @@ function VerificationWidget({ role, verification, submitVerification }: { role: 
       <div className="flex justify-between items-center border-b border-warm-100 pb-3">
         <h3 className="font-display font-bold text-base text-charcoal-900 flex items-center gap-2">
           <ShieldCheck size={18} className="text-maroon-800" />
-          <span>Profile Trust & Verification</span>
+          <span>Profile Trust &amp; Verification</span>
         </h3>
         <span className={cn("text-[0.625rem] font-bold uppercase tracking-wider px-2 py-0.5 rounded border", getStatusColor())}>
           {status.replace("_", " ")}
@@ -121,55 +174,43 @@ function VerificationWidget({ role, verification, submitVerification }: { role: 
         </div>
       )}
 
-      {status === "rejected" && (
+      {status === "need_more_documents" && (
         <div className="space-y-3">
-          <div className="bg-red-50/50 border border-red-100 p-3 rounded-lg text-xs text-red-750">
-            <strong>Rejection Reason:</strong> {verification.notes || "Blurry documents uploaded. Please submit clear copies."}
+          <div className="bg-amber-50/80 border border-amber-200 p-3 rounded-lg text-xs text-amber-800 leading-relaxed">
+            <strong className="block mb-1">📋 Additional Documents Requested</strong>
+            {verification?.notes?.replace("[VERIFICATION REQUESTED]", "").replace("Required:", "Required:").trim() || "Our team requires additional or clearer documents. Please see below."}
           </div>
         </div>
       )}
 
-      {(status === "not_submitted" || status === "rejected") && (
+      {status === "rejected" && (
+        <div className="space-y-3">
+          <div className="bg-red-50/50 border border-red-100 p-3 rounded-lg text-xs text-red-750">
+            <strong>Rejection Reason:</strong> {verification?.notes || "Your documents could not be verified. Please contact support."}
+          </div>
+        </div>
+      )}
+
+      {/* Upload form: only shown when admin has explicitly requested verification */}
+      {(status === "pending" || status === "need_more_documents") && (
         <form onSubmit={handleSubmit} className="space-y-4">
           <p className="text-xs text-charcoal-500 leading-relaxed">
-            Submit your trust verification documents to secure referrals, attendee passes, and unlock premium platform options.
+            {status === "need_more_documents"
+              ? "Please re-upload the requested documents below."
+              : "Our team has reviewed your application and is requesting the following documents."}
           </p>
 
           {role === "traveler" && (
             <div className="space-y-3">
-              <div>
-                <label className="text-[0.6875rem] font-bold text-charcoal-400 uppercase tracking-wider block mb-1">Passport Scan</label>
-                <label className="border-2 border-dashed border-warm-200 hover:border-maroon-300 rounded-xl p-3 text-center cursor-pointer bg-warm-50/30 text-xs font-semibold text-charcoal-500 transition-colors flex items-center justify-center gap-2">
-                  {passportUrl ? <><Check size={13} className="text-emerald-500" /><span className="text-emerald-600">{passportUrl}</span></> : "Click to upload Passport (PDF / JPG)"}
-                  <input type="file" accept=".pdf,.jpg,.jpeg,.png" className="sr-only" onChange={(e) => { if (e.target.files?.[0]) setPassportUrl(e.target.files[0].name); }} />
-                </label>
-              </div>
-              <div>
-                <label className="text-[0.6875rem] font-bold text-charcoal-400 uppercase tracking-wider block mb-1">Government Photo ID</label>
-                <label className="border-2 border-dashed border-warm-200 hover:border-maroon-300 rounded-xl p-3 text-center cursor-pointer bg-warm-50/30 text-xs font-semibold text-charcoal-500 transition-colors flex items-center justify-center gap-2">
-                  {govtIdUrl ? <><Check size={13} className="text-emerald-500" /><span className="text-emerald-600">{govtIdUrl}</span></> : "Click to upload Government ID (PDF / JPG)"}
-                  <input type="file" accept=".pdf,.jpg,.jpeg,.png" className="sr-only" onChange={(e) => { if (e.target.files?.[0]) setGovtIdUrl(e.target.files[0].name); }} />
-                </label>
-              </div>
+              <FileUploadField label="Passport Scan" url={passportUrl} onUpload={setPassportUrl} />
+              <FileUploadField label="Government Photo ID" url={govtIdUrl} onUpload={setGovtIdUrl} />
             </div>
           )}
 
           {role === "couple" && (
             <div className="space-y-3">
-              <div>
-                <label className="text-[0.6875rem] font-bold text-charcoal-400 uppercase tracking-wider block mb-1">Wedding Invitation Card / PDF</label>
-                <label className="border-2 border-dashed border-warm-200 hover:border-maroon-300 rounded-xl p-3 text-center cursor-pointer bg-warm-50/30 text-xs font-semibold text-charcoal-500 transition-colors flex items-center justify-center gap-2">
-                  {invitationUrl ? <><Check size={13} className="text-emerald-500" /><span className="text-emerald-600">{invitationUrl}</span></> : "Click to upload Invitation (PDF / JPG)"}
-                  <input type="file" accept=".pdf,.jpg,.jpeg,.png" className="sr-only" onChange={(e) => { if (e.target.files?.[0]) setInvitationUrl(e.target.files[0].name); }} />
-                </label>
-              </div>
-              <div>
-                <label className="text-[0.6875rem] font-bold text-charcoal-400 uppercase tracking-wider block mb-1">Venue Booking Confirmation Scan</label>
-                <label className="border-2 border-dashed border-warm-200 hover:border-maroon-300 rounded-xl p-3 text-center cursor-pointer bg-warm-50/30 text-xs font-semibold text-charcoal-500 transition-colors flex items-center justify-center gap-2">
-                  {venueConfirmUrl ? <><Check size={13} className="text-emerald-500" /><span className="text-emerald-600">{venueConfirmUrl}</span></> : "Click to upload Venue Confirmation (PDF / JPG)"}
-                  <input type="file" accept=".pdf,.jpg,.jpeg,.png" className="sr-only" onChange={(e) => { if (e.target.files?.[0]) setVenueConfirmUrl(e.target.files[0].name); }} />
-                </label>
-              </div>
+              <FileUploadField label="Wedding Invitation Card / PDF" url={invitationUrl} onUpload={setInvitationUrl} />
+              <FileUploadField label="Venue Booking Confirmation Scan" url={venueConfirmUrl} onUpload={setVenueConfirmUrl} />
               <div>
                 <label className="text-[0.6875rem] font-bold text-charcoal-400 uppercase tracking-wider block mb-1">Social Profile Link (Instagram/Facebook)</label>
                 <input type="text" placeholder="instagram.com/wedding_couples" className="input-luxury text-xs" value={socialLinks} onChange={(e) => setSocialLinks(e.target.value)} />
@@ -179,13 +220,7 @@ function VerificationWidget({ role, verification, submitVerification }: { role: 
 
           {role === "agent" && (
             <div className="space-y-3">
-              <div>
-                <label className="text-[0.6875rem] font-bold text-charcoal-400 uppercase tracking-wider block mb-1">Business Registration Certificate (Optional)</label>
-                <label className="border-2 border-dashed border-warm-200 hover:border-maroon-300 rounded-xl p-3 text-center cursor-pointer bg-warm-50/30 text-xs font-semibold text-charcoal-500 transition-colors flex items-center justify-center gap-2">
-                  {businessRegUrl ? <><Check size={13} className="text-emerald-500" /><span className="text-emerald-600">{businessRegUrl}</span></> : "Click to upload Registration Certificate (PDF)"}
-                  <input type="file" accept=".pdf,.jpg,.jpeg,.png" className="sr-only" onChange={(e) => { if (e.target.files?.[0]) setBusinessRegUrl(e.target.files[0].name); }} />
-                </label>
-              </div>
+              <FileUploadField label="Business Registration Certificate (Optional)" url={businessRegUrl} onUpload={setBusinessRegUrl} />
               <div>
                 <label className="text-[0.6875rem] font-bold text-charcoal-400 uppercase tracking-wider block mb-1">LinkedIn Profile Link</label>
                 <input type="text" placeholder="linkedin.com/in/agency_lead" className="input-luxury text-xs" value={linkedinUrl} onChange={(e) => setLinkedinUrl(e.target.value)} />
@@ -202,6 +237,21 @@ function VerificationWidget({ role, verification, submitVerification }: { role: 
           </button>
         </form>
       )}
+
+      {/* NOT_SUBMITTED: admin has not yet requested verification — show holding state */}
+      {(status === "not_submitted" || !verification) && (
+        <div className="space-y-3">
+          <div className="bg-warm-50 border border-warm-200/50 rounded-xl p-4 text-center">
+            <div className="text-2xl mb-2">🕐</div>
+            <p className="text-xs font-semibold text-charcoal-600 mb-1">Application Under Review</p>
+            <p className="text-[0.6875rem] text-charcoal-400 leading-relaxed">
+              Your application has been submitted and is being reviewed by our team.
+              We will notify you once we are ready to proceed with identity verification.
+            </p>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
@@ -736,21 +786,21 @@ export default function DashboardOverviewPage() {
 
             <div className="space-y-4">
               <h3 className="font-display font-bold text-lg text-charcoal-900">Wedding Timeline</h3>
-              <div className="bg-white border border-warm-200/50 p-4 rounded-2xl shadow-sm space-y-4">
-                <div className="border-l-2 border-[var(--color-brand-primary)] pl-3 space-y-1">
-                  <div className="text-[0.625rem] font-bold text-[var(--color-brand-secondary)] uppercase tracking-wider">Day 1 — Mehndi</div>
-                  <div className="text-xs font-bold text-charcoal-800">16:00 - Welcome Henna Dinner</div>
-                </div>
-                <div className="border-l-2 border-[var(--color-brand-primary)] pl-3 space-y-1">
-                  <div className="text-[0.625rem] font-bold text-[var(--color-brand-secondary)] uppercase tracking-wider">Day 2 — Sangeet</div>
-                  <div className="text-xs font-bold text-charcoal-800">18:00 - Family Dance Extrava</div>
-                </div>
-                <div className="border-l-2 border-[var(--color-brand-primary)] pl-3 space-y-1">
-                  <div className="text-[0.625rem] font-bold text-[var(--color-brand-secondary)] uppercase tracking-wider">Day 3 — Vows</div>
-                  <div className="text-xs font-bold text-charcoal-800">15:30 - Baraat & Vedic Pheras</div>
-                </div>
+              <div className="bg-white border border-warm-200/50 p-6 rounded-2xl shadow-sm text-center space-y-3">
+                <div className="text-3xl">📅</div>
+                <p className="text-xs font-semibold text-charcoal-700">No Schedule Published Yet</p>
+                <p className="text-[0.6875rem] text-charcoal-400 leading-relaxed">
+                  Use the <strong>Event Hub</strong> to build and publish your wedding day-by-day schedule — ceremonies, mehndi, sangeet, baraat, pheras, and receptions — for your guests to view.
+                </p>
+                <a
+                  href="/dashboard/celebrations"
+                  className="inline-block mt-1 px-4 py-2 rounded-xl bg-maroon-50 text-maroon-700 border border-maroon-200 text-[0.6875rem] font-bold uppercase tracking-wider hover:bg-maroon-600 hover:text-white transition-colors"
+                >
+                  Build Your Schedule →
+                </a>
               </div>
             </div>
+
           </div>
         </div>
       </div>
@@ -800,7 +850,7 @@ export default function DashboardOverviewPage() {
           <StatCard label="Total Processed Volume" value={`$${totalVolume.toLocaleString()}`} icon={DollarSign} />
           <StatCard label="Verification Audits Queue" value={adminStats?.pendingVerifications?.length || 0} icon={Bell} />
           <StatCard label="Refunds Queue" value={adminStats?.refundQueue?.length || 0} icon={RefreshCw} />
-          <StatCard label="Active Weddings" value="6" icon={Calendar} />
+          <StatCard label="Active Weddings" value={weddings.filter((w: any) => w.status === "PUBLISHED" || !w.status).length} icon={Calendar} />
         </div>
 
         {/* Stripe statistics */}

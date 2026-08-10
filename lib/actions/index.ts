@@ -1,10 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { prisma, isDatabaseAvailable } from "../prisma";
+import { prisma } from "../prisma";
 import { requireAuth, syncAndGetDbUser } from "../auth";
 export { syncAndGetDbUser };
-import { UserRole, BookingStatus, PaymentStatus, VerificationStatus, ReferralStatus, CancellationReasonCode, CancellationActor } from "@prisma/client";
+import { UserRole, BookingStatus, PaymentStatus, VerificationStatus, WeddingStatus, ReferralStatus, CancellationReasonCode, CancellationActor } from "@prisma/client";
+import type { WeddingCategory } from "@/types";
 import { stripe } from "../stripe";
 import { rateLimit } from "../rate-limit";
 import { getWeddingRatingAggregate, getPublishedReviewWhere } from "../services/trust-score";
@@ -23,12 +24,24 @@ import {
   weddingSchema
 } from "../validation";
 import { unstable_cache } from "next/cache";
+import { env } from "../env";
 
 /**
  * 1. Action to update User Role during onboarding or settings.
  */
 export async function updateUserRoleAction(role: UserRole) {
   const dbUser = await requireAuth();
+
+  // Security: Prevent self-elevation to ADMIN via client-controlled role update.
+  // Admin roles can only be assigned directly in the database by a platform operator.
+  if (role === UserRole.ADMIN) {
+    throw new Error("FORBIDDEN: Cannot self-assign administrative roles.");
+  }
+
+  // Prevent role change if user has already completed onboarding
+  if (dbUser.status !== "ONBOARDING") {
+    throw new Error("FORBIDDEN: Role cannot be changed after onboarding is complete.");
+  }
 
   const updatedUser = await prisma.user.update({
     where: { id: dbUser.id },
@@ -246,10 +259,26 @@ export async function createWedding(data: any) {
     update: {}
   });
 
+  // SEC-001: KYC Gate — Enforce host verification before allowing PUBLISHED status.
+  // An unverified host can only create experiences in DRAFT mode.
+  let resolvedStatus = data.status;
+  if (resolvedStatus === "PUBLISHED" || resolvedStatus === WeddingStatus.PUBLISHED) {
+    const verification = await prisma.verification.findUnique({
+      where: { userId: user.id },
+      select: { status: true }
+    });
+    if (verification?.status !== VerificationStatus.APPROVED) {
+      // Silently downgrade to DRAFT rather than throwing, to prevent information leakage
+      // about verification state through error messages on public-facing forms.
+      resolvedStatus = WeddingStatus.DRAFT;
+    }
+  }
+
   const slug = await generateUniqueWeddingSlug(data.title || "wedding");
 
   const parsed = weddingSchema.parse({
     ...data,
+    status: resolvedStatus,
     slug,
     hostCoupleId: coupleProfile.id,
     pricePerGuest: parseFloat(data.pricePerGuest || "1000"),
@@ -284,8 +313,25 @@ export async function editWedding(weddingId: string, data: any) {
     throw new Error("Forbidden: You can only edit wedding experiences you host.");
   }
 
+  // SEC-001: KYC Gate — Enforce host verification before allowing PUBLISHED status.
+  // An unverified host editing an existing DRAFT cannot promote it to PUBLISHED.
+  let resolvedStatus = data.status;
+  if (resolvedStatus === "PUBLISHED" || resolvedStatus === WeddingStatus.PUBLISHED) {
+    const verification = await prisma.verification.findUnique({
+      where: { userId: user.id },
+      select: { status: true }
+    });
+    if (verification?.status !== VerificationStatus.APPROVED) {
+      // Silently downgrade — preserve existing status if it was already DRAFT/PUBLISHED
+      resolvedStatus = existing.status === WeddingStatus.PUBLISHED
+        ? WeddingStatus.PUBLISHED  // Already published and was approved at publish time
+        : WeddingStatus.DRAFT;
+    }
+  }
+
   const parsed = weddingSchema.parse({
     ...data,
+    status: resolvedStatus,
     slug: existing.slug,
     hostCoupleId: coupleProfile.id,
     pricePerGuest: parseFloat(data.pricePerGuest),
@@ -436,9 +482,13 @@ export async function createBookingAction(data: {
   weddingId: string;
   date: string;
   guestsCount: number;
-  pricePerGuest: number;
-  totalAmount: number;
+  // NOTE: pricePerGuest and totalAmount are intentionally NOT accepted from the client.
+  // The server recalculates authoritative pricing from the database to prevent price injection.
 }) {
+  if (typeof data.guestsCount !== "number" || !Number.isInteger(data.guestsCount) || data.guestsCount < 1) {
+    throw new Error("INVALID_GUEST_COUNT: Guest count must be a positive integer greater than or equal to 1.");
+  }
+
   const user = await requireAuth();
 
   // Rate limiting: max 5 booking attempts per user per 10 minutes
@@ -511,15 +561,19 @@ export async function createBookingAction(data: {
       throw new Error(`Cannot exceed maximum wedding guest capacity. Available spots: ${wedding.capacity - currentBookedCount}.`);
     }
 
-    // 6. Create booking
+    // 6. Server-authoritative pricing: derive from DB record, never trust client-supplied amounts.
+    // P0 Security: Client cannot inject a false price. pricePerGuest comes from Wedding.pricePerGuest.
+    const serverPricePerGuest = wedding.pricePerGuest;
+    const serverTotalAmount = serverPricePerGuest * data.guestsCount;
+
     const createdBooking = await tx.booking.create({
       data: {
         travelerId: traveler.id,
         weddingId: data.weddingId,
         date: new Date(data.date),
         guestsCount: data.guestsCount,
-        pricePerGuest: data.pricePerGuest,
-        totalAmount: data.totalAmount,
+        pricePerGuest: serverPricePerGuest,
+        totalAmount: serverTotalAmount,
         status: BookingStatus.PENDING
       }
     });
@@ -658,7 +712,8 @@ export async function handleGuestApplicationAction(appId: string, status: "appro
       });
 
       // Send host approval with payment link email
-      const dashboardUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/dashboard/bookings`;
+      // ENV-001: Use validated env to prevent localhost URLs in production transactional emails.
+      const dashboardUrl = `${env.NEXT_PUBLIC_APP_URL}/dashboard/bookings`;
       await sendHostApprovalWithPaymentLinkEmail(
         booking.traveler.user.email,
         booking.traveler.fullName,
@@ -732,7 +787,8 @@ export async function createCheckoutSessionAction(bookingId: string) {
     throw new Error("This booking has already been paid.");
   }
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  // ENV-001: Use validated env to prevent localhost URLs in production Stripe redirect URLs.
+  const appUrl = env.NEXT_PUBLIC_APP_URL;
 
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ["card"],
@@ -850,15 +906,24 @@ export async function submitVerificationAction(data: {
 }) {
   const user = await requireAuth();
 
-  const verification = await prisma.verification.upsert({
+  // SECURITY: Admin must have explicitly requested verification before a user
+  // can upload documents. If no Verification record exists, or the status is
+  // NOT_SUBMITTED, the user must wait for admin to trigger the verification
+  // request — they cannot self-initiate document uploads.
+  const existingVerification = await prisma.verification.findUnique({
     where: { userId: user.id },
-    update: {
-      ...data,
-      status: VerificationStatus.PENDING,
-      submissionDate: new Date(),
-    },
-    create: {
-      userId: user.id,
+  });
+
+  if (!existingVerification || existingVerification.status === VerificationStatus.NOT_SUBMITTED) {
+    throw new Error(
+      "VERIFICATION_NOT_REQUESTED: Your verification has not been requested yet. " +
+      "Our team will reach out to you once your application has been reviewed."
+    );
+  }
+
+  const verification = await prisma.verification.update({
+    where: { userId: user.id },
+    data: {
       ...data,
       status: VerificationStatus.PENDING,
       submissionDate: new Date(),
@@ -996,23 +1061,6 @@ export async function markNotificationsReadAction() {
 export async function fetchDashboardDataAction() {
   const dbUser = await requireAuth();
 
-  if (typeof isDatabaseAvailable === "function" && !(await isDatabaseAvailable())) {
-    return {
-      notifications: [],
-      verification: null,
-      bookings: [],
-      wishlist: [],
-      guestApplications: [],
-      hostWedding: null,
-      revenue: 0,
-      pendingPayouts: 0,
-      paidGuests: [],
-      allPayments: [],
-      refundQueue: [],
-      pendingVerifications: [],
-    };
-  }
-
   const notifications = await prisma.notification.findMany({
     where: { userId: dbUser.id },
     orderBy: { createdAt: "desc" }
@@ -1143,7 +1191,7 @@ export async function fetchDashboardDataAction() {
       message: n.message,
       time: n.createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       read: n.read,
-      type: n.type.toLowerCase() as any
+      type: (n.type.toLowerCase() === "payment_received" ? "success" : "info") as "info" | "request" | "alert" | "success"
     })),
     guestApplications,
     hostWedding,
@@ -1207,97 +1255,11 @@ export async function fetchDashboardDataAction() {
 /**
  * 9. Seeding & Querying Weddings in PostgreSQL
  */
-export async function seedDatabaseIfNeeded() {
-  try {
-    const count = await prisma.wedding.count();
-    if (count > 0) return;
 
-    const { featuredWeddings } = await import("../data");
-
-    // Create a mock host couple user
-    const mockUser = await prisma.user.create({
-      data: {
-        clerkUserId: "mock_host_id",
-        email: "host@weddingwithindia.com",
-        name: "Devika & Kaber",
-        role: "COUPLE",
-        status: "ACTIVE",
-        avatar: "https://images.unsplash.com/photo-1615966650071-855b15f29ad1?w=400&q=80"
-      }
-    });
-
-    const coupleProfile = await prisma.coupleProfile.create({
-      data: {
-        userId: mockUser.id,
-        weddingDate: new Date("2025-02-14"),
-        weddingLocation: "Umaid Bhawan Palace, Jodhpur",
-        expectedGuests: 500,
-        languagesSpoken: "English, Hindi",
-        familyBio: "Devika and Kaber met while working on the restoration of a fort. They want to welcome global guests to experience traditional hospitality."
-      }
-    });
-
-    for (const w of featuredWeddings) {
-      await prisma.wedding.create({
-        data: {
-          id: w.id === "w1" ? "w1" : undefined,
-          slug: w.slug,
-          title: w.title,
-          description: w.story,
-          location: w.location,
-          category: w.category,
-          date: new Date(w.date),
-          pricePerGuest: w.pricePerGuest,
-          capacity: w.guestsAllowed,
-          mainImageUrl: w.imageUrl,
-          status: "PUBLISHED",
-          hostCoupleId: coupleProfile.id,
-          gallery: {
-            create: w.gallery.map((url, idx) => ({
-              imageUrl: url,
-              order: idx
-            }))
-          },
-          events: {
-            create: w.timeline.map((evt) => {
-              const timeParts = evt.time.split(" - ");
-              const startTime = timeParts[0] || "09:00";
-              const endTime = timeParts[1] || "17:00";
-              return {
-                name: evt.title,
-                description: evt.description,
-                date: new Date(w.date),
-                startTime,
-                endTime,
-                location: w.location,
-                dressCode: "Traditional / Festive smart casual"
-              };
-            })
-          },
-          traditions: {
-            create: w.tags.map((tag) => ({
-              name: tag,
-              description: "A beautiful, colorful Indian wedding tradition."
-            }))
-          }
-        }
-      });
-    }
-  } catch (err) {
-    console.warn("[seedDatabaseIfNeeded] Unable to seed database:", err);
-  }
-}
 
 export const getWeddings = unstable_cache(
   async () => {
   try {
-    const dbOk = typeof isDatabaseAvailable === "function" ? await isDatabaseAvailable(300) : true;
-    if (!dbOk) {
-      console.info("[getWeddings] Database unavailable. Fast-fallback to featuredWeddings.");
-      const { featuredWeddings } = await import("../data");
-      return featuredWeddings;
-    }
-
     const weddings = await prisma.wedding.findMany({
       where: { status: "PUBLISHED" },
       include: {
@@ -1333,7 +1295,7 @@ export const getWeddings = unstable_cache(
           state: w.location.split(",")[1]?.trim() || "India",
           country: "India",
           countryCode: "IN",
-          category: w.category as any,
+          category: w.category as WeddingCategory,
           pricePerGuest: w.pricePerGuest,
           currency: "USD",
           rating: ratings.bayesianRating,
@@ -1341,10 +1303,10 @@ export const getWeddings = unstable_cache(
           guestsAllowed: w.capacity,
           guestsBooked: 24,
           imageUrl: w.mainImageUrl,
-          coupleImage: (w as any).coupleImage || w.mainImageUrl || w.hostCouple.user.avatar || "https://images.unsplash.com/photo-1615966650071-855b15f29ad1?w=400&q=80",
-          coupleName: (w as any).coupleName || w.hostCouple.user.name || "Host Couple",
-          hostName: (w as any).hostName || w.hostCouple.user.name || "Host Couple",
-          hostAvatar: (w as any).hostAvatar || w.hostCouple.user.avatar || "https://images.unsplash.com/photo-1615966650071-855b15f29ad1?w=400&q=80",
+          coupleImage: w.mainImageUrl || w.hostCouple.user.avatar || "https://images.unsplash.com/photo-1615966650071-855b15f29ad1?w=400&q=80",
+          coupleName: w.hostCouple.user.name || "Host Couple",
+          hostName: w.hostCouple.user.name || "Host Couple",
+          hostAvatar: w.hostCouple.user.avatar || "https://images.unsplash.com/photo-1615966650071-855b15f29ad1?w=400&q=80",
           featured: true,
           tags: w.traditions.map((t) => t.name),
           date: w.date.toISOString().split("T")[0],
@@ -1374,7 +1336,7 @@ export const getWeddings = unstable_cache(
           accommodation: "5-star luxury accommodation available nearby (discount rates offered for our guests).",
           included: ["Entry pass", "Food & beverages", "Cultural workshops", "Henna art session"],
           notIncluded: ["Flights", "Personal local transport", "Hotel stay (available as add-on)"],
-          reviews: [] as any[],
+          reviews: [],
           faqs: []
         };
       })
@@ -1439,13 +1401,6 @@ function mapToPublicReviewDTO(review: any) {
 export const getWeddingBySlug = unstable_cache(
   async (slug: string) => {
   try {
-    const dbOk = typeof isDatabaseAvailable === "function" ? await isDatabaseAvailable(1500) : true;
-    if (!dbOk) {
-      console.info(`[getWeddingBySlug] Database unavailable. Serving static fallback for slug '${slug}'.`);
-      const { featuredWeddings } = await import("../data");
-      return featuredWeddings.find((fw) => fw.slug === slug) || featuredWeddings[0] || null;
-    }
-
     const w = await prisma.wedding.findUnique({
       where: { slug },
       include: {
@@ -1535,7 +1490,7 @@ export const getWeddingBySlug = unstable_cache(
       state: w.location.split(",")[1]?.trim() || "India",
       country: "India",
       countryCode: "IN",
-      category: w.category as any,
+      category: w.category as WeddingCategory,
       pricePerGuest: w.pricePerGuest,
       currency: "USD",
       rating: ratings.bayesianRating,
@@ -1543,10 +1498,10 @@ export const getWeddingBySlug = unstable_cache(
       guestsAllowed: w.capacity,
       guestsBooked: 24,
       imageUrl: w.mainImageUrl,
-      coupleImage: (w as any).coupleImage || w.mainImageUrl || w.hostCouple.user.avatar || "https://images.unsplash.com/photo-1615966650071-855b15f29ad1?w=400&q=80",
-      coupleName: (w as any).coupleName || w.hostCouple.user.name || "Host Couple",
-      hostName: (w as any).hostName || w.hostCouple.user.name || "Host Couple",
-      hostAvatar: (w as any).hostAvatar || w.hostCouple.user.avatar || "https://images.unsplash.com/photo-1615966650071-855b15f29ad1?w=400&q=80",
+      coupleImage: w.mainImageUrl || w.hostCouple.user.avatar || "https://images.unsplash.com/photo-1615966650071-855b15f29ad1?w=400&q=80",
+      coupleName: w.hostCouple.user.name || "Host Couple",
+      hostName: w.hostCouple.user.name || "Host Couple",
+      hostAvatar: w.hostCouple.user.avatar || "https://images.unsplash.com/photo-1615966650071-855b15f29ad1?w=400&q=80",
       featured: true,
       tags: w.traditions.map((t) => t.name),
       date: w.date.toISOString().split("T")[0],

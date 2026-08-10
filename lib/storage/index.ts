@@ -1,5 +1,6 @@
 import { createUploadthing, type FileRouter } from "uploadthing/next";
 import { getSession } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 
 const f = createUploadthing();
 
@@ -50,6 +51,17 @@ export const ourFileRouter = {
     .middleware(async () => {
       const session = await getSession();
       if (!session?.userId) throw new Error("UNAUTHORIZED");
+      
+      const verification = await prisma.verification.findUnique({
+        where: { userId: session.userId }
+      });
+      if (!verification) {
+        throw new Error("UNAUTHORIZED_NO_VERIFICATION_REQUEST");
+      }
+      if (verification.status === "APPROVED" || verification.status === "UNDER_REVIEW") {
+        throw new Error("UNAUTHORIZED_VERIFICATION_LOCKED");
+      }
+
       return { userId: session.userId };
     })
     .onUploadComplete(async ({ metadata, file }) => {
@@ -90,6 +102,17 @@ export const ourFileRouter = {
     .middleware(async () => {
       const session = await getSession();
       if (!session?.userId) throw new Error("UNAUTHORIZED");
+      
+      const verification = await prisma.verification.findUnique({
+        where: { userId: session.userId }
+      });
+      if (!verification) {
+        throw new Error("UNAUTHORIZED_NO_VERIFICATION_REQUEST");
+      }
+      if (verification.status === "APPROVED" || verification.status === "UNDER_REVIEW") {
+        throw new Error("UNAUTHORIZED_VERIFICATION_LOCKED");
+      }
+
       return { userId: session.userId };
     })
     .onUploadComplete(async ({ metadata, file }) => {

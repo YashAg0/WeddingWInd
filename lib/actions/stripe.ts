@@ -34,7 +34,7 @@ export async function createStripeCheckoutAction(bookingId: string, couponCode?:
 
   // Validate Promo Coupon Code
   if (couponCode) {
-    const coupon = await (prisma as any).coupon.findUnique({
+    const coupon = await prisma.coupon.findUnique({
       where: { code: couponCode.toUpperCase().trim() },
     });
 
@@ -52,11 +52,15 @@ export async function createStripeCheckoutAction(bookingId: string, couponCode?:
   }
 
   // Fetch System Financial Configuration (Fee %, Tax %)
-  const config = await (prisma as any).systemConfig.findUnique({ where: { id: "global" } });
-  const platformFeePct = config?.platformFeePercent ?? 15.0;
-  const taxPct = config?.taxPercent ?? 18.0;
+  let platformFeePct = 15.0;
+  let taxPct = 18.0;
+  const config = await prisma.systemConfig.findUnique({ where: { id: "global" } });
+  if (config) {
+    platformFeePct = config.platformFeePercent ?? 15.0;
+    taxPct = config.taxPercent ?? 18.0;
+  }
 
-  const origin = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const origin = process.env.NEXT_PUBLIC_APP_URL || "https://weddingwithindia.com";
 
   // $0 Bypass
   if (finalAmount <= 0) {
@@ -231,8 +235,21 @@ export async function processPartialRefundAction(paymentId: string, partialAmoun
   });
 
   if (!payment) throw new Error("Payment record not found.");
-  if (partialAmount <= 0 || partialAmount >= payment.amount) {
-    throw new Error("Partial refund amount must be greater than $0 and less than total paid.");
+  if (partialAmount <= 0) {
+    throw new Error("Partial refund amount must be greater than $0.");
+  }
+
+  const existingRefunds = await prisma.refund.findMany({
+    where: {
+      paymentId: payment.id,
+      status: { in: ["COMPLETED", "PENDING", "SUCCESSFUL", "succeeded"] },
+    },
+  });
+
+  const totalAlreadyRefunded = existingRefunds.reduce((sum, r) => sum + r.amount, 0);
+
+  if ((totalAlreadyRefunded + partialAmount) > payment.amount) {
+    throw new Error("EXCEEDS_PAYMENT_AMOUNT: Cumulative partial refunds exceed total payment amount.");
   }
 
   let stripeRefundId: string | null = null;

@@ -143,7 +143,7 @@ export default function FounderControlPanel({ initialConfig, initialCMS, initial
           return (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
+              onClick={() => setActiveTab(tab.id as typeof activeTab)}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl font-bold text-xs transition-all whitespace-nowrap cursor-pointer ${
                 isActive
                   ? "bg-maroon-600 text-white shadow-sm"
