@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireRole } from "@/lib/auth";
+import { requireAuth } from "@/lib/auth";
 import { UserRole } from "@prisma/client";
 
 // POST /api/host-application — submit a new host celebration application
 // Creates User + CoupleProfile + Wedding (DRAFT status awaiting admin verification)
 export async function POST(req: NextRequest) {
   try {
-    const user = await requireRole([UserRole.COUPLE]);
+    const user = await requireAuth();
     const body = await req.json();
     const {
       hostName, email, phone: _phone, coupleNames, city, state,
@@ -23,6 +23,14 @@ export async function POST(req: NextRequest) {
     // account from an email supplied in the request.
     if (email.trim().toLowerCase() !== user.email.toLowerCase()) {
       return NextResponse.json({ error: "Use the email on your signed-in account." }, { status: 400 });
+    }
+
+    // Upgrade TRAVELER to COUPLE role automatically
+    if (user.role === UserRole.TRAVELER) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { role: UserRole.COUPLE }
+      });
     }
 
     // Ensure couple profile exists

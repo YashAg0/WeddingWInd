@@ -1,39 +1,34 @@
-# Orchestrator Final Handoff Report — WeddingWithIndia Marketplace
+# Orchestrator Succession Handoff Report
 
 ## Milestone State
-| # | Milestone | Requirements | Status | Verification / Evidence |
-|---|-----------|--------------|--------|--------------------------|
-| M1 | Admin Access & Control Center | R1 | **DONE** | Server RBAC in `lib/auth.ts`, `lib/rbac.ts`, self-elevation block in `lib/actions/index.ts`, `founder.ts` type safety |
-| M2 | Verification Lifecycle & Storage Security | R2 | **DONE** | Admin-driven KYC, UploadThing presigned URL middleware in `lib/storage/index.ts`, RBAC proxy at `/api/safety/evidence/[evidenceId]` |
-| M3 | User & Host Lifecycles | R3 | **DONE** | Server-enforced state machine, unverified host listing attempt downgraded to `DRAFT` |
-| M4 | Financial Integrity | R4 | **DONE** | Server price calculation, `guestsCount >= 1` integer check in `createBookingAction`, cumulative partial refund sum check in `processPartialRefundAction` |
-| M5 | Privacy & Contact Moderation | R5 | **DONE** | Sanitized DTOs excluding PII, `normalizeForModeration` stripping zero-width/homoglyphs, chat message interceptors in `lib/actions/messages.ts` |
-| M6 | Visual/UX Quality & Responsive QA | R6 | **DONE** | `AboutContent.tsx:148` 5-col grid responsive fix, 6 luxury skeleton loading states, 100% `as any` type assertion purge |
-| M7 | Documentation & Release Governance | R7 | **DONE** | `FINAL_ROUTE_MAP.md`, `ADMIN_OPERATIONS_GUIDE.md`, `USER_FLOWS.md`, `FINAL_PRODUCTION_AUDIT.md` created at project root |
-| E2E | E2E Testing Track | Criteria | **DONE** | `TEST_READY.md` published; 85 opaque-box Playwright tests across 14 spec files (Tiers 1-4) |
+- **Phase 0: Survey & Technical Investigation**: **DONE** (Explorers `explorer_auth_db_v2`, `explorer_wedding_dashboards_v2`, `explorer_financial_ux_v2` completed)
+- **Phase 1: Feature Inventory & Decomposition**: **DONE** (Established 13 features & Milestones M1-M6 in `PROJECT.md`)
+- **Milestone M1: Identity & Auth Hardening (R3)**: **DONE** (`lib/auth.ts` `syncAndGetDbUser()` email normalization, Clerk ID reconciliation, founder protection, P2002 retry; 5/5 gate verdicts positive, audit CLEAN)
+- **Milestone M2: Database & Transaction Integrity (R4)**: **DONE** (`stripe/route.ts` & `lib/actions/index.ts` transaction atomicity refactoring; 5/5 gate verdicts positive, audit CLEAN)
+- **Milestone M3: Wedding Lifecycle & Listing Creation Repair (R5)**: **DONE** (Zod empty URL preprocessing in `lib/validation/index.ts`, edit link query params fix, lifecycle state & rejection workflows verified; 5/5 gate verdicts positive, audit CLEAN)
+- **Milestone M4: Dashboard Repair & UI/Hydration Consistency (R6)**: **PLANNED** (Next up for successor)
+- **Milestone M5: Financial, Security & Quad-Verification Run (R2, R8)**: **PLANNED**
+- **Milestone M6: Forensic Audit Verification**: **PLANNED**
 
 ## Active Subagents
-- None (All 12 subagent dispatches complete; final re-audit passed with verdict `CLEAN`).
+- None (All 21 subagents spawned by Generation 1 have completed their tasks and delivered reports).
 
-## Pending Decisions
-- None. All requirements R1 through R7 and acceptance criteria are fully met.
+## Pending Decisions & Technical Context
+- Milestone M4 scope: Audit and fix client component locale date formatting hydration mismatches (wrap date rendering in mounted state or server-consistent ISO/formatted date helper without using `suppressHydrationWarning`). Verify Admin portal (19 routes) and all dashboards match homepage brand tokens (`#6b1026` Royal Maroon, `#c9972a` Luxury Gold, `#fdfaf7` Warm Ivory).
+- Milestone M5 scope: Full Quad-Verification (`npm run type-check`, `npm run lint`, `npm test`, `npm run build`), single-dev-server behavioral runtime check.
+- Milestone M6 scope: Independent `teamwork_preview_auditor` verification for CLEAN verdict.
 
-## Remaining Work
-- None. Project is 100% production ready and verified.
+## Remaining Work for Successor
+1. Read `handoff.md`, `BRIEFING.md`, `ORIGINAL_REQUEST.md`, `DISPATCH.md`, `PROJECT.md`, and `progress.md`.
+2. Start fresh heartbeat cron via `schedule(CronExpression="*/10 * * * *")`.
+3. Dispatch `worker_m4` to implement Milestone M4 (Dashboard Repair & UI/Hydration Consistency - Requirement R6).
+4. Run Milestone M4 gate verification (2 Reviewers, 2 Challengers, 1 Auditor).
+5. Proceed to Milestone M5 (Quad-Verification Suite & Single Dev Server Runtime Verification) and Milestone M6 (Forensic Audit).
+6. Send completion message to parent (`a063668d-04ab-4c05-9776-bb07044273bd`) and claim victory in `progress.md`.
 
 ## Key Artifacts
-- `c:\Projects\WeddingWithIndia\wedding-with-india\FINAL_ROUTE_MAP.md`
-- `c:\Projects\WeddingWithIndia\wedding-with-india\ADMIN_OPERATIONS_GUIDE.md`
-- `c:\Projects\WeddingWithIndia\wedding-with-india\USER_FLOWS.md`
-- `c:\Projects\WeddingWithIndia\wedding-with-india\FINAL_PRODUCTION_AUDIT.md`
-- `c:\Projects\WeddingWithIndia\wedding-with-india\TEST_READY.md`
-- `c:\Projects\WeddingWithIndia\wedding-with-india\.agents\orchestrator\PROJECT.md`
+- `c:\Projects\WeddingWithIndia\wedding-with-india\.agents\ORIGINAL_REQUEST.md`
+- `c:\Projects\WeddingWithIndia\wedding-with-india\.agents\PROJECT.md`
+- `c:\Projects\WeddingWithIndia\wedding-with-india\.agents\orchestrator\BRIEFING.md`
 - `c:\Projects\WeddingWithIndia\wedding-with-india\.agents\orchestrator\progress.md`
 - `c:\Projects\WeddingWithIndia\wedding-with-india\.agents\orchestrator\GATE_STATUS.md`
-
-## Verification Summary
-1. `npx tsc --noEmit`: Exit Code `0` (0 type errors).
-2. `npx eslint`: Exit Code `0` (0 errors, 0 warnings).
-3. `npx jest --passWithNoTests`: Exit Code `0` (23 test suites, 118 unit tests passed).
-4. `npx playwright test --list`: Exit Code `0` (85 tests in 14 spec files discovered cleanly).
-5. Forensic Auditor (`auditor_2_retry`) Verdict: **`CLEAN`**.

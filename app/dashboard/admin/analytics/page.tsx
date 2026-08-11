@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { UserRole } from "@prisma/client";
 import { adminGetAuditLogsAction } from "@/lib/actions/admin";
 import { History, Shield, Users } from "lucide-react";
+import { formatDateTime } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -47,7 +48,7 @@ export default async function AdminAnalyticsPage() {
             <div className="space-y-3.5 text-xs">
               <div className="flex justify-between items-center pb-2 border-b border-warm-50">
                 <span className="font-semibold text-charcoal-600">Travelers</span>
-                <span className="font-bold text-charcoal-950 bg-sky-50 text-sky-600 px-2 py-0.5 rounded-md">
+                <span className="font-bold text-charcoal-950 bg-gold-50 text-gold-700 px-2 py-0.5 rounded-md">
                   {travelerCount} accounts
                 </span>
               </div>
@@ -65,7 +66,7 @@ export default async function AdminAnalyticsPage() {
               </div>
               <div className="flex justify-between items-center">
                 <span className="font-semibold text-charcoal-600">System Administrators</span>
-                <span className="font-bold text-charcoal-950 bg-purple-50 text-purple-650 px-2 py-0.5 rounded-md">
+                <span className="font-bold text-charcoal-950 bg-maroon-50 text-maroon-800 px-2 py-0.5 rounded-md">
                   {adminCount} accounts
                 </span>
               </div>
@@ -79,8 +80,8 @@ export default async function AdminAnalyticsPage() {
               Role Permission Access Controls
             </h3>
             <div className="space-y-3 text-xs leading-relaxed text-charcoal-500 font-medium">
-              <div className="p-3 bg-sky-50/50 border border-sky-100 rounded-xl">
-                <strong className="text-sky-700 block mb-0.5">TRAVELER Role</strong>
+              <div className="p-3 bg-gold-50/50 border border-gold-100 rounded-xl">
+                <strong className="text-gold-700 block mb-0.5">TRAVELER Role</strong>
                 Can browse weddings, join waitlists, request reservations, pay Stripe invoices, and submit identity verification docs.
               </div>
               <div className="p-3 bg-rose-50/50 border border-rose-100 rounded-xl">
@@ -91,8 +92,8 @@ export default async function AdminAnalyticsPage() {
                 <strong className="text-emerald-700 block mb-0.5">AGENT Role</strong>
                 Can register local liaisons, track referred traveler profiles, claim commissions, and verify in-person host credentials.
               </div>
-              <div className="p-3 bg-purple-50/50 border border-purple-100 rounded-xl">
-                <strong className="text-purple-700 block mb-0.5">ADMIN Role</strong>
+              <div className="p-3 bg-maroon-50/50 border border-maroon-100 rounded-xl">
+                <strong className="text-maroon-800 block mb-0.5">ADMIN Role</strong>
                 Holds super-user access. Can force override booking registers, issue Stripe refunds, review document queues, and edit site CMS.
               </div>
             </div>
@@ -119,7 +120,7 @@ export default async function AdminAnalyticsPage() {
                       {log.action}
                     </span>
                     <span className="text-[0.625rem] text-charcoal-400">
-                      {new Date(log.createdAt).toLocaleString()}
+                      {formatDateTime(log.createdAt)}
                     </span>
                   </div>
                   <p className="text-charcoal-600 font-medium leading-relaxed">{log.details}</p>
@@ -138,3 +139,4 @@ export default async function AdminAnalyticsPage() {
     </div>
   );
 }
+

@@ -13,6 +13,8 @@ import { HelpCircle, FileText, Quote, Plus, Trash2, Edit2, Star } from "lucide-r
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import { formatDate } from "@/lib/utils";
+
 
 export const dynamic = "force-dynamic";
 
@@ -410,7 +412,7 @@ export default async function AdminCMSPage({
                       {p.excerpt && <p className="text-charcoal-400 text-[0.6875rem] italic">{p.excerpt}</p>}
                       <p className="text-charcoal-500 text-[0.6875rem] font-medium leading-relaxed line-clamp-1">{p.content}</p>
                       <div className="text-[0.625rem] text-charcoal-400 pt-1">
-                        By {p.authorName} on {new Date(p.createdAt).toLocaleDateString()}
+                        By {p.authorName} on {formatDate(p.createdAt)}
                       </div>
                     </div>
 

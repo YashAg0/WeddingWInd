@@ -521,6 +521,12 @@ export async function createBookingAction(data: {
       throw new Error("This wedding experience is currently suspended and cannot accept new bookings.");
     }
 
+    // SEC-DEMO: Server-side invariant — demo weddings must NEVER be bookable.
+    // A malicious client cannot bypass this by manipulating availability state.
+    if (wedding.isDemo) {
+      throw new Error("This is a demonstration wedding experience and cannot be booked.");
+    }
+
     // 2. Cannot book own wedding
     if (wedding.hostCouple.userId === user.id) {
       throw new Error("Cannot book your own hosted wedding experience.");
@@ -825,32 +831,32 @@ export async function refundBookingAction(bookingId: string) {
     throw new Error("Forbidden: Only administrators can process refunds.");
   }
 
-  return await prisma.$transaction(async (tx) => {
-    const booking = await tx.booking.findUnique({
-      where: { id: bookingId },
-      include: {
-        payments: {
-          where: { status: PaymentStatus.PAID }
-        },
-        traveler: { include: { user: true } }
-      }
-    });
-
-    if (!booking) throw new Error("Booking not found.");
-    if (booking.status !== BookingStatus.PAID) {
-      throw new Error("Only paid bookings can be refunded.");
+  const booking = await prisma.booking.findUnique({
+    where: { id: bookingId },
+    include: {
+      payments: {
+        where: { status: PaymentStatus.PAID }
+      },
+      traveler: { include: { user: true } }
     }
+  });
 
-    const payment = booking.payments[0];
-    if (!payment || !payment.stripePaymentIntentId) {
-      throw new Error("No successful payment transactions found for this booking.");
-    }
+  if (!booking) throw new Error("Booking not found.");
+  if (booking.status !== BookingStatus.PAID) {
+    throw new Error("Only paid bookings can be refunded.");
+  }
 
-    const stripeRefund = await stripe.refunds.create({
-      payment_intent: payment.stripePaymentIntentId,
-      amount: Math.round(payment.amount * 100)
-    });
+  const payment = booking.payments[0];
+  if (!payment || !payment.stripePaymentIntentId) {
+    throw new Error("No successful payment transactions found for this booking.");
+  }
 
+  const stripeRefund = await stripe.refunds.create({
+    payment_intent: payment.stripePaymentIntentId,
+    amount: Math.round(payment.amount * 100)
+  });
+
+  const updatedBooking = await prisma.$transaction(async (tx) => {
     await tx.refund.create({
       data: {
         paymentId: payment.id,
@@ -866,7 +872,7 @@ export async function refundBookingAction(bookingId: string) {
       data: { status: PaymentStatus.REFUNDED }
     });
 
-    const updatedBooking = await tx.booking.update({
+    const updated = await tx.booking.update({
       where: { id: bookingId },
       data: { status: BookingStatus.REFUNDED }
     });
@@ -881,6 +887,10 @@ export async function refundBookingAction(bookingId: string) {
       }
     });
 
+    return updated;
+  }, { maxWait: 10000, timeout: 15000 });
+
+  try {
     await sendRefundConfirmationEmail(
       booking.traveler.user.email,
       booking.traveler.fullName,
@@ -888,22 +898,14 @@ export async function refundBookingAction(bookingId: string) {
       stripeRefund.id,
       payment.amount
     );
+  } catch {
+    // Non-blocking email dispatch failure
+  }
 
-    return updatedBooking;
-  });
+  return updatedBooking;
 }
 
-export async function submitVerificationAction(data: {
-  passportUrl?: string;
-  govtIdUrl?: string;
-  selfieUrl?: string;
-  invitationUrl?: string;
-  venueConfirmUrl?: string;
-  socialLinks?: string;
-  orgDetails?: string;
-  businessRegUrl?: string;
-  linkedinUrl?: string;
-}) {
+export async function submitVerificationAction(data: Record<string, any>) {
   const user = await requireAuth();
 
   // SECURITY: Admin must have explicitly requested verification before a user
@@ -921,10 +923,20 @@ export async function submitVerificationAction(data: {
     );
   }
 
+  // Sanitize empty string fields to null to eliminate Zod URL errors and clean DB state
+  const sanitizedData: Record<string, any> = {};
+  for (const [key, val] of Object.entries(data)) {
+    if (typeof val === "string" && val.trim() === "") {
+      sanitizedData[key] = null;
+    } else {
+      sanitizedData[key] = val;
+    }
+  }
+
   const verification = await prisma.verification.update({
     where: { userId: user.id },
     data: {
-      ...data,
+      ...sanitizedData,
       status: VerificationStatus.PENDING,
       submissionDate: new Date(),
     },
@@ -1036,8 +1048,17 @@ export async function reviewVerificationAction(
     await evaluateEntityBadges(entityType, entityId);
   }
 
+  revalidatePath("/dashboard/admin/verifications");
   revalidatePath("/dashboard");
   return { success: true, verification: updatedVerification };
+}
+
+export async function approveVerificationAction(verificationId: string, notes?: string) {
+  return reviewVerificationAction(verificationId, "APPROVED", notes);
+}
+
+export async function rejectVerificationAction(verificationId: string, notes?: string) {
+  return reviewVerificationAction(verificationId, "REJECTED", notes);
 }
 
 /**
@@ -1261,14 +1282,31 @@ export const getWeddings = unstable_cache(
   async () => {
   try {
     const weddings = await prisma.wedding.findMany({
-      where: { status: "PUBLISHED" },
+      where: { status: "PUBLISHED", suspended: false, deletedAt: null },
+      orderBy: [
+        { sponsored: "desc" },
+        { featured: "desc" },
+        { manualTrendingBoost: "desc" },
+        { createdAt: "desc" },
+      ],
       include: {
         hostCouple: {
           include: { user: true }
         },
         gallery: true,
         events: true,
-        traditions: true
+        traditions: true,
+        _count: {
+          select: {
+            bookings: {
+              where: {
+                status: {
+                  in: ["APPROVED", "PAID", "CONFIRMED", "COMPLETED", "CHECKED_IN", "ATTENDED", "READY_FOR_EVENT"]
+                }
+              }
+            }
+          }
+        }
       }
     });
 
@@ -1280,12 +1318,15 @@ export const getWeddings = unstable_cache(
 
     const results = await Promise.all(
       weddings.map(async (w) => {
-        let ratings = { bayesianRating: 4.96, reviewCount: 124 };
+        let ratings = { bayesianRating: 4.96, reviewCount: 0 };
         try {
           ratings = await getWeddingRatingAggregate(w.id);
         } catch {
           // Use default aggregate fallback
         }
+
+        const confirmedGuestsBooked = w._count.bookings;
+
         return {
           id: w.id,
           slug: w.slug,
@@ -1301,13 +1342,15 @@ export const getWeddings = unstable_cache(
           rating: ratings.bayesianRating,
           reviewCount: ratings.reviewCount,
           guestsAllowed: w.capacity,
-          guestsBooked: 24,
+          guestsBooked: confirmedGuestsBooked,
           imageUrl: w.mainImageUrl,
           coupleImage: w.mainImageUrl || w.hostCouple.user.avatar || "https://images.unsplash.com/photo-1615966650071-855b15f29ad1?w=400&q=80",
           coupleName: w.hostCouple.user.name || "Host Couple",
           hostName: w.hostCouple.user.name || "Host Couple",
           hostAvatar: w.hostCouple.user.avatar || "https://images.unsplash.com/photo-1615966650071-855b15f29ad1?w=400&q=80",
-          featured: true,
+          featured: w.featured,
+          sponsored: w.sponsored,
+          isDemo: w.isDemo,
           tags: w.traditions.map((t) => t.name),
           date: w.date.toISOString().split("T")[0],
           religion: w.category === "Royal" ? "Hinduism" : "Multicultural",
@@ -1315,6 +1358,8 @@ export const getWeddings = unstable_cache(
           durationDays: 3,
           languages: w.hostCouple.languagesSpoken?.split(",").map((l) => l.trim()) || ["English"],
           isVerified: true,
+          isCurated: w.sponsored || w.featured,
+          curatedBadge: w.sponsored ? "Sponsored" : w.featured ? "Featured" : undefined,
           gallery: w.gallery.map((g) => g.imageUrl),
           story: w.description,
           coupleBio: w.hostCouple.familyBio || "",
@@ -1330,7 +1375,7 @@ export const getWeddings = unstable_cache(
             title: t.name,
             description: t.description
           })),
-          dressCode: "Traditional Indian / Festive Smart Casual",
+          dressCode: w.dressCode || "Traditional Indian / Festive Smart Casual",
           foodDescription: "Authentic local cuisine with vegetarian and vegan options available.",
           venueDescription: "A gorgeous venue with complete safety check, clean sanitation, and parking.",
           accommodation: "5-star luxury accommodation available nearby (discount rates offered for our guests).",
@@ -1418,7 +1463,7 @@ export const getWeddingBySlug = unstable_cache(
       return featuredWeddings.find((fw) => fw.slug === slug) || null;
     }
 
-    let ratings = { bayesianRating: 4.96, reviewCount: 124 };
+    let ratings = { bayesianRating: 4.96, reviewCount: 0 };
     try {
       const { calculateBayesianRating } = await import("../services/trust-score");
       ratings = await calculateBayesianRating(w.id);
@@ -1446,6 +1491,19 @@ export const getWeddingBySlug = unstable_cache(
         },
         orderBy: { createdAt: "desc" }
       });
+    } catch {}
+
+    // Real confirmed guests booked count
+    let confirmedGuestsBooked = 0;
+    try {
+      const agg = await prisma.booking.aggregate({
+        where: {
+          weddingId: w.id,
+          status: { in: [BookingStatus.APPROVED, BookingStatus.PAID, BookingStatus.CONFIRMED, BookingStatus.COMPLETED, BookingStatus.CHECKED_IN, BookingStatus.ATTENDED, BookingStatus.READY_FOR_EVENT] }
+        },
+        _sum: { guestsCount: true }
+      });
+      confirmedGuestsBooked = agg._sum.guestsCount || 0;
     } catch {}
 
     if (w.suspended) {
@@ -1496,13 +1554,17 @@ export const getWeddingBySlug = unstable_cache(
       rating: ratings.bayesianRating,
       reviewCount: ratings.reviewCount,
       guestsAllowed: w.capacity,
-      guestsBooked: 24,
+      guestsBooked: confirmedGuestsBooked,
       imageUrl: w.mainImageUrl,
       coupleImage: w.mainImageUrl || w.hostCouple.user.avatar || "https://images.unsplash.com/photo-1615966650071-855b15f29ad1?w=400&q=80",
       coupleName: w.hostCouple.user.name || "Host Couple",
       hostName: w.hostCouple.user.name || "Host Couple",
       hostAvatar: w.hostCouple.user.avatar || "https://images.unsplash.com/photo-1615966650071-855b15f29ad1?w=400&q=80",
-      featured: true,
+      featured: w.featured,
+      sponsored: w.sponsored,
+      isDemo: w.isDemo,
+      isCurated: w.sponsored || w.featured,
+      curatedBadge: w.sponsored ? "Sponsored" : w.featured ? "Featured" : undefined,
       tags: w.traditions.map((t) => t.name),
       date: w.date.toISOString().split("T")[0],
       religion: w.category === "Royal" ? "Hinduism" : "Multicultural",

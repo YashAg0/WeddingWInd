@@ -77,7 +77,7 @@ export async function POST(req: Request) {
           return new NextResponse("Missing bookingId client reference.", { status: 400 });
         }
 
-        await prisma.$transaction(async (tx) => {
+        const invoiceEmailData = await prisma.$transaction(async (tx) => {
           const booking = await tx.booking.findUnique({
             where: { id: bookingId },
             include: {
@@ -96,12 +96,12 @@ export async function POST(req: Request) {
             booking.status === BookingStatus.REFUNDED
           ) {
             logger.warn("[webhook/stripe] Payment received for cancelled/rejected booking — ignoring", { bookingId, status: booking.status });
-            return;
+            return null;
           }
 
           if (booking.status === BookingStatus.PAID || booking.payments.length > 0) {
             logger.info("[webhook/stripe] Booking already processed — skipping", { bookingId });
-            return;
+            return null;
           }
 
           const paymentIntentId = (typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id) ?? session.id;
@@ -175,16 +175,6 @@ export async function POST(req: Request) {
             },
           });
 
-          await sendInvoiceEmail(
-            booking.traveler.user.email,
-            booking.traveler.fullName,
-            booking.wedding.title,
-            payment.id,
-            booking.totalAmount,
-            booking.guestsCount,
-            booking.date.toLocaleDateString()
-          );
-
           // Agent Referral Commission
           try {
             const { generateBookingCommissionAction } = require("@/lib/actions/referrals");
@@ -198,7 +188,33 @@ export async function POST(req: Request) {
           } catch (commErr) {
             logger.error("[webhook/stripe] Failed to generate referral commission:", {}, commErr);
           }
-        });
+
+          return {
+            email: booking.traveler.user.email,
+            fullName: booking.traveler.fullName,
+            weddingTitle: booking.wedding.title,
+            paymentId: payment.id,
+            totalAmount: booking.totalAmount,
+            guestsCount: booking.guestsCount,
+            bookingDateStr: booking.date.toLocaleDateString(),
+          };
+        }, { maxWait: 10000, timeout: 15000 });
+
+        if (invoiceEmailData) {
+          try {
+            await sendInvoiceEmail(
+              invoiceEmailData.email,
+              invoiceEmailData.fullName,
+              invoiceEmailData.weddingTitle,
+              invoiceEmailData.paymentId,
+              invoiceEmailData.totalAmount,
+              invoiceEmailData.guestsCount,
+              invoiceEmailData.bookingDateStr
+            );
+          } catch (emailErr) {
+            logger.error("[webhook/stripe] Failed to send invoice email outside transaction:", {}, emailErr);
+          }
+        }
         break;
       }
 

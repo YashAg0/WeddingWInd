@@ -374,7 +374,7 @@ export default async function CoupleListingsPage({
 
                       {/* Edit */}
                       <Link
-                        href={`/dashboard/celebrations?action=edit&id=${w.id}`}
+                        href={`/dashboard/listings?action=edit&id=${w.id}`}
                         className="p-1.5 rounded-lg border border-warm-200 bg-white text-charcoal-600 hover:bg-warm-50"
                         title="Edit celebration"
                       >

@@ -2,6 +2,8 @@ import { requireRole } from "@/lib/auth";
 import { UserRole } from "@prisma/client";
 import { getOperationsDashboardAction } from "@/lib/actions/admin-dashboards";
 import { Activity, ShieldCheck, QrCode, Calendar } from "lucide-react";
+import { formatTime } from "@/lib/utils";
+
 
 export const dynamic = "force-dynamic";
 
@@ -74,7 +76,7 @@ export default async function ExecutiveOperationsDashboardPage() {
                   <span className="text-charcoal-400 text-[0.6875rem] block">{c.guestPass?.booking?.wedding?.title || "Wedding Pass"}</span>
                 </div>
                 <div className="text-right">
-                  <span className="text-emerald-700 font-bold block">{new Date(c.createdAt).toLocaleTimeString()}</span>
+                  <span className="text-emerald-700 font-bold block">{formatTime(c.createdAt)}</span>
                   <span className="text-[0.6875rem] text-charcoal-400">Validated</span>
                 </div>
               </div>

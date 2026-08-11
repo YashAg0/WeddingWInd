@@ -7,6 +7,8 @@ import {
   regenerateReferralCodeAction
 } from "@/lib/actions/referrals";
 import { Coins, AlertTriangle, Users, RefreshCw } from "lucide-react";
+import { formatDate, formatDateTime } from "@/lib/utils";
+
 
 interface ClientAdminAgentsListProps {
   agents: Array<{
@@ -137,8 +139,9 @@ export default function ClientAdminAgentsList({
                     Amount: <strong className="text-charcoal-900">${req.amount.toFixed(2)}</strong> • Method: {req.method}
                   </div>
                   <div className="text-[9px] text-charcoal-400">
-                    Requested on: {new Date(req.createdAt).toLocaleString()}
+                    Requested on: {formatDateTime(req.createdAt)}
                   </div>
+
                 </div>
 
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
@@ -219,7 +222,7 @@ export default function ClientAdminAgentsList({
                       </span>
                     </td>
                     <td className="p-4 text-[10px] text-charcoal-400">
-                      {new Date(flag.createdAt).toLocaleDateString()}
+                      {formatDate(flag.createdAt)}
                     </td>
                   </tr>
                 ))}

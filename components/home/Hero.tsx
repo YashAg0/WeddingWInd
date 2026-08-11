@@ -231,7 +231,7 @@ export function Hero({ stats: _stats }: HeroProps) {
           }
         >
           <Image
-            src="https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=1920&q=90"
+            src="https://images.unsplash.com/photo-1660455559502-8f71b47443c4?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
             alt="Indian Wedding Celebration"
             fill
             priority

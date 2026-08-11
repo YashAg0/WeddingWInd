@@ -8,14 +8,12 @@
  * Does NOT modify production state. Runs read-only SELECT 1 queries and one user lookup.
  */
 
-import { createRequire } from 'module';
 import { readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const require = createRequire(import.meta.url);
 
 // Load .env manually since we're running outside Next.js
 const envPath = join(__dirname, '../.env');

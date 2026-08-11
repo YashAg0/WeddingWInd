@@ -4,7 +4,7 @@
  * Unit tests for utility functions in lib/utils.ts (cn, sanitizeRedirectUrl).
  */
 
-import { sanitizeRedirectUrl, cn } from "@/lib/utils";
+import { sanitizeRedirectUrl, cn, formatDate, formatDateTime, formatTime } from "@/lib/utils";
 
 describe("lib/utils - cn", () => {
   it("should merge class names correctly", () => {
@@ -53,3 +53,26 @@ describe("lib/utils - sanitizeRedirectUrl", () => {
     expect(sanitizeRedirectUrl("data:text/html,hack")).toBe("/dashboard");
   });
 });
+
+describe("lib/utils - deterministic date formatting", () => {
+  it("should format dates deterministically with UTC timezone", () => {
+    const testDate = new Date("2026-08-15T12:00:00.000Z");
+    expect(formatDate(testDate)).toBe("Aug 15, 2026");
+    expect(formatDate("2026-08-15T12:00:00.000Z")).toBe("Aug 15, 2026");
+    expect(formatDate(null)).toBe("");
+    expect(formatDate("invalid-date")).toBe("");
+  });
+
+  it("should format date-times deterministically", () => {
+    const testDate = new Date("2026-08-15T14:30:00.000Z");
+    expect(formatDateTime(testDate)).toContain("Aug 15, 2026");
+    expect(formatDateTime(null)).toBe("");
+  });
+
+  it("should format times deterministically", () => {
+    const testDate = new Date("2026-08-15T14:30:00.000Z");
+    expect(formatTime(testDate)).toContain("30");
+    expect(formatTime(null)).toBe("");
+  });
+});
+

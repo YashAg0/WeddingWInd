@@ -32,7 +32,8 @@ export function BookingSidebar({ wedding }: BookingSidebarProps) {
   const [isBooked, setIsBooked] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const availableSlots = wedding.guestsAllowed - wedding.guestsBooked;
+  const availableSlots = Math.max(0, wedding.guestsAllowed - wedding.guestsBooked);
+  const isSoldOut = wedding.guestsAllowed === 0 || availableSlots <= 0;
   const activeTier: PricingTier = PRICING_TIERS[selectedTierKey] || PRICING_TIERS.PREMIUM;
 
   const subtotalINR = activeTier.priceINR * guestsCount;
@@ -44,6 +45,10 @@ export function BookingSidebar({ wedding }: BookingSidebarProps) {
   };
 
   const handleBook = async () => {
+    if (isSoldOut) {
+      toast.error("This wedding experience is currently fully booked.");
+      return;
+    }
     if (!user) {
       const currentPath = window.location.pathname + window.location.search;
       router.push(`/login?redirect_url=${encodeURIComponent(currentPath)}`);
@@ -91,8 +96,8 @@ export function BookingSidebar({ wedding }: BookingSidebarProps) {
           <Users size={16} className="text-[var(--color-brand-primary)]" />
           <span className="text-xs font-semibold">Guest Slots Remaining</span>
         </div>
-        <span className="text-xs font-bold text-charcoal-900 bg-white border border-warm-200 px-3 py-1 rounded-lg">
-          {availableSlots} / {wedding.guestsAllowed} Left
+        <span className={cn("text-xs font-bold px-3 py-1 rounded-lg border", isSoldOut ? "bg-amber-100 text-amber-900 border-amber-300" : "bg-white text-charcoal-900 border-warm-200")}>
+          {isSoldOut ? "Fully Booked" : `${availableSlots} / ${wedding.guestsAllowed} Left`}
         </span>
       </div>
 
@@ -148,15 +153,20 @@ export function BookingSidebar({ wedding }: BookingSidebarProps) {
         </label>
         <select
           id="booking-guests"
-          value={guestsCount}
+          value={isSoldOut ? 0 : guestsCount}
+          disabled={isSoldOut}
           onChange={(e) => setGuestsCount(Number(e.target.value))}
-          className="input-luxury bg-white font-semibold cursor-pointer"
+          className="input-luxury bg-white font-semibold cursor-pointer disabled:bg-warm-100 disabled:text-charcoal-400 disabled:cursor-not-allowed"
         >
-          {Array.from({ length: Math.min(10, availableSlots) }).map((_, i) => (
-            <option key={i + 1} value={i + 1}>
-              {i + 1} {i + 1 === 1 ? "Guest" : "Guests"}
-            </option>
-          ))}
+          {isSoldOut ? (
+            <option value={0}>Fully Booked (0 Seats Available)</option>
+          ) : (
+            Array.from({ length: Math.min(10, availableSlots) }).map((_, i) => (
+              <option key={i + 1} value={i + 1}>
+                {i + 1} {i + 1 === 1 ? "Guest" : "Guests"}
+              </option>
+            ))
+          )}
         </select>
       </div>
 
@@ -189,12 +199,21 @@ export function BookingSidebar({ wedding }: BookingSidebarProps) {
             {errorMessage}
           </div>
         )}
-        <button
-          onClick={handleBook}
-          className="btn btn-primary w-full py-4 text-base shadow-lg justify-center font-bold"
-        >
-          Reserve Invitation — {formatPrice(subtotalINR).primary}
-        </button>
+        {isSoldOut ? (
+          <button
+            disabled
+            className="w-full py-4 text-base font-bold bg-amber-50 text-amber-900 border border-amber-300 rounded-2xl cursor-not-allowed text-center shadow-xs"
+          >
+            Fully Booked — No Spots Available
+          </button>
+        ) : (
+          <button
+            onClick={handleBook}
+            className="btn btn-primary w-full py-4 text-base shadow-lg justify-center font-bold"
+          >
+            Reserve Invitation — {formatPrice(subtotalINR).primary}
+          </button>
+        )}
 
         <div className="grid grid-cols-2 gap-2">
           <button

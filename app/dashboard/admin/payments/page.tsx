@@ -4,6 +4,7 @@ import { adminGetPaymentsAndQueuesAction } from "@/lib/actions/admin";
 import AdminStripeAuditManager from "@/components/dashboard/AdminStripeAuditManager";
 import { Coins, CreditCard, RefreshCcw, Landmark, ArrowUpRight } from "lucide-react";
 
+
 export const dynamic = "force-dynamic";
 
 export default async function AdminPaymentsPage() {

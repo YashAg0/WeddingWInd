@@ -9,6 +9,9 @@ import {
   recommendWeddingAction,
   deleteSavedSearch
 } from "@/lib/actions/discovery";
+import { getProfileCompletion } from "@/lib/actions/profile-completion";
+import type { ProfileCompletionResult } from "@/lib/actions/profile-completion";
+import { ProfileCompletionWidget } from "@/components/dashboard/ProfileCompletionWidget";
 import StatCard from "@/components/dashboard/StatCard";
 import ActivityCard from "@/components/dashboard/ActivityCard";
 import { useState, useEffect } from "react";
@@ -282,6 +285,9 @@ export default function DashboardOverviewPage() {
   const [savedSearches, setSavedSearches] = useState<any[]>([]);
   const [personalizedRecs, setPersonalizedRecs] = useState<any[]>([]);
   
+  // Profile completion state
+  const [profileCompletion, setProfileCompletion] = useState<ProfileCompletionResult | null>(null);
+
   // AI matching advisor states
   const [aiBudget, setAiBudget] = useState(200);
   const [aiCountry] = useState("India");
@@ -297,6 +303,9 @@ export default function DashboardOverviewPage() {
   const userRole = user?.role || "traveler";
 
   useEffect(() => {
+    if (userRole === "traveler" || userRole === "couple" || userRole === "agent") {
+      getProfileCompletion().then(setProfileCompletion).catch(() => {});
+    }
     if (userRole === "traveler") {
       fetchRecentlyViewed().then(setRecentlyViewed).catch(console.error);
       fetchSavedSearches().then(setSavedSearches).catch(console.error);
@@ -571,6 +580,9 @@ export default function DashboardOverviewPage() {
 
           {/* Sidebar: Recent Activity */}
           <div className="lg:col-span-4 space-y-6">
+            {profileCompletion && profileCompletion.percent < 100 && (
+              <ProfileCompletionWidget completion={profileCompletion} />
+            )}
             <VerificationWidget role="traveler" verification={verification} submitVerification={submitVerification} />
 
             <div className="space-y-4">

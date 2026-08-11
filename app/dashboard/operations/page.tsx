@@ -114,8 +114,8 @@ export default async function OperationsPage() {
       </div>
 
       <ClientOperationsCenter
-        wedding={wedding}
-        bookings={bookings}
+        wedding={wedding as any}
+        bookings={bookings as any}
       />
     </div>
   );

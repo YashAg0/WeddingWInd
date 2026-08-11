@@ -7,7 +7,7 @@
  * 3. Founder & Admin action role check enforcement.
  */
 
-import { createBookingAction } from "@/lib/actions/index";
+import { createBookingAction, refundBookingAction } from "@/lib/actions/index";
 import { processPartialRefundAction } from "@/lib/actions/stripe";
 import { getSiteCMSAction } from "@/lib/actions/founder";
 import { UserRole } from "@prisma/client";
@@ -23,10 +23,17 @@ jest.mock("@/lib/prisma", () => ({
     user: { findUnique: jest.fn() },
     travelerProfile: { findUnique: jest.fn() },
     wedding: { findUnique: jest.fn() },
-    booking: { findUnique: jest.fn(), aggregate: jest.fn() },
-    payment: { findUnique: jest.fn() },
+    booking: { findUnique: jest.fn(), update: jest.fn(), aggregate: jest.fn() },
+    payment: { findUnique: jest.fn(), update: jest.fn() },
     refund: { findMany: jest.fn(), create: jest.fn() },
+    transaction: { create: jest.fn() },
     siteCMS: { upsert: jest.fn() },
+    $transaction: jest.fn().mockImplementation(async (cb: any) => cb({
+      refund: { create: jest.fn().mockResolvedValue({ id: "ref_1" }) },
+      payment: { update: jest.fn().mockResolvedValue({ id: "pay_1" }) },
+      booking: { update: jest.fn().mockResolvedValue({ id: "b_paid_123", status: "REFUNDED" }) },
+      transaction: { create: jest.fn().mockResolvedValue({ id: "tx_1" }) },
+    })),
   },
   isDatabaseAvailable: jest.fn().mockResolvedValue(true),
 }));
@@ -51,6 +58,11 @@ jest.mock("@/lib/actions/safety", () => ({
 
 jest.mock("@/lib/actions/admin", () => ({
   createAuditLog: jest.fn().mockResolvedValue(undefined),
+}));
+
+jest.mock("@/lib/email", () => ({
+  sendInvoiceEmail: jest.fn().mockResolvedValue(undefined),
+  sendRefundConfirmationEmail: jest.fn().mockResolvedValue(undefined),
 }));
 
 jest.mock("@/lib/stripe", () => ({
@@ -164,5 +176,74 @@ describe("M1 Admin Security Hardening - getSiteCMSAction Role Enforcement", () =
     const result = await getSiteCMSAction();
     expect(requireRole).toHaveBeenCalledWith([UserRole.ADMIN]);
     expect(result).toHaveProperty("heroTitle", "Welcome");
+  });
+});
+
+describe("M2 Transaction Atomicity - refundBookingAction", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("should throw error if non-admin user attempts refund", async () => {
+    const { requireAuth } = jest.requireMock("@/lib/auth");
+    requireAuth.mockResolvedValueOnce({ id: "user_1", role: UserRole.TRAVELER, status: "ACTIVE" });
+
+    await expect(refundBookingAction("booking_123")).rejects.toThrow("Forbidden: Only administrators can process refunds.");
+  });
+
+  it("should throw error if booking is not found or not paid before Stripe refund call", async () => {
+    const { requireAuth } = jest.requireMock("@/lib/auth");
+    const { stripe } = jest.requireMock("@/lib/stripe");
+    requireAuth.mockResolvedValueOnce({ id: "admin_1", role: UserRole.ADMIN, status: "ACTIVE" });
+
+    prisma.booking.findUnique.mockResolvedValueOnce(null);
+
+    await expect(refundBookingAction("invalid_booking")).rejects.toThrow("Booking not found.");
+    expect(stripe.refunds.create).not.toHaveBeenCalled();
+  });
+
+  it("should perform Stripe refund API call outside transaction before updating DB state", async () => {
+    const { requireAuth } = jest.requireMock("@/lib/auth");
+    const { stripe } = jest.requireMock("@/lib/stripe");
+    const { sendRefundConfirmationEmail } = jest.requireMock("@/lib/email");
+
+    requireAuth.mockResolvedValueOnce({ id: "admin_1", role: UserRole.ADMIN, status: "ACTIVE" });
+
+    prisma.booking.findUnique.mockResolvedValueOnce({
+      id: "b_paid_123",
+      status: "PAID",
+      totalAmount: 500,
+      weddingId: "w_123",
+      payments: [{ id: "pay_1", amount: 500, stripePaymentIntentId: "pi_123", status: "PAID" }],
+      traveler: { fullName: "Alice Traveler", user: { email: "alice@example.com" } },
+    });
+
+    const callOrder: string[] = [];
+    stripe.refunds.create.mockImplementationOnce(async () => {
+      callOrder.push("stripe.refunds.create");
+      return { id: "stripe_ref_999" };
+    });
+
+    prisma.$transaction.mockImplementationOnce(async (cb: any) => {
+      callOrder.push("prisma.$transaction");
+      return cb({
+        refund: { create: jest.fn().mockResolvedValue({ id: "ref_1" }) },
+        payment: { update: jest.fn().mockResolvedValue({ id: "pay_1" }) },
+        booking: { update: jest.fn().mockResolvedValue({ id: "b_paid_123", status: "REFUNDED" }) },
+        transaction: { create: jest.fn().mockResolvedValue({ id: "tx_1" }) },
+      });
+    });
+
+    const result = await refundBookingAction("b_paid_123");
+
+    expect(callOrder).toEqual(["stripe.refunds.create", "prisma.$transaction"]);
+    expect(result).toEqual({ id: "b_paid_123", status: "REFUNDED" });
+    expect(sendRefundConfirmationEmail).toHaveBeenCalledWith(
+      "alice@example.com",
+      "Alice Traveler",
+      "w_123",
+      "stripe_ref_999",
+      500
+    );
   });
 });

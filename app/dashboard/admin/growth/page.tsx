@@ -2,6 +2,8 @@ import { requireRole } from "@/lib/auth";
 import { UserRole } from "@prisma/client";
 import { getGrowthDashboardAction } from "@/lib/actions/admin-dashboards";
 import { TrendingUp, Users, Ticket, Tag } from "lucide-react";
+import { formatDate } from "@/lib/utils";
+
 
 export const dynamic = "force-dynamic";
 
@@ -71,7 +73,7 @@ export default async function ExecutiveGrowthDashboardPage() {
               {growth.newsletterSubscribers.map((s: any) => (
                 <div key={s.id} className="p-3 bg-warm-50/50 border border-warm-200 rounded-2xl text-xs flex justify-between">
                   <span className="font-semibold text-charcoal-900">{s.email}</span>
-                  <span className="text-[0.6875rem] text-charcoal-400">{new Date(s.createdAt).toLocaleDateString()}</span>
+                  <span className="text-[0.6875rem] text-charcoal-400">{formatDate(s.createdAt)}</span>
                 </div>
               ))}
             </div>

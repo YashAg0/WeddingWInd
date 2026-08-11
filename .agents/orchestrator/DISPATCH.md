@@ -25,3 +25,33 @@ Execute God-level authentication, database availability, and admin access repair
 - R7: Admin Controls & Verification Lifecycle (unrequested KYC uploads blocked at UI, Server Action, UploadThing, and DB).
 - R8: Security, Financial, & UX Integrity (Stripe webhook idempotency, server-authoritative pricing, contact moderation, responsive QA 320px-1920px, error boundaries).
 
+## 2026-08-10T16:22:35Z
+
+Make the existing WeddingWithIndia application genuinely work end-to-end as a coherent production marketplace, recovering it autonomously through rigorous testing, root-cause fixes, and comprehensive verifications.
+
+Requirements Overview:
+1. R1. Independent & Coherent Execution: Autonomous Goal Mode. Logical workstreams. Single source of truth for findings in progress.md / context.md / plan.md.
+2. R2. Strict Tooling: Do not repeatedly run `npm run dev` or leave multiple dev servers running. Rely on `npm run type-check`, `npm run lint`, `npm test`, and `npm run build` for code checks. Use at most ONE dev server for browser/runtime testing.
+3. R3. Identity & Auth Hardening: Resolve the `P2002` email error in `syncAndGetDbUser()`. Founder DB row is canonical truth. Reconcile Clerk ID using verified email, create user only if neither exists. Never duplicate founders, downgrade ADMIN/ACTIVE, or trust client identities.
+4. R4. Database & Transaction Integrity: Audit `lib/prisma.ts`, `lib/auth.ts`, schema, API routes. Strict Prisma singleton, connection/transaction timeouts, remove `Promise.race` leaks, transaction atomicity without external calls inside transactions.
+5. R5. End-to-End Repair: Fix Admin portal routes/controls, Wedding lifecycle ("document type error" blocking listing creation, approval/rejection workflows), Host/Traveler/Agent/Coordinator/Admin dashboards, Booking & Stripe server-authoritative pricing/webhooks, KYC/uploads, messaging with PII moderation.
+6. R6. UI & Hydration Consistency: Match homepage brand colors/typography across Admin and all dashboards. Fix SSR hydration errors deterministically (no `suppressHydrationWarning`).
+7. R7. Security & Data Integrity: Do NOT reset database. Resolve real data corruption safely. Enforce server-authoritative RBAC, Stripe signature verification, PII moderation.
+8. R8. Verification & Behavioral Testing: Code-level verification + single dev server runtime verification.
+
+## 2026-08-11T03:07:03Z
+
+Resume work at c:\Projects\WeddingWithIndia\wedding-with-india\.agents\orchestrator (Gen 2 Project Orchestrator).
+Parent conversation ID: a063668d-04ab-4c05-9776-bb07044273bd.
+Milestones M1, M2, and M3 are DONE and verified CLEAN.
+Immediate mission:
+1. Start fresh heartbeat cron via `schedule(CronExpression="*/10 * * * *")`.
+2. Execute Milestone M4: Dashboard Repair & UI/Hydration Consistency (Requirements R5 & R6).
+   - Eliminate client component locale/date hydration mismatches without `suppressHydrationWarning`.
+   - Verify Admin portal (19 sub-routes) and dashboards match homepage brand tokens (`#6b1026` Royal Maroon, `#c9972a` Luxury Gold, `#fdfaf7` Warm Ivory, `#1a1a1a` Dark Charcoal).
+   - Gate verification: Reviewers, Challengers, Auditor.
+3. Execute Milestone M5: Financial, Security & Quad-Verification Run (Requirements R2 & R8).
+   - Server-authoritative Stripe pricing, webhook idempotency, KYC gating, PII moderation.
+   - Full Quad-Verification suite (`type-check`, `lint`, `test`, `build`) and single-dev-server behavioral test.
+4. Execute Milestone M6: Forensic Audit Verification (`teamwork_preview_auditor` final CLEAN verdict).
+5. Send completion message to parent (`a063668d-04ab-4c05-9776-bb07044273bd`) and claim victory in `progress.md`.

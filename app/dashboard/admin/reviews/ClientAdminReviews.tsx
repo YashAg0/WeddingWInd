@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { toast } from "sonner";
 import { Star, ShieldCheck, Trash2, EyeOff, AlertTriangle, CheckSquare } from "lucide-react";
 import { adminModerateReviewAction } from "@/lib/actions/reviews";
+import { formatDate, formatDateTime } from "@/lib/utils";
 
 interface Report {
   id: string;
@@ -160,7 +161,7 @@ export function ClientAdminReviews({ initialReviews, auditLogs: initialLogs }: C
                         />
                       ))}
                       <span className="text-xs text-charcoal-400 font-semibold ml-2">
-                        {new Date(rev.createdAt).toLocaleDateString()}
+                        {formatDate(rev.createdAt)}
                       </span>
                     </div>
                     <p className="text-charcoal-700 text-xs sm:text-sm leading-relaxed italic">
@@ -294,7 +295,7 @@ export function ClientAdminReviews({ initialReviews, auditLogs: initialLogs }: C
                 logs.map((log) => (
                   <tr key={log.id} className="hover:bg-warm-50/50">
                     <td className="p-4 whitespace-nowrap">
-                      {new Date(log.createdAt).toLocaleString()}
+                      {formatDateTime(log.createdAt)}
                     </td>
                     <td className="p-4 font-bold">
                       <span className={`inline-block px-2.5 py-0.5 rounded text-[0.625rem] font-bold ${

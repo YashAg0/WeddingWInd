@@ -21,8 +21,8 @@ test.describe("Phase 4: Authentication Verification", () => {
     
     // Check if the URL contains sign-in or we see the clerk sign-in component
     await expect(page).toHaveURL(/sign-in|login/i);
-    // Looking for Clerk's standard sign-in heading or a specific header
-    const signInHeader = page.locator("h1", { hasText: /Sign in/i }).first();
+    // Looking for the custom sign-in heading
+    const signInHeader = page.locator("h1", { hasText: /Welcome back/i }).first();
     await expect(signInHeader).toBeVisible();
   });
 
@@ -32,8 +32,8 @@ test.describe("Phase 4: Authentication Verification", () => {
 
     // Check if we hit sign-up route
     await expect(page).toHaveURL(/sign-up|signup/i);
-    // Looking for Clerk's standard sign-up heading
-    const signUpHeader = page.locator("h1", { hasText: /Create your account/i }).first();
+    // Looking for the custom sign-up heading
+    const signUpHeader = page.locator("h1", { hasText: /Create account/i }).first();
     await expect(signUpHeader).toBeVisible();
   });
 

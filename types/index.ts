@@ -1,26 +1,58 @@
-export interface Review {
+export type Role = "SUPER_ADMIN" | "ADMIN" | "COUPLE" | "TRAVELER" | "AGENT" | "COORDINATOR";
+
+export interface User {
   id: string;
-  authorName: string;
-  authorAvatar: string;
-  rating: number;
-  date: string;
-  content: string;
+  email: string;
+  name: string;
+  role: Role;
+  avatarUrl?: string;
+  createdAt: Date;
 }
 
-export interface WeddingEvent {
-  title: string;
-  time: string;
+export interface FAQ {
+  question: string;
+  answer: string;
+}
+
+export interface Review {
+  id: string;
+  userName?: string;
+  authorName?: string;
+  authorAvatar?: string;
+  userAvatar?: string;
+  rating: number;
+  comment: string;
   date: string;
+  country?: string;
+  createdAt?: any;
+  helpfulVotes?: any;
+  ratingFood?: any;
+  ratingHospitality?: any;
+  ratingExperience?: any;
+  ratingCulture?: any;
+  ratingSafety?: any;
+  ratingAccommodation?: any;
+  ratingOrganization?: any;
+  ratingValue?: any;
+  ratingCommunication?: any;
+  repliesList?: any;
+}
+
+export interface WeddingTimelineEvent {
+  time: string;
+  title: string;
   description: string;
   icon?: string;
+  date?: string;
 }
 
 export interface WeddingTradition {
-  title: string;
+  name?: string;
+  title?: string;
   description: string;
 }
 
-export interface Wedding {
+export interface DemoWedding {
   id: string;
   slug: string;
   title: string;
@@ -42,26 +74,22 @@ export interface Wedding {
   hostName: string;
   hostAvatar: string;
   featured: boolean;
+  sponsored: boolean;
+  isDemo: boolean;
   tags: string[];
   date: string;
   religion: string;
-  luxuryLevel: "Premium" | "Luxury" | "Ultra-Luxury";
+  luxuryLevel: string;
   durationDays: number;
   languages: string[];
   isVerified: boolean;
-  isCurated?: boolean;
-  curatedBadge?: string;
-  
-  // Detailed fields for detail page
+  isCurated: boolean;
   gallery: string[];
   story: string;
   coupleBio: string;
-  timeline: WeddingEvent[];
+  timeline: WeddingTimelineEvent[];
   traditions: WeddingTradition[];
   dressCode: string;
-  theme?: string;
-  ethnicity?: string;
-  requiredGuests?: number;
   foodDescription: string;
   venueDescription: string;
   accommodation: string;
@@ -69,6 +97,9 @@ export interface Wedding {
   notIncluded: string[];
   reviews: Review[];
   faqs: FAQItem[];
+  theme?: string;
+  ethnicity?: string;
+  curatedBadge?: string;
 }
 
 export type WeddingCategory =
@@ -77,15 +108,18 @@ export type WeddingCategory =
   | "South Indian"
   | "Beach"
   | "Destination"
-  | "Traditional";
+  | "Traditional"
+  | "Nature";
 
 export interface Category {
   id: string;
   name: WeddingCategory;
-  description: string;
-  imageUrl: string;
-  weddingCount: number;
-  icon: string;
+  description?: string;
+  imageUrl?: string;
+  weddingCount?: number;
+  icon?: string;
+  slug?: string;
+  count?: number;
 }
 
 export interface Testimonial {
@@ -118,7 +152,7 @@ export interface FAQItem {
 export interface Stat {
   value: string;
   label: string;
-  description: string;
+  description?: string;
 }
 
 export interface HowItWorksStep {
@@ -127,3 +161,6 @@ export interface HowItWorksStep {
   title: string;
   description: string;
 }
+
+export type Wedding = DemoWedding;
+export type WeddingEvent = WeddingTimelineEvent;

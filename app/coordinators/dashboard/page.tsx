@@ -1,6 +1,3 @@
-"use client";
-
-import { useState, useEffect } from "react";
 import {
   Compass,
   MapPin,
@@ -12,27 +9,26 @@ import {
 } from "lucide-react";
 import { COORDINATOR_STATUS_CONFIG, CoordinatorApplicationStatus } from "@/lib/constants/status";
 import { COORDINATOR_MODEL } from "@/lib/constants/financial-model";
-import { coordinatorMockStore, MockCoordinatorRecord } from "@/lib/mock-data-store";
+import { requireAuth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { redirect } from "next/navigation";
 
-export default function CoordinatorDashboardPage() {
-  const [coordinator, setCoordinator] = useState<MockCoordinatorRecord | null>(null);
+export const dynamic = "force-dynamic";
 
-  useEffect(() => {
-    const updateState = () => {
-      const coords = coordinatorMockStore.getCoordinators();
-      // Find coordinator or default to CORD-APP-01 or CORD-APP-02
-      const current = coords.find(c => c.id === "CORD-APP-01") || coords[0];
-      setCoordinator(current || null);
-    };
+export default async function CoordinatorDashboardPage() {
+  const user = await requireAuth();
+  
+  const coordinator = await prisma.coordinatorProfile.findUnique({
+    where: { userId: user.id }
+  });
 
-    updateState();
-    const unsubscribe = coordinatorMockStore.subscribe(updateState);
-    return () => unsubscribe();
-  }, []);
+  if (!coordinator) {
+    redirect("/coordinators/apply");
+  }
 
-  const currentStatus: CoordinatorApplicationStatus = coordinator?.status || "not_available_in_city";
-  const statusMeta = COORDINATOR_STATUS_CONFIG[currentStatus];
-  const userCity = coordinator?.city || "Jaipur";
+  const currentStatus = (coordinator.status.toLowerCase() as CoordinatorApplicationStatus) || "submitted";
+  const statusMeta = COORDINATOR_STATUS_CONFIG[currentStatus] || COORDINATOR_STATUS_CONFIG["submitted"];
+  const userCity = coordinator.city || "Not Specified";
 
   // Responsibilities checklist
   const responsibilities = [
@@ -60,7 +56,7 @@ export default function CoordinatorDashboardPage() {
 
           <div className="flex items-center gap-2 bg-white border border-warm-200 px-3.5 py-1.5 rounded-xl shadow-xs">
             <span className="text-[0.6875rem] font-bold text-charcoal-500 uppercase tracking-wider">Coordinator ID:</span>
-            <span className="font-mono text-xs font-bold text-charcoal-900">{coordinator?.id || "CORD-APP-01"}</span>
+            <span className="font-mono text-xs font-bold text-charcoal-900">{coordinator.id.slice(0, 13).toUpperCase()}</span>
           </div>
         </div>
 
@@ -142,11 +138,11 @@ export default function CoordinatorDashboardPage() {
                 <span className="text-[0.625rem] font-bold uppercase tracking-wider text-[var(--color-brand-primary)] bg-maroon-50 px-2 py-0.5 rounded-md border border-maroon-100">
                   EVT-801
                 </span>
-                <h4 className="font-display font-bold text-base text-charcoal-900">{coordinator?.assignedEventTitle || "The Grand Maharaja Wedding"}</h4>
+                <h4 className="font-display font-bold text-base text-charcoal-900">{coordinator.assignedEventTitle || "The Grand Maharaja Wedding"}</h4>
                 <div className="flex flex-wrap items-center gap-3 text-xs text-charcoal-600 font-medium">
-                  <span className="flex items-center gap-1"><MapPin size={12} /> {coordinator?.city || "Udaipur"} Palace Venue</span>
+                  <span className="flex items-center gap-1"><MapPin size={12} /> {coordinator.city || "Udaipur"} Palace Venue</span>
                   <span>·</span>
-                  <span className="flex items-center gap-1"><Calendar size={12} /> {coordinator?.assignedDate || "Feb 14, 2025 (Day 1 - Welcome)"}</span>
+                  <span className="flex items-center gap-1"><Calendar size={12} /> {coordinator.assignedDate || "Feb 14, 2025 (Day 1 - Welcome)"}</span>
                 </div>
               </div>
 

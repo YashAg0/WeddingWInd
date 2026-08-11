@@ -12,6 +12,8 @@ import {
   CheckCircle
 } from "lucide-react";
 import Link from "next/link";
+import { formatDate } from "@/lib/utils";
+
 
 export default function AdminMessagesCMSPage() {
   const { user } = useAuth();
@@ -163,7 +165,7 @@ export default function AdminMessagesCMSPage() {
 
                         <div className="flex flex-col items-end gap-2 flex-shrink-0">
                           <span className="text-[9px] text-charcoal-400 font-semibold">
-                            {latestMsg ? new Date(latestMsg.createdAt).toLocaleDateString() : ""}
+                            {latestMsg ? formatDate(latestMsg.createdAt) : ""}
                           </span>
                           <div className="flex gap-1.5">
                             <button

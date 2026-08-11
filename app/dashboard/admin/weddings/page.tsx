@@ -7,8 +7,9 @@ import {
   adminDeleteWeddingAction,
   adminToggleWeddingStatusAction,
   adminToggleWeddingFeaturedAction,
+  adminToggleSponsoredAction,
 } from "@/lib/actions/admin";
-import { Calendar as CalendarIcon, MapPin, Tag, Users, Plus, Edit2, Trash2, CheckCircle, Star } from "lucide-react";
+import { Calendar as CalendarIcon, MapPin, Tag, Users, Plus, Edit2, Trash2, CheckCircle, Star, Zap, FlaskConical } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -107,6 +108,14 @@ export default async function AdminWeddingsPage({
     const id = formData.get("id") as string;
     const currentFeatured = formData.get("featured") === "true";
     await adminToggleWeddingFeaturedAction(id, !currentFeatured);
+    redirect("/dashboard/admin/weddings");
+  }
+
+  async function handleToggleSponsored(formData: FormData) {
+    "use server";
+    const id = formData.get("id") as string;
+    const currentSponsored = formData.get("sponsored") === "true";
+    await adminToggleSponsoredAction(id, !currentSponsored);
     redirect("/dashboard/admin/weddings");
   }
 
@@ -334,6 +343,16 @@ export default async function AdminWeddingsPage({
                       <Star size={10} className="fill-white" /> Featured
                     </span>
                   )}
+                  {(w as any).sponsored && (
+                    <span className="absolute top-3 left-3 bg-gradient-to-r from-amber-500 to-yellow-400 text-white font-bold text-[0.625rem] px-2 py-0.5 rounded uppercase tracking-wider flex items-center gap-1">
+                      <Zap size={10} className="fill-white" /> Sponsored
+                    </span>
+                  )}
+                  {(w as any).isDemo && (
+                    <span className="absolute bottom-3 left-3 bg-sky-500 text-white font-bold text-[0.625rem] px-2 py-0.5 rounded uppercase tracking-wider flex items-center gap-1">
+                      <FlaskConical size={10} /> Demo
+                    </span>
+                  )}
                   <span className={`absolute top-3 right-3 text-[0.625rem] font-bold uppercase px-2 py-0.5 rounded ${
                     w.status === "PUBLISHED" ? "bg-emerald-500 text-white" : w.status === "COMPLETED" ? "bg-charcoal-500 text-white" : "bg-warm-500 text-white"
                   }`}>
@@ -399,6 +418,21 @@ export default async function AdminWeddingsPage({
                           }`}
                         >
                           <Star size={13} className={w.featured ? "fill-amber-500 text-amber-500" : ""} />
+                        </button>
+                      </form>
+
+                      {/* Toggle Sponsored */}
+                      <form action={handleToggleSponsored}>
+                        <input type="hidden" name="id" value={w.id} />
+                        <input type="hidden" name="sponsored" value={(w as any).sponsored ? "true" : "false"} />
+                        <button
+                          type="submit"
+                          title="Toggle Sponsored (Priority Discovery)"
+                          className={`p-1.5 rounded-lg border text-xs cursor-pointer ${
+                            (w as any).sponsored ? "bg-gradient-to-r from-amber-50 to-yellow-50 border-amber-200 text-amber-700 hover:bg-amber-100" : "bg-warm-100 border-warm-200 text-charcoal-500 hover:bg-warm-200"
+                          }`}
+                        >
+                          <Zap size={13} className={(w as any).sponsored ? "fill-amber-500 text-amber-500" : ""} />
                         </button>
                       </form>
 

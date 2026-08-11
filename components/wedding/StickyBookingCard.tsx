@@ -30,7 +30,8 @@ export function StickyBookingCard({ wedding }: StickyBookingCardProps) {
   const [isBooked, setIsBooked] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const availableSlots = wedding.guestsAllowed - wedding.guestsBooked;
+  const availableSlots = Math.max(0, wedding.guestsAllowed - wedding.guestsBooked);
+  const isSoldOut = wedding.guestsAllowed === 0 || availableSlots <= 0;
   const activeTier: PricingTier = PRICING_TIERS[selectedTierKey] || PRICING_TIERS.PREMIUM;
   const subtotalINR = activeTier.priceINR * guestsCount;
 
@@ -53,12 +54,21 @@ export function StickyBookingCard({ wedding }: StickyBookingCardProps) {
           )}
         </div>
 
-        <button
-          onClick={() => setIsOpen(true)}
-          className="btn btn-primary btn-sm px-6 py-3 shadow-md font-bold"
-        >
-          Reserve Invitation
-        </button>
+        {isSoldOut ? (
+          <button
+            disabled
+            className="btn btn-secondary btn-sm px-4 py-2.5 bg-warm-200 text-charcoal-400 border border-warm-300 font-bold cursor-not-allowed"
+          >
+            Fully Booked
+          </button>
+        ) : (
+          <button
+            onClick={() => setIsOpen(true)}
+            className="btn btn-primary btn-sm px-6 py-3 shadow-md font-bold"
+          >
+            Reserve Invitation
+          </button>
+        )}
       </section>
 
       {/* Mobile Booking Bottom Drawer */}

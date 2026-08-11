@@ -38,6 +38,7 @@ export async function searchWeddingsAction(
   const where: any = {
     status: "PUBLISHED",
     suspended: false,
+    isDemo: false,
   };
 
   // String Search Query (Title, Location, Category/Style, Description)
@@ -198,6 +199,8 @@ export async function searchWeddingsAction(
       const fraudPenalty = hasUnresolvedFraud ? 30 : 0;
 
       const relevanceScore =
+        (w.sponsored ? 1000 : 0) +
+        (w.featured ? 500 : 0) +
         (w.featured ? 40 : 0) +
         (cappedBoost * 8) +
         (trustScore * 0.4) +

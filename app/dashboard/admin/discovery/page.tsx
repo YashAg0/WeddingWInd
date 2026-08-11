@@ -11,6 +11,8 @@ import {
   Zap,
   Percent
 } from "lucide-react";
+import { formatDate } from "@/lib/utils";
+
 
 export default function AdminDiscoveryPage() {
   const { user } = useAuth();
@@ -116,7 +118,7 @@ export default function AdminDiscoveryPage() {
 
         {/* Search CTR averages */}
         <div className="bg-white border border-warm-200/50 p-5 rounded-2xl shadow-sm flex items-center gap-4">
-          <div className="w-10 h-10 bg-sky-50 rounded-full flex items-center justify-center text-sky-700">
+          <div className="w-10 h-10 bg-gold-50 rounded-full flex items-center justify-center text-gold-700">
             <Percent size={18} />
           </div>
           <div>
@@ -209,7 +211,7 @@ export default function AdminDiscoveryPage() {
                 stats?.failedSearches?.map((f: any, index: number) => (
                   <div key={index} className="py-2.5 flex justify-between items-center">
                     <span className="font-bold text-rose-800">{f.query}</span>
-                    <span className="text-[10px] text-charcoal-400">{new Date(f.createdAt).toLocaleDateString()}</span>
+                    <span className="text-[10px] text-charcoal-400">{formatDate(f.createdAt)}</span>
                   </div>
                 ))
               )}

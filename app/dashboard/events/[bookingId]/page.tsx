@@ -57,7 +57,7 @@ export default async function EventHubDetailPage({ params }: EventHubPageProps) 
   }
 
   // Count checklist values
-  const prep = booking.preparations[0] || {
+  const prep = booking.preparations || {
     emergencyContactCompleted: false,
     dressCodeAcknowledged: false,
     culturalGuideViewed: false,
@@ -226,16 +226,16 @@ export default async function EventHubDetailPage({ params }: EventHubPageProps) 
           {/* Interactive forms wrapper */}
           <ClientEventHubForm
             bookingId={bookingId}
-            initialEmergency={booking.emergencies[0] ?? null}
-            initialTravel={booking.travelDetails[0] ? {
-              arrivalDate: booking.travelDetails[0].arrivalDate.toISOString().substring(0, 16),
-              departureDate: booking.travelDetails[0].departureDate.toISOString().substring(0, 16),
-              arrivalCity: booking.travelDetails[0].arrivalCity,
-              flightNumber: booking.travelDetails[0].flightNumber,
-              hotelName: booking.travelDetails[0].hotelName,
-              transportRequired: booking.travelDetails[0].transportRequired,
-              dietaryRequirements: booking.travelDetails[0].dietaryRequirements,
-              accessibilityRequirements: booking.travelDetails[0].accessibilityRequirements,
+            initialEmergency={(booking.emergencies as any) ?? null}
+            initialTravel={booking.travelDetails ? {
+              arrivalDate: booking.travelDetails.arrivalDate.toISOString().substring(0, 16),
+              departureDate: booking.travelDetails.departureDate.toISOString().substring(0, 16),
+              arrivalCity: booking.travelDetails.arrivalCity,
+              flightNumber: booking.travelDetails.flightNumber,
+              hotelName: booking.travelDetails.hotelName,
+              transportRequired: booking.travelDetails.transportRequired,
+              dietaryRequirements: booking.travelDetails.dietaryRequirements,
+              accessibilityRequirements: booking.travelDetails.accessibilityRequirements,
             } : null}
             preparations={{
               culturalGuideViewed: prep.culturalGuideViewed,

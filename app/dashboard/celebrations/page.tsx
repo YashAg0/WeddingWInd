@@ -1,6 +1,24 @@
 import { redirect } from "next/navigation";
 
-/** Host wedding management lives at /dashboard/listings; keep this alias for nav links. */
-export default function CelebrationsAliasPage() {
-  redirect("/dashboard/listings");
+/** Host wedding management lives at /dashboard/listings; keep this alias for nav links while preserving query params. */
+export default async function CelebrationsAliasPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>> | Record<string, string | string[] | undefined>;
+}) {
+  const resolvedParams = await Promise.resolve(searchParams);
+  const query = new URLSearchParams();
+  if (resolvedParams) {
+    for (const [key, value] of Object.entries(resolvedParams)) {
+      if (typeof value === "string") {
+        query.append(key, value);
+      } else if (Array.isArray(value)) {
+        for (const item of value) {
+          query.append(key, item);
+        }
+      }
+    }
+  }
+  const queryString = query.toString();
+  redirect(queryString ? `/dashboard/listings?${queryString}` : "/dashboard/listings");
 }

@@ -1,31 +1,34 @@
-# DISPATCH — worker_m4
+## 2026-08-11T03:08:20Z
 
-## Task Objective
-Implement Milestone M4: Financial/UX Integrity Hardening (R8), Quad-Verification Run, and Final Documentation Update.
+You are worker_m4 (teamwork_preview_worker). Your working directory is c:\Projects\WeddingWithIndia\wedding-with-india\.agents\worker_m4.
+You MUST read:
+- c:\Projects\WeddingWithIndia\wedding-with-india\.agents\ORIGINAL_REQUEST.md
+- c:\Projects\WeddingWithIndia\wedding-with-india\.agents\PROJECT.md
+- c:\Projects\WeddingWithIndia\wedding-with-india\.agents\orchestrator\handoff.md
 
-## Scope & Instructions
-1. **R8: Financial, Security, & UX Integrity Audit & Hardening**:
-   - Verify Stripe webhook idempotency (`app/api/webhooks/stripe/route.ts` & `StripeWebhookEvent` DB table).
-   - Verify server-authoritative pricing in checkout (`createBookingAction` & `createStripeCheckoutAction` using DB values).
-   - Verify contact moderation filters (`lib/services/contact-moderation.ts`) stripping zero-width spaces, NFKD diacritics, and blocking email/phone/WhatsApp leakage.
-   - Verify error boundary leak prevention (`app/global-error.tsx`, `app/error.tsx`, `app/dashboard/error.tsx`).
-   - Verify responsive layout boundaries (320px to 1920px).
+Your task is Milestone M4: Dashboard Repair & UI/Hydration Consistency (Requirements R5 & R6).
 
-2. **Documentation Verification & Update**:
-   - Verify `FINAL_ROUTE_MAP.md`, `ADMIN_OPERATIONS_GUIDE.md`, `USER_FLOWS.md`, and update `FINAL_PRODUCTION_AUDIT.md` with truthful evidence of all 8 requirements (R1–R8) and all verification commands.
+1. Hydration Mismatch Fix:
+   - Audit client components in `app/dashboard/**/*`, `app/admin/**/*`, `components/**/*` for SSR locale/date/time hydration mismatches (e.g. `toLocaleDateString()`, `toLocaleTimeString()`, `formatDate()`, `Date.now()`, `new Date()`, client-side locale detection or `window` object access during initial JSX render).
+   - Eliminate all date/locale hydration mismatches deterministically across JSX trees WITHOUT using `suppressHydrationWarning`.
+   - Use proper client-side mounted state pattern (e.g. `useEffect` setting `isMounted = true`, or deterministic server ISO date string helpers) so server and client initial markup match 100%.
 
-3. **Quad-Verification Execution**:
-   - Run `npm run type-check` (Must pass with Exit Code 0).
-   - Run `npm run lint` (Must pass with Exit Code 0).
-   - Run `npm test -- --no-coverage` (Must pass all 26+ test suites / 148+ tests with Exit Code 0).
-   - Run `npm run build` (Must succeed with Exit Code 0).
+2. Brand Token Alignment across Admin Portal & Dashboards:
+   - Audit all 19 Admin portal sub-routes (`app/admin/**/*`) and all role dashboards (`app/dashboard/**/*` for Host, Traveler, Agent, Coordinator, Admin).
+   - Verify all routes use homepage brand tokens:
+     - `#6b1026` Royal Maroon
+     - `#c9972a` Luxury Gold
+     - `#fdfaf7` Warm Ivory
+     - `#1a1a1a` Dark Charcoal
+   - Replace any mismatched raw hex codes or inconsistent theme colors with canonical Tailwind design tokens/brand hex codes matching the homepage.
 
-## MANDATORY INTEGRITY WARNING
+3. Build & Test Verification:
+   - Run `npm run type-check` and `npm run lint` and `npm test -- --no-coverage`.
+   - Ensure 0 errors.
+
+4. Handoff:
+   - Write your handoff report to `c:\Projects\WeddingWithIndia\wedding-with-india\.agents\worker_m4\handoff.md`.
+   - Report back to parent orchestrator with a summary of files modified, fixes implemented, and test results.
+
+MANDATORY INTEGRITY WARNING:
 DO NOT CHEAT. All implementations must be genuine. DO NOT hardcode test results, create dummy/facade implementations, or circumvent the intended task. A teamwork_preview_auditor will independently verify your work. Integrity violations WILL be detected and your work WILL be rejected.
-
-## Deliverable
-Write your implementation report and full command outputs to `c:\Projects\WeddingWithIndia\wedding-with-india\.agents\worker_m4\handoff.md` and notify parent.
-
-## 2026-08-10T03:46:54Z
-Worker worker_m4 starting execution of Milestone M4: R8 Security, Financial, & UX Integrity Hardening, Quad-Verification Execution, and Final Documentation Update.
-

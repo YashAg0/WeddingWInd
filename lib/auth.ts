@@ -67,7 +67,8 @@ export async function syncAndGetDbUser() {
     
     console.log(`[AUTH DEBUG] STAGE 1 (Clerk user lookup) SUCCESS durationMs=${Date.now() - startTime}`);
 
-    const email = clerkUser.emailAddresses[0]?.emailAddress || `${clerkUser.id}@guest.weddingwithindia.com`;
+    const rawEmail = clerkUser.emailAddresses[0]?.emailAddress || `${clerkUser.id}@guest.weddingwithindia.com`;
+    const email = rawEmail.trim().toLowerCase();
     const name = `${clerkUser.firstName || ""} ${clerkUser.lastName || ""}`.trim() || email.split("@")[0];
     const crypto = require('crypto');
     const randomAvatarImg = crypto.randomBytes(1).readUInt8(0) % 70;
@@ -100,40 +101,64 @@ export async function syncAndGetDbUser() {
       console.log(`[AUTH DEBUG] STAGE 4 (user.upsert) START`);
       const stage4Start = Date.now();
       
-      if (existingByClerkId) {
-        // Clerk ID is known. Update fields (in case they changed name/avatar/email).
-        // If email changed in Clerk, and the new email exists in DB under another user, it means 
-        // Clerk state vs DB state is heavily conflicted, but Clerk guarantees unique emails.
+      if (existingByEmail && existingByClerkId) {
+        if (existingByEmail.id !== existingByClerkId.id) {
+          // Unlink stale clerkUserId from existingByClerkId row to prevent unique constraint error
+          await tx.user.update({
+            where: { id: existingByClerkId.id },
+            data: { clerkUserId: `unlinked_${existingByClerkId.id}_${Date.now()}` }
+          });
+          // Update existingByEmail row with current Clerk ID
+          upsertedUser = await tx.user.update({
+            where: { id: existingByEmail.id },
+            data: { clerkUserId: clerkUser.id, name, avatar }
+          });
+        } else {
+          // Both match same row; update name & avatar
+          upsertedUser = await tx.user.update({
+            where: { id: existingByEmail.id },
+            data: { name, avatar }
+          });
+        }
+      } else if (existingByEmail) {
+        // Only email matches existing record (e.g. pre-provisioned email or re-registered user)
+        upsertedUser = await tx.user.update({
+          where: { id: existingByEmail.id },
+          data: { clerkUserId: clerkUser.id, name, avatar }
+        });
+      } else if (existingByClerkId) {
+        // Only Clerk ID matches existing record; update email, name, avatar
         upsertedUser = await tx.user.update({
           where: { id: existingByClerkId.id },
           data: { email, name, avatar }
         });
-      } else if (existingByEmail) {
-        // Clerk ID is NEW, but email is KNOWN.
-        // This happens if:
-        // 1. The account was pre-provisioned via a script with a placeholder like "pending_admin_..."
-        // 2. The developer deleted the user in the Clerk Dashboard and signed up again with the same email.
-        // We MUST link the existing DB row to the new Clerk ID to avoid P2002 Unique Constraint errors.
-        upsertedUser = await tx.user.update({
-          where: { id: existingByEmail.id },
-          data: {
-            clerkUserId: clerkUser.id,
-            name,
-            avatar
-          }
-        });
       } else {
-        // Brand new user, neither Clerk ID nor Email exists in DB.
-        upsertedUser = await tx.user.create({
-          data: {
-            clerkUserId: clerkUser.id,
-            email,
-            name,
-            avatar,
-            role: "TRAVELER",
-            status: "ONBOARDING"
+        // Brand new user
+        try {
+          upsertedUser = await tx.user.create({
+            data: {
+              clerkUserId: clerkUser.id,
+              email,
+              name,
+              avatar,
+              role: "TRAVELER",
+              status: "ONBOARDING"
+            }
+          });
+        } catch (createErr: any) {
+          if (createErr?.code === "P2002") {
+            const racedUser =
+              (await tx.user.findUnique({ where: { email } })) ||
+              (await tx.user.findUnique({ where: { clerkUserId: clerkUser.id } }));
+            if (racedUser) {
+              upsertedUser = racedUser;
+            } else {
+              throw createErr;
+            }
+          } else {
+            throw createErr;
           }
-        });
+        }
       }
       
       console.log(`[AUTH DEBUG] STAGE 4 (user.upsert) SUCCESS durationMs=${Date.now() - stage4Start}`);

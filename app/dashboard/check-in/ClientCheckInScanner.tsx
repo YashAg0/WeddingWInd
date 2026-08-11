@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { checkInGuestAction } from "@/lib/actions/event-operations";
 import { AlertCircle, CheckCircle, XCircle } from "lucide-react";
+import { formatDateTime } from "@/lib/utils";
 
 interface ClientCheckInScannerProps {
   weddings: Array<{
@@ -145,7 +146,7 @@ export default function ClientCheckInScanner({ weddings }: ClientCheckInScannerP
                 <div className="border-t border-amber-200/50 pt-2 text-[10px] space-y-0.5 text-amber-800 font-semibold">
                   <p>Guest: {result.pass?.booking?.traveler?.fullName ?? "—"}</p>
                   {result.pass?.firstScannedAt && (
-                    <p>First Scanned: {new Date(result.pass.firstScannedAt).toLocaleString()}</p>
+                    <p>First Scanned: {formatDateTime(result.pass.firstScannedAt)}</p>
                   )}
                   <p>Total Scans: {result.pass?.scanCount ?? "—"}</p>
                 </div>

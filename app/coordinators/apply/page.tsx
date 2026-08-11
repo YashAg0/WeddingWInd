@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { Users, CheckCircle2, AlertCircle, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { COORDINATOR_MODEL } from "@/lib/constants/financial-model";
-import { coordinatorMockStore } from "@/lib/mock-data-store";
+import { submitCoordinatorApplication } from "@/app/actions/coordinator";
 
 export default function CoordinatorApplyPage() {
   const router = useRouter();
@@ -25,30 +25,22 @@ export default function CoordinatorApplyPage() {
     interestNote: ""
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.fullName || !formData.email || !formData.phone || !formData.city) {
       toast.error("Please fill in all required fields.");
       return;
     }
     setIsSubmitting(true);
-    setTimeout(() => {
-      const newId = `CORD-APP-${Date.now()}`;
-      coordinatorMockStore.addCoordinator({
-        id: newId,
-        fullName: formData.fullName,
-        email: formData.email,
-        phone: formData.phone,
-        city: formData.city,
-        eventExperience: formData.eventExperience,
-        availability: formData.availability,
-        languages: formData.languages,
-        status: "submitted"
-      });
-      setIsSubmitting(false);
+    try {
+      await submitCoordinatorApplication(formData);
       setSubmitted(true);
       toast.success("Application submitted successfully!");
-    }, 1000);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to submit application.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (

@@ -191,7 +191,7 @@ export function HowItWorks({ steps }: HowItWorksProps) {
             ))}
           </svg>
 
-          <div className="grid grid-cols-1 gap-y-16 gap-x-6 sm:grid-cols-2 lg:grid-cols-4 lg:gap-x-8">
+          <div className="grid grid-cols-1 gap-y-16 gap-x-6 sm:grid-cols-2 lg:grid-cols-4 lg:gap-x-8 items-stretch">
             {steps.map((step, index) => {
               const fallback = STEP_FALLBACK[step.step];
               const imageUrl =
@@ -201,12 +201,12 @@ export function HowItWorks({ steps }: HowItWorksProps) {
               return (
                 <div
                   key={step.step}
-                  className="hiw-procession-card relative flex flex-col items-center"
+                  className="hiw-procession-card relative flex flex-col items-center h-full"
                   style={{ transitionDelay: inView ? `${index * 140 + 200}ms` : "0ms" }}
                   data-in-view={inView}
                 >
                   {/* Wax-seal medallion marking this stop on the garland */}
-                  <div className="relative z-20 mb-8 flex justify-center lg:mb-10" aria-hidden="true">
+                  <div className="relative z-20 mb-8 flex justify-center lg:mb-10 shrink-0" aria-hidden="true">
                     <div className="hiw-seal relative flex h-[68px] w-[68px] items-center justify-center">
                       <div
                         className="absolute inset-0 rounded-full"
@@ -229,11 +229,11 @@ export function HowItWorks({ steps }: HowItWorksProps) {
                   {/* Invitation card */}
                   <div
                     tabIndex={0}
-                    className="hiw-card relative w-full max-w-[300px] focus-visible:outline-none"
+                    className="hiw-card relative w-full max-w-[300px] flex flex-col flex-1 h-full focus-visible:outline-none"
                     aria-label={`Step ${step.step}: ${step.title}. ${step.description}`}
                   >
                     <div
-                      className="hiw-card-surface relative overflow-hidden rounded-[4px]"
+                      className="hiw-card-surface relative flex flex-col flex-1 h-full overflow-hidden rounded-[4px]"
                       style={{
                         background: C.ivory,
                         boxShadow:
@@ -241,7 +241,7 @@ export function HowItWorks({ steps }: HowItWorksProps) {
                       }}
                     >
                       {/* Photo */}
-                      <div className="relative aspect-[4/3] w-full overflow-hidden">
+                      <div className="relative aspect-[4/3] w-full shrink-0 overflow-hidden">
                         {imageUrl ? (
                           <Image
                             src={imageUrl}
@@ -278,31 +278,33 @@ export function HowItWorks({ steps }: HowItWorksProps) {
                       </div>
 
                       {/* Card body — fixed-height zones so every card aligns regardless of copy length */}
-                      <div className="relative flex flex-col px-5 pb-6 pt-5 text-left">
-                        <span
-                          className="mb-2.5 block h-px w-8 shrink-0"
-                          style={{ background: C.gold300 }}
-                          aria-hidden="true"
-                        />
-                        <h3
-                          className="mb-1.5 font-display text-xl font-semibold leading-tight"
-                          style={{ color: C.ink, minHeight: "1.4em" }}
-                        >
-                          {step.title}
-                        </h3>
-                        <p
-                          className="hiw-clamp-3 text-[15px] font-medium leading-relaxed"
-                          style={{ color: "rgba(58,10,21,0.85)", minHeight: "3.9em" }}
-                        >
-                          {step.description}
-                        </p>
+                      <div className="relative flex flex-col flex-1 justify-between px-5 pb-6 pt-5 text-left min-h-[220px]">
+                        <div>
+                          <span
+                            className="mb-2.5 block h-px w-8 shrink-0"
+                            style={{ background: C.gold300 }}
+                            aria-hidden="true"
+                          />
+                          <h3
+                            className="mb-1.5 font-display text-xl font-semibold leading-tight"
+                            style={{ color: C.ink, minHeight: "2.8rem" }}
+                          >
+                            {step.title}
+                          </h3>
+                          <p
+                            className="hiw-clamp-3 text-[15px] font-medium leading-relaxed"
+                            style={{ color: "rgba(58,10,21,0.85)", minHeight: "4.5rem" }}
+                          >
+                            {step.description}
+                          </p>
+                        </div>
 
                         {detail && (
-                          <>
+                          <div className="mt-4 pt-3 border-t shrink-0" style={{ borderColor: "rgba(107,16,38,0.15)" }}>
                             <div className="hiw-detail-wrap">
                               <p
-                                className="hiw-clamp-3 mt-3 border-t pt-3 text-[14px] italic leading-relaxed font-medium"
-                                style={{ color: "rgba(58,10,21,0.75)", borderColor: "rgba(107,16,38,0.15)" }}
+                                className="hiw-clamp-3 text-[14px] italic leading-relaxed font-medium"
+                                style={{ color: "rgba(58,10,21,0.75)" }}
                               >
                                 {detail}
                               </p>
@@ -313,7 +315,7 @@ export function HowItWorks({ steps }: HowItWorksProps) {
                                 <path d="M0.5 4H9M9 4L5.5 0.5M9 4L5.5 7.5" stroke="currentColor" strokeWidth="1.25" />
                               </svg>
                             </span>
-                          </>
+                          </div>
                         )}
                       </div>
 
@@ -364,6 +366,10 @@ export function HowItWorks({ steps }: HowItWorksProps) {
           border-color: rgba(0,0,0,0.1);
         }
         .hiw-procession-card {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          height: 100%;
           opacity: 0;
           transform: translateY(28px);
           transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1), transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
@@ -379,11 +385,17 @@ export function HowItWorks({ steps }: HowItWorksProps) {
         .hiw-card:focus-visible .hiw-seal {
           transform: rotate(8deg) scale(1.06);
         }
-        .hiw-card:focus-visible {
-          box-shadow: 0 0 0 2px ${C.gold200};
-          border-radius: 6px;
+        .hiw-card {
+          display: flex;
+          flex-direction: column;
+          flex: 1 1 auto;
+          height: 100%;
         }
         .hiw-card-surface {
+          display: flex;
+          flex-direction: column;
+          flex: 1 1 auto;
+          height: 100%;
           transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
         }
         .hiw-card:hover .hiw-card-surface,

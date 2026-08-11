@@ -1045,3 +1045,86 @@ export async function adminCreateManualReputationAdjustmentAction(params: {
   return { success: event };
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// WEDDING DISCOVERY CONTROLS
+// ─────────────────────────────────────────────────────────────────────────────
+
+const weddingDiscoveryUpdateSchema = z.object({
+  weddingId: z.string().uuid("Invalid wedding ID"),
+});
+
+export async function adminToggleSponsoredAction(weddingId: string, isSponsored: boolean) {
+  await requireRole([UserRole.ADMIN]);
+
+  const { weddingId: validId } = weddingDiscoveryUpdateSchema.parse({ weddingId });
+
+  const wedding = await prisma.wedding.findUnique({ where: { id: validId }, select: { id: true, title: true } });
+  if (!wedding) throw new Error("Wedding not found.");
+
+  const updated = await prisma.wedding.update({
+    where: { id: validId },
+    data: { sponsored: isSponsored },
+  });
+
+  await createAuditLog(
+    isSponsored ? "WEDDING_SPONSORED" : "WEDDING_UNSPONSORED",
+    "Wedding",
+    validId,
+    `Admin ${isSponsored ? "enabled" : "disabled"} sponsored status for wedding: "${wedding.title}"`
+  );
+
+  revalidatePath("/weddings");
+  revalidatePath("/");
+  return { success: true, wedding: updated };
+}
+
+export async function adminToggleFeaturedAction(weddingId: string, isFeatured: boolean) {
+  await requireRole([UserRole.ADMIN]);
+
+  const { weddingId: validId } = weddingDiscoveryUpdateSchema.parse({ weddingId });
+
+  const wedding = await prisma.wedding.findUnique({ where: { id: validId }, select: { id: true, title: true } });
+  if (!wedding) throw new Error("Wedding not found.");
+
+  const updated = await prisma.wedding.update({
+    where: { id: validId },
+    data: { featured: isFeatured },
+  });
+
+  await createAuditLog(
+    isFeatured ? "WEDDING_FEATURED" : "WEDDING_UNFEATURED",
+    "Wedding",
+    validId,
+    `Admin ${isFeatured ? "enabled" : "disabled"} featured status for wedding: "${wedding.title}"`
+  );
+
+  revalidatePath("/weddings");
+  revalidatePath("/");
+  return { success: true, wedding: updated };
+}
+
+export async function adminSetTrendingBoostAction(weddingId: string, boostScore: number) {
+  await requireRole([UserRole.ADMIN]);
+
+  const { weddingId: validId } = weddingDiscoveryUpdateSchema.parse({ weddingId });
+  const clampedBoost = Math.max(0.0, Math.min(5.0, Number(boostScore)));
+
+  const wedding = await prisma.wedding.findUnique({ where: { id: validId }, select: { id: true, title: true } });
+  if (!wedding) throw new Error("Wedding not found.");
+
+  const updated = await prisma.wedding.update({
+    where: { id: validId },
+    data: { manualTrendingBoost: clampedBoost },
+  });
+
+  await createAuditLog(
+    "WEDDING_TRENDING_BOOST_SET",
+    "Wedding",
+    validId,
+    `Admin set manualTrendingBoost to ${clampedBoost} for wedding: "${wedding.title}"`
+  );
+
+  revalidatePath("/weddings");
+  revalidatePath("/");
+  return { success: true, wedding: updated };
+}

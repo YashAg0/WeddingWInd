@@ -104,8 +104,8 @@ export function Categories({ categories }: CategoriesProps) {
                   className="categories-card-reveal group relative block rounded-2xl transition-[filter] duration-500 ease-out hover:drop-shadow-[0_18px_32px_rgba(0,0,0,0.35)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-gold-300)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-warm-50)] motion-reduce:transition-none"
                   role="listitem"
                   aria-label={`${category.name} weddings — ${
-                    category.weddingCount > 0
-                      ? `${category.weddingCount} celebrations`
+                    (category.weddingCount ?? category.count ?? 0) > 0
+                      ? `${category.weddingCount ?? category.count} celebrations`
                       : "new destination"
                   }`}
                   style={{ animationDelay: `${Math.min(index, 9) * 90}ms` }}
@@ -118,7 +118,7 @@ export function Categories({ categories }: CategoriesProps) {
                     }}
                   >
                     <Image
-                      src={category.imageUrl}
+                      src={category.imageUrl || "https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=1200&q=80"}
                       alt={`${category.name} wedding style`}
                       fill
                       sizes="(max-width: 640px) 50vw, 33vw"
@@ -144,7 +144,7 @@ export function Categories({ categories }: CategoriesProps) {
                         className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-[var(--color-gold-300)] to-[#9c6f19] shadow-lg shadow-black/30 transition-transform duration-500 group-hover:-rotate-6 group-hover:scale-110 motion-reduce:transition-none"
                         aria-hidden="true"
                       >
-                        {ICON_MAP[category.icon] ?? FALLBACK_ICON}
+                        {(category.icon && ICON_MAP[category.icon]) ?? FALLBACK_ICON}
                       </div>
 
                       <h3 className="mb-1.5 font-display text-lg font-bold leading-tight text-white sm:text-xl">
@@ -157,13 +157,13 @@ export function Categories({ categories }: CategoriesProps) {
                       />
 
                       <p className="mb-3 line-clamp-2 text-xs leading-snug text-white/70 transition-colors group-hover:text-white/90 sm:text-sm">
-                        {category.description}
+                        {category.description || "Authentic Indian wedding celebration."}
                       </p>
 
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-semibold tracking-wide text-[var(--color-gold-300)]">
-                          {category.weddingCount > 0
-                            ? `${category.weddingCount} celebrations`
+                          {(category.weddingCount ?? category.count ?? 0) > 0
+                            ? `${category.weddingCount ?? category.count} celebrations`
                             : "Awaiting celebrations"}
                         </span>
                         <span className="flex h-7 w-7 translate-x-2 items-center justify-center rounded-full border border-white/20 bg-white/10 opacity-0 transition-all duration-300 group-hover:translate-x-0 group-hover:opacity-100">

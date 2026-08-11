@@ -4,6 +4,8 @@ import React, { useState } from "react";
 import { toast } from "sonner";
 import { manualCheckInAction, markAttendanceAction } from "@/lib/actions/event-operations";
 import { Calendar, History } from "lucide-react";
+import { formatDate, formatTime } from "@/lib/utils";
+
 
 interface ClientAdminEventsProps {
   weddings: Array<{
@@ -90,7 +92,7 @@ export default function ClientAdminEvents({ weddings, checkInLogs: initialLogs }
                     Host: {w.hostCouple.user.name} • Location: {w.location}
                   </div>
                   <div className="text-[9px] text-charcoal-400">
-                    Date: {new Date(w.date).toLocaleDateString()} • {w.bookings.length} Bookings
+                    Date: {formatDate(w.date)} • {w.bookings.length} Bookings
                   </div>
                 </div>
 
@@ -212,7 +214,7 @@ export default function ClientAdminEvents({ weddings, checkInLogs: initialLogs }
                   </span>
                 </div>
                 <div className="text-[9px] text-charcoal-400">
-                  Scan Type: {log.scanType} • {new Date(log.createdAt).toLocaleTimeString()}
+                  Scan Type: {log.scanType} • {formatTime(log.createdAt)}
                 </div>
               </div>
             ))}

@@ -92,7 +92,7 @@ export default async function WeddingsPage({ searchParams }: PageProps) {
 
     // 8. Languages
     if (languagesFilter.length > 0) {
-      const hasLang = wedding.languages.some((l) =>
+      const hasLang = wedding.languages.some((l: string) =>
         languagesFilter.includes(l.toLowerCase())
       );
       if (!hasLang) return false;
@@ -121,8 +121,12 @@ export default async function WeddingsPage({ searchParams }: PageProps) {
     if (sort === "rating") {
       return b.rating - a.rating;
     }
-    // Default: featured first, then rating
-    return (b.featured ? 1 : 0) - (a.featured ? 1 : 0) || b.rating - a.rating;
+    // Default: sponsored first → featured → rating (server-authoritative ordering preserved)
+    const sponsoredDiff = (b.sponsored ? 2 : 0) - (a.sponsored ? 2 : 0);
+    if (sponsoredDiff !== 0) return sponsoredDiff;
+    const featuredDiff = (b.featured ? 1 : 0) - (a.featured ? 1 : 0);
+    if (featuredDiff !== 0) return featuredDiff;
+    return b.rating - a.rating;
   });
 
   return (

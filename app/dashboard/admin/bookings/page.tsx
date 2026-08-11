@@ -6,6 +6,8 @@ import { refundBookingAction } from "@/lib/actions";
 import { Calendar as CalendarIcon, Users, Download, Ban } from "lucide-react";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { formatDate } from "@/lib/utils";
+
 
 export const dynamic = "force-dynamic";
 
@@ -142,11 +144,11 @@ export default async function AdminBookingsPage({
                   } else if (b.status === BookingStatus.CANCELLED) {
                     statusColor = "text-rose-600 bg-rose-50";
                   } else if (b.status === BookingStatus.REFUNDED) {
-                    statusColor = "text-purple-600 bg-purple-50";
+                    statusColor = "text-gold-700 bg-gold-50 border border-gold-200";
                   } else if (b.status === BookingStatus.AWAITING_PAYMENT) {
-                    statusColor = "text-blue-600 bg-blue-50";
+                    statusColor = "text-amber-700 bg-amber-50 border border-amber-200";
                   } else if (b.status === BookingStatus.APPROVED) {
-                    statusColor = "text-indigo-650 bg-indigo-50";
+                    statusColor = "text-maroon-800 bg-maroon-50 border border-maroon-200";
                   }
                   
                   const isPaid = b.status === BookingStatus.PAID;
@@ -175,7 +177,7 @@ export default async function AdminBookingsPage({
                         </div>
                         <div className="text-[0.6875rem] text-charcoal-400 mt-0.5 flex items-center gap-1">
                           <CalendarIcon size={12} className="text-maroon-600" />
-                          {new Date(b.date).toLocaleDateString()}
+                          {formatDate(b.date)}
                         </div>
                       </td>
 
@@ -234,7 +236,7 @@ export default async function AdminBookingsPage({
                               <button
                                 type="submit"
                                 title="Issue Refund"
-                                className="p-1 px-2 rounded-lg border border-purple-100 bg-purple-50 text-purple-650 hover:bg-purple-500 hover:text-white cursor-pointer h-8 flex items-center justify-center font-bold text-[0.625rem] uppercase tracking-wider"
+                                className="p-1 px-2 rounded-lg border border-gold-200 bg-gold-50 text-gold-700 hover:bg-gold-500 hover:text-white cursor-pointer h-8 flex items-center justify-center font-bold text-[0.625rem] uppercase tracking-wider"
                               >
                                 Refund
                               </button>
@@ -245,6 +247,7 @@ export default async function AdminBookingsPage({
                     </tr>
                   );
                 })}
+
               </tbody>
             </table>
           </div>

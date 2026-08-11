@@ -52,8 +52,16 @@ export const ourFileRouter = {
       const session = await getSession();
       if (!session?.userId) throw new Error("UNAUTHORIZED");
       
+      // CRITICAL: Verification.userId is the DB User UUID, not the Clerk user ID.
+      // We must resolve the DB user ID from the Clerk userId first.
+      const dbUser = await prisma.user.findUnique({
+        where: { clerkUserId: session.userId },
+        select: { id: true }
+      });
+      if (!dbUser) throw new Error("UNAUTHORIZED_NO_DB_USER");
+
       const verification = await prisma.verification.findUnique({
-        where: { userId: session.userId }
+        where: { userId: dbUser.id }
       });
       if (!verification) {
         throw new Error("UNAUTHORIZED_NO_VERIFICATION_REQUEST");
@@ -62,7 +70,7 @@ export const ourFileRouter = {
         throw new Error("UNAUTHORIZED_VERIFICATION_LOCKED");
       }
 
-      return { userId: session.userId };
+      return { userId: dbUser.id };
     })
     .onUploadComplete(async ({ metadata, file }) => {
       return { uploadedBy: metadata.userId, url: file.url };
@@ -103,8 +111,15 @@ export const ourFileRouter = {
       const session = await getSession();
       if (!session?.userId) throw new Error("UNAUTHORIZED");
       
+      // CRITICAL: Verification.userId is the DB User UUID, not the Clerk user ID.
+      const dbUser = await prisma.user.findUnique({
+        where: { clerkUserId: session.userId },
+        select: { id: true }
+      });
+      if (!dbUser) throw new Error("UNAUTHORIZED_NO_DB_USER");
+
       const verification = await prisma.verification.findUnique({
-        where: { userId: session.userId }
+        where: { userId: dbUser.id }
       });
       if (!verification) {
         throw new Error("UNAUTHORIZED_NO_VERIFICATION_REQUEST");
@@ -113,7 +128,7 @@ export const ourFileRouter = {
         throw new Error("UNAUTHORIZED_VERIFICATION_LOCKED");
       }
 
-      return { userId: session.userId };
+      return { userId: dbUser.id };
     })
     .onUploadComplete(async ({ metadata, file }) => {
       return { uploadedBy: metadata.userId, url: file.url };

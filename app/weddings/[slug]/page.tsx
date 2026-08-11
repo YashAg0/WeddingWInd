@@ -21,6 +21,18 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       title: 'Wedding Not Found',
     };
   }
+
+  // Demo weddings must not be indexed as real marketplace inventory
+  if (wedding.isDemo) {
+    return {
+      title: `${wedding.title} — ${wedding.location}`,
+      description: `Explore ${wedding.title} in ${wedding.location}. ${wedding.category} wedding celebration.`,
+      robots: {
+        index: false,
+        follow: false,
+      },
+    };
+  }
   
   return {
     title: `${wedding.title} — ${wedding.location}`,
@@ -233,10 +245,10 @@ export default async function WeddingDetailPage({ params }: PageProps) {
                 Key Customs &amp; Traditions
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                {wedding.traditions.map((trad) => (
-                  <div key={trad.title} className="space-y-2 p-5 rounded-2xl bg-warm-50/80 border border-warm-200/40">
+                {wedding.traditions.map((trad: { name?: string; title?: string; description: string }) => (
+                  <div key={trad.title || trad.name} className="space-y-2 p-5 rounded-2xl bg-warm-50/80 border border-warm-200/40">
                     <h3 className="font-display font-semibold text-base text-charcoal-800">
-                      {trad.title}
+                      {trad.title || trad.name}
                     </h3>
                     <p className="text-charcoal-600 text-sm leading-relaxed">
                       {trad.description}
@@ -329,7 +341,7 @@ export default async function WeddingDetailPage({ params }: PageProps) {
                   What is Included
                 </h3>
                 <ul className="space-y-2.5">
-                  {wedding.included.map((inc) => (
+                  {wedding.included.map((inc: string) => (
                     <li key={inc} className="text-charcoal-700 text-sm leading-relaxed flex items-start gap-2">
                       <span className="text-emerald-500 font-bold mt-0.5 flex-shrink-0">•</span>
                       {inc}
@@ -345,7 +357,7 @@ export default async function WeddingDetailPage({ params }: PageProps) {
                   Not Included
                 </h3>
                 <ul className="space-y-2.5">
-                  {wedding.notIncluded.map((exc) => (
+                  {wedding.notIncluded.map((exc: string) => (
                     <li key={exc} className="text-charcoal-700 text-sm leading-relaxed flex items-start gap-2">
                       <span className="text-rose-400 font-bold mt-0.5 flex-shrink-0">•</span>
                       {exc}

@@ -133,3 +133,146 @@ Maintain Stripe webhook idempotency, server-authoritative price calculations, an
 - [ ] `npm test -- --no-coverage` passes all suites.
 - [ ] `npm run build` succeeds, proving production readiness.
 
+## Follow-up — 2026-08-10T16:22:35Z
+
+# Teamwork Project Prompt — Draft
+
+> Status: Ready for launch — awaiting user approval
+> Goal: Craft prompt → get user approval → delegate to teamwork_preview
+
+Make the existing WeddingWithIndia application genuinely work end-to-end as a coherent production marketplace, recovering it autonomously through rigorous testing, root-cause fixes, and comprehensive verifications.
+
+Working directory: c:\Projects\WeddingWithIndia\wedding-with-india
+Integrity mode: development
+
+## Requirements
+
+### R1. Independent & Coherent Execution
+Work autonomously in "Goal Mode." Break the mission into logical workstreams. Parallelize independent investigations but respect dependencies. Maintain a single source of truth for findings. Re-evaluate the entire system after major fixes. Keep security and data integrity as hard constraints.
+
+### R2. Strict Environment & Tooling Constraints
+Do not repeatedly run `npm run dev` or leave multiple Next.js servers running to verify if code compiles. Rely on `npm run type-check`, `npm run lint`, `npm test`, and `npm run build` for code-level verification. Use exactly one dev server for actual browser/runtime testing. Never blindly trust previous "production ready" claims.
+
+### R3. Identity & Authentication Hardening
+The recent bug involved `P2002` on `email` inside `syncAndGetDbUser()`. The founder's DB row is the canonical truth. Identify users securely: check Clerk ID, fallback to verified email to reconcile Clerk ID, create only if neither exists. Never duplicate founders, downgrade `ADMIN`/`ACTIVE`, or trust client-provided identities.
+
+### R4. Database & Transaction Integrity
+Audit `lib/prisma.ts`, `lib/auth.ts`, schema, and API routes. Ensure a strict Prisma singleton, appropriate connection/transaction timeouts, and no `Promise.race` timeouts that cause leaks. Maintain atomicity in transactions without executing global or external calls within them.
+
+### R5. Complete End-to-End Application Repair
+Fix all critical blockers and workflows, including:
+- **Admin Portal**: Ensure all routes (`users`, `weddings`, `verifications`, `bookings`, `finance`, etc.) render with real data and functional controls.
+- **Wedding Lifecycle**: Fix the known "document type error" blocking listing creation. Trace the end-to-end flow from UI to database. Implement approval/rejection workflows.
+- **Dashboards**: Ensure Host, Traveler, Agent, Coordinator, and Admin dashboards fetch real backend state and function appropriately.
+- **Booking & Stripe**: Secure server-authoritative pricing, checkout, webhooks, and idempotency.
+- **Other Systems**: Ensure KYC/document uploads, messaging (with PII filtering), safety, reviews, and agent referrals work exactly as intended.
+
+### R6. UI, Design & Hydration Consistency
+Ensure the Admin portal and all dashboards match the homepage's brand colors, typography, spacing, and visual hierarchy. Audit for hydration mismatches (like `Date.now()`, `window` on SSR) and fix them deterministically without using `suppressHydrationWarning`.
+
+### R7. Performance, Data, & Security Integrity
+Do not reset the database. Resolve real data corruption safely. Maintain server-authoritative RBAC, Stripe signatures, safe file uploads, and PII moderation. Optimize performance only where justified without sacrificing correctness. 
+
+### R8. Verification & Behavioral Testing
+Maintain or add targeted tests for Identity reconciliation, RBAC, Wedding creation/validation, Booking security, and other critical paths. Validate via code-level checks first. Finally, perform real runtime verification (e.g., login → Admin → manage weddings → public listing) on a clean, single Next.js server instance.
+
+## Acceptance Criteria
+
+### AUTH
+- [ ] Founder login works
+- [ ] Clerk identity works
+- [ ] Verified email reconciliation works
+- [ ] No P2002
+- [ ] No duplicate founder
+- [ ] ADMIN preserved
+- [ ] DB failure fails closed
+- [ ] No Guest User fallback
+- [ ] No synthetic identity
+- [ ] No client-trust route
+
+### ADMIN
+- [ ] Admin dashboard loads
+- [ ] Admin gets real data
+- [ ] Users work
+- [ ] Weddings work
+- [ ] Verification works
+- [ ] Bookings work
+- [ ] Finance works
+- [ ] Payments work
+- [ ] Reviews work
+- [ ] Safety works
+- [ ] Messages work
+- [ ] Agents work
+- [ ] Events work
+- [ ] Operations work
+- [ ] Support/CMS/settings work where implemented
+
+### WEDDINGS
+- [ ] Host can create
+- [ ] Draft saves
+- [ ] Documents work
+- [ ] Media uploads work
+- [ ] No document type error
+- [ ] Submission works
+- [ ] Admin sees submission
+- [ ] Admin can approve
+- [ ] Admin can reject
+- [ ] Rejection reason persists
+- [ ] Host sees rejection
+- [ ] Host can resubmit
+- [ ] Approved wedding becomes public
+- [ ] Rejected wedding stays private
+- [ ] Wedding detail works
+
+### DASHBOARDS
+- [ ] Host dashboard works
+- [ ] Traveler dashboard works
+- [ ] Agent dashboard works
+- [ ] Coordinator dashboard works
+- [ ] Admin dashboard works
+
+### BOOKING
+- [ ] Discovery works
+- [ ] Availability works
+- [ ] Pricing server-authoritative
+- [ ] Booking works
+- [ ] Payment works
+- [ ] Webhook works
+- [ ] Confirmation works
+- [ ] Cancellation/refund works where implemented
+
+### SECURITY
+- [ ] Server RBAC
+- [ ] Ownership checks
+- [ ] Private documents protected
+- [ ] PII moderation
+- [ ] Stripe signature verification
+- [ ] Idempotency
+- [ ] Open redirect protection
+- [ ] No mock production users
+- [ ] No synthetic fallback
+
+### UI
+- [ ] Homepage works
+- [ ] No hydration errors
+- [ ] Admin visually matches homepage
+- [ ] Host dashboard matches brand
+- [ ] Traveler dashboard matches brand
+- [ ] Agent dashboard matches brand
+- [ ] Coordinator dashboard matches brand
+- [ ] Responsive
+- [ ] No broken layouts
+- [ ] No dead buttons
+- [ ] No fake success states
+
+### QUALITY
+- [ ] Type-check
+- [ ] Lint
+- [ ] Tests
+- [ ] Build
+- [ ] Runtime/browser verification
+
+### REPORTING
+- [ ] A final evidence-based report detailing bugs found, root causes, files/database changes, and all major fixes with specific verification evidence.
+
+

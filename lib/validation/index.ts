@@ -12,13 +12,27 @@ export const VerificationStatusSchema = z.enum(["NOT_SUBMITTED", "PENDING", "UND
 export const NotificationTypeSchema = z.enum(["INFO", "SUCCESS", "ALERT", "REQUEST"]);
 export const ContactStatusSchema = z.enum(["NEW", "READ", "RESOLVED"]);
 
+// Preprocessing helper to transform empty strings ("") or whitespace to null before Zod URL validation runs.
+// Prevents Zod "Invalid url" errors on optional/unselected document upload form submissions.
+export const preprocessUrl = (val: unknown) => {
+  if (typeof val === "string" && val.trim() === "") {
+    return null;
+  }
+  return val;
+};
+
+export const optionalUrlSchema = z.preprocess(
+  preprocessUrl,
+  z.string().url("Invalid URL format").nullable().optional()
+);
+
 // 1. User Schema
 export const userSchema = z.object({
   id: z.string().uuid().optional(),
   email: z.string().email("Invalid email format"),
   clerkUserId: z.string().min(1, "Clerk User ID is required"),
   name: z.string().nullable().optional(),
-  avatar: z.string().url("Invalid avatar URL").nullable().optional(),
+  avatar: optionalUrlSchema,
   role: UserRoleSchema.default("TRAVELER"),
   status: UserStatusSchema.default("ONBOARDING"),
   createdAt: z.date().optional(),
@@ -79,7 +93,10 @@ export const weddingSchema = z.object({
   theme: z.string().nullable().optional(),
   dressCode: z.string().nullable().optional(),
   ethnicity: z.string().nullable().optional(),
-  mainImageUrl: z.string().url("Invalid image URL"),
+  mainImageUrl: z.preprocess(
+    (val) => (typeof val === "string" && val.trim() === "" ? "https://images.unsplash.com/photo-1519741497674-611481863552" : val),
+    z.string().url("Invalid image URL")
+  ),
   status: WeddingStatusSchema.default("DRAFT")
 });
 
@@ -87,7 +104,10 @@ export const weddingSchema = z.object({
 export const weddingGallerySchema = z.object({
   id: z.string().uuid().optional(),
   weddingId: z.string().uuid("Invalid Wedding UUID"),
-  imageUrl: z.string().url("Invalid image URL"),
+  imageUrl: z.preprocess(
+    (val) => (typeof val === "string" && val.trim() === "" ? "https://images.unsplash.com/photo-1519741497674-611481863552" : val),
+    z.string().url("Invalid image URL")
+  ),
   order: z.number().int().nonnegative().default(0)
 });
 
@@ -198,35 +218,35 @@ export const verificationSchema = z.object({
   id: z.string().uuid().optional(),
   userId: z.string().uuid("Invalid User UUID"),
   status: VerificationStatusSchema.default("NOT_SUBMITTED"),
-  govtIdUrl: z.string().url().nullable().optional(),
+  govtIdUrl: optionalUrlSchema,
   phoneVerified: z.boolean().default(false),
   emailVerified: z.boolean().default(false),
-  passportUrl: z.string().url().nullable().optional(),
-  selfieUrl: z.string().url().nullable().optional(),
+  passportUrl: optionalUrlSchema,
+  selfieUrl: optionalUrlSchema,
   emergencyContact: z.string().nullable().optional(),
   nationality: z.string().nullable().optional(),
   visaStatus: z.string().nullable().optional(),
-  travelInsuranceUrl: z.string().url().nullable().optional(),
+  travelInsuranceUrl: optionalUrlSchema,
   medicalDeclaration: z.string().nullable().optional(),
   panNumber: z.string().nullable().optional(),
-  panUrl: z.string().url().nullable().optional(),
+  panUrl: optionalUrlSchema,
   aadhaarNumber: z.string().nullable().optional(),
-  aadhaarUrl: z.string().url().nullable().optional(),
-  addressProofUrl: z.string().url().nullable().optional(),
-  weddingProofUrl: z.string().url().nullable().optional(),
-  venueConfirmUrl: z.string().url().nullable().optional(),
-  invitationUrl: z.string().url().nullable().optional(),
+  aadhaarUrl: optionalUrlSchema,
+  addressProofUrl: optionalUrlSchema,
+  weddingProofUrl: optionalUrlSchema,
+  venueConfirmUrl: optionalUrlSchema,
+  invitationUrl: optionalUrlSchema,
   bankName: z.string().nullable().optional(),
   bankAccountNo: z.string().nullable().optional(),
   bankIfsc: z.string().nullable().optional(),
-  bankVerificationUrl: z.string().url().nullable().optional(),
+  bankVerificationUrl: optionalUrlSchema,
   socialLinks: z.string().nullable().optional(),
   gstNumber: z.string().nullable().optional(),
-  gstUrl: z.string().url().nullable().optional(),
+  gstUrl: optionalUrlSchema,
   orgDetails: z.string().nullable().optional(),
-  businessRegUrl: z.string().url().nullable().optional(),
-  linkedinUrl: z.string().url().nullable().optional(),
-  portfolioUrl: z.string().url().nullable().optional(),
+  businessRegUrl: optionalUrlSchema,
+  linkedinUrl: optionalUrlSchema,
+  portfolioUrl: optionalUrlSchema,
   experienceYears: z.number().int().nonnegative().nullable().optional(),
   references: z.string().nullable().optional(),
   experienceNotes: z.string().nullable().optional(),

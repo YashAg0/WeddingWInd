@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Heart, Globe, BadgeCheck, ShieldCheck } from "lucide-react";
 
@@ -118,12 +119,33 @@ export function CTASection() {
         }
       `}</style>
 
+      {/* Atmospheric Indian Wedding Background Layer */}
+      <div className="absolute inset-0 z-0 pointer-events-none">
+        <Image
+          src="https://images.unsplash.com/photo-1532712938310-34cb3982ef74?w=1600&q=80"
+          alt=""
+          fill
+          sizes="100vw"
+          className="object-cover object-center filter blur-[1px] scale-105 opacity-65"
+          loading="lazy"
+          aria-hidden="true"
+        />
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(180deg, rgba(20, 4, 9, 0.70) 0%, rgba(15, 2, 6, 0.75) 50%, rgba(12, 3, 7, 0.80) 100%)",
+          }}
+          aria-hidden="true"
+        />
+      </div>
+
       {/* Ambient brand-warmth glow */}
-      <div className="cta-aurora cta-aurora-a" aria-hidden="true" />
-      <div className="cta-aurora cta-aurora-b" aria-hidden="true" />
+      <div className="cta-aurora cta-aurora-a z-10" aria-hidden="true" />
+      <div className="cta-aurora cta-aurora-b z-10" aria-hidden="true" />
 
       {/* Quiet world-routes texture — the "world" in "World of Sacred Hospitality" made literal */}
-      <svg className="cta-routes" viewBox="0 0 1200 480" preserveAspectRatio="none" aria-hidden="true">
+      <svg className="cta-routes z-10" viewBox="0 0 1200 480" preserveAspectRatio="none" aria-hidden="true">
         <path className="cta-route-path" d="M600,300 Q380,180 150,110" stroke="#fcd34d" />
         <path className="cta-route-path" d="M600,300 Q480,150 420,60" stroke="#c9972a" style={{ animationDelay: "-6s" }} />
         <path className="cta-route-path" d="M600,300 Q660,180 730,120" stroke="#fcd34d" style={{ animationDelay: "-12s" }} />
@@ -136,12 +158,12 @@ export function CTASection() {
       </svg>
 
       {/* Subtle grid pattern */}
-      <div className="cta-grid" aria-hidden="true" />
+      <div className="cta-grid z-10" aria-hidden="true" />
 
       {/* Vignette keeps the center legible under all the ambient layers */}
-      <div className="cta-vignette" aria-hidden="true" />
+      <div className="cta-vignette z-10" aria-hidden="true" />
 
-      <div className="relative z-10 container-luxury">
+      <div className="relative z-20 container-luxury">
         <div className="max-w-3xl mx-auto text-center">
           {/* Signature: a rotating seal, two interlocking rings at its heart */}
           <div className="cta-rise cta-seal" style={{ animationDelay: "0ms" }} aria-hidden="true">
@@ -250,7 +272,7 @@ export function CTASection() {
       </div>
 
       {/* Bottom ornament: gold lines meeting at a center mark */}
-      <div className="absolute bottom-0 left-0 right-0 flex items-center gap-3 px-8" aria-hidden="true">
+      <div className="absolute bottom-0 left-0 right-0 z-20 flex items-center gap-3 px-8" aria-hidden="true">
         <span className="h-px flex-1" style={{ background: "linear-gradient(90deg, transparent, #c9972a 60%, #fcd34d)" }} />
         <span className="cta-ornament-mark" />
         <span className="h-px flex-1" style={{ background: "linear-gradient(90deg, #fcd34d, #c9972a 40%, transparent)" }} />
