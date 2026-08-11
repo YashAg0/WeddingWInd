@@ -23,7 +23,6 @@ import {
   MessageSquare,
   Ticket,
   ScanLine,
-  Sparkles,
   ShieldCheck,
   Sliders
 } from "lucide-react";
@@ -232,8 +231,14 @@ export default function Sidebar({ className, onCloseMobile }: SidebarProps) {
         {/* Brand Header */}
         <div className="flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 group">
-            <span className="w-8 h-8 rounded-lg bg-gradient-brand flex items-center justify-center">
-              <Sparkles size={16} className="text-white" />
+            <span className="w-8 h-8 rounded-lg bg-gradient-brand flex items-center justify-center overflow-hidden">
+              <Image
+                src="/images/logos/logo.png"
+                alt="Wedding With India Logo"
+                width={32}
+                height={32}
+                className="w-full h-full object-cover rounded-lg"
+              />
             </span>
             <span className="font-display font-bold text-sm tracking-wide text-white group-hover:text-[var(--color-brand-secondary)] transition-colors">
               Wedding With India

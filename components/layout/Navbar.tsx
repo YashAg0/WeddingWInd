@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Menu, X, ChevronDown, Heart, Globe, Bell, LayoutDashboard, User, Sparkles } from "lucide-react";
+import { Menu, X, ChevronDown, Heart, Globe, Bell, LayoutDashboard, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import { useCurrency } from "@/context/CurrencyContext";
@@ -370,8 +370,15 @@ export default function Navbar() {
                     aria-hidden="true"
                   />
                 )}
-                <div className="relative w-10 h-10 rounded-xl bg-[var(--color-brand-primary)] flex items-center justify-center transition-transform duration-300 group-hover:scale-105 group-hover:rotate-6">
-                  <Sparkles size={20} className="text-white" aria-hidden="true" />
+                <div className="relative w-10 h-10 rounded-xl bg-[var(--color-brand-primary)] flex items-center justify-center overflow-hidden transition-transform duration-300 group-hover:scale-105 group-hover:rotate-6">
+                  <Image
+                    src="/images/logos/logo.png"
+                    alt="Wedding With India Logo"
+                    width={40}
+                    height={40}
+                    className="w-full h-full object-cover rounded-xl"
+                    priority
+                  />
                 </div>
               </div>
               <div className="hidden sm:flex flex-col justify-center leading-none">
@@ -706,8 +713,14 @@ export default function Navbar() {
           {/* Drawer header */}
           <div className="flex items-center justify-between p-5 border-b border-warm-200">
             <Link href="/" className="flex items-center gap-2.5" onClick={() => setIsMobileOpen(false)}>
-              <div className="w-8 h-8 rounded-lg bg-[var(--color-brand-primary)] flex items-center justify-center">
-                <Sparkles size={16} className="text-white" aria-hidden="true" />
+              <div className="w-8 h-8 rounded-lg bg-[var(--color-brand-primary)] flex items-center justify-center overflow-hidden">
+                <Image
+                  src="/images/logos/logo.png"
+                  alt="Wedding With India Logo"
+                  width={32}
+                  height={32}
+                  className="w-full h-full object-cover rounded-lg"
+                />
               </div>
               <span className="font-display font-bold text-[var(--color-brand-primary)] text-sm">
                 Wedding With India

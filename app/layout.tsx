@@ -82,6 +82,11 @@ export const metadata: Metadata = {
   alternates: {
     canonical: APP_URL,
   },
+  icons: {
+    icon: "/images/logos/logo.png",
+    shortcut: "/images/logos/logo.png",
+    apple: "/images/logos/logo.png",
+  },
   verification: {
     // Add Google Search Console verification token when available
     // google: "YOUR_VERIFICATION_TOKEN",
@@ -94,7 +99,7 @@ const organizationJsonLd = {
   "@type": "Organization",
   name: "Wedding With India",
   url: APP_URL,
-  logo: `${APP_URL}/logo.png`,
+  logo: `${APP_URL}/images/logos/logo.png`,
   description:
     "The world's first marketplace to attend authentic Indian weddings as an honoured guest.",
   sameAs: [

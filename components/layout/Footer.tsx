@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Mail, Phone, MapPin, Sparkles } from "lucide-react";
+import Image from "next/image";
+import { Mail, Phone, MapPin, LinkedinIcon } from "lucide-react";
 import { NewsletterForm } from "@/components/ui/NewsletterForm";
 
 // Inline SVG social icons (brand icons not in lucide-react)
@@ -51,10 +52,11 @@ const footerLinks = {
 };
 
 const socialLinks = [
-  { icon: InstagramIcon, label: "Instagram", href: "https://instagram.com" },
-  { icon: FacebookIcon, label: "Facebook", href: "https://facebook.com" },
-  { icon: TwitterIcon, label: "Twitter / X", href: "https://twitter.com" },
-  { icon: YoutubeIcon, label: "YouTube", href: "https://youtube.com" },
+  { icon: InstagramIcon, label: "Instagram", href: "https://instagram.com/weddingwithindia" },
+  { icon: FacebookIcon, label: "Facebook", href: "https://facebook.com/weddingwithindia" },
+  { icon: TwitterIcon, label: "Twitter / X", href: "https://twitter.com/weddingwithindia" },
+  { icon: YoutubeIcon, label: "YouTube", href: "https://youtube.com/weddingwithindia" },
+  { icon: LinkedinIcon, label: "LinkedIn", href: "https://linkedin.com/company/weddingwithindia" },
 ];
 
 export default function Footer() {
@@ -93,8 +95,14 @@ export default function Footer() {
               className="inline-flex items-center gap-2.5 mb-6 group"
               aria-label="Wedding With India — Home"
             >
-              <div className="w-10 h-10 rounded-xl bg-[var(--color-brand-primary)] flex items-center justify-center">
-                <Sparkles size={20} className="text-white" aria-hidden="true" />
+              <div className="w-10 h-10 rounded-xl bg-[var(--color-brand-primary)] flex items-center justify-center overflow-hidden">
+                <Image
+                  src="/images/logos/logo.png"
+                  alt="Wedding With India Logo"
+                  width={40}
+                  height={40}
+                  className="w-full h-full object-cover rounded-xl"
+                />
               </div>
               <div className="flex flex-col leading-none">
                 <span className="font-display font-bold text-white text-base">
@@ -141,7 +149,10 @@ export default function Footer() {
                   className="text-[var(--color-brand-secondary)] flex-shrink-0 mt-0.5"
                   aria-hidden="true"
                 />
-                <span>New Delhi, India · Remote-first</span>
+                <div className="flex flex-col gap-0.5">
+                  <span>Birmingham, UK - Remote</span>
+                  <span>New Delhi, India - Remote</span>
+                </div>
               </div>
             </address>
 
