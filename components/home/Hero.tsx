@@ -222,7 +222,7 @@ export function Hero({ stats: _stats }: HeroProps) {
             static hero photo behind a luxury travel brand reads as a stock
             photo, a barely-moving one reads as a living moment. */}
         <motion.div
-          className="absolute inset-0"
+          className="absolute inset-0 z-0"
           animate={isReducedMotion ? { scale: 1.1 } : { scale: [1.1, 1.17, 1.1] }}
           transition={
             isReducedMotion
@@ -231,19 +231,19 @@ export function Hero({ stats: _stats }: HeroProps) {
           }
         >
           <Image
-            src="https://images.unsplash.com/photo-1660455559502-8f71b47443c4?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+            src="https://images.unsplash.com/photo-1735415899585-12e3cde91d31?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
             alt="Indian Wedding Celebration"
             fill
             priority
             quality={90}
             sizes="100vw"
-            className="object-cover"
+            className="object-cover filter blur-[2px] opacity-75"
           />
         </motion.div>
-        {/* Rich layered overlay: dark at top for text, deep maroon at bottom for brand warmth */}
-        <div className="absolute inset-0 bg-gradient-to-b from-charcoal-950/88 via-charcoal-950/68 to-maroon-950/92" />
+        {/* Rich layered overlay: translucent dark at top for text legibility, maroon at bottom for brand warmth */}
+        <div className="absolute inset-0 z-10 bg-gradient-to-b from-charcoal-950/65 via-charcoal-950/45 to-maroon-950/70" />
         {/* Warm brand fade into the next section */}
-        <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-[var(--color-warm-50)] to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 z-20 h-32 bg-gradient-to-t from-[var(--color-warm-50)] via-[var(--color-warm-50)]/40 to-transparent" />
       </motion.div>
 
       {/* Floating ornament particles */}

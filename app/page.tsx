@@ -19,7 +19,7 @@ import {
   howItWorksSteps,
 } from "@/lib/data";
 
-export const revalidate = 3600;
+export const revalidate = 60;
 
 export const metadata: Metadata = {
   title: "Wedding With India — Attend Authentic Indian Weddings",

@@ -122,11 +122,11 @@ export function CTASection() {
       {/* Atmospheric Indian Wedding Background Layer */}
       <div className="absolute inset-0 z-0 pointer-events-none">
         <Image
-          src="https://images.unsplash.com/photo-1532712938310-34cb3982ef74?w=1600&q=80"
+          src="https://images.unsplash.com/photo-1660455559502-8f71b47443c4?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
           alt=""
           fill
           sizes="100vw"
-          className="object-cover object-center filter blur-[1px] scale-105 opacity-65"
+          className="object-cover object-center filter blur-[0.5px] scale-105 opacity-65"
           loading="lazy"
           aria-hidden="true"
         />

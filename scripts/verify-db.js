@@ -120,23 +120,23 @@ async function main() {
   console.log(`TOTAL DB USERS:             ${totalUsers}`);
 
   const passedAllChecks =
-    totalMarketplaceWeddings === 22 &&
-    uniqueHostsCount === 22 &&
+    totalMarketplaceWeddings === 23 &&
+    uniqueHostsCount === 23 &&
     duplicateHostsCount === 0 &&
-    uniqueImageCount === 22 &&
+    uniqueImageCount === 23 &&
     duplicateImageCount === 0 &&
     missingImageCount === 0 &&
-    uniqueDatesCount === 22 &&
+    uniqueDatesCount === 23 &&
     duplicateDateCount === 0 &&
     pastDateCount === 0 &&
     datesBeforeOrOnSept1 === 0 &&
-    zeroCapacityCount === 22 &&
+    zeroCapacityCount === 23 &&
     publicDemoWordingCount === 0 &&
     invalidFieldCount === 0;
 
   console.log("\n==========================================");
   if (passedAllChecks) {
-    console.log("✅ ALL 22 MARKETPLACE QUALITY CHECKS PASSED!");
+    console.log("✅ ALL 23 MARKETPLACE QUALITY CHECKS PASSED!");
   } else {
     console.log("❌ MARKETPLACE AUDIT FAILURES DETECTED.");
     process.exitCode = 1;

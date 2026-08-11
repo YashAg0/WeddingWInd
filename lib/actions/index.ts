@@ -1392,7 +1392,7 @@ export const getWeddings = unstable_cache(
     const { featuredWeddings } = await import("../data");
     return featuredWeddings;
   }
-}, ["published-weddings"], { revalidate: 3600, tags: ["weddings"] });
+}, ["published-weddings"], { revalidate: 60, tags: ["weddings"] });
 
 /**
  * Maps a review record to a public data transfer object, stripping sensitive data.
