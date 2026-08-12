@@ -24,7 +24,8 @@ import {
   Ticket,
   ScanLine,
   ShieldCheck,
-  Sliders
+  Sliders,
+  Building2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -82,6 +83,12 @@ const navItems: NavItem[] = [
     href: "/dashboard/check-in",
     icon: ScanLine,
     roles: ["couple", "admin"]
+  },
+  {
+    label: "Host Applications",
+    href: "/dashboard/admin/hosts",
+    icon: Building2,
+    roles: ["admin"]
   },
   {
     label: "Event Manager",

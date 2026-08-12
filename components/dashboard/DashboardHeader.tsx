@@ -7,6 +7,8 @@ import { useAuth } from "@/context/AuthContext";
 import { Bell, Search, Menu, LogOut, User, Settings, Check } from "lucide-react";
 
 
+import AdminGlobalSearch from "./AdminGlobalSearch";
+
 interface DashboardHeaderProps {
   onOpenMobileSidebar: () => void;
 }
@@ -18,6 +20,7 @@ export default function DashboardHeader({ onOpenMobileSidebar }: DashboardHeader
   const [showProfileMenu, setShowProfileMenu] = useState(false);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
+  const isAdmin = user?.role === "admin";
 
   return (
     <header className="bg-white border-b border-warm-200/50 h-16 px-4 sm:px-6 flex items-center justify-between sticky top-0 z-35 shadow-sm">
@@ -32,14 +35,18 @@ export default function DashboardHeader({ onOpenMobileSidebar }: DashboardHeader
           <Menu size={22} />
         </button>
 
-        <div className="hidden sm:flex items-center gap-2.5 bg-warm-50 border border-warm-200/50 rounded-xl px-3.5 py-1.5 w-64 md:w-80 group focus-within:border-maroon-350 focus-within:bg-white transition-all duration-200">
-          <Search size={16} className="text-charcoal-400 group-focus-within:text-charcoal-800 transition-colors" />
-          <input
-            type="text"
-            placeholder="Search bookings, weddings, or help..."
-            className="bg-transparent border-none text-xs sm:text-sm text-charcoal-800 placeholder-charcoal-400 focus:outline-none w-full font-medium"
-          />
-        </div>
+        {isAdmin ? (
+          <AdminGlobalSearch />
+        ) : (
+          <div className="hidden sm:flex items-center gap-2.5 bg-warm-50 border border-warm-200/50 rounded-xl px-3.5 py-1.5 w-64 md:w-80 group focus-within:border-maroon-350 focus-within:bg-white transition-all duration-200">
+            <Search size={16} className="text-charcoal-400 group-focus-within:text-charcoal-800 transition-colors" />
+            <input
+              type="text"
+              placeholder="Search bookings, weddings, or help..."
+              className="bg-transparent border-none text-xs sm:text-sm text-charcoal-800 placeholder-charcoal-400 focus:outline-none w-full font-medium"
+            />
+          </div>
+        )}
       </div>
 
       {/* Right controls */}

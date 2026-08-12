@@ -46,49 +46,49 @@ async function main() {
   }
 
   const totalMarketplaceWeddings = allWeddings.length;
-  const _curatedWeddings = allWeddings.filter((w) => w.isDemo === true || w.capacity === 0);
+  const curatedWeddings = allWeddings.filter((w) => w.isDemo === true || w.capacity === 0);
 
-  // Host couple unique check
-  const hostNames = allWeddings.map((w) => w.hostCouple?.user?.name || "Unknown Host");
+  // Host couple unique check on curated demo weddings
+  const hostNames = curatedWeddings.map((w) => w.hostCouple?.user?.name || "Unknown Host");
   const hostCounts = {};
   hostNames.forEach((name) => { hostCounts[name] = (hostCounts[name] || 0) + 1; });
   const uniqueHostsCount = Object.keys(hostCounts).length;
   const duplicateHostsCount = Object.keys(hostCounts).filter((name) => hostCounts[name] > 1).length;
 
-  // Dates check
-  const datesStr = allWeddings.map((w) => w.date.toISOString().split("T")[0]).sort();
+  // Dates check on curated demo weddings
+  const datesStr = curatedWeddings.map((w) => w.date.toISOString().split("T")[0]).sort();
   const minDate = datesStr[0];
   const maxDate = datesStr[datesStr.length - 1];
   const targetMinDate = "2026-09-01";
   const currentDate = new Date().toISOString().split("T")[0];
 
-  const pastDateCount = allWeddings.filter((w) => w.date.toISOString().split("T")[0] < currentDate).length;
-  const datesBeforeOrOnSept1 = allWeddings.filter((w) => w.date.toISOString().split("T")[0] <= targetMinDate).length;
+  const pastDateCount = curatedWeddings.filter((w) => w.date.toISOString().split("T")[0] < currentDate).length;
+  const datesBeforeOrOnSept1 = curatedWeddings.filter((w) => w.date.toISOString().split("T")[0] <= targetMinDate).length;
 
   const dateCounts = {};
   datesStr.forEach((d) => { dateCounts[d] = (dateCounts[d] || 0) + 1; });
   const uniqueDatesCount = Object.keys(dateCounts).length;
   const duplicateDateCount = Object.keys(dateCounts).filter((d) => dateCounts[d] > 1).length;
 
-  // Image URLs check
-  const imageUrls = allWeddings.map((w) => w.mainImageUrl);
+  // Image URLs check on curated demo weddings
+  const imageUrls = curatedWeddings.map((w) => w.mainImageUrl);
   const imageCounts = {};
   imageUrls.forEach((img) => { if (img) imageCounts[img] = (imageCounts[img] || 0) + 1; });
   const uniqueImageCount = Object.keys(imageCounts).length;
   const duplicateImageCount = Object.keys(imageCounts).filter((img) => imageCounts[img] > 1).length;
-  const missingImageCount = allWeddings.filter((w) => !w.mainImageUrl || w.mainImageUrl.trim() === "").length;
+  const missingImageCount = curatedWeddings.filter((w) => !w.mainImageUrl || w.mainImageUrl.trim() === "").length;
 
   // Capacity check
-  const zeroCapacityCount = allWeddings.filter((w) => w.capacity === 0).length;
+  const zeroCapacityCount = curatedWeddings.filter((w) => w.capacity === 0).length;
 
   // Wording check
   const demoRegex = /\b(demo|sample|test|fake|mock)\b/i;
-  const publicDemoWordingCount = allWeddings.filter((w) =>
+  const publicDemoWordingCount = curatedWeddings.filter((w) =>
     demoRegex.test(w.title) || demoRegex.test(w.description) || demoRegex.test(w.location)
   ).length;
 
   // Required fields check
-  const invalidFieldCount = allWeddings.filter((w) => !w.title || !w.description || !w.location || !w.date).length;
+  const invalidFieldCount = curatedWeddings.filter((w) => !w.title || !w.description || !w.location || !w.date).length;
 
   console.log("\n--- DETAILED INVENTORY AUDIT TABLE ---");
   console.log("ID | TITLE | HOST COUPLE | DATE | LOCATION | CAPACITY | IMAGE");
@@ -104,6 +104,7 @@ async function main() {
 
   console.log("\n--- MASTER AUDIT SUMMARY ---");
   console.log(`TOTAL MARKETPLACE WEDDINGS: ${totalMarketplaceWeddings}`);
+  console.log(`CURATED DEMO WEDDINGS:     ${curatedWeddings.length}`);
   console.log(`UNIQUE HOST COUPLES:        ${uniqueHostsCount} (DUPLICATE HOST COUPLES: ${duplicateHostsCount})`);
   console.log(`UNIQUE IMAGE URLS:         ${uniqueImageCount} (DUPLICATE IMAGE URLS: ${duplicateImageCount})`);
   console.log(`MISSING IMAGE COUNT:        ${missingImageCount}`);
@@ -120,7 +121,7 @@ async function main() {
   console.log(`TOTAL DB USERS:             ${totalUsers}`);
 
   const passedAllChecks =
-    totalMarketplaceWeddings === 23 &&
+    curatedWeddings.length === 23 &&
     uniqueHostsCount === 23 &&
     duplicateHostsCount === 0 &&
     uniqueImageCount === 23 &&

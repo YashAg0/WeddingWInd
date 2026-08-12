@@ -32,7 +32,9 @@ import {
   X,
   RefreshCw,
   Coins,
-  Sparkles
+  Sparkles,
+  AlertCircle,
+  Clock
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -296,9 +298,24 @@ export default function DashboardOverviewPage() {
   const [aiResult, setAiResult] = useState<any | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
 
+  const [hostAppState, setHostAppState] = useState<any>(null);
+
   useEffect(() => {
     getWeddings().then(setWeddings).catch(console.error);
   }, []);
+
+  useEffect(() => {
+    if (user) {
+      fetch("/api/host-application")
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data && data.exists) {
+            setHostAppState(data);
+          }
+        })
+        .catch((err) => console.warn("Failed to fetch host application state:", err));
+    }
+  }, [user]);
 
   const userRole = user?.role || "traveler";
 
@@ -346,6 +363,78 @@ export default function DashboardOverviewPage() {
   const wishlistedWeddings = weddings.filter((w) => wishlist.includes(w.slug));
   const activeBookings = bookings.filter((b) => b.status === "upcoming");
 
+  // Helper component for Host Application Status Banner
+  const HostApplicationStatusCard = () => {
+    if (!hostAppState || !hostAppState.exists) return null;
+    const vStatus = hostAppState.verificationStatus;
+
+    if (vStatus === "NEED_MORE_DOCUMENTS") {
+      return (
+        <div className="bg-blue-50 border border-blue-200 rounded-2xl p-6 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-l-4 border-l-blue-600">
+          <div className="flex items-start gap-4">
+            <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
+              <AlertCircle size={20} />
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="text-[0.625rem] font-bold uppercase tracking-wider text-blue-800 bg-blue-100 px-2.5 py-0.5 rounded-full border border-blue-200">
+                  Action Required
+                </span>
+                <span className="text-xs text-blue-700 font-semibold">More Information Requested</span>
+              </div>
+              <h3 className="font-display font-bold text-base text-charcoal-900">
+                Update Your Wedding Application
+              </h3>
+              <p className="text-xs text-charcoal-600 leading-relaxed max-w-xl">
+                {hostAppState.adminNotes || "Our admin team reviewed your application and requested additional information before approval."}
+              </p>
+            </div>
+          </div>
+          <Link
+            href="/list-wedding"
+            className="btn btn-primary text-xs font-bold py-2.5 px-5 flex items-center gap-2 whitespace-nowrap shadow-md"
+          >
+            <RefreshCw size={14} />
+            Continue Application
+          </Link>
+        </div>
+      );
+    }
+
+    if (vStatus === "PENDING" || vStatus === "UNDER_REVIEW") {
+      return (
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-l-4 border-l-amber-500">
+          <div className="flex items-start gap-4">
+            <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+              <Clock size={20} />
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="text-[0.625rem] font-bold uppercase tracking-wider text-amber-800 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-200">
+                  Application In Progress
+                </span>
+              </div>
+              <h3 className="font-display font-bold text-base text-charcoal-900">
+                Your Wedding Application Is Under Review
+              </h3>
+              <p className="text-xs text-charcoal-600 leading-relaxed max-w-xl">
+                Our verification operations desk is auditing your celebration application.
+              </p>
+            </div>
+          </div>
+          <Link
+            href="/list-wedding"
+            className="btn btn-secondary text-xs font-bold py-2.5 px-5 flex items-center gap-2 whitespace-nowrap"
+          >
+            View Application Details
+          </Link>
+        </div>
+      );
+    }
+
+    return null;
+  };
+
   // 1. TRAVELER VIEW
   if (userRole === "traveler") {
     const totalSpent = bookings
@@ -363,6 +452,9 @@ export default function DashboardOverviewPage() {
             Here is what is happening with your cultural wedding discovery plans.
           </p>
         </div>
+
+        {/* Host Application Status Banner if traveler submitted an application */}
+        <HostApplicationStatusCard />
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -630,6 +722,9 @@ export default function DashboardOverviewPage() {
             Manage your wedding guest requests, payouts, and wedding details.
           </p>
         </div>
+
+        {/* Host Application Status Banner */}
+        <HostApplicationStatusCard />
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">

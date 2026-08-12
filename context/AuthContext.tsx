@@ -138,14 +138,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       // DB is available and returned a real user record
-      setDbOffline(false);
+      const isCoupleWithData = dbUser.role === "COUPLE" && (
+        !!dbUser.coupleProfile || 
+        ((dbUser.coupleProfile as any)?.weddings && (dbUser.coupleProfile as any).weddings.length > 0) || 
+        !!(dbUser as any).verification
+      );
+      const isAgentWithData = dbUser.role === "AGENT" && !!dbUser.agentProfile;
+      const isTravelerWithData = dbUser.role === "TRAVELER" && (!!dbUser.travelerProfile || dbUser.status === "ACTIVE");
+      const isAdminOrCoordinator = dbUser.role === "ADMIN" || dbUser.role === "COORDINATOR";
+      const isOnboarded = dbUser.status === "ACTIVE" || isAdminOrCoordinator || isCoupleWithData || isAgentWithData || isTravelerWithData;
       const roleStr = dbUser.role.toLowerCase() as UserRole;
+
       setUser({
         id: dbUser.id,
         name: dbUser.name || dbUser.email.split("@")[0],
         email: dbUser.email,
-        role: dbUser.status === "ONBOARDING" && dbUser.role !== "ADMIN" ? null : roleStr,
-        onboarded: dbUser.status === "ACTIVE" || dbUser.role === "ADMIN",
+        role: roleStr,
+        onboarded: isOnboarded,
         avatar: dbUser.avatar || "",
         country: dbUser.travelerProfile?.country || dbUser.agentProfile?.country || "",
         bio: dbUser.travelerProfile?.interests || dbUser.coupleProfile?.familyBio || dbUser.agentProfile?.targetAudience || "",

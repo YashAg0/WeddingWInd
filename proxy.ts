@@ -49,6 +49,17 @@ export default async function middleware(req: NextRequest, event: NextFetchEvent
   try {
     return await clerkHandler(req, event);
   } catch (err: any) {
+    const pathname = req.nextUrl?.pathname || new URL(req.url).pathname;
+    const isUnauthenticated =
+      err?.message?.includes("Unauthenticated") ||
+      err?.message?.includes("auth.protect") ||
+      err?.name === "AuthError" ||
+      err?.clerkError === true;
+
+    if (pathname.startsWith("/api/") && isUnauthenticated) {
+      return NextResponse.json({ error: "UNAUTHORIZED: Authentication required." }, { status: 401 });
+    }
+
     const isMockOrTest =
       process.env.CLERK_SECRET_KEY?.includes("e2e_mock") ||
       process.env.PLAYWRIGHT_TEST === "true" ||
@@ -59,7 +70,6 @@ export default async function middleware(req: NextRequest, event: NextFetchEvent
 
     if (isMockOrTest) {
       if (isAdminRoute(req) || isProtectedRoute(req)) {
-        const pathname = req.nextUrl?.pathname || new URL(req.url).pathname;
         if (pathname.startsWith("/api/")) {
           return NextResponse.json({ error: "UNAUTHORIZED" }, { status: 401 });
         }

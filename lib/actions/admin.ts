@@ -236,6 +236,8 @@ export async function adminToggleWeddingFeaturedAction(weddingId: string, featur
 // 3. User Management
 // ─────────────────────────────────────────────────────────────────────────────
 
+const PROTECTED_FOUNDER_EMAIL = "founder@weddingwithindia.com";
+
 export async function adminGetUsersAction() {
   await requireRole([UserRole.ADMIN]);
   return await prisma.user.findMany({
@@ -243,6 +245,7 @@ export async function adminGetUsersAction() {
       travelerProfile: true,
       coupleProfile: true,
       agentProfile: true,
+      verification: true,
     },
     orderBy: { createdAt: "desc" },
   });
@@ -251,9 +254,25 @@ export async function adminGetUsersAction() {
 export async function adminUpdateUserRoleAction(userId: string, role: UserRole) {
   const admin = await requireRole([UserRole.ADMIN]);
 
-  // Prevent self-role modification to prevent locked-out admin scenario
+  // Prevent self-role modification
   if (userId === admin.id) {
     throw new Error("Cannot change your own role settings.");
+  }
+
+  const targetUser = await prisma.user.findUnique({ where: { id: userId } });
+  if (!targetUser) throw new Error("User not found.");
+
+  // Protect founder email
+  if (targetUser.email === PROTECTED_FOUNDER_EMAIL && role !== UserRole.ADMIN) {
+    throw new Error("Cannot modify the role of the primary system founder account.");
+  }
+
+  // Prevent removing the last active administrator
+  if (targetUser.role === UserRole.ADMIN && role !== UserRole.ADMIN) {
+    const adminCount = await prisma.user.count({ where: { role: UserRole.ADMIN } });
+    if (adminCount <= 1) {
+      throw new Error("Cannot demote the last active administrator account.");
+    }
   }
 
   const updated = await prisma.user.update({
@@ -304,10 +323,138 @@ export async function adminUpdateUserRoleAction(userId: string, role: UserRole) 
   return { success: true };
 }
 
+export async function adminUpdateUserStatusAction(
+  userId: string,
+  status: "ACTIVE" | "ONBOARDING" | "SUSPENDED" | "BANNED",
+  reason?: string
+) {
+  const admin = await requireRole([UserRole.ADMIN]);
+
+  if (userId === admin.id) {
+    throw new Error("Cannot change your own account status.");
+  }
+
+  const targetUser = await prisma.user.findUnique({ where: { id: userId } });
+  if (!targetUser) throw new Error("User not found.");
+
+  if (targetUser.email === PROTECTED_FOUNDER_EMAIL && status !== "ACTIVE") {
+    throw new Error("Cannot suspend or ban the primary system founder account.");
+  }
+
+  const updated = await prisma.user.update({
+    where: { id: userId },
+    data: { status: status as any },
+  });
+
+  await prisma.notification.create({
+    data: {
+      userId,
+      title: "Account Status Updated",
+      message: reason || `Your account status has been updated to ${status}.`,
+      type: status === "ACTIVE" ? "SUCCESS" : "ALERT",
+    },
+  });
+
+  await createAuditLog(
+    "UPDATE_USER_STATUS",
+    "User",
+    userId,
+    `Admin ${admin.email} updated user ${updated.email} status to ${status}. Reason: "${reason || 'N/A'}"`
+  );
+
+  revalidatePath("/dashboard/admin/users");
+  return { success: true, user: updated };
+}
+
+export async function adminInviteUserAction(email: string, role: UserRole, name?: string) {
+  const admin = await requireRole([UserRole.ADMIN]);
+  const cleanEmail = email.trim().toLowerCase();
+
+  if (!cleanEmail || !cleanEmail.includes("@")) {
+    throw new Error("A valid email address is required for admin invitation.");
+  }
+
+  let user = await prisma.user.findUnique({ where: { email: cleanEmail } });
+
+  if (user) {
+    // User already exists; grant assigned role
+    user = await prisma.user.update({
+      where: { id: user.id },
+      data: { role },
+    });
+  } else {
+    // Pre-provision user account for Clerk authentication sync
+    const tempClerkId = `invited_${Date.now()}_${crypto.randomBytes(4).toString("hex")}`;
+    user = await prisma.user.create({
+      data: {
+        clerkUserId: tempClerkId,
+        email: cleanEmail,
+        name: name || cleanEmail.split("@")[0],
+        role,
+        status: "ONBOARDING",
+      },
+    });
+
+    if (role === UserRole.TRAVELER) {
+      await prisma.travelerProfile.create({
+        data: {
+          userId: user.id,
+          fullName: user.name || "New Traveler",
+          country: "United States",
+          language: "English",
+        },
+      });
+    } else if (role === UserRole.COUPLE) {
+      await prisma.coupleProfile.create({
+        data: {
+          userId: user.id,
+          expectedGuests: 200,
+          familyBio: "Hosted Couple",
+        },
+      });
+    } else if (role === UserRole.AGENT) {
+      const { generateReferralCode } = require("./referrals");
+      const refCode = await generateReferralCode(user.name || "AGENT");
+      await prisma.agentProfile.create({
+        data: {
+          userId: user.id,
+          organization: "Pre-provisioned Agent",
+          country: "India",
+          referralCode: refCode,
+        },
+      });
+    }
+  }
+
+  await createAuditLog(
+    "INVITE_USER",
+    "User",
+    user.id,
+    `Admin ${admin.email} invited user ${cleanEmail} with role ${role}`
+  );
+
+  revalidatePath("/dashboard/admin/users");
+  return { success: true, user };
+}
+
 export async function adminDeleteUserAction(userId: string) {
   const admin = await requireRole([UserRole.ADMIN]);
   if (userId === admin.id) {
     throw new Error("Cannot delete your own admin account.");
+  }
+
+  const targetUser = await prisma.user.findUnique({ where: { id: userId } });
+  if (!targetUser) throw new Error("User not found.");
+
+  if (targetUser.email === PROTECTED_FOUNDER_EMAIL) {
+    throw new Error("Cannot delete the primary system founder account.");
+  }
+
+  if (targetUser.role === UserRole.ADMIN) {
+    const adminCount = await prisma.user.count({ where: { role: UserRole.ADMIN } });
+    if (adminCount <= 1) {
+      throw new Error("Cannot delete the last remaining administrator account.");
+    }
   }
 
   const deleted = await prisma.user.delete({
@@ -317,6 +464,87 @@ export async function adminDeleteUserAction(userId: string) {
   await createAuditLog("DELETE_USER", "User", userId, `Deleted user account: ${deleted.email}`);
   revalidatePath("/dashboard/admin/users");
   return { success: true };
+}
+
+export async function adminGlobalSearchAction(query: string) {
+  await requireRole([UserRole.ADMIN]);
+  const term = query.trim().toLowerCase();
+  if (!term || term.length < 2) return { results: [] };
+
+  const users = await prisma.user.findMany({
+    where: {
+      OR: [
+        { name: { contains: term, mode: "insensitive" } },
+        { email: { contains: term, mode: "insensitive" } },
+      ],
+    },
+    take: 5,
+    select: { id: true, name: true, email: true, role: true, status: true },
+  });
+
+  const weddings = await prisma.wedding.findMany({
+    where: {
+      OR: [
+        { title: { contains: term, mode: "insensitive" } },
+        { location: { contains: term, mode: "insensitive" } },
+      ],
+    },
+    take: 5,
+    select: { id: true, title: true, location: true, status: true, slug: true },
+  });
+
+  const bookings = await prisma.booking.findMany({
+    where: {
+      OR: [
+        { id: { contains: term, mode: "insensitive" } },
+        { traveler: { fullName: { contains: term, mode: "insensitive" } } },
+      ],
+    },
+    take: 5,
+    select: { id: true, status: true, totalAmount: true, traveler: { select: { fullName: true } }, wedding: { select: { title: true } } },
+  });
+
+  const safetyCases = await prisma.safetyCase.findMany({
+    where: {
+      OR: [
+        { caseNumber: { contains: term, mode: "insensitive" } },
+        { title: { contains: term, mode: "insensitive" } },
+      ],
+    },
+    take: 5,
+    select: { id: true, caseNumber: true, title: true, status: true, severity: true },
+  });
+
+  return {
+    users: users.map((u) => ({
+      id: u.id,
+      title: u.name || u.email,
+      subtitle: `${u.role} · ${u.email}`,
+      type: "User",
+      url: `/dashboard/admin/users?search=${encodeURIComponent(u.email)}`,
+    })),
+    weddings: weddings.map((w) => ({
+      id: w.id,
+      title: w.title,
+      subtitle: `${w.location} · ${w.status}`,
+      type: "Wedding",
+      url: `/dashboard/admin/hosts/${w.id}`,
+    })),
+    bookings: bookings.map((b) => ({
+      id: b.id,
+      title: `Booking #${b.id.slice(-6).toUpperCase()} — ${b.wedding?.title}`,
+      subtitle: `Guest: ${b.traveler?.fullName} · Status: ${b.status}`,
+      type: "Booking",
+      url: `/dashboard/admin/bookings?search=${b.id}`,
+    })),
+    safetyCases: safetyCases.map((s) => ({
+      id: s.id,
+      title: `${s.caseNumber}: ${s.title}`,
+      subtitle: `Severity: ${s.severity} · Status: ${s.status}`,
+      type: "SafetyCase",
+      url: `/dashboard/admin/safety/${s.id}`,
+    })),
+  };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -844,6 +1072,53 @@ export async function adminDeleteTestimonialAction(testimonialId: string) {
   return { success: true };
 }
 
+const heroContentSchema = z.object({
+  title: z.string().min(5),
+  subtitle: z.string().min(10),
+  buttonText: z.string().default("Explore Celebrations"),
+  buttonLink: z.string().default("/explore"),
+  imageUrl: z.string().url().optional().or(z.literal("")),
+  active: z.boolean().default(true),
+});
+
+export async function adminUpsertHeroContentAction(heroId: string | null, data: any) {
+  await requireRole([UserRole.ADMIN]);
+  const parsed = heroContentSchema.parse({
+    ...data,
+    active: !!data.active,
+  });
+
+  let hero;
+  if (heroId) {
+    hero = await prisma.heroContent.update({
+      where: { id: heroId },
+      data: parsed,
+    });
+    await createAuditLog("UPDATE_HERO_CONTENT", "HeroContent", hero.id, `Updated homepage hero slide: "${hero.title}"`);
+  } else {
+    hero = await prisma.heroContent.create({
+      data: parsed,
+    });
+    await createAuditLog("CREATE_HERO_CONTENT", "HeroContent", hero.id, `Created homepage hero slide: "${hero.title}"`);
+  }
+
+  revalidatePath("/");
+  revalidatePath("/dashboard/admin/cms");
+  return { success: true, hero };
+}
+
+export async function adminDeleteHeroContentAction(heroId: string) {
+  await requireRole([UserRole.ADMIN]);
+  const deleted = await prisma.heroContent.delete({
+    where: { id: heroId },
+  });
+
+  await createAuditLog("DELETE_HERO_CONTENT", "HeroContent", heroId, `Deleted hero slide: "${deleted.title}"`);
+  revalidatePath("/");
+  revalidatePath("/dashboard/admin/cms");
+  return { success: true };
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // 8. Analytics & Audit Logs
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1127,4 +1402,222 @@ export async function adminSetTrendingBoostAction(weddingId: string, boostScore:
   revalidatePath("/weddings");
   revalidatePath("/");
   return { success: true, wedding: updated };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 12. Host Application Management & Review
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function adminGetHostApplicationsAction() {
+  await requireRole([UserRole.ADMIN]);
+  const weddings = await prisma.wedding.findMany({
+    include: {
+      hostCouple: {
+        include: {
+          user: {
+            include: {
+              verification: true,
+            },
+          },
+        },
+      },
+      gallery: true,
+      events: true,
+      traditions: true,
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  return weddings;
+}
+
+export async function adminGetHostApplicationByIdAction(id: string) {
+  await requireRole([UserRole.ADMIN]);
+  let wedding = await prisma.wedding.findUnique({
+    where: { id },
+    include: {
+      hostCouple: {
+        include: {
+          user: {
+            include: {
+              verification: true,
+              travelerProfile: true,
+              agentProfile: true,
+            },
+          },
+        },
+      },
+      gallery: true,
+      events: true,
+      traditions: true,
+      bookings: {
+        include: {
+          traveler: { include: { user: true } },
+          payments: true,
+        },
+      },
+    },
+  });
+
+  if (!wedding) {
+    // Attempt lookup by hostCoupleId
+    wedding = await prisma.wedding.findFirst({
+      where: { hostCoupleId: id },
+      include: {
+        hostCouple: {
+          include: {
+            user: {
+              include: {
+                verification: true,
+                travelerProfile: true,
+                agentProfile: true,
+              },
+            },
+          },
+        },
+        gallery: true,
+        events: true,
+        traditions: true,
+        bookings: {
+          include: {
+            traveler: { include: { user: true } },
+            payments: true,
+          },
+        },
+      },
+    });
+  }
+
+  return wedding;
+}
+
+export async function adminReviewHostApplicationAction(
+  weddingId: string,
+  reviewStatus: "APPROVED" | "REJECTED" | "NEED_MORE_DOCUMENTS" | "UNDER_REVIEW",
+  notes?: string
+) {
+  const admin = await requireRole([UserRole.ADMIN]);
+
+  const wedding = await prisma.wedding.findUnique({
+    where: { id: weddingId },
+    include: {
+      hostCouple: {
+        include: {
+          user: {
+            include: {
+              verification: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!wedding) {
+    throw new Error("Host application wedding record not found.");
+  }
+
+  const hostUserId = wedding.hostCouple?.userId;
+  const reviewNote = notes || `Host application review: status set to ${reviewStatus}`;
+
+  // Map review status to database enums
+  let targetWeddingStatus: any = "DRAFT";
+  let targetVerificationStatus: VerificationStatus = VerificationStatus.PENDING;
+  let targetUserStatus: any = "ONBOARDING";
+
+  if (reviewStatus === "APPROVED") {
+    targetWeddingStatus = "PUBLISHED";
+    targetVerificationStatus = VerificationStatus.APPROVED;
+    targetUserStatus = "ACTIVE";
+  } else if (reviewStatus === "REJECTED") {
+    targetWeddingStatus = "REJECTED";
+    targetVerificationStatus = VerificationStatus.REJECTED;
+    targetUserStatus = "ONBOARDING";
+  } else if (reviewStatus === "NEED_MORE_DOCUMENTS") {
+    targetWeddingStatus = "DRAFT";
+    targetVerificationStatus = VerificationStatus.NEED_MORE_DOCUMENTS;
+    targetUserStatus = "ONBOARDING";
+  } else if (reviewStatus === "UNDER_REVIEW") {
+    targetWeddingStatus = "DRAFT";
+    targetVerificationStatus = VerificationStatus.UNDER_REVIEW;
+    targetUserStatus = "ONBOARDING";
+  }
+
+  // Update Wedding Status
+  const updatedWedding = await prisma.wedding.update({
+    where: { id: weddingId },
+    data: { status: targetWeddingStatus },
+  });
+
+  // Update Host User & Verification if present
+  if (hostUserId) {
+    await prisma.user.update({
+      where: { id: hostUserId },
+      data: { status: targetUserStatus },
+    });
+
+    await prisma.verification.upsert({
+      where: { userId: hostUserId },
+      create: {
+        userId: hostUserId,
+        status: targetVerificationStatus,
+        notes: reviewNote,
+        reviewedBy: admin.name || admin.email,
+        expiryDate: reviewStatus === "APPROVED" ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000) : null,
+      },
+      update: {
+        status: targetVerificationStatus,
+        notes: reviewNote,
+        reviewedBy: admin.name || admin.email,
+        expiryDate: reviewStatus === "APPROVED" ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000) : null,
+      },
+    });
+
+    // Send Notification
+    await prisma.notification.create({
+      data: {
+        userId: hostUserId,
+        title: reviewStatus === "APPROVED" ? "Host Application Approved!" : "Host Application Update",
+        message: reviewNote,
+        type: reviewStatus === "APPROVED" ? "SUCCESS" : reviewStatus === "REJECTED" ? "ALERT" : "INFO",
+      },
+    });
+
+    // Send Emails
+    const hostUser = wedding.hostCouple?.user;
+    if (hostUser?.email) {
+      const userName = hostUser.name || hostUser.email.split("@")[0];
+      if (reviewStatus === "APPROVED") {
+        await sendVerificationApprovedEmail(hostUser.email, userName, UserRole.COUPLE);
+      } else if (reviewStatus === "REJECTED") {
+        await sendVerificationRejectedEmail(hostUser.email, userName, reviewNote);
+      }
+    }
+
+    // Evaluate Quality Badges for Host
+    if (wedding.hostCoupleId) {
+      try {
+        const { evaluateEntityBadges } = require("../services/badges");
+        await evaluateEntityBadges(ReputationEntityType.HOST, wedding.hostCoupleId);
+      } catch (err) {
+        console.warn("Badge evaluation warning on host review:", err);
+      }
+    }
+  }
+
+  await createAuditLog(
+    "REVIEW_HOST_APPLICATION",
+    "Wedding",
+    weddingId,
+    `Admin ${admin.email} reviewed host application for "${wedding.title}". Set status to ${reviewStatus}. Notes: "${reviewNote}"`
+  );
+
+  revalidatePath("/dashboard/admin/hosts");
+  revalidatePath(`/dashboard/admin/hosts/${weddingId}`);
+  revalidatePath("/dashboard/admin/weddings");
+  revalidatePath("/dashboard/admin/verifications");
+  revalidatePath("/weddings");
+  revalidatePath(`/weddings/${wedding.slug}`);
+
+  return { success: true, wedding: updatedWedding };
 }

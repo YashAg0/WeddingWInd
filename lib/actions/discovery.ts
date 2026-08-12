@@ -334,58 +334,57 @@ export async function recommendWeddingAction(preferences: {
  * Returns personalized recommendations based on wishlist, history, and searches.
  */
 export async function getPersonalizedRecommendations() {
-  const user = await requireAuth();
+  try {
+    const user = await requireAuth();
 
-  // Fetch traveler profile
-  const traveler = await prisma.travelerProfile.findUnique({
-    where: { userId: user.id },
-    include: {
-      wishlists: true,
-      bookings: true,
-    },
-  });
+    // Fetch traveler profile
+    const traveler = await prisma.travelerProfile.findUnique({
+      where: { userId: user.id },
+      include: {
+        wishlists: true,
+        bookings: true,
+      },
+    });
 
-  if (!traveler) {
-    // Return trending/featured fallback
+    if (!traveler) {
+      // Return trending/featured fallback
+      return prisma.wedding.findMany({
+        where: { status: "PUBLISHED", suspended: false },
+        orderBy: { manualTrendingBoost: "desc" },
+        take: 4,
+      });
+    }
+
+    // Find styles in wishlist or bookings
+    const wishlistedIds = traveler.wishlists.map((w) => w.weddingId);
+    const bookedIds = traveler.bookings.map((b) => b.weddingId);
+    const interactingIds = Array.from(new Set([...wishlistedIds, ...bookedIds]));
+
+    // Query interacting weddings to extract categories/styles
+    const interactingWeddings = await prisma.wedding.findMany({
+      where: { id: { in: interactingIds } },
+    });
+
+    const preferredCategories = Array.from(
+      new Set(interactingWeddings.map((w) => w.category).filter(Boolean))
+    );
+
     return prisma.wedding.findMany({
-      where: { status: "PUBLISHED", suspended: false },
-      orderBy: { manualTrendingBoost: "desc" },
+      where: {
+        status: "PUBLISHED",
+        suspended: false,
+        id: { notIn: interactingIds },
+        ...(preferredCategories.length > 0
+          ? { category: { in: preferredCategories } }
+          : {}),
+      },
+      orderBy: { createdAt: "desc" },
       take: 4,
     });
+  } catch (err) {
+    console.warn("Non-critical getPersonalizedRecommendations failed safely:", err);
+    return [];
   }
-
-  // Find styles in wishlist or bookings
-  const wishlistedIds = traveler.wishlists.map((w) => w.weddingId);
-  const bookedIds = traveler.bookings.map((b) => b.weddingId);
-  const interactingIds = Array.from(new Set([...wishlistedIds, ...bookedIds]));
-
-  // Query interacting weddings to extract categories/styles
-  const interactingWeddings = await prisma.wedding.findMany({
-    where: { id: { in: interactingIds } },
-  });
-
-  const categories = interactingWeddings.map((w) => w.category);
-
-  // Recommend similar categories excluding already interacted ones
-  const recommendations = await prisma.wedding.findMany({
-    where: {
-      status: "PUBLISHED",
-      suspended: false,
-      id: { notIn: interactingIds },
-      category: categories.length > 0 ? { in: categories } : undefined,
-    },
-    orderBy: { manualTrendingBoost: "desc" },
-    take: 4,
-  });
-
-  if (recommendations.length > 0) return recommendations;
-
-  // Fallback: featured/trending
-  return prisma.wedding.findMany({
-    where: { status: "PUBLISHED", suspended: false },
-    orderBy: [{ featured: "desc" }, { manualTrendingBoost: "desc" }],
-    take: 4,
-  });
 }
 
 /**
@@ -451,12 +450,17 @@ export async function renameSavedSearch(id: string, name: string) {
 }
 
 export async function fetchSavedSearches() {
-  const user = await requireAuth();
+  try {
+    const user = await requireAuth();
 
-  return prisma.savedSearch.findMany({
-    where: { userId: user.id },
-    orderBy: { createdAt: "desc" },
-  });
+    return await prisma.savedSearch.findMany({
+      where: { userId: user.id },
+      orderBy: { createdAt: "desc" },
+    });
+  } catch (err) {
+    console.warn("Non-critical fetchSavedSearches failed safely:", err);
+    return [];
+  }
 }
 
 /**
@@ -489,16 +493,21 @@ export async function trackRecentlyViewed(weddingId: string) {
 }
 
 export async function fetchRecentlyViewed() {
-  const user = await requireAuth();
+  try {
+    const user = await requireAuth();
 
-  return prisma.recentlyViewed.findMany({
-    where: { userId: user.id },
-    take: 6,
-    orderBy: { viewedAt: "desc" },
-    include: {
-      wedding: true,
-    },
-  });
+    return await prisma.recentlyViewed.findMany({
+      where: { userId: user.id },
+      take: 6,
+      orderBy: { viewedAt: "desc" },
+      include: {
+        wedding: true,
+      },
+    });
+  } catch (err) {
+    console.warn("Non-critical fetchRecentlyViewed failed safely:", err);
+    return [];
+  }
 }
 
 /**
