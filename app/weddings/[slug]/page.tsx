@@ -104,8 +104,7 @@ export default async function WeddingDetailPage({ params }: PageProps) {
   };
 
   return (
-    <div className="px-5 sm:px-8 lg:px-12 xl:px-16">
-    <div className="min-h-screen bg-warm-50/50 pt-24 pb-20 rounded-[2.5rem]">
+    <div className="min-h-screen bg-warm-50 pt-28 pb-20">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(eventJsonLd).replace(/</g, "\\u003c") }}
@@ -412,6 +411,5 @@ export default async function WeddingDetailPage({ params }: PageProps) {
       <StickyBookingCard wedding={wedding} />
 
     </div>
-  
-    </div>);
+  );
 }

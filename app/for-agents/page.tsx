@@ -16,8 +16,7 @@ export default function ForAgentsPage() {
   const hostCommissionINR = Math.round((avgBookingINR * hostRate) / 100); // ₹552
 
   return (
-    <div className="px-5 sm:px-8 lg:px-12 xl:px-16">
-    <div className="min-h-screen bg-warm-50/50 pt-28 pb-20 rounded-[2.5rem]">
+    <div className="min-h-screen bg-warm-50 pt-28 pb-20">
       
       {/* Hero Section */}
       <section className="container-luxury text-center max-w-4xl mb-16 space-y-5">
@@ -204,6 +203,5 @@ export default function ForAgentsPage() {
       </section>
 
     </div>
-  
-    </div>);
+  );
 }

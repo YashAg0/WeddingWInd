@@ -1,63 +1,125 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Mail, Phone, MapPin, LinkedinIcon } from "lucide-react";
+import {
+  Mail,
+  Phone,
+  MapPin,
+  Instagram,
+  Facebook,
+  Youtube,
+  Linkedin,
+  Globe2,
+} from "lucide-react";
 import { NewsletterForm } from "@/components/ui/NewsletterForm";
 
-// Inline SVG social icons (brand icons not in lucide-react)
-const InstagramIcon = () => (
-  <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">
-    <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z"/>
-  </svg>
-);
-
-const FacebookIcon = () => (
-  <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">
-    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-  </svg>
-);
-
-const TwitterIcon = () => (
-  <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">
-    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-  </svg>
-);
-
-const YoutubeIcon = () => (
-  <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">
-    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
-  </svg>
-);
+/* ===============================================================
+   FOOTER NAVIGATION
+=============================================================== */
 
 const footerLinks = {
   company: [
     { label: "About Us", href: "/about" },
+    { label: "Founder: Tanishq Gupta", href: "/founder/tanishq-gupta" },
     { label: "How It Works", href: "/how-it-works" },
-    { label: "Our Story", href: "/about#story" },
-  ],
-  forGuests: [
-    { label: "Browse Weddings", href: "/weddings" },
-    { label: "Guest Guide", href: "/for-travelers" },
-  ],
-  forHosts: [
-    { label: "Become a Host Family", href: "/list-wedding" },
-    { label: "For Couples", href: "/for-couples" },
-    { label: "For Agents", href: "/for-agents" },
-    { label: "Coordinators", href: "/coordinators" },
-  ],
-  support: [
+    { label: "For Travelers", href: "/for-travelers" },
     { label: "Contact Us", href: "/contact" },
-    { label: "Privacy Policy", href: "/privacy" },
+  ],
+
+  explore: [
+    { label: "Browse Weddings", href: "/weddings" },
+    { label: "Become a Host Family", href: "/list-wedding" },
+    { label: "Become a Partner", href: "/for-agents" },
+    { label: "Become a Coordinator", href: "/coordinators" },
+  ],
+
+  legal: [
     { label: "Terms of Service", href: "/terms" },
+    { label: "Privacy Policy", href: "/privacy" },
+    { label: "Cookie Policy", href: "/cookies" },
+    { label: "Cancellation Policy", href: "/cancellation-policy" },
+    { label: "Refund Policy", href: "/refund-policy" },
+    { label: "Copyright & IP", href: "/copyright" },
+    { label: "Trademark & Brand", href: "/trademark" },
+  ],
+
+  agreements: [
+    { label: "Traveler Agreement", href: "/traveler-agreement" },
+    { label: "Host Agreement", href: "/host-agreement" },
+    { label: "Partner Agreement", href: "/agent-agreement" },
+    { label: "Coordinator Agreement", href: "/coordinator-agreement" },
+    { label: "DPDP Act (India)", href: "/dpdp" },
+    { label: "GDPR & EU Privacy", href: "/gdpr" },
   ],
 };
 
-const socialLinks = [
-  { icon: InstagramIcon, label: "Instagram", href: "https://instagram.com/weddingwithindia" },
-  { icon: FacebookIcon, label: "Facebook", href: "https://facebook.com/weddingwithindia" },
-  { icon: TwitterIcon, label: "Twitter / X", href: "https://twitter.com/weddingwithindia" },
-  { icon: YoutubeIcon, label: "YouTube", href: "https://youtube.com/weddingwithindia" },
-  { icon: LinkedinIcon, label: "LinkedIn", href: "https://linkedin.com/company/weddingwithindia" },
+/* ===============================================================
+   GLOBAL PRESENCE
+   IMPORTANT:
+   Use "Remote" / "Operating Location" unless the location is
+   legally a registered office of the business.
+=============================================================== */
+
+const globalLocations = [
+  {
+    country: "United States",
+    city: "United States",
+    status: "Remote",
+  },
+  {
+    country: "United Kingdom",
+    city: "United Kingdom",
+    status: "Remote",
+  },
+  {
+    country: "Australia",
+    city: "Australia",
+    status: "Remote",
+  },
+  {
+    country: "India",
+    city: "Jaipur, Rajasthan",
+    status: "Operating Location",
+  },
+  {
+    country: "India",
+    city: "Jaipur, Rajasthan",
+    status: "Operating Location",
+  },
 ];
+
+/* ===============================================================
+   SOCIAL LINKS
+   IMPORTANT:
+   Keep only accounts that are actually owned/operated by
+   Wedding With India.
+=============================================================== */
+
+const socialLinks = [
+  {
+    label: "Instagram",
+    href: "https://instagram.com/weddingwithindia",
+    icon: Instagram,
+  },
+  {
+    label: "Facebook",
+    href: "https://facebook.com/weddingwithindia",
+    icon: Facebook,
+  },
+  {
+    label: "YouTube",
+    href: "https://youtube.com/@weddingwithindia",
+    icon: Youtube,
+  },
+  {
+    label: "LinkedIn",
+    href: "https://linkedin.com/company/weddingwithindia",
+    icon: Linkedin,
+  },
+];
+
+/* ===============================================================
+   FOOTER
+=============================================================== */
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -67,174 +129,451 @@ export default function Footer() {
       className="bg-[var(--color-charcoal-900)] text-white"
       role="contentinfo"
     >
-      {/* Newsletter strip */}
+
+      {/* =========================================================
+          NEWSLETTER
+      ========================================================= */}
+
       <div className="border-b border-white/10">
-        <div className="container-luxury py-12">
+        <div className="container-luxury py-12 sm:py-14">
+
           <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8">
-            <div className="max-w-md">
-              <h2 className="font-display text-2xl font-bold text-white mb-2">
-                Never miss a celebration
+
+            <div className="max-w-xl">
+
+              <div className="text-[0.65rem] font-bold uppercase tracking-[0.18em] text-[var(--color-brand-secondary)] mb-3">
+                Stay Connected
+              </div>
+
+              <h2 className="font-display text-2xl sm:text-3xl font-bold text-white mb-3">
+                Discover India beyond the itinerary.
               </h2>
-              <p className="text-white/80 text-base leading-relaxed">
-                Get curated celebrations, cultural guides, and exclusive
-                early access delivered to your inbox.
+
+              <p className="text-white/60 text-sm sm:text-base leading-relaxed max-w-md">
+                Get new wedding experiences, cultural guides and Wedding With
+                India updates delivered to your inbox.
               </p>
+
             </div>
-            <NewsletterForm />
+
+            <div className="w-full lg:w-auto">
+              <NewsletterForm />
+            </div>
+
           </div>
+
         </div>
       </div>
 
-      {/* Main footer grid */}
-      <div className="container-luxury py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-6 gap-10 xl:gap-8">
-          {/* Brand column */}
-          <div className="md:col-span-2 xl:col-span-2">
+      {/* =========================================================
+          MAIN FOOTER
+      ========================================================= */}
+
+      <div className="container-luxury py-14 sm:py-16">
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-10 lg:gap-8">
+
+          {/* =====================================================
+              BRAND / CONTACT
+          ===================================================== */}
+
+          <div className="md:col-span-2 lg:col-span-2">
+
             <Link
               href="/"
-              className="inline-flex items-center gap-2.5 mb-6 group"
+              className="inline-flex items-center gap-3 mb-6 group"
               aria-label="Wedding With India — Home"
             >
-              <div className="w-10 h-10 rounded-xl bg-[var(--color-brand-primary)] flex items-center justify-center overflow-hidden">
+
+              <div className="w-11 h-11 rounded-xl bg-[var(--color-brand-primary)] flex items-center justify-center overflow-hidden shrink-0">
                 <Image
                   src="/images/logos/logo.png"
-                  alt="Wedding With India Logo"
-                  width={40}
-                  height={40}
+                  alt="Wedding With India"
+                  width={44}
+                  height={44}
                   className="w-full h-full object-cover rounded-xl"
                 />
               </div>
+
               <div className="flex flex-col leading-none">
+
                 <span className="font-display font-bold text-white text-base">
                   Wedding With India
                 </span>
-                <span className="text-[0.625rem] font-medium uppercase tracking-widest text-[var(--color-brand-secondary)] mt-0.5">
-                  Experience Our Indian Weddings
+
+                <span className="text-[0.58rem] font-medium uppercase tracking-[0.14em] text-[var(--color-brand-secondary)] mt-1">
+                  Experience India Differently
                 </span>
+
               </div>
+
             </Link>
 
-            <p className="text-white/90 text-sm leading-relaxed mb-6 max-w-xs">
-              The world&apos;s most trusted platform to celebrate Our Indian Weddings.
-              Connecting Guest Families with authentic cultural celebrations.
+            <p className="text-white/60 text-sm leading-relaxed mb-7 max-w-sm">
+              A platform connecting international travelers with participating
+              Indian wedding experiences and the families who choose to welcome
+              them.
             </p>
 
-            {/* Contact */}
-            <address className="not-italic space-y-3 mb-8">
+            {/* =================================================
+                CONTACT
+            ================================================= */}
+
+            <address className="not-italic space-y-3 mb-7">
+
               <a
                 href="mailto:contact@weddingwithindia.com"
-                className="flex items-center gap-3 text-sm text-white/80 hover:text-[var(--color-brand-secondary)] transition-colors group"
+                className="flex items-start gap-3 text-sm text-white/65 hover:text-[var(--color-brand-secondary)] transition-colors"
               >
+
                 <Mail
                   size={16}
-                  className="text-[var(--color-brand-secondary)] flex-shrink-0"
+                  className="text-[var(--color-brand-secondary)] shrink-0 mt-0.5"
                   aria-hidden="true"
                 />
-                contact@weddingwithindia.com
+
+                <span>
+                  contact@weddingwithindia.com
+                </span>
+
               </a>
+
               <a
                 href="tel:+919116734675"
-                className="flex items-center gap-3 text-sm text-white/80 hover:text-[var(--color-brand-secondary)] transition-colors"
+                className="flex items-start gap-3 text-sm text-white/65 hover:text-[var(--color-brand-secondary)] transition-colors"
               >
+
                 <Phone
                   size={16}
-                  className="text-[var(--color-brand-secondary)] flex-shrink-0"
+                  className="text-[var(--color-brand-secondary)] shrink-0 mt-0.5"
                   aria-hidden="true"
                 />
-                +91 91 1673 4675
+
+                <span>
+                  +91 91 1673 4675
+                </span>
+
               </a>
-              <div className="flex items-start gap-3 text-sm text-white/80">
-                <MapPin
-                  size={16}
-                  className="text-[var(--color-brand-secondary)] flex-shrink-0 mt-0.5"
-                  aria-hidden="true"
-                />
-                <div className="flex flex-col gap-0.5">
-                  <span>Birmingham, UK - Remote</span>
-                  <span>New Delhi, India - Remote</span>
-                </div>
-              </div>
+
             </address>
 
-            {/* Socials */}
-            <div className="flex items-center gap-3" role="list" aria-label="Social media">
-              {socialLinks.map(({ icon: Icon, label, href }) => (
+            {/* =================================================
+                GLOBAL PRESENCE
+            ================================================= */}
+
+            <div className="flex items-start gap-3 mb-7">
+
+              <Globe2
+                size={17}
+                className="text-[var(--color-brand-secondary)] shrink-0 mt-0.5"
+                aria-hidden="true"
+              />
+
+              <div className="min-w-0">
+
+                <div className="text-white font-semibold text-sm mb-3">
+                  Global Presence
+                </div>
+
+                <div className="space-y-2">
+
+                  {globalLocations.map((location, index) => (
+                    <div
+                      key={`${location.city}-${index}`}
+                      className="flex items-center justify-between gap-4"
+                    >
+
+                      <div className="flex items-center gap-2 min-w-0">
+
+                        <MapPin
+                          size={12}
+                          className="text-white/30 shrink-0"
+                          aria-hidden="true"
+                        />
+
+                        <span className="text-xs text-white/60 truncate">
+                          {location.city}
+                        </span>
+
+                      </div>
+
+                      <span className="text-[0.6rem] uppercase tracking-wider text-white/30 whitespace-nowrap">
+                        {location.status}
+                      </span>
+
+                    </div>
+                  ))}
+
+                </div>
+
+              </div>
+
+            </div>
+
+            {/* =================================================
+                SOCIAL MEDIA
+            ================================================= */}
+
+            <div
+              className="flex items-center gap-2.5"
+              aria-label="Wedding With India social media"
+            >
+
+              {socialLinks.map(({ label, href, icon: Icon }) => (
                 <a
                   key={label}
                   href={href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  aria-label={label}
-                  role="listitem"
-                  className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white/80 hover:text-white hover:bg-[var(--color-brand-primary)] hover:border-[var(--color-brand-primary)] transition-all duration-200"
+                  aria-label={`Wedding With India on ${label}`}
+                  className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white/60 hover:text-white hover:bg-[var(--color-brand-primary)] hover:border-[var(--color-brand-primary)] transition-all duration-200"
                 >
-                  <Icon />
+                  <Icon
+                    size={16}
+                    aria-hidden="true"
+                  />
                 </a>
               ))}
+
             </div>
+
           </div>
 
-          {/* Link columns */}
-          {(
-            [
-              { title: "Company", links: footerLinks.company },
-              { title: "For Guests", links: footerLinks.forGuests },
-              { title: "Our Host Families", links: footerLinks.forHosts },
-              { title: "Support", links: footerLinks.support },
-            ] as const
-          ).map(({ title, links }) => (
-            <div key={title} className="xl:col-span-1">
-              <h3 className="text-white font-semibold text-sm mb-5 tracking-wide">
-                {title}
-              </h3>
-              <ul className="space-y-3" role="list">
-                {links.map(({ label, href }) => (
-                  <li key={label} role="listitem">
-                    <Link
-                      href={href}
-                      className="text-white/80 text-sm hover:text-[var(--color-brand-secondary)] transition-colors duration-150"
-                    >
-                      {label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+          {/* =====================================================
+              COMPANY
+          ===================================================== */}
+
+          <FooterColumn
+            title="Company"
+            links={footerLinks.company}
+          />
+
+          {/* =====================================================
+              EXPLORE
+          ===================================================== */}
+
+          <FooterColumn
+            title="Explore"
+            links={footerLinks.explore}
+          />
+
+          {/* =====================================================
+              LEGAL
+          ===================================================== */}
+
+          <FooterColumn
+            title="Legal"
+            links={footerLinks.legal}
+          />
+
+          {/* =====================================================
+              AGREEMENTS
+          ===================================================== */}
+
+          <FooterColumn
+            title="Agreements"
+            links={footerLinks.agreements}
+          />
+
         </div>
+
       </div>
 
-      {/* Bottom bar */}
+      {/* =========================================================
+          GLOBAL PRESENCE TRUST BAR
+      ========================================================= */}
+
       <div className="border-t border-white/10">
+
+        <div className="container-luxury py-8">
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+
+            <TrustItem
+              title="Global Reach"
+              description="Supporting travelers and partners across international markets."
+            />
+
+            <TrustItem
+              title="India Operations"
+              description="Operating presence in Jaipur, Rajasthan."
+            />
+
+            <TrustItem
+              title="Built Around Trust"
+              description="Clear policies, agreements and responsible cultural participation."
+            />
+
+          </div>
+
+        </div>
+
+      </div>
+
+      {/* =========================================================
+          DISCLOSURE
+      ========================================================= */}
+
+      <div className="border-t border-white/10">
+
+        <div className="container-luxury py-7">
+
+          <p className="text-xs leading-relaxed text-white/40 max-w-5xl">
+            Wedding With India is a platform for discovering and coordinating
+            participating wedding experiences. Availability, host
+            participation, verification, services, pricing and other
+            experience details may vary by listing. Experience participation
+            is subject to applicable booking terms, host approval and
+            applicable laws and regulations. Locations shown above represent
+            remote or operating presence and should not be interpreted as
+            registered offices unless expressly identified as such.
+          </p>
+
+        </div>
+
+      </div>
+
+      {/* =========================================================
+          COPYRIGHT / BOTTOM NAV
+      ========================================================= */}
+
+      <div className="border-t border-white/10">
+
         <div className="container-luxury py-6">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-white/70">
-            <p>
+
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-4">
+
+            <p className="text-xs sm:text-sm text-white/40 text-center lg:text-left">
               © {currentYear} Wedding With India. All rights reserved.
             </p>
-            <div className="flex items-center gap-6">
+
+            <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs sm:text-sm text-white/40">
+
               <Link
                 href="/privacy"
                 className="hover:text-white transition-colors"
               >
                 Privacy
               </Link>
+
               <Link
                 href="/terms"
                 className="hover:text-white transition-colors"
               >
                 Terms
               </Link>
+
+              <Link
+                href="/cookies"
+                className="hover:text-white transition-colors"
+              >
+                Cookies
+              </Link>
+
+              <Link
+                href="/contact"
+                className="hover:text-white transition-colors"
+              >
+                Contact
+              </Link>
+
+              <span className="hidden sm:inline text-white/15">
+                |
+              </span>
+
               <span className="flex items-center gap-1.5">
-                Made with{" "}
-                <span className="text-[var(--color-brand-secondary)]" aria-label="love">
+                Made with
+                <span
+                  className="text-[var(--color-brand-secondary)]"
+                  aria-label="love"
+                >
                   ♥
-                </span>{" "}
+                </span>
                 in India
               </span>
+
             </div>
+
           </div>
+
         </div>
+
       </div>
+
     </footer>
+  );
+}
+
+/* ===============================================================
+   FOOTER COLUMN COMPONENT
+=============================================================== */
+
+type FooterColumnProps = {
+  title: string;
+  links: readonly {
+    label: string;
+    href: string;
+  }[];
+};
+
+function FooterColumn({
+  title,
+  links,
+}: FooterColumnProps) {
+  return (
+    <div className="lg:col-span-1">
+
+      <h3 className="text-white font-semibold text-sm mb-5 tracking-wide">
+        {title}
+      </h3>
+
+      <ul className="space-y-3.5" role="list">
+
+        {links.map(({ label, href }) => (
+          <li key={label} role="listitem">
+
+            <Link
+              href={href}
+              className="text-white/55 text-sm hover:text-[var(--color-brand-secondary)] transition-colors duration-150"
+            >
+              {label}
+            </Link>
+
+          </li>
+        ))}
+
+      </ul>
+
+    </div>
+  );
+}
+
+/* ===============================================================
+   TRUST ITEM
+=============================================================== */
+
+function TrustItem({
+  title,
+  description,
+}: {
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="flex items-start gap-3">
+
+      <div className="w-2 h-2 rounded-full bg-[var(--color-brand-secondary)] mt-2 shrink-0" />
+
+      <div>
+        <h3 className="text-sm font-semibold text-white mb-1">
+          {title}
+        </h3>
+
+        <p className="text-xs text-white/40 leading-relaxed">
+          {description}
+        </p>
+      </div>
+
+    </div>
   );
 }

@@ -146,7 +146,7 @@ export async function createStripeCheckoutAction(bookingId: string, couponCode?:
           currency: "usd",
           product_data: {
             name: `Guest Reservation: ${booking.wedding.title}`,
-            description: `${booking.guestsCount} Guest(s) • Tax (${taxPct}%) & Escrow Safety Hold included.`,
+            description: `${booking.guestsCount} Guest(s) • Tax (${taxPct}%) & Platform Service Fee included.`,
             images: booking.wedding.mainImageUrl ? [booking.wedding.mainImageUrl] : [],
           },
           unit_amount: Math.round(finalAmount * 100),

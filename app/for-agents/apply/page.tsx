@@ -60,8 +60,7 @@ export default function AgentApplicationPage() {
   };
 
   return (
-    <div className="px-5 sm:px-8 lg:px-12 xl:px-16">
-    <div className="min-h-screen bg-warm-50/50 pt-28 pb-20 rounded-[2.5rem]">
+    <div className="min-h-screen bg-warm-50 pt-28 pb-20">
       <div className="container-luxury max-w-3xl mx-auto space-y-8">
         
         {/* Header */}
@@ -268,6 +267,5 @@ export default function AgentApplicationPage() {
 
       </div>
     </div>
-  
-    </div>);
+  );
 }

@@ -19,13 +19,13 @@ export function GuestJourneyDiagram() {
     {
       num: "03",
       title: "Secure Checkout",
-      desc: "Book with confidence. Fees are safely held in trust until check-in.",
+      desc: "Book with confidence. Payments are protected and processed via Stripe Checkout.",
       icon: ShieldCheck,
     },
     {
       num: "04",
       title: "Attend & Celebrate",
-      desc: "Receive traditional attire, host greetings, feast, and 24/7 liaison.",
+      desc: "Receive traditional attire, host greetings, feast, and experience liaison support.",
       icon: Heart,
     },
   ];

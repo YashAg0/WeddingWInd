@@ -173,7 +173,7 @@ function VerificationWidget({ role, verification, submitVerification }: { role: 
             <div className="text-emerald-600">✓ Step 1: Documents Uploaded ({verification.submissionDate || "Just now"})</div>
             <div className="text-amber-500 animate-pulse flex items-center gap-1">
               <ArrowRight size={11} />
-              <span>Step 2: Undergoing Background Checks</span>
+              <span>Step 2: Undergoing Identity &amp; Account Screening</span>
             </div>
             <div className="text-charcoal-400">Step 3: Verification Badge Issuance</div>
           </div>

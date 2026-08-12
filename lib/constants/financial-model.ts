@@ -66,7 +66,7 @@ export const PRICING_TIERS: Record<string, PricingTier> = {
     features: [
       "Complete multi-day wedding access with family lounge entry",
       "Bespoke designer attire rental & professional styling",
-      "Dedicated 24/7 personal liaison & translator",
+      "Dedicated personal liaison & translator support",
       "Private luxury transportation throughout the wedding city",
       "Exclusive post-wedding family dinner invitation"
     ]

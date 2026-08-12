@@ -1,6 +1,6 @@
 export default function WeddingDetailLoading() {
   return (
-    <div className="min-h-screen bg-warm-50/50 pt-24 pb-20">
+    <div className="min-h-screen bg-warm-50 pt-24 pb-20">
       
       {/* Header Container Loader */}
       <header className="container-luxury mt-4 flex flex-col gap-4">

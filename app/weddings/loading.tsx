@@ -1,6 +1,6 @@
 export default function WeddingsLoading() {
   return (
-    <div className="min-h-screen bg-warm-50/50 pt-24 pb-16">
+    <div className="min-h-screen bg-warm-50 pt-24 pb-16">
       <div className="container-luxury flex flex-col gap-8">
         
         {/* Search header container loader */}

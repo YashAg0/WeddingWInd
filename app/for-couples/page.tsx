@@ -1,257 +1,628 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowRight, Heart, ShieldCheck, DollarSign, Gift, Users } from "lucide-react";
+import {
+  ArrowRight,
+  CheckCircle2,
+  DollarSign,
+  Gift,
+  Heart,
+  Info,
+  ShieldCheck,
+  Users,
+} from "lucide-react";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import Link from "next/link";
-import { BUSINESS_METRICS } from "@/lib/constants/business-metrics";
 
 const hostFAQs = [
   {
-    q: "Who pays for the guests' clothing?",
-    a: "Guests are responsible for hiring or buying their traditional attire. We encourage hosts to recommend local tailors, but the guest pays for all personal garments."
+    q: "Who pays for the guest's clothing?",
+    a: "Guests are generally responsible for their own clothing and personal purchases unless a particular experience explicitly includes attire. Hosts can share recommendations for local shops or traditional clothing, but should not represent optional purchases as included unless they are part of the confirmed booking.",
   },
   {
-    q: "How many guests should we invite?",
-    a: "It is entirely up to you. Most families invite between 5 to 20 international guests. Your wedding will continue exactly as planned; guests simply join the festivities."
+    q: "How many international guests can we host?",
+    a: "You decide the number of guest places you are comfortable offering, subject to the capacity, venue rules, family preferences and requirements applicable to your celebration. Wedding With India may also apply reasonable limits for safety, operations or experience quality.",
   },
   {
-    q: "How do we receive our payouts?",
-    a: "Earnings are held securely in a trust account when the guest reserves. They are transferred directly to your bank account within 3 business days after the wedding celebrations conclude."
+    q: "How much can we earn?",
+    a: "Your earnings depend on the experience price, number of confirmed and completed bookings, applicable Platform fees, taxes, refunds, payment costs and the commercial terms applicable to your host account. The calculator on this page is only an illustrative estimate and is not a guaranteed payout.",
   },
   {
-    q: "How does the screening process work?",
-    a: "Global guests submit passport scans, social profiles, and write a motivational statement explaining why they wish to attend. You have final approval on every single application."
-  }
+    q: "How does guest verification work?",
+    a: "Wedding With India may use identity, account, booking or other verification measures depending on the experience and applicable requirements. Verification methods can vary, and verification does not guarantee a guest's future conduct or eliminate all risk.",
+  },
+  {
+    q: "Do we have to accept every guest?",
+    a: "Not necessarily. The applicable booking workflow will determine whether a host can review and approve an application. Hosts must apply the Platform's rules consistently and must not reject or treat guests unlawfully on a prohibited discriminatory basis.",
+  },
+  {
+    q: "What happens if we need to cancel?",
+    a: "If you need to cancel or materially change a confirmed experience, notify Wedding With India as soon as reasonably possible. Guest refunds and any resulting host payout adjustments are handled according to the applicable booking and cancellation terms.",
+  },
+  {
+    q: "When will we receive our payout?",
+    a: "Payout timing depends on the payment provider, verification status, the applicable host agreement and the booking's settlement conditions. A specific payout timeframe should only be relied upon when it is expressly shown in your applicable commercial or payout terms.",
+  },
+  {
+    q: "Are we responsible for taxes?",
+    a: "Hosts are responsible for understanding and meeting tax and reporting obligations applicable to income or payments they receive. The exact treatment can depend on your legal status, location, turnover and the nature of the experience. Consider professional tax advice where appropriate.",
+  },
+];
+
+const hostBenefits = [
+  {
+    title: "Share your celebration",
+    description:
+      "Give international travelers an opportunity to experience selected parts of your celebration, traditions, food and hospitality.",
+    icon: Heart,
+  },
+  {
+    title: "Potential additional income",
+    description:
+      "Earn according to the actual bookings and commercial terms applicable to your experience. Use our estimator for an illustrative scenario.",
+    icon: DollarSign,
+  },
+  {
+    title: "Structured guest experience",
+    description:
+      "Present your event details, guest requirements, inclusions and expectations clearly before a traveler books.",
+    icon: ShieldCheck,
+  },
+  {
+    title: "Cross-cultural connection",
+    description:
+      "Meet people from around the world while sharing the traditions and atmosphere that make your celebration special.",
+    icon: Gift,
+  },
+];
+
+const hostResponsibilities = [
+  "Provide accurate information about the wedding experience.",
+  "Only offer access to ceremonies, venues and activities you are authorized to offer.",
+  "Clearly disclose what is and is not included in the guest booking.",
+  "Follow applicable Platform, safety, privacy and payment requirements.",
+  "Treat guests respectfully and maintain reasonable safety standards.",
+  "Promptly report material changes or cancellations affecting confirmed bookings.",
 ];
 
 export default function ForCouplesPage() {
   const [guestCount, setGuestCount] = useState(10);
-  const [pricePerGuest, setPricePerGuest] = useState(16000); // default: Premium Experience tier (INR)
+  const [pricePerGuest, setPricePerGuest] = useState(16000);
 
-  // Host receives 78% of core booking value (per Numbers.pdf)
-  const grossEarnings = guestCount * pricePerGuest;
-  const hostEarnings = Math.round(grossEarnings * 0.72);
-  const totalEarnings = hostEarnings;
+  /*
+   * IMPORTANT:
+   * This is an illustrative calculator only.
+   *
+   * Do not describe this percentage as a guaranteed contractual
+   * host payout unless the actual host commercial agreement uses it.
+   *
+   * Keep this value synchronized with your actual commercial model
+   * if you decide to publicly advertise a standard host share.
+   */
+  const illustrativeHostShare = 0.72;
+
+  const grossBookingValue = guestCount * pricePerGuest;
+  const illustrativeHostAmount = Math.round(
+    grossBookingValue * illustrativeHostShare
+  );
+
+  const tiers = [
+    {
+      label: "Standard",
+      price: 10000,
+      description: "Illustrative ₹10,000 / guest",
+    },
+    {
+      label: "Premium",
+      price: 16000,
+      description: "Illustrative ₹16,000 / guest",
+    },
+    {
+      label: "Royal",
+      price: 32000,
+      description: "Illustrative ₹32,000 / guest",
+    },
+  ];
 
   return (
-    <div className="px-5 sm:px-8 lg:px-12 xl:px-16">
-    <div className="min-h-screen bg-warm-50/50 pt-28 pb-20 rounded-[2.5rem]">
-      
+    <main className="min-h-screen bg-warm-50 pt-28 pb-20">
       {/* Hero */}
-      <section className="container-luxury text-center max-w-3xl mb-16 space-y-4">
+      <section
+        className="container-luxury text-center max-w-3xl mb-16 space-y-5"
+        aria-labelledby="host-heading"
+      >
         <div className="inline-flex items-center gap-2 bg-maroon-50 text-[var(--color-brand-primary)] text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-full border border-maroon-100/50">
-          <Heart size={12} />
-          Become a Host Couple
-        </div>
-        <h1 className="font-display font-bold text-4xl sm:text-5xl text-charcoal-900 leading-tight">
-          Share your joy. <span className="text-gradient-brand">Welcome the world</span>.
-        </h1>
-        <p className="text-charcoal-500 text-sm sm:text-base leading-relaxed">
-          Open your wedding gates to international guests. Share your sacred traditions, create lifelong friendships, and offset your wedding expenses.
-        </p>
-      </section>
-
-      {/* Why Host Benefits Grid */}
-      <section className="container-luxury grid grid-cols-1 md:grid-cols-3 gap-8 mb-20">
-        
-        {/* Benefit 1 */}
-        <div className="bg-white border border-warm-200/50 p-8 rounded-[2rem] shadow-sm space-y-4 text-center">
-          <div className="w-12 h-12 rounded-full bg-maroon-50 text-[var(--color-brand-primary)] mx-auto flex items-center justify-center">
-            <Gift size={20} />
-          </div>
-          <h3 className="font-display font-bold text-lg text-charcoal-900">Cultural Pride</h3>
-          <p className="text-charcoal-500 text-xs sm:text-sm leading-relaxed">
-            Showcase the colors, rituals, music, and cuisine of your region to global guests who appreciate authentic heritage.
-          </p>
+          <Heart size={12} aria-hidden="true" />
+          Host Your Wedding Experience
         </div>
 
-        {/* Benefit 2 */}
-        <div className="bg-white border border-warm-200/50 p-8 rounded-[2rem] shadow-sm space-y-4 text-center">
-          <div className="w-12 h-12 rounded-full bg-maroon-50 text-[var(--color-brand-primary)] mx-auto flex items-center justify-center">
-            <DollarSign size={20} />
-          </div>
-          <h3 className="font-display font-bold text-lg text-charcoal-900">Offset Expenses</h3>
-          <p className="text-charcoal-500 text-xs sm:text-sm leading-relaxed">
-            Hosting guests helps offset the cost of venues, catering, or your honeymoon. Receive secure, guaranteed payouts.
-          </p>
-        </div>
-
-        {/* Benefit 3 */}
-        <div className="bg-white border border-warm-200/50 p-8 rounded-[2rem] shadow-sm space-y-4 text-center">
-          <div className="w-12 h-12 rounded-full bg-maroon-50 text-[var(--color-brand-primary)] mx-auto flex items-center justify-center">
-            <Users size={20} />
-          </div>
-          <h3 className="font-display font-bold text-lg text-charcoal-900">Global Friendships</h3>
-          <p className="text-charcoal-500 text-xs sm:text-sm leading-relaxed">
-            Forge deep relationships with international guests who join your celebrations as family, not strangers.
-          </p>
-        </div>
-
-      </section>
-
-      {/* Interactive Earnings Calculator */}
-      <section className="container-luxury max-w-4xl bg-white border border-warm-200/50 rounded-[2.5rem] p-6 sm:p-10 shadow-sm mb-20 grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
-        <div className="space-y-6">
-          <SectionHeader
-            title="Calculate Your Earnings"
-            align="left"
-            className="mb-0"
-          />
-          <p className="text-charcoal-600 text-sm leading-relaxed">
-            Specify the number of international guest slots you want to share and the price per guest based on your luxury level and food inclusions.
-          </p>
-
-          {/* Guest slots selector */}
-          <div className="space-y-2">
-            <div className="flex justify-between text-xs font-bold text-charcoal-500 uppercase tracking-wider">
-              <span>Guest Slots</span>
-              <span className="text-[var(--color-brand-primary)] font-black">{guestCount} slots</span>
-            </div>
-            <input
-              type="range"
-              min="5"
-              max="50"
-              step="5"
-              value={guestCount}
-              onChange={(e) => setGuestCount(Number(e.target.value))}
-              className="w-full h-1.5 bg-warm-200 rounded-lg appearance-none cursor-pointer accent-[var(--color-brand-primary)]"
-            />
-          </div>
-
-          {/* Price selector — tiers in INR per Numbers.pdf */}
-          <div className="space-y-2">
-            <div className="flex justify-between text-xs font-bold text-charcoal-500 uppercase tracking-wider">
-              <span>Guest Tier (per guest)</span>
-              <span className="text-[var(--color-brand-primary)] font-black">₹{pricePerGuest.toLocaleString("en-IN")}</span>
-            </div>
-            <input
-              type="range"
-              min="9000"
-              max="30000"
-              step="4500"
-              value={pricePerGuest}
-              onChange={(e) => setPricePerGuest(Number(e.target.value))}
-              className="w-full h-1.5 bg-warm-200 rounded-lg appearance-none cursor-pointer accent-[var(--color-brand-primary)]"
-            />
-            <div className="flex justify-between text-[0.6rem] text-charcoal-400 font-medium">
-              <span>₹7,499 Cultural</span>
-              <span>₹11,999 Celebration</span>
-              <span>₹17,999 Immersive</span>
-              <span>₹29,999 Premium</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Results output Card */}
-        <div className="bg-maroon-900 text-white rounded-[2rem] p-8 text-center space-y-4 relative overflow-hidden shadow-md">
-          <div className="absolute inset-0 opacity-5 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-white via-transparent to-transparent" />
-          
-          <span className="inline-block text-[0.625rem] font-bold uppercase tracking-widest bg-white/10 px-3.5 py-1.5 rounded-full border border-white/20">
-            Estimated Earnings
+        <h1
+          id="host-heading"
+          className="font-display font-bold text-4xl sm:text-5xl text-charcoal-900 leading-tight"
+        >
+          Share your celebration.{" "}
+          <span className="text-gradient-brand">
+            Welcome guests from around the world.
           </span>
-          
-          <h4 className="font-display font-black text-4xl sm:text-5xl text-gradient-gold">
-            ₹{totalEarnings.toLocaleString("en-IN")}
-          </h4>
+        </h1>
 
-          <div className="text-white/70 text-xs space-y-1">
-            <p>Host receives <strong className="text-white">78%</strong> of core booking value</p>
-            <p className="text-white/50">(Gross: ₹{grossEarnings.toLocaleString("en-IN")} · Platform fee 22% = ₹{(grossEarnings - totalEarnings).toLocaleString("en-IN")})</p>
+        <p className="text-charcoal-500 text-sm sm:text-base leading-relaxed max-w-2xl mx-auto">
+          Wedding With India helps eligible hosts offer selected parts of their
+          Indian wedding celebrations to international travelers who want to
+          experience Indian culture respectfully.
+        </p>
+
+        <div className="flex flex-wrap justify-center gap-3 pt-2">
+          <Link
+            href="/list-wedding"
+            className="btn btn-primary btn-lg inline-flex items-center gap-2 shadow-sm"
+          >
+            Apply to Become a Host
+            <ArrowRight size={16} aria-hidden="true" />
+          </Link>
+
+          <Link
+            href="#earnings"
+            className="btn btn-secondary btn-lg inline-flex items-center gap-2"
+          >
+            Estimate Earnings
+          </Link>
+        </div>
+      </section>
+
+      {/* Benefits */}
+      <section
+        className="container-luxury max-w-6xl mb-20"
+        aria-labelledby="benefits-heading"
+      >
+        <div className="text-center max-w-2xl mx-auto mb-8">
+          <p className="text-xs font-bold uppercase tracking-widest text-[var(--color-brand-primary)]">
+            Why host?
+          </p>
+
+          <h2
+            id="benefits-heading"
+            className="font-display font-bold text-2xl sm:text-3xl text-charcoal-900 mt-2"
+          >
+            More than a wedding listing
+          </h2>
+
+          <p className="text-sm text-charcoal-500 mt-2 leading-relaxed">
+            Build a thoughtfully designed cultural experience around a
+            celebration you are already having.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          {hostBenefits.map((benefit) => {
+            const Icon = benefit.icon;
+
+            return (
+              <div
+                key={benefit.title}
+                className="bg-white border border-warm-200/50 p-7 rounded-[2rem] shadow-sm space-y-4"
+              >
+                <div className="w-11 h-11 rounded-xl bg-maroon-50 text-[var(--color-brand-primary)] flex items-center justify-center">
+                  <Icon size={21} aria-hidden="true" />
+                </div>
+
+                <h3 className="font-display font-bold text-lg text-charcoal-900">
+                  {benefit.title}
+                </h3>
+
+                <p className="text-charcoal-600 text-sm leading-relaxed">
+                  {benefit.description}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* How hosting works */}
+      <section
+        className="container-luxury max-w-5xl mb-20"
+        aria-labelledby="process-heading"
+      >
+        <div className="bg-white border border-warm-200/50 rounded-[2.5rem] p-7 sm:p-10 shadow-sm">
+          <div className="text-center max-w-2xl mx-auto mb-10">
+            <p className="text-xs font-bold uppercase tracking-widest text-[var(--color-brand-primary)]">
+              The host journey
+            </p>
+
+            <h2
+              id="process-heading"
+              className="font-display font-bold text-2xl sm:text-3xl text-charcoal-900 mt-2"
+            >
+              From wedding plans to international guests
+            </h2>
           </div>
-          
-          <p className="text-white/60 text-[0.6875rem] max-w-xs mx-auto leading-relaxed">
-            Estimates per Numbers.pdf financial model. Actual payouts processed 7 days post-event.
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            {[
+              {
+                number: "01",
+                title: "Apply",
+                text: "Tell us about your celebration, location, dates, available guest places and the experience you want to offer.",
+              },
+              {
+                number: "02",
+                title: "Review",
+                text: "We may review your information and request verification or additional details before your experience is published.",
+              },
+              {
+                number: "03",
+                title: "Receive bookings",
+                text: "Eligible travelers can discover your experience and submit bookings according to the applicable booking workflow.",
+              },
+              {
+                number: "04",
+                title: "Host",
+                text: "Welcome confirmed guests to the parts of your celebration included in their booking and follow the applicable host requirements.",
+              },
+            ].map((step) => (
+              <div key={step.number} className="space-y-3">
+                <div className="text-xs font-bold tracking-widest text-[var(--color-brand-primary)]">
+                  {step.number}
+                </div>
+
+                <h3 className="font-display font-bold text-lg text-charcoal-900">
+                  {step.title}
+                </h3>
+
+                <p className="text-sm text-charcoal-500 leading-relaxed">
+                  {step.text}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Earnings calculator */}
+      <section
+        id="earnings"
+        className="container-luxury max-w-4xl bg-white border border-warm-200/50 rounded-[2.5rem] p-7 sm:p-12 shadow-sm mb-20 space-y-8"
+        aria-labelledby="earnings-heading"
+      >
+        <div className="text-center space-y-2 max-w-xl mx-auto">
+          <span className="text-xs font-bold text-[var(--color-brand-primary)] uppercase tracking-widest">
+            Illustrative earnings calculator
+          </span>
+
+          <h2
+            id="earnings-heading"
+            className="font-display font-bold text-2xl sm:text-3xl text-charcoal-900"
+          >
+            What could your bookings look like?
+          </h2>
+
+          <p className="text-xs sm:text-sm text-charcoal-500 leading-relaxed">
+            Adjust the guest count and example experience price to see an
+            illustrative scenario.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center pt-4">
+          <div className="space-y-7">
+            {/* Guest capacity */}
+            <div className="space-y-3">
+              <div className="flex justify-between gap-4 text-xs font-bold text-charcoal-700">
+                <span>Illustrative guest places</span>
+
+                <span className="text-[var(--color-brand-primary)]">
+                  {guestCount} guests
+                </span>
+              </div>
+
+              <input
+                type="range"
+                min={1}
+                max={30}
+                value={guestCount}
+                onChange={(e) => setGuestCount(Number(e.target.value))}
+                aria-label="Number of illustrative guest places"
+                className="w-full accent-[var(--color-brand-primary)] cursor-pointer"
+              />
+
+              <div className="flex justify-between text-[0.6875rem] text-charcoal-400">
+                <span>1</span>
+                <span>30</span>
+              </div>
+            </div>
+
+            {/* Experience tier */}
+            <div className="space-y-3">
+              <span className="text-xs font-bold text-charcoal-700 block">
+                Example experience price
+              </span>
+
+              <div className="grid grid-cols-3 gap-2">
+                {tiers.map((tier) => {
+                  const selected = pricePerGuest === tier.price;
+
+                  return (
+                    <button
+                      key={tier.label}
+                      type="button"
+                      onClick={() => setPricePerGuest(tier.price)}
+                      aria-pressed={selected}
+                      className={`py-3 px-2 rounded-xl text-xs font-bold transition-all border ${
+                        selected
+                          ? "bg-[var(--color-brand-primary)] text-white border-[var(--color-brand-primary)]"
+                          : "bg-warm-50 text-charcoal-700 border-warm-200 hover:border-warm-300"
+                      }`}
+                    >
+                      <span className="block">{tier.label}</span>
+                      <span
+                        className={`block mt-1 text-[0.625rem] font-medium ${
+                          selected
+                            ? "text-white/80"
+                            : "text-charcoal-400"
+                        }`}
+                      >
+                        ₹{tier.price.toLocaleString()}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Gross booking value */}
+            <div className="rounded-2xl bg-warm-50 border border-warm-200 p-4">
+              <div className="flex items-center justify-between gap-4">
+                <span className="text-xs text-charcoal-500">
+                  Illustrative gross booking value
+                </span>
+
+                <span className="font-bold text-charcoal-900">
+                  ₹{grossBookingValue.toLocaleString()}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Result */}
+          <div className="bg-warm-100/70 border border-warm-200 p-7 sm:p-8 rounded-3xl text-center space-y-4">
+            <span className="text-xs font-bold text-charcoal-500 uppercase tracking-wider block">
+              Illustrative host amount
+            </span>
+
+            <div className="font-display font-bold text-4xl sm:text-5xl text-[var(--color-brand-primary)]">
+              ₹{illustrativeHostAmount.toLocaleString()}
+            </div>
+
+            <p className="text-xs text-charcoal-500 max-w-sm mx-auto leading-relaxed">
+              This example uses a {Math.round(illustrativeHostShare * 100)}%
+              host-share assumption. It is not a guaranteed payout and does not
+              account for taxes, refunds, payment costs, adjustments or
+              booking-specific terms.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-start gap-3 rounded-2xl border border-warm-200 bg-white p-5">
+          <Info
+            size={19}
+            className="mt-0.5 shrink-0 text-[var(--color-brand-primary)]"
+            aria-hidden="true"
+          />
+
+          <p className="text-xs sm:text-sm text-charcoal-600 leading-relaxed">
+            <strong className="text-charcoal-900">
+              Important:
+            </strong>{" "}
+            The calculator is for planning purposes only. Your actual
+            commercial terms are determined by the host agreement and applicable
+            booking terms accepted by you. Do not rely on this calculator as a
+            promise of income.
           </p>
         </div>
       </section>
 
-      {/* Safety & Vetting Check */}
-      <section className="container-luxury max-w-4xl bg-warm-100 border border-warm-200/50 rounded-[2.5rem] p-6 sm:p-10 shadow-sm mb-20 space-y-6">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-white text-[var(--color-brand-primary)] flex items-center justify-center shadow-sm">
-            <ShieldCheck size={20} />
-          </div>
-          <h2 className="font-display font-bold text-xl text-charcoal-900">
-            Guaranteed Host Safety & Vetting
-          </h2>
-        </div>
-        
-        <p className="text-charcoal-600 text-sm leading-relaxed">
-          We treat your wedding as if it were our own family event. We have built strict vetting checkpoints to ensure guests are respectful, safe, and culturally aligned:
-        </p>
-
+      {/* Responsibilities */}
+      <section
+        className="container-luxury max-w-5xl mb-20"
+        aria-labelledby="responsibilities-heading"
+      >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-1">
-            <h4 className="font-sans font-bold text-sm text-charcoal-800">1. Full Identity Vetting</h4>
-            <p className="text-charcoal-500 text-xs leading-relaxed">
-              Every guest must upload verified copies of passports and link active social profiles.
+          <div className="bg-white border border-warm-200/50 rounded-[2rem] p-7 sm:p-8 shadow-sm">
+            <div className="w-11 h-11 rounded-xl bg-maroon-50 text-[var(--color-brand-primary)] flex items-center justify-center mb-5">
+              <Users size={21} aria-hidden="true" />
+            </div>
+
+            <h2
+              id="responsibilities-heading"
+              className="font-display font-bold text-xl text-charcoal-900"
+            >
+              Your responsibilities
+            </h2>
+
+            <p className="text-sm text-charcoal-500 leading-relaxed mt-2 mb-5">
+              Hosting is a real-world responsibility. A successful experience
+              starts with accurate information and clear expectations.
             </p>
+
+            <div className="space-y-3">
+              {hostResponsibilities.map((item) => (
+                <div key={item} className="flex items-start gap-3">
+                  <CheckCircle2
+                    size={17}
+                    className="mt-0.5 shrink-0 text-[var(--color-brand-primary)]"
+                    aria-hidden="true"
+                  />
+
+                  <p className="text-sm text-charcoal-600 leading-relaxed">
+                    {item}
+                  </p>
+                </div>
+              ))}
+            </div>
           </div>
-          <div className="space-y-1">
-            <h4 className="font-sans font-bold text-sm text-charcoal-800">2. Motivation Review</h4>
-            <p className="text-charcoal-500 text-xs leading-relaxed">
-              Guests submit application letters explaining why they want to join, ensuring genuine cultural interest.
+
+          <div className="bg-white border border-warm-200/50 rounded-[2rem] p-7 sm:p-8 shadow-sm">
+            <div className="w-11 h-11 rounded-xl bg-maroon-50 text-[var(--color-brand-primary)] flex items-center justify-center mb-5">
+              <ShieldCheck size={21} aria-hidden="true" />
+            </div>
+
+            <h2 className="font-display font-bold text-xl text-charcoal-900">
+              What Wedding With India does
+            </h2>
+
+            <p className="text-sm text-charcoal-500 leading-relaxed mt-2 mb-5">
+              Depending on the experience and operational setup, the Platform
+              may support hosts with:
             </p>
-          </div>
-          <div className="space-y-1">
-            <h4 className="font-sans font-bold text-sm text-charcoal-800">3. Local Etiquette Briefings</h4>
-            <p className="text-charcoal-500 text-xs leading-relaxed">
-              Guests complete a mandatory training guide outlining attire guidelines, gift rules, and ritual etiquette.
-            </p>
-          </div>
-          <div className="space-y-1">
-            <h4 className="font-sans font-bold text-sm text-charcoal-800">4. 24/7 Security Liaison</h4>
-            <p className="text-charcoal-500 text-xs leading-relaxed">
-              Our local bilingual manager monitors each event, serving as a safety buffer for both family and guests.
-            </p>
+
+            <div className="space-y-3">
+              {[
+                "Experience discovery and listing management.",
+                "Guest applications and booking workflows.",
+                "Applicable identity or account verification.",
+                "Platform communications and booking information.",
+                "Payment processing through applicable payment infrastructure.",
+                "Support and operational guidance related to the Platform.",
+              ].map((item) => (
+                <div key={item} className="flex items-start gap-3">
+                  <CheckCircle2
+                    size={17}
+                    className="mt-0.5 shrink-0 text-[var(--color-brand-primary)]"
+                    aria-hidden="true"
+                  />
+
+                  <p className="text-sm text-charcoal-600 leading-relaxed">
+                    {item}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-6 rounded-xl bg-warm-50 border border-warm-200 p-4">
+              <p className="text-xs text-charcoal-500 leading-relaxed">
+                Wedding With India does not replace local emergency services,
+                immigration authorities, professional legal advisers, tax
+                advisers, medical providers or venue operators.
+              </p>
+            </div>
           </div>
         </div>
       </section>
 
       {/* FAQs */}
-      <section className="container-luxury max-w-3xl mb-20 space-y-10" aria-label="Frequently Asked Questions">
+      <section
+        className="container-luxury max-w-3xl mb-20 space-y-8"
+        aria-labelledby="faq-heading"
+      >
         <SectionHeader
-          label="FAQs"
-          title="Questions about hosting"
-          highlightedWord="hosting"
+          label="Host Guidance"
+          title="Frequently Asked Questions"
+          highlightedWord="Questions"
         />
 
         <div className="space-y-4">
           {hostFAQs.map((faq) => (
-            <details key={faq.q} className="group bg-white border border-warm-200/50 rounded-2xl p-5 shadow-sm cursor-pointer transition-colors duration-200">
-              <summary className="font-sans font-bold text-sm sm:text-base text-charcoal-800 flex justify-between items-center list-none outline-none">
-                <span>{faq.q}</span>
-                <span className="text-charcoal-400 group-open:rotate-50 transition-transform duration-200">↓</span>
+            <details
+              key={faq.q}
+              className="group bg-white border border-warm-200/50 rounded-2xl shadow-sm overflow-hidden"
+            >
+              <summary className="list-none cursor-pointer p-6 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-brand-primary)]">
+                <div className="flex items-start justify-between gap-5">
+                  <h3 className="font-display font-bold text-base text-charcoal-900">
+                    {faq.q}
+                  </h3>
+
+                  <span
+                    className="text-[var(--color-brand-primary)] text-lg leading-none transition-transform group-open:rotate-45"
+                    aria-hidden="true"
+                  >
+                    +
+                  </span>
+                </div>
               </summary>
-              <p className="text-charcoal-500 text-xs sm:text-sm leading-relaxed mt-3 pt-3 border-t border-warm-100">
-                {faq.a}
-              </p>
+
+              <div className="px-6 pb-6">
+                <p className="text-charcoal-600 text-sm leading-relaxed">
+                  {faq.a}
+                </p>
+              </div>
             </details>
           ))}
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="container-luxury text-center">
-        <div className="max-w-2xl mx-auto space-y-6">
-          <h2 className="font-display font-bold text-2xl sm:text-3xl text-charcoal-900">
-            Ready to share your celebration?
-          </h2>
-          <p className="text-charcoal-500 text-sm max-w-md mx-auto">
-            Join {BUSINESS_METRICS.WEDDINGS_HOSTED} verified host families across India sharing their special moments with guests from all corners of the globe.
-          </p>
-          <Link
-            href="/login?redirect_url=/dashboard/operations"
-            className="btn btn-primary btn-lg shadow-lg group inline-flex gap-2"
-          >
-            Share Your Celebration
-            <ArrowRight size={16} className="group-hover:translate-x-0.5 transition-transform" />
-          </Link>
+      {/* Legal / commercial disclaimer */}
+      <section className="container-luxury max-w-3xl mb-16">
+        <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-6">
+          <div className="flex items-start gap-3">
+            <Info
+              size={20}
+              className="mt-0.5 shrink-0 text-amber-700"
+              aria-hidden="true"
+            />
+
+            <div className="space-y-3">
+              <h2 className="font-display font-bold text-lg text-charcoal-900">
+                Important information for prospective hosts
+              </h2>
+
+              <p className="text-sm text-charcoal-700 leading-relaxed">
+                Applying to become a host does not guarantee approval,
+                publication, bookings, guest attendance or earnings.
+              </p>
+
+              <p className="text-sm text-charcoal-700 leading-relaxed">
+                Any fees, commissions, host-share percentages, taxes, payment
+                processing costs, refund adjustments and payout timing are
+                governed by the applicable host commercial agreement and booking
+                terms.
+              </p>
+
+              <p className="text-sm text-charcoal-600 leading-relaxed">
+                Hosts remain responsible for complying with applicable laws,
+                venue requirements, tax obligations, privacy requirements and
+                other obligations relating to their activities.
+              </p>
+            </div>
+          </div>
         </div>
       </section>
 
-    </div>
-  
-    </div>);
+      {/* Final CTA */}
+      <section
+        className="container-luxury text-center max-w-2xl"
+        aria-labelledby="cta-heading"
+      >
+        <div className="bg-white border border-warm-200/50 p-8 sm:p-10 rounded-[2.5rem] shadow-sm space-y-5">
+          <div className="w-11 h-11 mx-auto rounded-xl bg-maroon-50 text-[var(--color-brand-primary)] flex items-center justify-center">
+            <Heart size={20} aria-hidden="true" />
+          </div>
+
+          <h2
+            id="cta-heading"
+            className="font-display font-bold text-2xl text-charcoal-900"
+          >
+            Ready to share your celebration?
+          </h2>
+
+          <p className="text-charcoal-500 text-sm leading-relaxed">
+            Submit your host application and tell us about the celebration you
+            would like to share with international travelers.
+          </p>
+
+          <Link
+            href="/list-wedding"
+            className="btn btn-primary btn-lg shadow-lg group inline-flex gap-2"
+          >
+            Apply to Become a Host
+            <ArrowRight
+              size={16}
+              className="group-hover:translate-x-0.5 transition-transform"
+              aria-hidden="true"
+            />
+          </Link>
+        </div>
+      </section>
+    </main>
+  );
 }

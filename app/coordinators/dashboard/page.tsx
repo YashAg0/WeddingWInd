@@ -39,7 +39,7 @@ export default async function CoordinatorDashboardPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-warm-50/50 pt-28 pb-20">
+    <div className="min-h-screen bg-warm-50 pt-28 pb-20">
       <div className="container-luxury max-w-5xl mx-auto space-y-10">
         
         {/* Header */}

@@ -2,214 +2,449 @@
 
 import { motion } from "framer-motion";
 import Image from "next/image";
-import { ShieldCheck, Compass, Users, Award } from "lucide-react";
+import Link from "next/link";
+import {
+  ShieldCheck,
+  Compass,
+  Users,
+  Heart,
+  ArrowRight,
+  CheckCircle2,
+} from "lucide-react";
 import { SectionHeader } from "@/components/ui/SectionHeader";
-
-import { BUSINESS_METRICS } from "@/lib/constants/business-metrics";
-
-const stats = [
-  { value: BUSINESS_METRICS.WEDDINGS_HOSTED, label: "Weddings Hosted" },
-  { value: BUSINESS_METRICS.GLOBAL_GUESTS, label: "Global Guests" },
-  { value: BUSINESS_METRICS.COUNTRIES_REPRESENTED, label: "Countries Represented" },
-  { value: BUSINESS_METRICS.SATISFACTION_RATE, label: "Satisfaction Rate" }
-];
-
-const milestones = [
-  {
-    year: "2023",
-    title: "The Spark",
-    description: "Our founder Arjun attended a wedding in Rajasthan with foreign friends, witnessing their awe. The idea for cultural wedding immersion was born."
-  },
-  {
-    year: "2024",
-    title: "Verifying Hosts",
-    description: "Vetted and onboarded the first 50 host families in Jaipur, Goa, and Amritsar. Conducted first 200 pilot experiences with 100% safety record."
-  },
-  {
-    year: "2025",
-    title: "Scaling Trust",
-    description: "Launched the global guest liaison system, partnering with local translators and curators to offer 24/7 on-ground assistance."
-  },
-  {
-    year: "2026",
-    title: "Platform Expansion",
-    description: `Onboarded ${BUSINESS_METRICS.WEDDINGS_HOSTED} weddings and welcomed guests from ${BUSINESS_METRICS.COUNTRIES_REPRESENTED} countries, establishing the gold standard of cultural immersion.`
-  }
-];
 
 export default function AboutPage() {
   return (
-    <div className="min-h-screen bg-warm-50/50 pt-28 pb-20">
-      
-      {/* Hero Section */}
-      <section className="container-luxury text-center max-w-4xl mb-16 space-y-6">
+    <main className="min-h-screen bg-warm-50 pt-28 pb-20">
+
+      {/* =========================================================
+          HERO
+      ========================================================= */}
+      <section className="container-luxury text-center max-w-4xl mb-20 space-y-6">
         <motion.div
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
           className="inline-flex items-center gap-2 bg-maroon-50 text-[var(--color-brand-primary)] text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-full border border-maroon-100/50"
         >
-          <Compass size={12} />
-          Our Story
+          <Compass size={13} aria-hidden="true" />
+          About Wedding With India
         </motion.div>
-        
+
         <motion.h1
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.1 }}
           className="font-display font-bold text-4xl sm:text-5xl lg:text-6xl text-charcoal-900 leading-tight"
         >
-          Beyond tourism. Into the <span className="text-gradient-brand">heart of culture</span>.
+          Experience India
+          <br />
+          <span className="text-gradient-brand">
+            beyond the usual itinerary.
+          </span>
         </motion.h1>
-        
+
         <motion.p
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
           className="text-charcoal-500 text-base sm:text-lg leading-relaxed max-w-2xl mx-auto"
         >
-          We are the world&apos;s most trusted platform connecting global guests with genuine Indian families to attend Our Indian Weddings as honored guests.
+          Wedding With India is building a platform for international
+          travelers who want to experience Indian weddings and culture through
+          genuine, respectful connections with host families.
         </motion.p>
       </section>
 
-      {/* Story & Image Row */}
-      <section className="container-luxury grid grid-cols-1 lg:grid-cols-12 gap-12 items-center mb-20">
-        <div className="lg:col-span-6 space-y-6">
+      {/* =========================================================
+          WHAT WE DO
+      ========================================================= */}
+      <section className="container-luxury max-w-5xl mb-24">
+        <div className="bg-white border border-warm-200/60 rounded-[2.5rem] p-7 sm:p-10 lg:p-12 shadow-sm">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-center">
+
+            <div className="space-y-6">
+              <SectionHeader
+                label="What We Do"
+                title="A different way to experience India"
+                highlightedWord="different"
+                align="left"
+                className="mb-0"
+              />
+
+              <p className="text-charcoal-600 text-sm sm:text-base leading-relaxed">
+                Indian weddings bring together food, music, clothing, rituals,
+                family and community in a way that is difficult to experience
+                through conventional tourism.
+              </p>
+
+              <p className="text-charcoal-600 text-sm sm:text-base leading-relaxed">
+                Wedding With India is designed to make it possible for
+                international travelers to discover these celebrations through
+                structured experiences while respecting the privacy, wishes and
+                traditions of the families involved.
+              </p>
+
+              <div className="flex flex-col gap-3 pt-2">
+                {[
+                  "Discover authentic Indian wedding experiences",
+                  "Connect with participating host families",
+                  "Understand cultural etiquette before attending",
+                  "Coordinate the guest experience through the platform",
+                ].map((item) => (
+                  <div
+                    key={item}
+                    className="flex items-start gap-3 text-sm text-charcoal-700"
+                  >
+                    <CheckCircle2
+                      size={18}
+                      className="mt-0.5 shrink-0 text-[var(--color-brand-primary)]"
+                      aria-hidden="true"
+                    />
+                    <span>{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="relative h-[340px] sm:h-[400px] rounded-[2rem] overflow-hidden border border-warm-200/60 shadow-md">
+              <Image
+                src="https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=1200&q=85"
+                alt="Indian wedding celebration with guests"
+                fill
+                sizes="(max-width: 1024px) 100vw, 50vw"
+                className="object-cover"
+                priority
+              />
+
+              <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
+
+              <div className="absolute bottom-5 left-5 right-5">
+                <div className="inline-flex items-center gap-2 bg-white/95 backdrop-blur-sm rounded-xl px-4 py-3 shadow-lg">
+                  <Heart
+                    size={17}
+                    className="text-[var(--color-brand-primary)]"
+                    aria-hidden="true"
+                  />
+
+                  <span className="text-xs sm:text-sm font-semibold text-charcoal-900">
+                    Culture is best experienced with people.
+                  </span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      {/* =========================================================
+          STORY
+      ========================================================= */}
+      <section className="container-luxury max-w-4xl mb-24">
+        <div className="text-center max-w-3xl mx-auto space-y-5">
           <SectionHeader
-            title="How It All Started"
-            align="left"
-            className="mb-0"
+            label="Our Story"
+            title="Born from a simple idea"
+            highlightedWord="simple"
           />
+
           <p className="text-charcoal-600 text-sm sm:text-base leading-relaxed">
-            In 2023, while attending his cousin&apos;s grand wedding in Jodhpur, our founder noticed several international guests standing outside the palace gate, fascinated by the colorful procession, the drums, and the joyful energy. He invited them inside to join the family.
+            Founded by <strong>Tanishq Gupta</strong> in July together with a team of co-founders and friends, Wedding With India was born from a simple observation: a wedding can reveal more about a culture in a few hours than a conventional sightseeing itinerary can reveal in days.
           </p>
+
           <p className="text-charcoal-600 text-sm sm:text-base leading-relaxed">
-            That single evening transformed those guests&apos; lives. They didn&apos;t just sightsee; they danced, tasted authentic recipes, and shared stories with the couple. We realized that weddings are the ultimate window into a culture&apos;s soul.
+            The mission behind Wedding With India is to create a structured, responsible way for international visitors to participate in authentic Indian wedding celebrations when participating host families choose to welcome them.
           </p>
-          <p className="text-charcoal-600 text-sm sm:text-base leading-relaxed font-semibold">
-            Wedding With India was built to make these life-changing cultural connections safe, respectful, and accessible to the world.
+
+          <p className="text-charcoal-700 text-sm sm:text-base leading-relaxed font-semibold">
+            We are building the platform infrastructure around that mission — discovery, applications, identity verification, guest guidance, and experience coordination.
           </p>
-        </div>
-        <div className="lg:col-span-6 relative h-[380px] rounded-[2rem] overflow-hidden shadow-lg border border-warm-200/50">
-          <Image
-            src="https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=800&q=80"
-            alt="Traditional Indian Wedding Celebration"
-            fill
-            className="object-cover"
-          />
+
+          <div className="pt-6">
+            <div className="inline-flex flex-col sm:flex-row items-center gap-4 bg-white border border-warm-200/60 rounded-3xl p-5 shadow-sm max-w-md mx-auto text-left">
+              <div className="relative w-16 h-16 rounded-full overflow-hidden shrink-0 border-2 border-maroon-100/70 shadow-sm">
+                <Image
+                  src="/images/founder/founder.png"
+                  alt="Tanishq Gupta, Founder of Wedding With India"
+                  fill
+                  sizes="64px"
+                  className="object-cover"
+                />
+              </div>
+              <div className="space-y-1 text-center sm:text-left">
+                <h4 className="font-display font-bold text-base text-charcoal-900">
+                  Tanishq Gupta
+                </h4>
+                <p className="text-xs text-charcoal-500 font-medium">
+                  Founder, Wedding With India
+                </p>
+                <Link
+                  href="/founder/tanishq-gupta"
+                  className="inline-flex items-center gap-1 text-xs font-bold text-[var(--color-brand-primary)] hover:underline pt-0.5"
+                >
+                  Read Founder Profile <ArrowRight size={12} />
+                </Link>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* Mission & Vision Cards */}
-      <section className="container-luxury grid grid-cols-1 md:grid-cols-2 gap-8 mb-20">
-        <div className="bg-white border border-warm-200/50 p-8 rounded-[2rem] shadow-sm space-y-4">
-          <div className="w-10 h-10 rounded-xl bg-maroon-50 text-[var(--color-brand-primary)] flex items-center justify-center">
-            <Compass size={20} />
+      {/* =========================================================
+          MISSION + VISION
+      ========================================================= */}
+      <section className="container-luxury grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8 mb-24">
+
+        <div className="bg-white border border-warm-200/60 p-7 sm:p-9 rounded-[2rem] shadow-sm space-y-5">
+          <div className="w-11 h-11 rounded-xl bg-maroon-50 text-[var(--color-brand-primary)] flex items-center justify-center">
+            <Compass size={21} aria-hidden="true" />
           </div>
-          <h3 className="font-display font-bold text-xl text-charcoal-900">Our Mission</h3>
+
+          <div>
+            <span className="text-[0.65rem] font-bold uppercase tracking-widest text-charcoal-400">
+              Our Mission
+            </span>
+
+            <h2 className="font-display font-bold text-2xl text-charcoal-900 mt-2">
+              Make cultural immersion more accessible.
+            </h2>
+          </div>
+
           <p className="text-charcoal-600 text-sm leading-relaxed">
-            To bridge cultural gaps by offering guests deep, respectful cultural immersion while empowering local families to share their heritage and celebrations with the world.
+            We want international travelers to experience India through
+            meaningful human connections while giving participating families
+            control over how, when and whether they welcome guests.
           </p>
         </div>
 
-        <div className="bg-white border border-warm-200/50 p-8 rounded-[2rem] shadow-sm space-y-4">
-          <div className="w-10 h-10 rounded-xl bg-maroon-50 text-[var(--color-brand-primary)] flex items-center justify-center">
-            <Award size={20} />
+        <div className="bg-white border border-warm-200/60 p-7 sm:p-9 rounded-[2rem] shadow-sm space-y-5">
+          <div className="w-11 h-11 rounded-xl bg-maroon-50 text-[var(--color-brand-primary)] flex items-center justify-center">
+            <Heart size={21} aria-hidden="true" />
           </div>
-          <h3 className="font-display font-bold text-xl text-charcoal-900">Our Vision</h3>
+
+          <div>
+            <span className="text-[0.65rem] font-bold uppercase tracking-widest text-charcoal-400">
+              Our Vision
+            </span>
+
+            <h2 className="font-display font-bold text-2xl text-charcoal-900 mt-2">
+              Make travel feel more human.
+            </h2>
+          </div>
+
           <p className="text-charcoal-600 text-sm leading-relaxed">
-            To redefine experiential travel, transforming the journey into real human connections, mutual respect, and shared celebrations that guests will remember for a lifetime.
+            We envision a world where travelers can discover cultures through
+            genuine participation rather than simply observing them from the
+            outside.
           </p>
         </div>
+
       </section>
 
-      {/* Growth Timeline */}
-      <section className="container-luxury mb-20 space-y-12">
+      {/* =========================================================
+          HOW THE PLATFORM WORKS
+      ========================================================= */}
+      <section className="container-luxury max-w-5xl mb-24">
         <SectionHeader
-          label="Our Journey"
-          title="Milestones along the way"
-          highlightedWord="milestones"
+          label="The Platform"
+          title="Built around four people"
+          highlightedWord="four"
         />
 
-        <div className="relative border-l border-warm-300 max-w-3xl mx-auto pl-8 space-y-10">
-          {milestones.map((m, idx) => (
-            <motion.div
-              key={m.year}
-              initial={{ opacity: 0, x: -15 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: idx * 0.1 }}
-              className="relative"
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mt-10">
+
+          {[
+            {
+              icon: Heart,
+              title: "Travelers",
+              text: "Discover celebrations and apply to participate as guests.",
+            },
+            {
+              icon: Users,
+              title: "Host Families",
+              text: "Choose whether and how they want to welcome international guests.",
+            },
+            {
+              icon: Compass,
+              title: "Local Coordinators",
+              text: "Help coordinate the guest experience on the ground where available.",
+            },
+            {
+              icon: ShieldCheck,
+              title: "Platform Operations",
+              text: "Support discovery, communication, verification and experience coordination.",
+            },
+          ].map((item) => {
+            const Icon = item.icon;
+
+            return (
+              <div
+                key={item.title}
+                className="bg-white border border-warm-200/60 rounded-3xl p-6 shadow-sm space-y-4"
+              >
+                <div className="w-10 h-10 rounded-xl bg-maroon-50 text-[var(--color-brand-primary)] flex items-center justify-center">
+                  <Icon size={19} aria-hidden="true" />
+                </div>
+
+                <h3 className="font-display font-bold text-lg text-charcoal-900">
+                  {item.title}
+                </h3>
+
+                <p className="text-charcoal-500 text-xs sm:text-sm leading-relaxed">
+                  {item.text}
+                </p>
+              </div>
+            );
+          })}
+
+        </div>
+      </section>
+
+      {/* =========================================================
+          TRUST & RESPONSIBILITY
+      ========================================================= */}
+      <section className="container-luxury max-w-5xl mb-24">
+        <div className="bg-white border border-warm-200/60 rounded-[2.5rem] p-7 sm:p-10 lg:p-12 shadow-sm">
+
+          <div className="max-w-2xl mx-auto text-center space-y-4 mb-10">
+            <div className="w-11 h-11 rounded-xl bg-maroon-50 text-[var(--color-brand-primary)] flex items-center justify-center mx-auto">
+              <ShieldCheck size={21} aria-hidden="true" />
+            </div>
+
+            <span className="text-[0.65rem] font-bold uppercase tracking-widest text-charcoal-400">
+              Trust & Responsibility
+            </span>
+
+            <h2 className="font-display font-bold text-2xl sm:text-3xl text-charcoal-900">
+              Trust has to be earned.
+            </h2>
+
+            <p className="text-charcoal-500 text-sm leading-relaxed">
+              We are designing the platform around transparency, informed
+              participation and responsible handling of traveler and host
+              information.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+
+            <div className="rounded-2xl bg-warm-50 border border-warm-200/60 p-6 space-y-3">
+              <ShieldCheck
+                size={20}
+                className="text-[var(--color-brand-primary)]"
+                aria-hidden="true"
+              />
+
+              <h3 className="font-display font-bold text-base text-charcoal-900">
+                Clear participation
+              </h3>
+
+              <p className="text-charcoal-500 text-xs leading-relaxed">
+                Guests should understand the experience, expectations and
+                applicable terms before booking.
+              </p>
+            </div>
+
+            <div className="rounded-2xl bg-warm-50 border border-warm-200/60 p-6 space-y-3">
+              <Users
+                size={20}
+                className="text-[var(--color-brand-primary)]"
+                aria-hidden="true"
+              />
+
+              <h3 className="font-display font-bold text-base text-charcoal-900">
+                Host choice
+              </h3>
+
+              <p className="text-charcoal-500 text-xs leading-relaxed">
+                Participating families retain control over whether guests are
+                accepted and which parts of a celebration they may attend.
+              </p>
+            </div>
+
+            <div className="rounded-2xl bg-warm-50 border border-warm-200/60 p-6 space-y-3">
+              <Compass
+                size={20}
+                className="text-[var(--color-brand-primary)]"
+                aria-hidden="true"
+              />
+
+              <h3 className="font-display font-bold text-base text-charcoal-900">
+                Cultural respect
+              </h3>
+
+              <p className="text-charcoal-500 text-xs leading-relaxed">
+                Guests are expected to follow host instructions, venue rules
+                and appropriate cultural etiquette.
+              </p>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      {/* =========================================================
+          NO FAKE METRICS
+      ========================================================= */}
+      <section className="container-luxury max-w-5xl mb-24">
+        <div className="rounded-[2.5rem] bg-charcoal-900 p-8 sm:p-12 text-center text-white">
+
+          <div className="max-w-2xl mx-auto space-y-4">
+            <span className="text-[0.65rem] font-bold uppercase tracking-widest text-white/50">
+              Building in Public
+            </span>
+
+            <h2 className="font-display font-bold text-2xl sm:text-3xl">
+              We would rather publish verified numbers than impressive ones.
+            </h2>
+
+            <p className="text-white/65 text-sm leading-relaxed">
+              As the platform grows, we will publish meaningful operating
+              metrics based on actual completed experiences rather than
+              unverified estimates or placeholder statistics.
+            </p>
+          </div>
+
+        </div>
+      </section>
+
+      {/* =========================================================
+          CTA
+      ========================================================= */}
+      <section className="container-luxury max-w-3xl text-center">
+        <div className="bg-white border border-warm-200/60 rounded-[2.5rem] p-8 sm:p-12 shadow-sm space-y-5">
+
+          <h2 className="font-display font-bold text-2xl sm:text-3xl text-charcoal-900">
+            Experience India differently.
+          </h2>
+
+          <p className="text-charcoal-500 text-sm leading-relaxed max-w-xl mx-auto">
+            Explore available wedding experiences or learn how you can
+            participate as a host family, traveler, partner or coordinator.
+          </p>
+
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+
+            <Link
+              href="/weddings"
+              className="btn btn-primary btn-lg inline-flex items-center justify-center gap-2 w-full sm:w-auto"
             >
-              {/* Year marker */}
-              <span className="absolute -left-[53px] top-0 w-10 h-10 rounded-xl bg-[var(--color-brand-primary)] text-white font-display font-bold text-xs flex items-center justify-center shadow-md">
-                {m.year}
-              </span>
-              <div className="bg-white border border-warm-200/50 p-6 rounded-2xl shadow-sm space-y-2">
-                <h4 className="font-display font-bold text-base text-charcoal-900">{m.title}</h4>
-                <p className="text-charcoal-600 text-xs sm:text-sm leading-relaxed">{m.description}</p>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </section>
+              Explore Weddings
+              <ArrowRight size={16} aria-hidden="true" />
+            </Link>
 
-      {/* Global Impact stats */}
-      <section className="bg-charcoal-900 py-16 text-center text-white mb-20 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-5 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-white via-transparent to-transparent" />
-        <div className="container-luxury max-w-5xl grid grid-cols-2 md:grid-cols-4 gap-8 relative z-10">
-          {stats.map((s) => (
-            <div key={s.label} className="space-y-1">
-              <div className="font-display font-black text-3xl sm:text-4xl text-gradient-gold">
-                {s.value}
-              </div>
-              <div className="text-white/70 text-xs sm:text-sm font-semibold">{s.label}</div>
-            </div>
-          ))}
-        </div>
-      </section>
+            <Link
+              href="/how-it-works"
+              className="btn btn-secondary btn-lg inline-flex items-center justify-center gap-2 w-full sm:w-auto"
+            >
+              How It Works
+            </Link>
 
-      {/* Trust & Safety highlights */}
-      <section className="container-luxury max-w-4xl space-y-10">
-        <SectionHeader
-          label="Trust & Safety"
-          title="Your safety is our top priority"
-          highlightedWord="safety"
-        />
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white border border-warm-200/50 p-6 rounded-2xl shadow-sm text-center space-y-3">
-            <div className="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 mx-auto flex items-center justify-center">
-              <ShieldCheck size={20} />
-            </div>
-            <h4 className="font-sans font-bold text-sm text-charcoal-900">Vetted Hosts</h4>
-            <p className="text-charcoal-500 text-xs leading-relaxed">
-              Every host family is background-checked and vetted in-person by our local compliance agents.
-            </p>
-          </div>
-
-          <div className="bg-white border border-warm-200/50 p-6 rounded-2xl shadow-sm text-center space-y-3">
-            <div className="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 mx-auto flex items-center justify-center">
-              <Users size={20} />
-            </div>
-            <h4 className="font-sans font-bold text-sm text-charcoal-900">24/7 Guest Liaison</h4>
-            <p className="text-charcoal-500 text-xs leading-relaxed">
-              Local bilingual guest liaison support is provided on the ground throughout the wedding events.
-            </p>
-          </div>
-
-          <div className="bg-white border border-warm-200/50 p-6 rounded-2xl shadow-sm text-center space-y-3">
-            <div className="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 mx-auto flex items-center justify-center">
-              <Award size={20} />
-            </div>
-            <h4 className="font-sans font-bold text-sm text-charcoal-900">Secure Hold Trust</h4>
-            <p className="text-charcoal-500 text-xs leading-relaxed">
-              Booking funds are held securely in a trust account and only released to the family post-event.
-            </p>
           </div>
         </div>
       </section>
 
-    </div>
+    </main>
   );
 }

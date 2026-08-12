@@ -88,14 +88,14 @@ export default function AgentDashboardPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-warm-50/50 pt-28 pb-20 flex items-center justify-center">
+      <div className="min-h-screen bg-warm-50 pt-28 pb-20 flex items-center justify-center">
         <div className="text-charcoal-400 text-sm font-medium animate-pulse">Loading agent dashboard from database…</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-warm-50/50 pt-28 pb-20">
+    <div className="min-h-screen bg-warm-50 pt-28 pb-20">
       <div className="container-luxury max-w-5xl mx-auto space-y-10">
         
         {/* Header */}

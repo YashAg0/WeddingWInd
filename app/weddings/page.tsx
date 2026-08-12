@@ -130,16 +130,19 @@ export default async function WeddingsPage({ searchParams }: PageProps) {
   });
 
   return (
-    <div className="px-5 sm:px-8 lg:px-12 xl:px-16">
-      <div className="min-h-screen bg-warm-50/50 pt-24 pb-16 rounded-[2.5rem]">
-        <div className="container-luxury flex flex-col gap-8">
+    <div className="min-h-screen bg-warm-50 pt-28 pb-20">
+      <div className="container-luxury flex flex-col gap-8">
         
         {/* Search header container */}
-        <div className="text-center max-w-2xl mx-auto space-y-3 mt-4">
-          <h1 className="font-display font-bold text-3xl md:text-4xl text-charcoal-900 leading-tight">
+        <div className="text-center max-w-2xl mx-auto space-y-3">
+          <div className="inline-flex items-center gap-2 bg-maroon-50 text-[var(--color-brand-primary)] text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full border border-maroon-100/50">
+            <Flower2 size={12} className="text-[var(--color-brand-secondary)]" />
+            Discover Celebrations
+          </div>
+          <h1 className="font-display font-bold text-3xl md:text-5xl text-charcoal-900 leading-tight">
             Explore Wedding Celebrations
           </h1>
-          <p className="text-charcoal-500 text-sm md:text-base">
+          <p className="text-charcoal-500 text-sm md:text-base leading-relaxed">
             Attend a real wedding as an honored global guest. Verified hosts, safe booking, cultural guides.
           </p>
         </div>
@@ -150,10 +153,10 @@ export default async function WeddingsPage({ searchParams }: PageProps) {
         </Suspense>
 
         {/* Content Layout Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start mt-4">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start mt-2">
           
           {/* Desktop Filter Sidebar */}
-          <div className="hidden lg:block lg:col-span-1 sticky top-28 bg-white border border-warm-200/50 rounded-3xl p-6 shadow-[0_8px_32px_-12px_rgba(0,0,0,0.06)]">
+          <div className="hidden lg:block lg:col-span-1 sticky top-28 bg-white border border-warm-200/60 rounded-3xl p-6 shadow-card">
             <Suspense fallback={<div className="h-96 bg-warm-100 rounded-2xl animate-pulse" />}>
               <FilterSidebar />
             </Suspense>
@@ -162,7 +165,7 @@ export default async function WeddingsPage({ searchParams }: PageProps) {
           {/* Marketplace Listing area */}
           <div className="col-span-1 lg:col-span-3 flex flex-col gap-6">
             {/* Top Toolbar / Counts & Sorting */}
-            <div className="flex items-center justify-between bg-white border border-warm-200/40 px-5 py-3 rounded-2xl shadow-sm">
+            <div className="flex items-center justify-between bg-white border border-warm-200/60 px-5 py-3.5 rounded-2xl shadow-sm">
               <span className="text-xs font-semibold text-charcoal-500 uppercase tracking-widest">
                 {sortedWeddings.length} {sortedWeddings.length === 1 ? "wedding" : "weddings"} found
               </span>
@@ -187,7 +190,7 @@ export default async function WeddingsPage({ searchParams }: PageProps) {
               </div>
             ) : (
               /* Empty state */
-              <div className="text-center py-20 bg-white border border-warm-200/50 rounded-3xl shadow-sm flex flex-col items-center gap-3">
+              <div className="text-center py-20 bg-white border border-warm-200/60 rounded-3xl shadow-sm flex flex-col items-center gap-3">
                 <Flower2 size={40} className="text-[var(--color-brand-primary)] opacity-40" aria-hidden="true" />
                 <h3 className="font-display font-bold text-lg text-charcoal-900">
                   No celebrations found
@@ -198,7 +201,6 @@ export default async function WeddingsPage({ searchParams }: PageProps) {
               </div>
             )}
           </div>
-        </div>
         </div>
       </div>
     </div>

@@ -52,7 +52,7 @@ jest.mock("@/lib/prisma", () => ({
         }
         return null;
       }),
-      update: jest.fn(async ({ where, data }) => ({
+      update: jest.fn(async ({ where: _where, data }) => ({
         ...mockUsers[1],
         ...data,
       })),
@@ -60,7 +60,7 @@ jest.mock("@/lib/prisma", () => ({
         id: `created_${Date.now()}`,
         ...data,
       })),
-      delete: jest.fn(async ({ where }) => mockUsers[1]),
+      delete: jest.fn(async ({ where: _where }) => mockUsers[1]),
       count: jest.fn(async () => 2),
     },
     wedding: {

@@ -477,7 +477,7 @@ export const faqItems: FAQItem[] = [
   {
     id: "f2",
     question: "How are hosts and weddings verified?",
-    answer: "Every wedding host undergoes strict identity verification, family background checks, and venue confirmation before listing their celebration.",
+    answer: "Every wedding host undergoes strict identity verification, profile screening, and venue confirmation before listing their celebration.",
     category: "Verification",
   },
   {

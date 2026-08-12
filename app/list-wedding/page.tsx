@@ -176,9 +176,8 @@ export default function ListWeddingPage() {
   };
 
   return (
-    <div className="px-5 sm:px-8 lg:px-12 xl:px-16">
-      <div className="min-h-screen bg-warm-50/50 pt-28 pb-20 rounded-[2.5rem]">
-        <div className="container-luxury max-w-4xl mx-auto space-y-12">
+    <div className="min-h-screen bg-warm-50 pt-28 pb-20">
+      <div className="container-luxury max-w-4xl mx-auto space-y-12">
           
           {/* Header */}
           <div className="text-center space-y-4 max-w-2xl mx-auto">
@@ -359,7 +358,7 @@ export default function ListWeddingPage() {
           <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-5 flex items-start gap-3 text-amber-900 text-xs sm:text-sm leading-relaxed">
             <ShieldCheck size={18} className="text-amber-700 flex-shrink-0 mt-0.5" />
             <div>
-              <strong className="font-bold">Trust-First Celebration Policy:</strong> All wedding applications default to <span className="underline font-semibold">Pending Verification</span> status. Our local team conducts background checks and venue confirmation before approving your celebration for international bookings.
+              <strong className="font-bold">Trust-First Celebration Policy:</strong> All wedding applications default to <span className="underline font-semibold">Pending Verification</span> status. Our local team conducts identity verification and venue confirmation before approving your celebration for international bookings.
             </div>
           </div>
 
@@ -635,7 +634,6 @@ export default function ListWeddingPage() {
             </form>
           )}
 
-        </div>
       </div>
     </div>
   );

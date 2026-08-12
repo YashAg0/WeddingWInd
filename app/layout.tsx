@@ -83,9 +83,9 @@ export const metadata: Metadata = {
     canonical: APP_URL,
   },
   icons: {
-    icon: "/images/logos/logo.png",
-    shortcut: "/images/logos/logo.png",
-    apple: "/images/logos/logo.png",
+    icon: "/favicon.ico",
+    shortcut: "/favicon.ico",
+    apple: "/apple-icon.png",
   },
   verification: {
     // Add Google Search Console verification token when available

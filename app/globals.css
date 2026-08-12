@@ -447,6 +447,123 @@
   flex-shrink: 0;
 }
 
+
+/* ─────────────────────────────────────────────
+   STATUS BADGE SYSTEM
+   ───────────────────────────────────────────── */
+
+.badge-luxury {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  line-height: 1.25;
+}
+
+.badge-approved,
+.badge-active,
+.badge-published,
+.badge-paid {
+  background-color: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+
+.badge-pending,
+.badge-under-review {
+  background-color: #fffbeb;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
+.badge-rejected,
+.badge-cancelled,
+.badge-failed {
+  background-color: #fff1f2;
+  color: #9f1239;
+  border: 1px solid #fecdd3;
+}
+
+.badge-need-more-documents,
+.badge-action-required {
+  background-color: #fff7ed;
+  color: #9a3412;
+  border: 1px solid #ffedd5;
+}
+
+.badge-draft,
+.badge-inactive {
+  background-color: #f8fafc;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+}
+
+.badge-admin,
+.badge-maroon {
+  background-color: var(--color-maroon-50);
+  color: var(--color-maroon-800);
+  border: 1px solid var(--color-maroon-200);
+}
+
+.badge-gold {
+  background-color: var(--color-gold-50);
+  color: var(--color-gold-800);
+  border: 1px solid var(--color-gold-200);
+}
+
+/* ─────────────────────────────────────────────
+   TABLE SYSTEM
+   ───────────────────────────────────────────── */
+
+.table-luxury-container {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: 1.25rem;
+  border: 1px solid rgba(107, 16, 38, 0.08);
+  background: #ffffff;
+  box-shadow: var(--shadow-card);
+}
+
+.table-luxury {
+  width: 100%;
+  text-align: left;
+  border-collapse: collapse;
+  font-family: var(--font-sans);
+}
+
+.table-luxury th {
+  background: var(--color-warm-100);
+  color: var(--color-charcoal-800);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 1rem 1.25rem;
+  border-bottom: 1.5px solid var(--color-warm-300);
+}
+
+.table-luxury td {
+  padding: 1rem 1.25rem;
+  font-size: 0.875rem;
+  color: var(--color-charcoal-700);
+  border-bottom: 1px solid var(--color-warm-200);
+  vertical-align: middle;
+}
+
+.table-luxury tr:last-child td {
+  border-bottom: none;
+}
+
+.table-luxury tr:hover td {
+  background: var(--color-warm-50);
+}
+
 /* ─────────────────────────────────────────────
    FORM ELEMENTS
    ───────────────────────────────────────────── */

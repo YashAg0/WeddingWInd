@@ -1,216 +1,581 @@
 import { Metadata } from "next";
 import Link from "next/link";
-import { Compass, Table, Info, FileText, ArrowRight, Sparkles } from "lucide-react";
+import {
+  ArrowRight,
+  CheckCircle2,
+  Clock,
+  Compass,
+  FileText,
+  Heart,
+  Info,
+  ShieldCheck,
+  Sparkles,
+} from "lucide-react";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 
 export const metadata: Metadata = {
-  title: "For Travelers",
-  description: "Everything you need to know about attending an authentic Indian wedding as an international guest.",
+  title: "For Travelers | Experience Indian Weddings | Wedding With India",
+  description:
+    "Learn how international travelers can discover, book and respectfully experience eligible Indian wedding celebrations through Wedding With India.",
+  keywords: [
+    "Indian wedding experience for foreigners",
+    "attend Indian wedding",
+    "Indian wedding tourism",
+    "Indian wedding travel",
+    "experience Indian culture",
+    "Wedding With India travelers",
+    "international guests Indian wedding",
+  ],
+  alternates: {
+    canonical: "/for-travelers",
+  },
+  openGraph: {
+    title: "For Travelers | Experience Indian Weddings",
+    description:
+      "Discover how international travelers can experience eligible Indian wedding celebrations with Wedding With India.",
+    type: "website",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 const travelerFAQs = [
   {
-    q: "Is it respectful to attend a stranger's wedding?",
-    a: "Yes! Host families on our platform invite international guests because they want to share their joy and traditions with the world. It is a matter of immense cultural pride and happiness."
+    q: "Can I really attend an Indian wedding as a traveler?",
+    a: "Some Wedding With India hosts choose to welcome international guests to specific parts of their celebration. Availability depends on the individual wedding, the host's invitation, venue rules, capacity and the experience terms shown on the listing. A booking does not automatically provide access to every part of a private wedding.",
+  },
+  {
+    q: "Is it respectful to attend a wedding I don't know the family personally?",
+    a: "It can be, when the family has intentionally chosen to welcome guests through the Platform. The important thing is to follow the host's instructions, respect religious and family traditions, dress appropriately, ask before taking photographs and respect private areas or ceremonies that are not included in your booking.",
   },
   {
     q: "Do I need to bring a gift?",
-    a: "We recommend a simple, thoughtful card. In Indian culture, cash gifts (shagun) ending in 1 (e.g., $11, $21, $51) are common. However, your presence is considered the greatest gift."
+    a: "A gift is not universally required. If your host provides guidance, follow it. A thoughtful card or culturally appropriate gift can be a nice gesture. Monetary wedding gifts, sometimes known as shagun, are common in many Indian communities, but customs vary significantly by region, family and community. When in doubt, ask your host.",
   },
   {
-    q: "What if I don't know the dance moves?",
-    a: "Don't worry! Indian weddings are all about letting go and celebrating. Folk dancers and host relatives will gladly pull you onto the dance floor and teach you basic steps (like holding light bulbs!)."
+    q: "What should I wear?",
+    a: "Dress expectations vary by ceremony, region, religion, venue and family. Your booking or host may provide specific guidance. Traditional Indian clothing can be a wonderful choice, but modest, clean and event-appropriate clothing is generally more important than wearing something elaborate.",
   },
   {
-    q: "How safe is the environment?",
-    a: "Extremely. Guests are hosted in verified premium resorts or heritage palaces. Our local guest liaison manager stays at the venue throughout all major events to assist you."
-  }
+    q: "Do I need to know Indian dances?",
+    a: "Not at all. Weddings can include music and dancing, and guests are often encouraged to participate, but you should never feel obligated. Follow the lead of the hosts and other guests and enjoy the celebration at your own comfort level.",
+  },
+  {
+    q: "How does safety work?",
+    a: "Wedding With India may apply account, host, booking or identity verification measures depending on the experience. Safety procedures vary by booking. Review the listing, host instructions and applicable safety information before attending. Wedding With India is not an emergency service, and local emergency services should be contacted for immediate emergencies.",
+  },
+  {
+    q: "Will I be able to attend every ceremony?",
+    a: "Not necessarily. Indian weddings can include multiple private and public ceremonies. Your booking will specify the parts of the celebration included in your experience. Respect any ceremony, family area or activity that is marked as private or unavailable to guests.",
+  },
+  {
+    q: "Do I need a visa to travel to India?",
+    a: "International travelers are responsible for obtaining the visa, passport, immigration permission and other travel documents required for their circumstances. Wedding With India does not guarantee visa approval and does not replace official Indian immigration or consular guidance.",
+  },
+];
+
+const ceremonyGuide = [
+  {
+    ceremony: "Sangeet",
+    women: "Festive saree, lehenga, Anarkali or suitable dress",
+    men: "Kurta, kurta-jacket combination, or smart formalwear",
+    vibe: "Music, performances and celebration",
+  },
+  {
+    ceremony: "Haldi",
+    women: "Comfortable festive clothing; light colors may be practical",
+    men: "Comfortable kurta or smart casual clothing",
+    vibe: "Informal, colorful and playful",
+  },
+  {
+    ceremony: "Wedding Ceremony",
+    women: "Saree, lehenga, Anarkali or modest formalwear",
+    men: "Kurta, sherwani, bandhgala or formalwear",
+    vibe: "Ceremonial and respectful",
+  },
+  {
+    ceremony: "Reception",
+    women: "Formal Indian, Indo-Western or evening attire",
+    men: "Suit, formal Indianwear or other event-appropriate attire",
+    vibe: "Formal celebration",
+  },
+];
+
+const travelPrinciples = [
+  {
+    title: "Read the listing",
+    description:
+      "Review exactly what is included, the location, timing, guest requirements, cancellation terms and any host instructions before booking.",
+    icon: FileText,
+  },
+  {
+    title: "Respect the celebration",
+    description:
+      "A wedding is a personal and cultural occasion. Follow ceremony rules, dress guidance, photography restrictions and requests from the host.",
+    icon: Heart,
+  },
+  {
+    title: "Ask before photographing",
+    description:
+      "Not every person, ritual or location should be photographed. When uncertain, ask the host before taking or sharing photos.",
+    icon: Info,
+  },
+  {
+    title: "Stay aware",
+    description:
+      "Keep your belongings secure, follow venue instructions and use appropriate local emergency services if an immediate emergency occurs.",
+    icon: ShieldCheck,
+  },
 ];
 
 export default function ForTravelersPage() {
   return (
-    <div className="px-5 sm:px-8 lg:px-12 xl:px-16">
-    <div className="min-h-screen bg-warm-50/50 pt-28 pb-20 rounded-[2.5rem]">
-      
+    <main className="min-h-screen bg-warm-50 pt-28 pb-20">
       {/* Hero */}
-      <section className="container-luxury text-center max-w-3xl mb-16 space-y-4">
+      <section
+        className="container-luxury text-center max-w-3xl mb-16 space-y-5"
+        aria-labelledby="traveler-heading"
+      >
         <div className="inline-flex items-center gap-2 bg-maroon-50 text-[var(--color-brand-primary)] text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-full border border-maroon-100/50">
-          <Compass size={12} />
+          <Compass size={12} aria-hidden="true" />
           Global Guest Guide
         </div>
-        <h1 className="font-display font-bold text-4xl sm:text-5xl text-charcoal-900 leading-tight">
-          Family, <span className="text-gradient-brand">not just a traveler</span>.
+
+        <h1
+          id="traveler-heading"
+          className="font-display font-bold text-4xl sm:text-5xl text-charcoal-900 leading-tight"
+        >
+          Travel beyond sightseeing.{" "}
+          <span className="text-gradient-brand">
+            Experience an Indian celebration.
+          </span>
         </h1>
-        <p className="text-charcoal-500 text-sm sm:text-base leading-relaxed">
-          Step beyond ordinary sightseeing. Celebrate alongside real families, taste legendary culinary recipes, and make memories that no guidebook can offer.
+
+        <p className="text-charcoal-500 text-sm sm:text-base leading-relaxed max-w-2xl mx-auto">
+          Wedding With India helps international travelers discover eligible
+          Indian wedding experiences where hosts have chosen to welcome guests
+          into selected parts of their celebrations.
         </p>
+
+        <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+          <Link
+            href="/weddings"
+            className="btn btn-primary btn-lg shadow-sm inline-flex items-center gap-2"
+          >
+            Explore Weddings
+            <ArrowRight size={16} aria-hidden="true" />
+          </Link>
+
+          <Link
+            href="#faqs"
+            className="btn btn-secondary btn-lg inline-flex items-center gap-2"
+          >
+            Read Traveler Guide
+          </Link>
+        </div>
       </section>
 
-      {/* Surface Sightseeing vs Deep Immersion */}
-      <section className="container-luxury grid grid-cols-1 md:grid-cols-2 gap-8 mb-20">
-        
-        {/* Surface sightseeing */}
-        <div className="bg-white/40 border border-warm-200/50 p-8 rounded-[2rem] space-y-4">
-          <h3 className="font-display font-bold text-lg text-charcoal-400">
-            Ordinary Travel
-          </h3>
-          <ul className="space-y-3 text-charcoal-500 text-xs sm:text-sm">
-            <li className="flex items-start gap-2">
-              <span className="text-red-500 font-bold mt-0.5">✕</span>
-              Viewing monuments and palaces from behind barriers.
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-red-500 font-bold mt-0.5">✕</span>
-              Eating hotel buffets and generic restaurant meals.
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-red-500 font-bold mt-0.5">✕</span>
-              Superficial interactions with tour guides.
-            </li>
-          </ul>
-        </div>
+      {/* Experience comparison */}
+      <section
+        className="container-luxury max-w-6xl mb-20"
+        aria-labelledby="experience-heading"
+      >
+        <div className="text-center max-w-2xl mx-auto mb-8">
+          <p className="text-xs font-bold uppercase tracking-widest text-[var(--color-brand-primary)]">
+            A different kind of travel
+          </p>
 
-        {/* Wedding immersion */}
-        <div className="bg-white border border-[var(--color-brand-primary)]/10 p-8 rounded-[2rem] shadow-sm space-y-4 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-24 h-24 rounded-full bg-[var(--color-brand-primary)]/5 blur-xl" />
-          
-          <h3 className="font-display font-bold text-lg text-[var(--color-brand-primary)] flex items-center gap-2">
-            <Sparkles size={18} className="text-[var(--color-gold-500)]" /> Wedding Immersion
-          </h3>
-          <ul className="space-y-3 text-charcoal-700 text-xs sm:text-sm">
-            <li className="flex items-start gap-2">
-              <span className="text-emerald-500 font-bold mt-0.5">✓</span>
-              Stepping inside real heritage palaces as an honored guest.
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-emerald-500 font-bold mt-0.5">✓</span>
-              Feasting on authentic local recipe feasts served on banana leaves or copper bowls.
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-emerald-500 font-bold mt-0.5">✓</span>
-              Dancing bhangra or garba side-by-side with host families.
-            </li>
-          </ul>
-        </div>
-
-      </section>
-
-      {/* Dress Code & Etiquette Table */}
-      <section className="container-luxury max-w-4xl bg-white border border-warm-200/50 rounded-[2.5rem] p-6 sm:p-10 shadow-sm mb-20 space-y-8">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-maroon-50 text-[var(--color-brand-primary)] flex items-center justify-center shadow-sm">
-            <Table size={18} />
-          </div>
-          <h2 className="font-display font-bold text-xl text-charcoal-900">
-            Dress Code & Etiquette Matrix
+          <h2
+            id="experience-heading"
+            className="font-display font-bold text-2xl sm:text-3xl text-charcoal-900 mt-2"
+          >
+            Experience India from the inside
           </h2>
+
+          <p className="text-sm text-charcoal-500 mt-2 leading-relaxed">
+            Traditional sightseeing and cultural immersion can complement each
+            other. Wedding With India focuses on the second.
+          </p>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse" role="table">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Conventional travel */}
+          <div className="bg-white/60 border border-warm-200/60 p-7 sm:p-8 rounded-[2rem] space-y-5">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-charcoal-400">
+                Traditional travel
+              </p>
+
+              <h3 className="font-display font-bold text-xl text-charcoal-700 mt-1">
+                Explore places and attractions
+              </h3>
+            </div>
+
+            <ul className="space-y-4 text-charcoal-600 text-sm">
+              {[
+                "Visit landmarks, monuments and cultural attractions.",
+                "Explore local food, markets and neighborhoods.",
+                "Learn about India's history and traditions through tourism.",
+              ].map((item) => (
+                <li key={item} className="flex items-start gap-3">
+                  <CheckCircle2
+                    size={17}
+                    className="mt-0.5 shrink-0 text-charcoal-400"
+                    aria-hidden="true"
+                  />
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Wedding immersion */}
+          <div className="bg-white border border-[var(--color-brand-primary)]/15 p-7 sm:p-8 rounded-[2rem] shadow-sm space-y-5 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-28 h-28 rounded-full bg-[var(--color-brand-primary)]/5 blur-2xl" />
+
+            <div className="relative">
+              <p className="text-xs font-bold uppercase tracking-widest text-[var(--color-brand-primary)]">
+                Wedding With India
+              </p>
+
+              <h3 className="font-display font-bold text-xl text-charcoal-900 mt-1 flex items-center gap-2">
+                <Sparkles
+                  size={18}
+                  className="text-[var(--color-gold-500)]"
+                  aria-hidden="true"
+                />
+                Participate in a celebration
+              </h3>
+            </div>
+
+            <ul className="relative space-y-4 text-charcoal-700 text-sm">
+              {[
+                "Join selected ceremonies and activities included in your booking.",
+                "Experience regional food, music, clothing and wedding traditions.",
+                "Meet hosts and other guests in an environment where participation has been invited.",
+              ].map((item) => (
+                <li key={item} className="flex items-start gap-3">
+                  <CheckCircle2
+                    size={17}
+                    className="mt-0.5 shrink-0 text-[var(--color-brand-primary)]"
+                    aria-hidden="true"
+                  />
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      {/* How booking works */}
+      <section
+        className="container-luxury max-w-5xl mb-20"
+        aria-labelledby="booking-heading"
+      >
+        <div className="bg-white border border-warm-200/50 rounded-[2.5rem] p-7 sm:p-10 shadow-sm">
+          <div className="text-center max-w-2xl mx-auto mb-10">
+            <p className="text-xs font-bold uppercase tracking-widest text-[var(--color-brand-primary)]">
+              Before you attend
+            </p>
+
+            <h2
+              id="booking-heading"
+              className="font-display font-bold text-2xl sm:text-3xl text-charcoal-900 mt-2"
+            >
+              From discovery to celebration
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            {[
+              {
+                number: "01",
+                title: "Explore",
+                text: "Browse available wedding experiences and compare dates, locations, inclusions and requirements.",
+              },
+              {
+                number: "02",
+                title: "Review",
+                text: "Read the host information, event details, guest rules, cancellation terms and what your booking includes.",
+              },
+              {
+                number: "03",
+                title: "Book",
+                text: "Submit the required information and complete any verification or payment steps required for the experience.",
+              },
+              {
+                number: "04",
+                title: "Attend",
+                text: "Follow the host instructions, arrive as agreed and enjoy the celebration respectfully.",
+              },
+            ].map((step) => (
+              <div key={step.number} className="space-y-3">
+                <div className="text-xs font-bold tracking-widest text-[var(--color-brand-primary)]">
+                  {step.number}
+                </div>
+
+                <h3 className="font-display font-bold text-lg text-charcoal-900">
+                  {step.title}
+                </h3>
+
+                <p className="text-sm text-charcoal-500 leading-relaxed">
+                  {step.text}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Etiquette */}
+      <section
+        className="container-luxury max-w-5xl bg-white border border-warm-200/50 rounded-[2.5rem] p-6 sm:p-10 shadow-sm mb-20 space-y-8"
+        aria-labelledby="etiquette-heading"
+      >
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+          <div className="w-11 h-11 rounded-xl bg-maroon-50 text-[var(--color-brand-primary)] flex items-center justify-center shrink-0">
+            <FileText size={20} aria-hidden="true" />
+          </div>
+
+          <div>
+            <p className="text-xs font-bold uppercase tracking-widest text-[var(--color-brand-primary)]">
+              Guest etiquette
+            </p>
+
+            <h2
+              id="etiquette-heading"
+              className="font-display font-bold text-xl sm:text-2xl text-charcoal-900"
+            >
+              Dress & ceremony guide
+            </h2>
+
+            <p className="text-xs text-charcoal-500 mt-1">
+              General guidance only — always follow the instructions for your
+              specific experience.
+            </p>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto rounded-2xl border border-warm-200">
+          <table className="w-full min-w-[720px] text-left">
             <thead>
-              <tr className="border-b border-warm-200 text-xs font-bold text-charcoal-500 uppercase tracking-widest bg-warm-50">
-                <th className="p-4 rounded-tl-xl">Ceremony</th>
-                <th className="p-4">What to Wear</th>
-                <th className="p-4 rounded-tr-xl">Important Etiquette</th>
+              <tr className="bg-warm-50 border-b border-warm-200">
+                <th className="px-5 py-4 text-xs font-bold uppercase tracking-wider text-charcoal-500">
+                  Ceremony
+                </th>
+                <th className="px-5 py-4 text-xs font-bold uppercase tracking-wider text-charcoal-500">
+                  Suggested attire
+                </th>
+                <th className="px-5 py-4 text-xs font-bold uppercase tracking-wider text-charcoal-500">
+                  General atmosphere
+                </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-warm-100 text-xs sm:text-sm text-charcoal-600">
-              <tr>
-                <td className="p-4 font-bold text-charcoal-900">Mehndi (Henna)</td>
-                <td className="p-4">Colorful casuals (pastels, yellow, green). Kurta shirts or sundresses.</td>
-                <td className="p-4">Keep sleeves short or rollable to apply henna on hands comfortably.</td>
-              </tr>
-              <tr>
-                <td className="p-4 font-bold text-charcoal-900">Sangeet (Music)</td>
-                <td className="p-4">Cocktail wear, heavy embroidered ethnic suits, or glamorous sherwanis.</td>
-                <td className="p-4">Be ready to dance! Ensure shoes are comfortable for the dance floor.</td>
-              </tr>
-              <tr>
-                <td className="p-4 font-bold text-charcoal-900">Main Ceremony</td>
-                <td className="p-4">Traditional (Saree/Lehenga for women, Sherwani/Kurta for men).</td>
-                <td className="p-4">Avoid wearing solid white or solid black (colors reserved for mourning).</td>
-              </tr>
-              <tr>
-                <td className="p-4 font-bold text-charcoal-900">Gurudwara (Sikhism)</td>
-                <td className="p-4">Modest clothing covering legs.</td>
-                <td className="p-4">Heads must be covered with a scarf or bandana at all times inside.</td>
-              </tr>
+
+            <tbody>
+              {ceremonyGuide.map((item) => (
+                <tr
+                  key={item.ceremony}
+                  className="border-b border-warm-100 last:border-0"
+                >
+                  <td className="px-5 py-5 font-bold text-charcoal-900 align-top">
+                    {item.ceremony}
+                  </td>
+
+                  <td className="px-5 py-5 text-charcoal-600 align-top">
+                    <div>
+                      <span className="font-semibold text-charcoal-800">
+                        Women:
+                      </span>{" "}
+                      {item.women}
+                    </div>
+
+                    <div className="mt-2">
+                      <span className="font-semibold text-charcoal-800">
+                        Men:
+                      </span>{" "}
+                      {item.men}
+                    </div>
+                  </td>
+
+                  <td className="px-5 py-5 text-charcoal-600 align-top">
+                    {item.vibe}
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
+
+        <div className="flex items-start gap-3 rounded-2xl bg-warm-50 border border-warm-200 p-5">
+          <Info
+            size={18}
+            className="mt-0.5 shrink-0 text-[var(--color-brand-primary)]"
+            aria-hidden="true"
+          />
+
+          <p className="text-sm text-charcoal-600 leading-relaxed">
+            India is culturally and religiously diverse. Wedding customs vary
+            by region, religion, community and family. These suggestions are
+            general guidance, not universal rules.
+          </p>
+        </div>
       </section>
 
-      {/* Visa Guidance Placeholder */}
-      <section className="container-luxury max-w-4xl bg-warm-100 border border-warm-200/50 rounded-[2.5rem] p-6 sm:p-10 shadow-sm mb-20 space-y-6">
-        <div className="flex items-start gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-white text-[var(--color-brand-primary)] flex items-center justify-center shadow-sm flex-shrink-0">
-            <Info size={22} />
-          </div>
-          <div className="space-y-2">
-            <h2 className="font-display font-bold text-xl text-charcoal-900">
-              India Visa Guidance & Travel Checklist
-            </h2>
-            <p className="text-charcoal-600 text-sm leading-relaxed">
-              Most international guests require a visa to enter India. We recommend applying for the official <strong>e-Visa (Tourist) (30 Days, 1 Year, or 5 Years)</strong> online at least 15 days before your departure.
-            </p>
-            <div className="flex flex-wrap gap-4 pt-2">
-              <a
-                href="https://indianvisaonline.gov.in/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-[var(--color-brand-primary)] text-xs font-bold uppercase tracking-wider hover:underline"
+      {/* Traveler principles */}
+      <section
+        className="container-luxury max-w-5xl mb-20"
+        aria-labelledby="principles-heading"
+      >
+        <div className="text-center max-w-2xl mx-auto mb-8">
+          <p className="text-xs font-bold uppercase tracking-widest text-[var(--color-brand-primary)]">
+            Be a great guest
+          </p>
+
+          <h2
+            id="principles-heading"
+            className="font-display font-bold text-2xl sm:text-3xl text-charcoal-900 mt-2"
+          >
+            Four simple principles
+          </h2>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          {travelPrinciples.map((item) => {
+            const Icon = item.icon;
+
+            return (
+              <div
+                key={item.title}
+                className="bg-white border border-warm-200/50 rounded-2xl p-6 shadow-sm"
               >
-                <FileText size={12} />
-                Official India Visa Site
-              </a>
-              <span className="text-charcoal-300">|</span>
-              <span className="text-charcoal-500 text-xs font-medium">Use category: &ldquo;Tourism / Recreation&rdquo;</span>
-            </div>
-          </div>
+                <div className="w-10 h-10 rounded-xl bg-maroon-50 text-[var(--color-brand-primary)] flex items-center justify-center mb-4">
+                  <Icon size={19} aria-hidden="true" />
+                </div>
+
+                <h3 className="font-display font-bold text-lg text-charcoal-900">
+                  {item.title}
+                </h3>
+
+                <p className="text-sm text-charcoal-500 leading-relaxed mt-2">
+                  {item.description}
+                </p>
+              </div>
+            );
+          })}
         </div>
       </section>
 
       {/* FAQs */}
-      <section className="container-luxury max-w-3xl mb-20 space-y-10" aria-label="Frequently Asked Questions">
+      <section
+        id="faqs"
+        className="container-luxury max-w-3xl mb-20 space-y-8"
+        aria-labelledby="faq-heading"
+      >
         <SectionHeader
-          label="FAQs"
-          title="Questions from global guests"
-          highlightedWord="global guests"
+          label="Common Questions"
+          title="Traveler FAQs"
+          highlightedWord="FAQs"
         />
 
         <div className="space-y-4">
           {travelerFAQs.map((faq) => (
-            <details key={faq.q} className="group bg-white border border-warm-200/50 rounded-2xl p-5 shadow-sm cursor-pointer transition-colors duration-200">
-              <summary className="font-sans font-bold text-sm sm:text-base text-charcoal-800 flex justify-between items-center list-none outline-none">
-                <span>{faq.q}</span>
-                <span className="text-charcoal-400 group-open:rotate-50 transition-transform duration-200">↓</span>
+            <details
+              key={faq.q}
+              className="group bg-white border border-warm-200/50 rounded-2xl shadow-sm overflow-hidden"
+            >
+              <summary className="list-none cursor-pointer p-6 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-brand-primary)]">
+                <div className="flex items-start justify-between gap-5">
+                  <h3 className="font-display font-bold text-base text-charcoal-900">
+                    {faq.q}
+                  </h3>
+
+                  <span
+                    className="text-[var(--color-brand-primary)] text-lg leading-none transition-transform group-open:rotate-45"
+                    aria-hidden="true"
+                  >
+                    +
+                  </span>
+                </div>
               </summary>
-              <p className="text-charcoal-500 text-xs sm:text-sm leading-relaxed mt-3 pt-3 border-t border-warm-100">
-                {faq.a}
-              </p>
+
+              <div className="px-6 pb-6">
+                <p className="text-charcoal-600 text-sm leading-relaxed">
+                  {faq.a}
+                </p>
+              </div>
             </details>
           ))}
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="container-luxury text-center">
-        <div className="max-w-2xl mx-auto space-y-6">
-          <h2 className="font-display font-bold text-2xl sm:text-3xl text-charcoal-900">
-            Ready to find your celebration?
-          </h2>
-          <p className="text-charcoal-500 text-sm max-w-md mx-auto">
-            Browse verified celebrations, read guest reviews, and choose a wedding style that speaks to your soul.
-          </p>
-          <Link href="/weddings" className="btn btn-primary btn-lg shadow-lg group inline-flex gap-2">
-            Explore All Weddings
-            <ArrowRight size={16} />
-          </Link>
+      {/* Important travel notice */}
+      <section className="container-luxury max-w-3xl mb-16">
+        <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-6">
+          <div className="flex items-start gap-3">
+            <Clock
+              size={20}
+              className="mt-0.5 shrink-0 text-amber-700"
+              aria-hidden="true"
+            />
+
+            <div className="space-y-3">
+              <h2 className="font-display font-bold text-lg text-charcoal-900">
+                Plan your trip independently
+              </h2>
+
+              <p className="text-sm text-charcoal-700 leading-relaxed">
+                Your wedding experience is only one part of your trip.
+                Travelers are responsible for their own passport, visa,
+                immigration permissions, flights, accommodation and other
+                travel arrangements unless a specific booking expressly
+                includes those services.
+              </p>
+
+              <p className="text-sm text-charcoal-600 leading-relaxed">
+                Wedding With India does not guarantee entry into India, visa
+                approval, flight availability or the absence of travel
+                disruption.
+              </p>
+            </div>
+          </div>
         </div>
       </section>
 
-    </div>
-  
-    </div>);
+      {/* Final CTA */}
+      <section
+        className="container-luxury text-center max-w-2xl"
+        aria-labelledby="cta-heading"
+      >
+        <div className="bg-white border border-warm-200/50 p-8 sm:p-10 rounded-[2.5rem] shadow-sm space-y-5">
+          <div className="w-11 h-11 mx-auto rounded-xl bg-maroon-50 text-[var(--color-brand-primary)] flex items-center justify-center">
+            <Heart size={20} aria-hidden="true" />
+          </div>
+
+          <h2
+            id="cta-heading"
+            className="font-display font-bold text-2xl text-charcoal-900"
+          >
+            Ready to discover an Indian wedding?
+          </h2>
+
+          <p className="text-charcoal-500 text-sm leading-relaxed">
+            Browse available experiences and find a celebration that matches
+            your travel plans and interests.
+          </p>
+
+          <Link
+            href="/weddings"
+            className="btn btn-primary btn-lg shadow-lg group inline-flex gap-2"
+          >
+            Explore Available Weddings
+            <ArrowRight size={16} aria-hidden="true" />
+          </Link>
+        </div>
+      </section>
+    </main>
+  );
 }
