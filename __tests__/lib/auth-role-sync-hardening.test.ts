@@ -51,7 +51,7 @@ jest.mock("@/lib/prisma", () => ({
   prisma: mockPrisma,
 }));
 
-const { requireAuth, requireRole, syncAndGetDbUser, getDbUser } = require("@/lib/auth");
+const { requireAuth, requireRole, syncAndGetDbUser, getDbUser: _getDbUser } = require("@/lib/auth");
 
 describe("Auth Role & Host Identity Synchronization Hardening", () => {
   beforeEach(() => {

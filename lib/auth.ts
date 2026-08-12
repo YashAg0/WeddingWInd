@@ -66,8 +66,18 @@ export async function syncAndGetDbUser() {
       where: { clerkUserId: clerkUser.id },
       include: {
         travelerProfile: true,
-        coupleProfile: true,
+        coupleProfile: {
+          include: {
+            weddings: {
+              where: { isDemo: false },
+              orderBy: { createdAt: "desc" },
+              take: 1,
+            },
+          },
+        },
         agentProfile: true,
+        coordinatorProfile: true,
+        verification: true,
       },
     });
 
@@ -180,11 +190,14 @@ export async function syncAndGetDbUser() {
           coupleProfile: {
             include: {
               weddings: {
-                where: { isDemo: false }
+                where: { isDemo: false },
+                orderBy: { createdAt: "desc" },
+                take: 1,
               }
             }
           },
           agentProfile: true,
+          coordinatorProfile: true,
           verification: true,
         }
       });

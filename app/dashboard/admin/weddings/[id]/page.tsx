@@ -7,18 +7,12 @@ import Image from "next/image";
 import {
   ArrowLeft,
   Calendar,
-  MapPin,
-  Users,
   Star,
   Zap,
   Building2,
-  ShieldCheck,
   Ticket,
   ExternalLink,
-  Edit2,
-  Tag,
-  Clock,
-  Heart
+  Edit2
 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 
@@ -185,7 +179,7 @@ export default async function AdminWeddingDetailPage({
                 Full Description
               </h4>
               <p className="text-xs text-charcoal-600 leading-relaxed italic">
-                "{wedding.description}"
+                &quot;{wedding.description}&quot;
               </p>
             </div>
           </div>

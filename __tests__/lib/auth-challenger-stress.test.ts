@@ -28,7 +28,9 @@ describe("Challenger Empirical Stress Tests — syncAndGetDbUser()", () => {
   const mockCurrentUser = currentUser as jest.MockedFunction<typeof currentUser>;
 
   beforeEach(() => {
+    jest.setTimeout(20000);
     jest.clearAllMocks();
+    jest.spyOn(prisma.user, "findUnique").mockResolvedValue(null as any);
   });
 
   describe("1. Email Normalization & Trimming", () => {

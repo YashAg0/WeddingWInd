@@ -3,15 +3,12 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
   Building2,
   CheckCircle2,
   XCircle,
-  Clock,
   Search,
-  Filter,
   Eye,
   ShieldCheck,
   Calendar,
@@ -27,7 +24,6 @@ import {
 import { formatDate } from "@/lib/utils";
 
 export default function AdminHostsPage() {
-  const router = useRouter();
   const [applications, setApplications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -83,7 +79,7 @@ export default function AdminHostsPage() {
   }).length;
 
   const approvedCount = applications.filter((a) => a.status === "PUBLISHED").length;
-  const rejectedCount = applications.filter((a) => a.status === "REJECTED").length;
+  const _rejectedCount = applications.filter((a) => a.status === "REJECTED").length;
   const needDocsCount = applications.filter(
     (a) => a.hostCouple?.user?.verification?.status === "NEED_MORE_DOCUMENTS"
   ).length;

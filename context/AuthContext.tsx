@@ -21,7 +21,7 @@ import {
   reviewVerificationAction
 } from "@/lib/actions";
 
-export type UserRole = "traveler" | "couple" | "agent" | "admin";
+export type UserRole = "traveler" | "couple" | "agent" | "admin" | "coordinator";
 
 export interface User {
   id: string;

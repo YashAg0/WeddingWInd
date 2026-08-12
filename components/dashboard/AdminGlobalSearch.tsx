@@ -120,7 +120,7 @@ export default function AdminGlobalSearch() {
                 </div>
               ) : !hasResults && !loading ? (
                 <div className="py-8 text-center text-charcoal-500 font-semibold">
-                  No matching record found for "{query}".
+                  No matching record found for &quot;{query}&quot;.
                 </div>
               ) : (
                 <div className="space-y-4">

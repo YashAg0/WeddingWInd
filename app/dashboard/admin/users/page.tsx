@@ -6,19 +6,14 @@ import { toast } from "sonner";
 import {
   User,
   Shield,
-  Briefcase,
-  Heart,
   Trash2,
   ShieldCheck,
   Search,
   UserPlus,
-  Ban,
-  CheckCircle2,
   Eye,
   RefreshCw,
   X,
-  Mail,
-  AlertCircle
+  Mail
 } from "lucide-react";
 import {
   adminGetUsersAction,

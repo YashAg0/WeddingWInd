@@ -145,6 +145,17 @@ describe("Auth Onboarding Redirect & Host Dashboard Persistence Matrix", () => {
     expect(result.onboardingRequired).toBe(false);
   });
 
+  it("8. Existing COORDINATOR resolves to EXISTING_COORDINATOR", async () => {
+    const mockUser = { id: "coord-user-8", email: "coord@example.com", role: UserRole.COORDINATOR, status: UserStatus.ACTIVE };
+    requireAuth.mockResolvedValue(mockUser);
+    mockPrisma.user.findUnique.mockResolvedValue(mockUser);
+
+    const result = await resolveAuthenticatedUserExperience();
+
+    expect(result.state).toBe("EXISTING_COORDINATOR");
+    expect(result.onboardingRequired).toBe(false);
+  });
+
   it("9. Database lookup failure returns DB_UNAVAILABLE (never NEW_USER)", async () => {
     requireAuth.mockRejectedValue(new Error("PrismaClientInitializationError: Connection pool exhausted"));
 
@@ -152,5 +163,28 @@ describe("Auth Onboarding Redirect & Host Dashboard Persistence Matrix", () => {
 
     expect(result.state).toBe("DB_UNAVAILABLE");
     expect(result.onboardingRequired).toBe(false);
+  });
+
+  it("10. Host experience resolution handles fast-path DB user with verification and weddings", async () => {
+    const mockUser = {
+      id: "host-fast-10",
+      email: "hostfast@example.com",
+      role: UserRole.COUPLE,
+      status: UserStatus.ONBOARDING,
+      coupleProfile: {
+        id: "cp-10",
+        weddings: [{ id: "wed-10", title: "My Wedding", isDemo: false }],
+      },
+      verification: { id: "ver-10", status: VerificationStatus.NEED_MORE_DOCUMENTS, notes: "Upload ID" },
+    };
+    requireAuth.mockResolvedValue(mockUser);
+    mockPrisma.user.findUnique.mockResolvedValue(mockUser);
+
+    const result = await resolveAuthenticatedUserExperience();
+
+    expect(result.state).toBe("EXISTING_COUPLE");
+    expect(result.hasHostApplication).toBe(true);
+    expect(result.weddingId).toBe("wed-10");
+    expect(result.verificationStatus).toBe("NEED_MORE_DOCUMENTS");
   });
 });

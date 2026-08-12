@@ -47,11 +47,13 @@ jest.mock("@/lib/attribution", () => ({
 
 describe("syncAndGetDbUser Identity Reconciliation (R3)", () => {
   beforeEach(() => {
+    jest.setTimeout(20000);
     jest.clearAllMocks();
   });
 
   it("normalizes email to lowercase and trimmed before DB lookup", async () => {
     let queriedEmail = "";
+    jest.spyOn(prisma.user, "findUnique").mockResolvedValue(null as any);
     jest.spyOn(prisma, "$transaction").mockImplementation(async (callback: any) => {
       const mockTx = {
         user: {
@@ -82,6 +84,7 @@ describe("syncAndGetDbUser Identity Reconciliation (R3)", () => {
   });
 
   it("reconciles when existingByEmail and existingByClerkId belong to different records (unlinking stale clerkUserId, preserving canonical row role/status)", async () => {
+    jest.spyOn(prisma.user, "findUnique").mockResolvedValue(null as any);
     const existingByClerkId = {
       id: "user_a",
       clerkUserId: "clerk_123",

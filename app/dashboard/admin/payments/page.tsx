@@ -60,7 +60,7 @@ export default async function AdminPaymentsPage() {
   // Calculate high-level financial metrics
   const totalLoggedVolumeINR = data.transactions.reduce((sum: number, t: any) => sum + (t.amount || 0), 0);
   const platformCommissionAccruedINR = Math.round(totalLoggedVolumeINR * 0.22);
-  const hostAllocationINR = totalLoggedVolumeINR - platformCommissionAccruedINR;
+  const _hostAllocationINR = totalLoggedVolumeINR - platformCommissionAccruedINR;
 
   return (
     <div className="space-y-8 animate-fade-in">

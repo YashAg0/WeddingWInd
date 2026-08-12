@@ -1,29 +1,22 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { toast } from "sonner";
 import {
   ArrowLeft,
-  Building2,
   CheckCircle2,
   XCircle,
   ShieldCheck,
-  Calendar,
-  MapPin,
-  Users,
   Clock,
   User,
-  Mail,
-  Phone,
   Heart,
   FileText,
   AlertCircle,
   RefreshCw,
-  ExternalLink,
-  MessageSquare
+  ExternalLink
 } from "lucide-react";
 import {
   adminGetHostApplicationByIdAction,
@@ -33,7 +26,6 @@ import { formatDate } from "@/lib/utils";
 
 export default function AdminHostDetailPage() {
   const params = useParams();
-  const router = useRouter();
   const id = params.id as string;
 
   const [wedding, setWedding] = useState<any>(null);
@@ -41,7 +33,7 @@ export default function AdminHostDetailPage() {
   const [reviewNotes, setReviewNotes] = useState("");
   const [submittingAction, setSubmittingAction] = useState<string | null>(null);
 
-  const loadDetail = async () => {
+  const loadDetail = useCallback(async () => {
     setLoading(true);
     try {
       const data = await adminGetHostApplicationByIdAction(id);
@@ -58,13 +50,13 @@ export default function AdminHostDetailPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
 
   useEffect(() => {
     if (id) {
       loadDetail();
     }
-  }, [id]);
+  }, [id, loadDetail]);
 
   const handleReviewAction = async (
     status: "APPROVED" | "REJECTED" | "NEED_MORE_DOCUMENTS" | "UNDER_REVIEW"
@@ -276,7 +268,7 @@ export default function AdminHostDetailPage() {
                 Couple Story & Host Welcome Note
               </h4>
               <p className="text-xs text-charcoal-600 leading-relaxed italic">
-                "{wedding.description || "No description provided."}"
+                &quot;{wedding.description || "No description provided."}&quot;
               </p>
             </div>
 

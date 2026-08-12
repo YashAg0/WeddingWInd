@@ -3,7 +3,6 @@ import {
   adminGetHostApplicationByIdAction,
   adminReviewHostApplicationAction
 } from "@/lib/actions/admin";
-import { getWeddings } from "@/lib/actions/wedding";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth";
 import { UserRole, VerificationStatus } from "@prisma/client";

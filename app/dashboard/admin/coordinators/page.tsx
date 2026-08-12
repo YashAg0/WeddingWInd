@@ -1,7 +1,7 @@
 import { requireRole } from "@/lib/auth";
 import { UserRole } from "@prisma/client";
 import { getOperationsDashboardAction } from "@/lib/actions/admin-dashboards";
-import { Compass, ShieldCheck, QrCode, Calendar, MapPin, Users, Activity } from "lucide-react";
+import { Compass, ShieldCheck, QrCode, Calendar } from "lucide-react";
 import { formatTime } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";

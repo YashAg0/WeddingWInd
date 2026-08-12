@@ -3,7 +3,6 @@ import {
   adminUpdateUserRoleAction,
   adminUpdateUserStatusAction,
   adminInviteUserAction,
-  adminDeleteUserAction,
   adminGlobalSearchAction,
   adminUpsertHeroContentAction,
   adminDeleteHeroContentAction,
@@ -12,7 +11,7 @@ import { UserRole } from "@prisma/client";
 
 // Mock auth module
 jest.mock("@/lib/auth", () => ({
-  requireRole: jest.fn(async (roles: string[]) => ({
+  requireRole: jest.fn(async (_roles: string[]) => ({
     id: "admin_test_id_123",
     email: "admin_tester@weddingwithindia.com",
     role: "ADMIN",
