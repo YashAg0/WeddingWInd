@@ -149,6 +149,13 @@ model Wedding {
   description         String
   location            String
   category            String
+  religion            String                 @default("Hindu")
+  region              String?
+  community           String?
+  foodContext         String?
+  dressExpectations   String?
+  guestRules          String?
+  etiquetteNotes      String?
   date                DateTime
   pricePerGuest       Float
   capacity            Int
@@ -166,6 +173,8 @@ model Wedding {
   deletedAt           DateTime?
   isDemo              Boolean                @default(false)
   sponsored           Boolean                @default(false)
+  sponsorshipStart    DateTime?
+  sponsorshipEnd      DateTime?
   bookings            Booking[]
   contacts            EventContact[]
   recentlyViewed      RecentlyViewed[]

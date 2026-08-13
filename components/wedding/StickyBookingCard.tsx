@@ -8,10 +8,8 @@ import type { Wedding } from "@/types";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import {
-  PRICING_TIERS,
   formatCurrencyINR,
-  formatSecondaryCurrency,
-  PricingTier
+  formatSecondaryCurrency
 } from "@/lib/constants/financial-model";
 import { useCurrency } from "@/context/CurrencyContext";
 
@@ -24,15 +22,40 @@ export function StickyBookingCard({ wedding }: StickyBookingCardProps) {
   const { formatPrice } = useCurrency();
   const router = useRouter();
 
+  const basePriceINR = wedding.pricePerGuest || 12000;
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedTierKey, setSelectedTierKey] = useState<string>("CELEBRATION_EXPERIENCE");
+  const [selectedTierKey, setSelectedTierKey] = useState<string>("BUDGET");
   const [guestsCount, setGuestsCount] = useState(1);
   const [isBooked, setIsBooked] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const availableSlots = Math.max(0, wedding.guestsAllowed - wedding.guestsBooked);
-  const isSoldOut = wedding.guestsAllowed === 0 || availableSlots <= 0;
-  const activeTier: PricingTier = PRICING_TIERS[selectedTierKey] || PRICING_TIERS.PREMIUM;
+  const isShowcase = wedding.isDemo === true;
+  const isSoldOut = isShowcase || wedding.guestsAllowed === 0 || availableSlots <= 0;
+
+  const dynamicTiers: Record<string, { id: string; name: string; priceINR: number; description: string; popular?: boolean }> = {
+    BUDGET: {
+      id: "budget",
+      name: "Standard Access",
+      priceINR: basePriceINR,
+      description: "Full access to wedding ceremonies, celebratory feasts, and digital cultural guide.",
+    },
+    PREMIUM: {
+      id: "premium",
+      name: "Premium Experience",
+      priceINR: Math.round(basePriceINR * 1.35),
+      description: "Multi-event access, professional Henna session, and bilingual coordinator support.",
+      popular: true,
+    },
+    VIP: {
+      id: "vip",
+      name: "VIP Family Guest",
+      priceINR: Math.round(basePriceINR * 2.0),
+      description: "Complete multi-day wedding access, family lounge entry, and designer attire rental.",
+    },
+  };
+
+  const activeTier = dynamicTiers[selectedTierKey] || dynamicTiers.BUDGET;
   const subtotalINR = activeTier.priceINR * guestsCount;
 
   return (
@@ -43,18 +66,25 @@ export function StickyBookingCard({ wedding }: StickyBookingCardProps) {
           <span className="text-[0.625rem] text-charcoal-400 font-semibold uppercase tracking-wider block">From</span>
           <div className="flex items-baseline gap-1">
             <span className="font-display font-black text-lg text-[var(--color-brand-primary)]">
-              {formatPrice(PRICING_TIERS.PREMIUM.priceINR).primary}
+              {formatPrice(basePriceINR).primary}
             </span>
             <span className="text-[0.625rem] text-charcoal-400 font-semibold">/guest</span>
           </div>
-          {formatPrice(PRICING_TIERS.PREMIUM.priceINR).secondary && (
+          {formatPrice(basePriceINR).secondary && (
             <span className="text-[0.625rem] text-charcoal-400 font-medium block">
-              {formatPrice(PRICING_TIERS.PREMIUM.priceINR).secondary}
+              {formatPrice(basePriceINR).secondary}
             </span>
           )}
         </div>
 
-        {isSoldOut ? (
+        {isShowcase ? (
+          <button
+            disabled
+            className="btn btn-secondary btn-sm px-4 py-2.5 bg-amber-50 text-amber-900 border border-amber-300 text-xs font-bold cursor-not-allowed"
+          >
+            Showcase Experience
+          </button>
+        ) : isSoldOut ? (
           <button
             disabled
             className="btn btn-secondary btn-sm px-4 py-2.5 bg-warm-200 text-charcoal-400 border border-warm-300 font-bold cursor-not-allowed"
@@ -123,7 +153,7 @@ export function StickyBookingCard({ wedding }: StickyBookingCardProps) {
 
               {/* Tiers List */}
               <div className="space-y-2">
-                {Object.entries(PRICING_TIERS).map(([key, tier]) => {
+                {Object.entries(dynamicTiers).map(([key, tier]) => {
                   const isSelected = selectedTierKey === key;
                   return (
                     <button

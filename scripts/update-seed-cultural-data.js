@@ -1,199 +1,11 @@
-/**
- * WeddingWithIndia — Master Database Seeder
- * Seeds a complete, interconnected demonstration ecosystem with Super Admin, Admin, 22 Unique Hosts, Guest, Agent, Coordinator,
- * 22 Unique Curated Weddings, Events, Traditions, Galleries, Bookings, Guest Passes, Reviews, Payments, Commissions, and Verifications.
- */
+const fs = require("fs");
+const path = require("path");
 
-const { PrismaClient } = require("@prisma/client");
+const seedFilePath = path.join(__dirname, "seed-complete.js");
+let content = fs.readFileSync(seedFilePath, "utf8");
 
-const dbUrl = process.env.DATABASE_URL || "";
-const connectionUrl = dbUrl + (dbUrl.includes("?") ? "&" : "?") + "pgbouncer=true&connection_limit=1";
-
-const prisma = new PrismaClient({
-  datasources: {
-    db: {
-      url: connectionUrl,
-    },
-  },
-});
-
-async function seedMasterData() {
-  console.log("==================================================");
-  console.log("  WeddingWithIndia — Master Database Seeder");
-  console.log("==================================================\n");
-
-  try {
-    console.log("[seed] Checking existing database state...");
-    const existingWeddings = await prisma.wedding.count();
-    if (existingWeddings > 0) {
-      console.log(`ℹ️ Database already contains ${existingWeddings} wedding listing(s). Refreshing seed data...\n`);
-    }
-
-    // ------------------------------------------------------------------------
-    // 1. CREATE RBAC DEMO ACCOUNTS
-    // ------------------------------------------------------------------------
-    console.log("1. Seeding Core RBAC User Accounts...");
-
-    // Super Admin
-    const superAdmin = await prisma.user.upsert({
-      where: { email: "superadmin@weddingwithindia.com" },
-      update: { role: "ADMIN", status: "ACTIVE" },
-      create: {
-        clerkUserId: "user_superadmin_seed",
-        email: "superadmin@weddingwithindia.com",
-        name: "Vikramaditya Roy (Super Admin)",
-        role: "ADMIN",
-        status: "ACTIVE",
-        avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&q=80",
-      },
-    });
-    console.log(`   ✓ Super Admin: ${superAdmin.email} (${superAdmin.id})`);
-
-    // Admin
-    const admin = await prisma.user.upsert({
-      where: { email: "admin@weddingwithindia.com" },
-      update: { role: "ADMIN", status: "ACTIVE" },
-      create: {
-        clerkUserId: "user_admin_seed",
-        email: "admin@weddingwithindia.com",
-        name: "Priya Sharma (Operations Manager)",
-        role: "ADMIN",
-        status: "ACTIVE",
-        avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&q=80",
-      },
-    });
-    console.log(`   ✓ Admin: ${admin.email} (${admin.id})`);
-
-    // Primary Host Couple
-    const hostUser = await prisma.user.upsert({
-      where: { email: "host@weddingwithindia.com" },
-      update: { role: "COUPLE", status: "ACTIVE" },
-      create: {
-        clerkUserId: "user_host_seed",
-        email: "host@weddingwithindia.com",
-        name: "Devika & Kaber Singhania",
-        role: "COUPLE",
-        status: "ACTIVE",
-        avatar: "https://images.unsplash.com/photo-1615966650071-855b15f29ad1?w=400&q=80",
-      },
-    });
-    const hostProfile = await prisma.coupleProfile.upsert({
-      where: { userId: hostUser.id },
-      update: {},
-      create: {
-        userId: hostUser.id,
-        weddingDate: new Date("2026-11-18"),
-        weddingLocation: "Umaid Bhawan Palace, Jodhpur",
-        expectedGuests: 500,
-        languagesSpoken: "English, Hindi, Marwari",
-        photographyRules: "Allowed in designated areas",
-        familyBio: "The Singhania family welcomes global travelers to experience royal Marwari hospitality and centuries-old wedding traditions.",
-      },
-    });
-    console.log(`   ✓ Host Couple: ${hostUser.email} (Profile ID: ${hostProfile.id})`);
-
-    // Traveler (Guest)
-    const guestUser = await prisma.user.upsert({
-      where: { email: "guest@weddingwithindia.com" },
-      update: { role: "TRAVELER", status: "ACTIVE" },
-      create: {
-        clerkUserId: "user_guest_seed",
-        email: "guest@weddingwithindia.com",
-        name: "Sarah & James Whitmore",
-        role: "TRAVELER",
-        status: "ACTIVE",
-        avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&q=80",
-      },
-    });
-    const guestProfile = await prisma.travelerProfile.upsert({
-      where: { userId: guestUser.id },
-      update: {},
-      create: {
-        userId: guestUser.id,
-        fullName: "Sarah Whitmore",
-        country: "United Kingdom",
-        language: "English",
-        interests: "Heritage architecture, Indian culinary arts, classical dance",
-        budget: "25000",
-        preferences: "Royal & Traditional",
-        foodPreferences: "Vegetarian Preferred",
-        accessibility: "None",
-      },
-    });
-    console.log(`   ✓ Traveler (Guest): ${guestUser.email} (Profile ID: ${guestProfile.id})`);
-
-    // Agent
-    const agentUser = await prisma.user.upsert({
-      where: { email: "agent@weddingwithindia.com" },
-      update: { role: "AGENT", status: "ACTIVE" },
-      create: {
-        clerkUserId: "user_agent_seed",
-        email: "agent@weddingwithindia.com",
-        name: "Amir Hussain (Royal Travel Corp)",
-        role: "AGENT",
-        status: "ACTIVE",
-        avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80",
-      },
-    });
-    const agentProfile = await prisma.agentProfile.upsert({
-      where: { userId: agentUser.id },
-      update: {},
-      create: {
-        userId: agentUser.id,
-        organization: "Royal India Hospitality & Luxury Travel",
-        country: "United Arab Emirates",
-        experienceYears: 8,
-        targetAudience: "High-net-worth cultural enthusiasts",
-        verifiedChecks: true,
-        referralCode: "WWI-ROYAL-AGENT",
-      },
-    });
-    console.log(`   ✓ Agent: ${agentUser.email} (Referral Code: ${agentProfile.referralCode})`);
-
-    // Coordinator
-    const coordinatorUser = await prisma.user.upsert({
-      where: { email: "coordinator@weddingwithindia.com" },
-      update: { role: "ADMIN", status: "ACTIVE" },
-      create: {
-        clerkUserId: "user_coordinator_seed",
-        email: "coordinator@weddingwithindia.com",
-        name: "Rajesh Mehta (Lead On-Site Coordinator)",
-        role: "ADMIN",
-        status: "ACTIVE",
-        avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&q=80",
-      },
-    });
-    console.log(`   ✓ Coordinator: ${coordinatorUser.email} (${coordinatorUser.id})`);
-
-    // ------------------------------------------------------------------------
-    // 2. SEED USER VERIFICATIONS
-    // ------------------------------------------------------------------------
-    console.log("\n2. Seeding Verification Records...");
-    const usersToVerify = [superAdmin, admin, hostUser, guestUser, agentUser, coordinatorUser];
-    for (const u of usersToVerify) {
-      await prisma.verification.upsert({
-        where: { userId: u.id },
-        update: { status: "APPROVED" },
-        create: {
-          userId: u.id,
-          status: "APPROVED",
-          phoneVerified: true,
-          emailVerified: true,
-          govtIdUrl: "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=600&q=80",
-          selfieUrl: u.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&q=80",
-          notes: "Auto-verified via Production Bootstrap Suite.",
-          reviewedBy: superAdmin.id,
-        },
-      });
-    }
-    console.log(`   ✓ Verified ${usersToVerify.length} user accounts.`);
-
-    // ------------------------------------------------------------------------
-    // 3. SEED DEMO WEDDING LISTINGS & CONNECTED CONTENT
-    // ------------------------------------------------------------------------
-    console.log("\n3. Seeding Connected Demo Weddings & Events...");
-
-    const demoWeddingsData = [
+// Replacement for demoWeddingsData array
+const updatedWeddingsCode = `    const demoWeddingsData = [
       {
         id: "w1",
         slug: "grand-maharaja-wedding",
@@ -1029,100 +841,50 @@ async function seedMasterData() {
           { name: "Pokhanu Welcome", description: "Playful nose-pulling welcome by bride's mother." }
         ],
       },
-    ];
+    ];`;
 
-    for (const wData of demoWeddingsData) {
-      // Find or create host user & couple profile
-      const hUser = await prisma.user.upsert({
-        where: { email: wData.hostEmail },
-        update: { role: "COUPLE", status: "ACTIVE" },
-        create: {
-          clerkUserId: `user_host_${wData.id}_seed`,
-          email: wData.hostEmail,
-          name: wData.hostCoupleName,
-          role: "COUPLE",
-          status: "ACTIVE",
-          avatar: wData.hostAvatar,
-        },
-      });
+// Replace demoWeddingsData array definition in seed-complete.js
+const startMarker = "    const demoWeddingsData = [";
+const endMarker = "    // ------------------------------------------------------------------------\n    // 4. SEED DEMO BOOKINGS";
 
-      const hProfile = await prisma.coupleProfile.upsert({
-        where: { userId: hUser.id },
-        update: {
-          weddingDate: wData.date,
-          weddingLocation: wData.location,
-          familyBio: `${wData.hostCoupleName} welcome global travelers to experience authentic ${wData.ethnicity} wedding traditions.`,
-        },
-        create: {
-          userId: hUser.id,
-          weddingDate: wData.date,
-          weddingLocation: wData.location,
-          expectedGuests: 200,
-          languagesSpoken: "English, Hindi",
-          photographyRules: "Allowed",
-          familyBio: `${wData.hostCoupleName} welcome global travelers to experience authentic ${wData.ethnicity} wedding traditions.`,
-        },
-      });
+const startIndex = content.indexOf(startMarker);
+const endIndex = content.indexOf(endMarker);
 
-      // Match existing wedding by slug or ID to prevent P2002 slug collision
-      const existingBySlug = await prisma.wedding.findUnique({ where: { slug: wData.slug } });
-      const targetId = existingBySlug ? existingBySlug.id : wData.id;
+if (startIndex === -1 || endIndex === -1) {
+  console.error("Could not find markers in seed-complete.js!");
+  process.exit(1);
+}
 
-      // Clear old events and traditions to guarantee zero stale generic events
-      await prisma.weddingEvent.deleteMany({ where: { weddingId: targetId } });
-      await prisma.weddingTradition.deleteMany({ where: { weddingId: targetId } });
+const before = content.slice(0, startIndex);
+const after = content.slice(endIndex);
 
-      const wedding = await prisma.wedding.upsert({
-        where: { id: targetId },
-        update: {
-          title: wData.title,
-          slug: wData.slug,
-          description: wData.description,
-          location: wData.location,
-          category: wData.category,
-          religion: wData.religion || "Hindu",
-          region: wData.region || null,
-          community: wData.community || null,
-          foodContext: wData.foodContext || null,
-          dressExpectations: wData.dressExpectations || null,
-          guestRules: wData.guestRules || null,
-          etiquetteNotes: wData.etiquetteNotes || null,
-          date: wData.date,
-          pricePerGuest: wData.pricePerGuest,
-          mainImageUrl: wData.mainImageUrl,
-          status: wData.status,
-          featured: wData.featured,
-          sponsored: wData.sponsored ?? false,
-          isDemo: true,
-          capacity: 20,
-          theme: wData.theme,
+let newContent = before + updatedWeddingsCode + "\n\n    " + after;
+
+// Now update the upsert block in seed-complete.js to save all cultural fields and authentic events!
+const oldUpsertLoop = `          theme: wData.theme,
           dressCode: wData.dressCode,
           ethnicity: wData.ethnicity,
+          gallery: {
+            create: [
+              { imageUrl: wData.mainImageUrl, order: 0 },
+            ],
+          },
           events: {
-            create: (wData.events || []).map((e) => ({
-              name: e.name,
-              description: e.description,
-              date: wData.date,
-              startTime: e.startTime || "17:00",
-              endTime: e.endTime || "22:00",
-              location: wData.location,
-            })),
-          },
-          traditions: {
-            create: (wData.traditions || []).map((t) => ({
-              name: t.name,
-              description: t.description,
-            })),
-          },
-        },
-        create: {
-          id: wData.id,
-          hostCoupleId: hProfile.id,
-          slug: wData.slug,
-          title: wData.title,
-          description: wData.description,
-          location: wData.location,
-          category: wData.category,
+            create: [
+              {
+                name: "Mehndi & Sangeet Gala",
+                description: "Evening of henna art, live folk music, and choreographed dances.",
+                date: wData.date,
+                startTime: "17:00",
+                endTime: "22:00",
+                location: wData.location,
+              },
+            ],
+          },`;
+
+const newUpsertLoop = `          theme: wData.theme,
+          dressCode: wData.dressCode,
+          ethnicity: wData.ethnicity,
           religion: wData.religion || "Hindu",
           region: wData.region || null,
           community: wData.community || null,
@@ -1130,17 +892,6 @@ async function seedMasterData() {
           dressExpectations: wData.dressExpectations || null,
           guestRules: wData.guestRules || null,
           etiquetteNotes: wData.etiquetteNotes || null,
-          date: wData.date,
-          pricePerGuest: wData.pricePerGuest,
-          capacity: 20,
-          mainImageUrl: wData.mainImageUrl,
-          status: wData.status,
-          featured: wData.featured,
-          sponsored: wData.sponsored ?? false,
-          isDemo: true,
-          theme: wData.theme,
-          dressCode: wData.dressCode,
-          ethnicity: wData.ethnicity,
           gallery: {
             create: [
               { imageUrl: wData.mainImageUrl, order: 0 },
@@ -1155,130 +906,31 @@ async function seedMasterData() {
               endTime: e.endTime || "22:00",
               location: wData.location,
             })),
-          },
-          traditions: {
-            create: (wData.traditions || []).map((t) => ({
-              name: t.name,
-              description: t.description,
-            })),
-          },
-        },
-      });
+          },`;
 
-      console.log(`   ✓ Curated Wedding Created/Updated: "${wedding.title}" (${wedding.slug}) — religion: ${wedding.religion}, region: ${wedding.region}`);
-    }
+newContent = newContent.replaceAll(oldUpsertLoop, newUpsertLoop);
 
-    console.log("\n4. Seeding Demo Bookings, Passes & Preparations...");
-    const targetWedding = await prisma.wedding.findFirst({ where: { slug: "grand-maharaja-wedding" } });
-    if (targetWedding) {
-      const demoBooking = await prisma.booking.upsert({
-        where: { id: "booking-demo-1" },
-        update: {},
-        create: {
-          id: "booking-demo-1",
-          weddingId: targetWedding.id,
-          travelerId: guestProfile.id,
-          date: targetWedding.date,
-          guestsCount: 2,
-          pricePerGuest: targetWedding.pricePerGuest,
-          totalAmount: targetWedding.pricePerGuest * 2,
-          status: "APPROVED",
-        },
-      });
+// Also update the `update:` block of upsert in seed-complete.js
+const oldUpdateBlock = `          featured: wData.featured,
+          sponsored: wData.sponsored ?? false,
+          isDemo: true,
+          capacity: 0,
+        },`;
 
-      await prisma.guestPass.upsert({
-        where: { id: "pass-demo-1" },
-        update: {},
-        create: {
-          id: "pass-demo-1",
-          bookingId: demoBooking.id,
-          passCode: "PASS-VIP-999",
-          qrTokenHash: "TOKEN_HASH_DEMO_999",
-          status: "ACTIVE",
-        },
-      });
+const newUpdateBlock = `          featured: wData.featured,
+          sponsored: wData.sponsored ?? false,
+          isDemo: true,
+          capacity: 0,
+          religion: wData.religion || "Hindu",
+          region: wData.region || null,
+          community: wData.community || null,
+          foodContext: wData.foodContext || null,
+          dressExpectations: wData.dressExpectations || null,
+          guestRules: wData.guestRules || null,
+          etiquetteNotes: wData.etiquetteNotes || null,
+        },`;
 
-      // Demo Review
-      await prisma.review.upsert({
-        where: { id: "rev-demo-1" },
-        update: {},
-        create: {
-          id: "rev-demo-1",
-          booking: { connect: { id: demoBooking.id } },
-          traveler: { connect: { id: guestProfile.id } },
-          rating: 5,
-          comment: "Attending the wedding at Umaid Bhawan was the absolute highlight of our trip to India! The warmth of the family, the food, and the cultural immersion were unmatched.",
-          ratingCulture: 5,
-          ratingHospitality: 5,
-          ratingSafety: 5,
-          status: "APPROVED",
-        },
-      });
-    }
+newContent = newContent.replace(oldUpdateBlock, newUpdateBlock);
 
-    // ------------------------------------------------------------------------
-    // 5. SEED WISHLISTS, NOTIFICATIONS & AUDIT LOGS
-    // ------------------------------------------------------------------------
-    console.log("\n5. Seeding Wishlists, Notifications & Audit Logs...");
-    if (targetWedding) {
-      await prisma.wishlist.upsert({
-        where: {
-          travelerId_weddingId: {
-            travelerId: guestProfile.id,
-            weddingId: targetWedding.id,
-          },
-        },
-        update: {},
-        create: {
-          traveler: { connect: { id: guestProfile.id } },
-          wedding: { connect: { id: targetWedding.id } },
-        },
-      });
-    }
-
-    await prisma.notification.upsert({
-      where: { id: "notif-demo-1" },
-      update: {},
-      create: {
-        id: "notif-demo-1",
-        userId: guestUser.id,
-        title: "Pass Approved!",
-        message: "Your guest pass for The Grand Maharaja Wedding has been approved by the host.",
-        type: "BOOKING_APPROVED",
-        read: false,
-      },
-    });
-
-    await prisma.auditLog.create({
-      data: {
-        userId: superAdmin.id,
-        userName: superAdmin.name || "Super Admin",
-        action: "SEED_MASTER_BOOTSTRAP",
-        entity: "SYSTEM",
-        entityId: "SYSTEM_GLOBAL",
-        details: JSON.stringify({ message: "Master Database Seed execution completed with 22 unique curated listings." }),
-      },
-    });
-
-    console.log("\n--------------------------------------------------");
-    console.log("✅ Master Database Seeding Completed Successfully!");
-    console.log("--------------------------------------------------");
-    const finalUserCount = await prisma.user.count();
-    const finalWeddingCount = await prisma.wedding.count();
-    const finalBookingCount = await prisma.booking.count();
-    const finalReviewCount = await prisma.review.count();
-
-    console.log(`  Users: ${finalUserCount}`);
-    console.log(`  Weddings: ${finalWeddingCount}`);
-    console.log(`  Bookings: ${finalBookingCount}`);
-    console.log(`  Reviews: ${finalReviewCount}`);
-    console.log("==================================================\n");
-  } catch (error) {
-    console.error("❌ Seeding Error:", error);
-    process.exit(1);
-  } finally {
-    await prisma.$disconnect();
-  }
-}
-
-seedMasterData();
+fs.writeFileSync(seedFilePath, newContent, "utf8");
+console.log("Successfully updated seed-complete.js with 22 authentic cultural wedding profiles!");

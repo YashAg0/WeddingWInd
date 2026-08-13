@@ -6,6 +6,7 @@ import { MarketplaceHeader } from "@/components/wedding/MarketplaceHeader";
 import { FilterSidebar } from "@/components/wedding/FilterSidebar";
 import { Flower2 } from "lucide-react";
 import { SortSelect } from "./SortSelect";
+import { CANONICAL_RELIGIONS, normalizeReligion } from "@/lib/culture";
 
 export const metadata: Metadata = {
   title: "Browse Weddings",
@@ -37,14 +38,44 @@ export default async function WeddingsPage({ searchParams }: PageProps) {
   const resolvedParams = await searchParams;
   const weddings = await getWeddings();
 
+  // Compute dynamic bounds & category counts from database weddings
+  const religionCounts: Record<string, number> = {};
+  CANONICAL_RELIGIONS.forEach((r) => { religionCounts[r] = 0; });
+
+  const styleCounts: Record<string, number> = {};
+  const stylesList = ["Royal", "Punjabi", "South Indian", "Beach", "Destination", "Traditional"];
+  stylesList.forEach((s) => { styleCounts[s] = 0; });
+
+  let minPriceInSystem = 999999;
+  let maxPriceInSystem = 0;
+
+  weddings.forEach((w) => {
+    const normRel = normalizeReligion(w.religion);
+    religionCounts[normRel] = (religionCounts[normRel] || 0) + 1;
+
+    if (styleCounts[w.category] !== undefined) {
+      styleCounts[w.category] += 1;
+    }
+
+    if (w.pricePerGuest > 0) {
+      if (w.pricePerGuest < minPriceInSystem) minPriceInSystem = w.pricePerGuest;
+      if (w.pricePerGuest > maxPriceInSystem) maxPriceInSystem = w.pricePerGuest;
+    }
+  });
+
+  if (minPriceInSystem === 999999) minPriceInSystem = 100;
+  if (maxPriceInSystem === 0) maxPriceInSystem = 25000;
+
   const destination = resolvedParams.destination?.toLowerCase() || "";
   const category = resolvedParams.category?.toLowerCase() || "";
   const date = resolvedParams.date || ""; // YYYY-MM format
   
   const stylesFilter = resolvedParams.styles ? resolvedParams.styles.split(",") : [];
-  const maxBudgetFilter = Number(resolvedParams.maxBudget || "99999"); // INR — default shows all tiers
+  const maxBudgetFilter = Number(resolvedParams.maxBudget || maxPriceInSystem.toString());
   const luxuryFilter = resolvedParams.luxuryLevels ? resolvedParams.luxuryLevels.split(",") : [];
-  const religionFilter = resolvedParams.religions ? resolvedParams.religions.split(",") : [];
+  const religionFilter = resolvedParams.religions
+    ? resolvedParams.religions.split(",").map((r) => normalizeReligion(r).toLowerCase())
+    : [];
   const minSlotsFilter = Number(resolvedParams.minSlots || "0");
   const languagesFilter = resolvedParams.languages ? resolvedParams.languages.split(",") : [];
   const durationFilter = resolvedParams.duration ? Number(resolvedParams.duration) : null;
@@ -81,13 +112,14 @@ export default async function WeddingsPage({ searchParams }: PageProps) {
       if (!luxuryFilter.includes(wedding.luxuryLevel.toLowerCase())) return false;
     }
 
-    // 6. Religion
+    // 6. Religion (Canonical Normalized Match)
     if (religionFilter.length > 0) {
-      if (!religionFilter.includes(wedding.religion.toLowerCase())) return false;
+      const normWeddingRel = normalizeReligion(wedding.religion).toLowerCase();
+      if (!religionFilter.includes(normWeddingRel)) return false;
     }
 
     // 7. Slots
-    const availableSlots = wedding.guestsAllowed - wedding.guestsBooked;
+    const availableSlots = wedding.guestsAllowed <= 0 ? 20 : (wedding.guestsAllowed - wedding.guestsBooked);
     if (availableSlots < minSlotsFilter) return false;
 
     // 8. Languages
@@ -143,7 +175,7 @@ export default async function WeddingsPage({ searchParams }: PageProps) {
             Explore Wedding Celebrations
           </h1>
           <p className="text-charcoal-500 text-sm md:text-base leading-relaxed">
-            Attend a real wedding as an honored global guest. Verified hosts, safe booking, cultural guides.
+            Attend an authentic Indian wedding as an honored guest. Thoughtfully curated experiences, transparent details, and dedicated guest support.
           </p>
         </div>
 
@@ -156,9 +188,15 @@ export default async function WeddingsPage({ searchParams }: PageProps) {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start mt-2">
           
           {/* Desktop Filter Sidebar */}
-          <div className="hidden lg:block lg:col-span-1 sticky top-28 bg-white border border-warm-200/60 rounded-3xl p-6 shadow-card">
+          <div className="hidden lg:block lg:col-span-1 sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto overscroll-contain pr-1 bg-white border border-warm-200/60 rounded-3xl p-5 shadow-card scrollbar-thin">
             <Suspense fallback={<div className="h-96 bg-warm-100 rounded-2xl animate-pulse" />}>
-              <FilterSidebar />
+              <FilterSidebar
+                religionCounts={religionCounts}
+                styleCounts={styleCounts}
+                minPriceInSystem={minPriceInSystem}
+                maxPriceInSystem={maxPriceInSystem}
+                totalWeddingsCount={weddings.length}
+              />
             </Suspense>
           </div>
 

@@ -30,7 +30,7 @@ export const featuredWeddings: Wedding[] = [
     coupleName: "Devika & Kaber Singhania",
     hostName: "Devika & Kaber Singhania",
     hostAvatar: "https://images.unsplash.com/photo-1615966650071-855b15f29ad1?w=400&q=80",
-    featured: true, sponsored: true, isDemo: true,
+    featured: true, sponsored: false, isDemo: true,
     tags: ["Palace", "Royal Heritage", "Umaid Bhawan", "Baraat Procession", "Fine Dining"],
     date: "2026-11-18",
     religion: "Hindu (Rajput Tradition)",
@@ -39,7 +39,7 @@ export const featuredWeddings: Wedding[] = [
     languages: ["English", "Hindi", "Marwari"],
     isVerified: true,
     isCurated: true,
-    curatedBadge: "Sponsored",
+    curatedBadge: "Featured",
     gallery: ["https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=1200&q=80"],
     story: "Experience royal Marwari grandeur at Umaid Bhawan Palace, Jodhpur. Enjoy authentic Sangeet performances, sacred Phera rituals, and a royal procession through the Blue City.",
     coupleBio: "The Singhania family welcomes global travelers to experience royal Marwari hospitality and centuries-old wedding traditions.",
@@ -75,7 +75,7 @@ export const featuredWeddings: Wedding[] = [
     coupleName: "Vikramaditya & Gayatri Himachal",
     hostName: "Vikramaditya & Gayatri Himachal",
     hostAvatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80",
-    featured: true, sponsored: true, isDemo: true,
+    featured: true, sponsored: false, isDemo: true,
     tags: ["Pine Forest", "Himalayan Luxury", "Wildflower Hall", "Pahadi Royal", "Oberoi Estate"],
     date: "2028-05-18",
     religion: "Hindu (Himachali Rajput Tradition)",
@@ -84,7 +84,7 @@ export const featuredWeddings: Wedding[] = [
     languages: ["English", "Hindi", "Pahadi"],
     isVerified: true,
     isCurated: true,
-    curatedBadge: "Sponsored",
+    curatedBadge: "Featured",
     gallery: ["https://images.unsplash.com/photo-1640953148126-1962ec17a92b?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"],
     story: "Experience mountain luxury at Wildflower Hall, Shimla. Enjoy authentic Pahadi Dham feasts, cedar forest pheras, and Sitar melodies overlooking Himalayan peaks.",
     coupleBio: "Vikramaditya & Gayatri invite global guests to experience serene Himachali royal hospitality.",
@@ -391,8 +391,7 @@ export const weddingCategories = categories;
 export const stats: Stat[] = [
   { label: "Curated Experiences", value: "22+" },
   { label: "Partner Cities", value: "18" },
-  { label: "Guest Satisfaction", value: "99.4%" },
-  { label: "Verified Hosts", value: "100%" },
+  { label: "Cultural Regions", value: "12+" },
 ];
 
 export const heroStats = stats;

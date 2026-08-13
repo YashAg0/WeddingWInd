@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Users, Heart, Share2, ShieldCheck, Check, Info, Sparkles } from "lucide-react";
@@ -9,10 +10,8 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import {
-  PRICING_TIERS,
   formatCurrencyINR,
-  formatSecondaryCurrency,
-  PricingTier
+  formatSecondaryCurrency
 } from "@/lib/constants/financial-model";
 import { useCurrency } from "@/context/CurrencyContext";
 
@@ -25,7 +24,8 @@ export function BookingSidebar({ wedding }: BookingSidebarProps) {
   const { formatPrice } = useCurrency();
   const router = useRouter();
 
-  const [selectedTierKey, setSelectedTierKey] = useState<string>("CELEBRATION_EXPERIENCE");
+  const basePriceINR = wedding.pricePerGuest || 12000;
+  const [selectedTierKey, setSelectedTierKey] = useState<string>("BUDGET");
   const [guestsCount, setGuestsCount] = useState(1);
   const [isSaved, setIsSaved] = useState(false);
   const [isShared, setIsShared] = useState(false);
@@ -33,9 +33,32 @@ export function BookingSidebar({ wedding }: BookingSidebarProps) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const availableSlots = Math.max(0, wedding.guestsAllowed - wedding.guestsBooked);
-  const isSoldOut = wedding.guestsAllowed === 0 || availableSlots <= 0;
-  const activeTier: PricingTier = PRICING_TIERS[selectedTierKey] || PRICING_TIERS.PREMIUM;
+  const isShowcase = wedding.isDemo === true;
+  const isSoldOut = isShowcase || wedding.guestsAllowed === 0 || availableSlots <= 0;
 
+  const dynamicTiers: Record<string, { id: string; name: string; priceINR: number; description: string; popular?: boolean }> = {
+    BUDGET: {
+      id: "budget",
+      name: "Standard Access",
+      priceINR: basePriceINR,
+      description: "Full access to wedding ceremonies, celebratory feasts, and digital cultural guide.",
+    },
+    PREMIUM: {
+      id: "premium",
+      name: "Premium Experience",
+      priceINR: Math.round(basePriceINR * 1.35),
+      description: "Multi-event access, professional Henna session, and bilingual coordinator support.",
+      popular: true,
+    },
+    VIP: {
+      id: "vip",
+      name: "VIP Family Guest",
+      priceINR: Math.round(basePriceINR * 2.0),
+      description: "Complete multi-day wedding access, family lounge entry, and designer attire rental.",
+    },
+  };
+
+  const activeTier = dynamicTiers[selectedTierKey] || dynamicTiers.BUDGET;
   const subtotalINR = activeTier.priceINR * guestsCount;
 
   const handleShare = () => {
@@ -45,8 +68,8 @@ export function BookingSidebar({ wedding }: BookingSidebarProps) {
   };
 
   const handleBook = async () => {
-    if (isSoldOut) {
-      toast.error("This wedding experience is currently fully booked.");
+    if (isShowcase || isSoldOut) {
+      toast.error("Showcase experiences are currently not available for booking.");
       return;
     }
     if (!user) {
@@ -94,10 +117,12 @@ export function BookingSidebar({ wedding }: BookingSidebarProps) {
       <div className="flex items-center justify-between p-3.5 bg-warm-50 border border-warm-200/50 rounded-2xl">
         <div className="flex items-center gap-2 text-charcoal-700">
           <Users size={16} className="text-[var(--color-brand-primary)]" />
-          <span className="text-xs font-semibold">Guest Slots Remaining</span>
+          <span className="text-xs font-semibold">
+            {isShowcase || isSoldOut ? "Availability Status" : "Guest Slots Remaining"}
+          </span>
         </div>
-        <span className={cn("text-xs font-bold px-3 py-1 rounded-lg border", isSoldOut ? "bg-amber-100 text-amber-900 border-amber-300" : "bg-white text-charcoal-900 border-warm-200")}>
-          {isSoldOut ? "Fully Booked" : `${availableSlots} / ${wedding.guestsAllowed} Left`}
+        <span className={cn("text-xs font-bold px-3 py-1 rounded-lg border", (isShowcase || isSoldOut) ? "bg-amber-100 text-amber-900 border-amber-300" : "bg-white text-charcoal-900 border-warm-200")}>
+          {isShowcase || isSoldOut ? "Fully Booked" : `${availableSlots} / ${wedding.guestsAllowed} Left`}
         </span>
       </div>
 
@@ -107,7 +132,7 @@ export function BookingSidebar({ wedding }: BookingSidebarProps) {
           Select Experience Tier
         </label>
         <div className="space-y-2">
-          {Object.entries(PRICING_TIERS).map(([key, tier]) => {
+          {Object.entries(dynamicTiers).map(([key, tier]) => {
             const isSelected = selectedTierKey === key;
             return (
               <button
@@ -158,8 +183,10 @@ export function BookingSidebar({ wedding }: BookingSidebarProps) {
           onChange={(e) => setGuestsCount(Number(e.target.value))}
           className="input-luxury bg-white font-semibold cursor-pointer disabled:bg-warm-100 disabled:text-charcoal-400 disabled:cursor-not-allowed"
         >
-          {isSoldOut ? (
-            <option value={0}>Fully Booked (0 Seats Available)</option>
+          {isShowcase || isSoldOut ? (
+            <option value={0}>
+              Fully Booked (0 Seats Available)
+            </option>
           ) : (
             Array.from({ length: Math.min(10, availableSlots) }).map((_, i) => (
               <option key={i + 1} value={i + 1}>
@@ -199,13 +226,24 @@ export function BookingSidebar({ wedding }: BookingSidebarProps) {
             {errorMessage}
           </div>
         )}
-        {isSoldOut ? (
-          <button
-            disabled
-            className="w-full py-4 text-base font-bold bg-amber-50 text-amber-900 border border-amber-300 rounded-2xl cursor-not-allowed text-center shadow-xs"
-          >
-            Fully Booked — No Spots Available
-          </button>
+        {isShowcase || isSoldOut ? (
+          <div className="space-y-2">
+            <button
+              disabled
+              className="w-full py-3.5 px-4 text-sm font-bold bg-amber-50/90 text-amber-900 border border-amber-300 rounded-2xl cursor-not-allowed text-center shadow-xs"
+            >
+              Fully Booked
+            </button>
+            <p className="text-[0.6875rem] text-charcoal-500 text-center leading-normal px-1">
+              This experience is not currently accepting reservations.
+            </p>
+            <Link
+              href="/contact"
+              className="w-full py-2.5 px-4 text-xs font-bold text-center text-charcoal-700 bg-warm-50 hover:bg-warm-100 border border-warm-200 rounded-xl transition-all block mt-1"
+            >
+              Enquire About Custom Dates
+            </Link>
+          </div>
         ) : (
           <button
             onClick={handleBook}

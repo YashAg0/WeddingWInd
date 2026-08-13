@@ -1328,7 +1328,12 @@ const weddingDiscoveryUpdateSchema = z.object({
   weddingId: z.string().uuid("Invalid wedding ID"),
 });
 
-export async function adminToggleSponsoredAction(weddingId: string, isSponsored: boolean) {
+export async function adminToggleSponsoredAction(
+  weddingId: string,
+  isSponsored: boolean,
+  sponsorshipStart?: Date | string | null,
+  sponsorshipEnd?: Date | string | null
+) {
   await requireRole([UserRole.ADMIN]);
 
   const { weddingId: validId } = weddingDiscoveryUpdateSchema.parse({ weddingId });
@@ -1336,9 +1341,16 @@ export async function adminToggleSponsoredAction(weddingId: string, isSponsored:
   const wedding = await prisma.wedding.findUnique({ where: { id: validId }, select: { id: true, title: true } });
   if (!wedding) throw new Error("Wedding not found.");
 
+  const start = sponsorshipStart ? new Date(sponsorshipStart) : null;
+  const end = sponsorshipEnd ? new Date(sponsorshipEnd) : null;
+
   const updated = await prisma.wedding.update({
     where: { id: validId },
-    data: { sponsored: isSponsored },
+    data: {
+      sponsored: isSponsored,
+      sponsorshipStart: start,
+      sponsorshipEnd: end,
+    },
   });
 
   await createAuditLog(

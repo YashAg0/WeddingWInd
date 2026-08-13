@@ -5,7 +5,6 @@ import { prisma } from "../prisma";
 import { requireAuth, syncAndGetDbUser } from "../auth";
 export { syncAndGetDbUser };
 import { UserRole, BookingStatus, PaymentStatus, VerificationStatus, WeddingStatus, ReferralStatus, CancellationReasonCode, CancellationActor } from "@prisma/client";
-import type { WeddingCategory } from "@/types";
 import { stripe } from "../stripe";
 import { rateLimit } from "../rate-limit";
 import { getWeddingRatingAggregate, getPublishedReviewWhere } from "../services/trust-score";
@@ -25,6 +24,7 @@ import {
 } from "../validation";
 import { unstable_cache } from "next/cache";
 import { env } from "../env";
+import { toWeddingDTO } from "../wedding-dto";
 
 /**
  * 1. Action to update User Role during onboarding or settings.
@@ -1318,72 +1318,17 @@ export const getWeddings = unstable_cache(
 
     const results = await Promise.all(
       weddings.map(async (w) => {
-        let ratings = { bayesianRating: 4.96, reviewCount: 0 };
+        let ratings = { bayesianRating: 0, reviewCount: 0 };
         try {
           ratings = await getWeddingRatingAggregate(w.id);
-        } catch {
-          // Use default aggregate fallback
-        }
+        } catch {}
 
-        const confirmedGuestsBooked = w._count.bookings;
-
-        return {
-          id: w.id,
-          slug: w.slug,
-          title: w.title,
-          location: w.location,
-          city: w.location.split(",")[0]?.trim() || "India",
-          state: w.location.split(",")[1]?.trim() || "India",
-          country: "India",
-          countryCode: "IN",
-          category: w.category as WeddingCategory,
-          pricePerGuest: w.pricePerGuest,
-          currency: "USD",
-          rating: ratings.bayesianRating,
+        return toWeddingDTO({
+          ...w,
+          rating: ratings.reviewCount > 0 ? ratings.bayesianRating : 0,
           reviewCount: ratings.reviewCount,
-          guestsAllowed: w.capacity,
-          guestsBooked: confirmedGuestsBooked,
-          imageUrl: w.mainImageUrl,
-          coupleImage: w.mainImageUrl || w.hostCouple.user.avatar || "https://images.unsplash.com/photo-1615966650071-855b15f29ad1?w=400&q=80",
-          coupleName: w.hostCouple.user.name || "Host Couple",
-          hostName: w.hostCouple.user.name || "Host Couple",
-          hostAvatar: w.hostCouple.user.avatar || "https://images.unsplash.com/photo-1615966650071-855b15f29ad1?w=400&q=80",
-          featured: w.featured,
-          sponsored: w.sponsored,
-          isDemo: w.isDemo,
-          tags: w.traditions.map((t) => t.name),
-          date: w.date.toISOString().split("T")[0],
-          religion: w.category === "Royal" ? "Hinduism" : "Multicultural",
-          luxuryLevel: "Luxury" as const,
-          durationDays: 3,
-          languages: w.hostCouple.languagesSpoken?.split(",").map((l) => l.trim()) || ["English"],
-          isVerified: true,
-          isCurated: w.sponsored || w.featured,
-          curatedBadge: w.sponsored ? "Sponsored" : w.featured ? "Featured" : undefined,
-          gallery: w.gallery.map((g) => g.imageUrl),
-          story: w.description,
-          coupleBio: w.hostCouple.familyBio || "",
-          timeline: w.events.map((evt) => ({
-            id: evt.id,
-            title: evt.name,
-            time: `${evt.startTime} - ${evt.endTime}`,
-            date: evt.date.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-            description: evt.description || "",
-            icon: "Sparkles"
-          })),
-          traditions: w.traditions.map((t) => ({
-            title: t.name,
-            description: t.description
-          })),
-          dressCode: w.dressCode || "Traditional Indian / Festive Smart Casual",
-          foodDescription: "Authentic local cuisine with vegetarian and vegan options available.",
-          venueDescription: "A gorgeous venue with complete safety check, clean sanitation, and parking.",
-          accommodation: "5-star luxury accommodation available nearby (discount rates offered for our guests).",
-          included: ["Entry pass", "Food & beverages", "Cultural workshops", "Henna art session"],
-          notIncluded: ["Flights", "Personal local transport", "Hotel stay (available as add-on)"],
-          reviews: [],
-          faqs: []
-        };
+          guestsBooked: w._count.bookings,
+        });
       })
     );
     return results;
@@ -1393,6 +1338,76 @@ export const getWeddings = unstable_cache(
     return featuredWeddings;
   }
 }, ["published-weddings"], { revalidate: 60, tags: ["weddings"] });
+
+export const getHomepageWeddings = unstable_cache(
+  async (limit: number = 6) => {
+    try {
+      const now = new Date();
+      const weddings = await prisma.wedding.findMany({
+        where: {
+          status: "PUBLISHED",
+          suspended: false,
+          deletedAt: null,
+          date: { gte: now },
+        },
+        take: limit,
+        orderBy: [
+          { featured: "desc" },
+          { sponsored: "desc" },
+          { createdAt: "desc" },
+        ],
+        include: {
+          hostCouple: {
+            include: { user: true },
+          },
+          gallery: true,
+          events: true,
+          traditions: true,
+          _count: {
+            select: {
+              bookings: {
+                where: {
+                  status: {
+                    in: ["APPROVED", "PAID", "CONFIRMED", "COMPLETED", "CHECKED_IN", "ATTENDED", "READY_FOR_EVENT"],
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+
+      if (!weddings || weddings.length === 0) {
+        console.info("[getHomepageWeddings] No weddings in database. Serving static fallback.");
+        const { featuredWeddings } = await import("../data");
+        return featuredWeddings.slice(0, limit);
+      }
+
+      const results = await Promise.all(
+        weddings.map(async (w) => {
+          let ratings = { bayesianRating: 0, reviewCount: 0 };
+          try {
+            ratings = await getWeddingRatingAggregate(w.id);
+          } catch {}
+
+          return toWeddingDTO({
+            ...w,
+            rating: ratings.reviewCount > 0 ? ratings.bayesianRating : 0,
+            reviewCount: ratings.reviewCount,
+            guestsBooked: w._count.bookings,
+          });
+        })
+      );
+      return results;
+    } catch (err) {
+      console.warn("[getHomepageWeddings] Database unreachable. Serving static fallback.", err);
+      const { featuredWeddings } = await import("../data");
+      return featuredWeddings.slice(0, limit);
+    }
+  },
+  ["homepage-featured-weddings"],
+  { revalidate: 60, tags: ["weddings", "homepage"] }
+);
 
 /**
  * Maps a review record to a public data transfer object, stripping sensitive data.
@@ -1463,7 +1478,7 @@ export const getWeddingBySlug = unstable_cache(
       return featuredWeddings.find((fw) => fw.slug === slug) || null;
     }
 
-    let ratings = { bayesianRating: 4.96, reviewCount: 0 };
+    let ratings = { bayesianRating: 0, reviewCount: 0 };
     try {
       const { calculateBayesianRating } = await import("../services/trust-score");
       ratings = await calculateBayesianRating(w.id);
@@ -1539,66 +1554,29 @@ export const getWeddingBySlug = unstable_cache(
 
     const reviews = dbReviews.map(mapToPublicReviewDTO);
 
-    return {
-      id: w.id,
-      slug: w.slug,
-      title: w.title,
-      location: w.location,
-      city: w.location.split(",")[0]?.trim() || "India",
-      state: w.location.split(",")[1]?.trim() || "India",
-      country: "India",
-      countryCode: "IN",
-      category: w.category as WeddingCategory,
-      pricePerGuest: w.pricePerGuest,
-      currency: "USD",
-      rating: ratings.bayesianRating,
+    const authenticInclusions = [
+      "Honorary guest entry pass",
+      "Celebration banquets & beverage service",
+      "Dedicated English-speaking cultural host/concierge",
+    ];
+    if (w.religion === "Muslim") {
+      authenticInclusions.push("Qawwali / Henna evening access", "Royal Walima banquet");
+    } else if (w.religion === "Sikh") {
+      authenticInclusions.push("Gurdwara Anand Karaj access", "Guru Ka Langar & head scarf (Rumaal)");
+    } else if (w.religion === "Christian") {
+      authenticInclusions.push("Church Nuptial mass access", "Sunset reception & cocktail dance");
+    } else {
+      authenticInclusions.push("Henna / Sangeet evening access", "Baraat procession participation");
+    }
+
+    return toWeddingDTO({
+      ...w,
+      rating: ratings.reviewCount > 0 ? ratings.bayesianRating : 0,
       reviewCount: ratings.reviewCount,
-      guestsAllowed: w.capacity,
       guestsBooked: confirmedGuestsBooked,
-      imageUrl: w.mainImageUrl,
-      coupleImage: w.mainImageUrl || w.hostCouple.user.avatar || "https://images.unsplash.com/photo-1615966650071-855b15f29ad1?w=400&q=80",
-      coupleName: w.hostCouple.user.name || "Host Couple",
-      hostName: w.hostCouple.user.name || "Host Couple",
-      hostAvatar: w.hostCouple.user.avatar || "https://images.unsplash.com/photo-1615966650071-855b15f29ad1?w=400&q=80",
-      featured: w.featured,
-      sponsored: w.sponsored,
-      isDemo: w.isDemo,
-      isCurated: w.sponsored || w.featured,
-      curatedBadge: w.sponsored ? "Sponsored" : w.featured ? "Featured" : undefined,
-      tags: w.traditions.map((t) => t.name),
-      date: w.date.toISOString().split("T")[0],
-      religion: w.category === "Royal" ? "Hinduism" : "Multicultural",
-      luxuryLevel: "Luxury" as const,
-      durationDays: 3,
-      languages: w.hostCouple.languagesSpoken?.split(",").map((l) => l.trim()) || ["English"],
-      isVerified: true,
-      gallery: w.gallery.map((g) => g.imageUrl),
-      story: w.description,
-      coupleBio: w.hostCouple.familyBio || "",
-      timeline: w.events.map((evt) => ({
-        id: evt.id,
-        title: evt.name,
-        time: `${evt.startTime} - ${evt.endTime}`,
-        date: evt.date.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-        description: evt.description || "",
-        icon: "Sparkles"
-      })),
-      traditions: w.traditions.map((t) => ({
-        title: t.name,
-        description: t.description
-      })),
-      dressCode: w.dressCode || "Traditional Indian / Festive Smart Casual",
-      theme: w.theme || "Traditional Indian Celebration",
-      ethnicity: w.ethnicity || "Multicultural",
-      requiredGuests: w.requiredGuests || 0,
-      foodDescription: "Authentic local cuisine with vegetarian and vegan options available.",
-      venueDescription: "A gorgeous venue with complete safety check, clean sanitation, and parking.",
-      accommodation: "5-star luxury accommodation available nearby (discount rates offered for our guests).",
-      included: ["Entry pass", "Food & beverages", "Cultural workshops", "Henna art session"],
-      notIncluded: ["Flights", "Personal local transport", "Hotel stay (available as add-on)"],
+      included: authenticInclusions,
       reviews,
-      faqs: []
-    };
+    });
   } catch (err) {
     console.warn(`[getWeddingBySlug] Database query failed for slug '${slug}'. Serving static fallback.`, err);
     const { featuredWeddings } = await import("../data");

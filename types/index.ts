@@ -75,6 +75,8 @@ export interface DemoWedding {
   hostAvatar: string;
   featured: boolean;
   sponsored: boolean;
+  sponsorshipStart?: string | null;
+  sponsorshipEnd?: string | null;
   isDemo: boolean;
   tags: string[];
   date: string;
@@ -99,6 +101,12 @@ export interface DemoWedding {
   faqs: FAQItem[];
   theme?: string;
   ethnicity?: string;
+  region?: string;
+  community?: string;
+  foodContext?: string;
+  dressExpectations?: string;
+  guestRules?: string;
+  etiquetteNotes?: string;
   curatedBadge?: string;
 }
 

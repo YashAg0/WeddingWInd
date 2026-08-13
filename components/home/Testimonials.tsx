@@ -7,17 +7,22 @@ interface TestimonialsProps {
   testimonials: Testimonial[];
 }
 
-function TestimonialCard({ testimonial }: { testimonial: Testimonial }) {
+function TestimonialCard({
+  testimonial,
+}: {
+  testimonial: Testimonial;
+}) {
   return (
     <article
-      className="card-luxury p-6 sm:p-8 flex flex-col gap-5 bg-white"
-      aria-label={`Testimonial from ${testimonial.name}`}
+      className="card-luxury flex flex-col gap-5 bg-white p-6 sm:p-8"
+      aria-label={`Guest experience from ${testimonial.name}`}
     >
-      {/* Large decorative quote mark */}
+      {/* Decorative quote mark */}
       <div
-        className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
+        className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl"
         style={{
-          background: "linear-gradient(135deg, var(--color-maroon-50) 0%, var(--color-warm-100) 100%)",
+          background:
+            "linear-gradient(135deg, var(--color-maroon-50) 0%, var(--color-warm-100) 100%)",
         }}
         aria-hidden="true"
       >
@@ -27,7 +32,7 @@ function TestimonialCard({ testimonial }: { testimonial: Testimonial }) {
         />
       </div>
 
-      {/* Stars */}
+      {/* Rating */}
       <div
         className="flex items-center gap-1"
         aria-label={`${testimonial.rating} out of 5 stars`}
@@ -39,44 +44,53 @@ function TestimonialCard({ testimonial }: { testimonial: Testimonial }) {
             size={16}
             className={
               i < testimonial.rating
-                ? "text-[var(--color-brand-secondary)] fill-[var(--color-brand-secondary)]"
-                : "text-charcoal-200 fill-charcoal-200"
+                ? "fill-[var(--color-brand-secondary)] text-[var(--color-brand-secondary)]"
+                : "fill-charcoal-200 text-charcoal-200"
             }
             aria-hidden="true"
           />
         ))}
       </div>
 
-      {/* Content */}
-      <blockquote className="text-charcoal-900 text-base font-medium leading-relaxed flex-1 italic">
+      {/* Guest experience */}
+      <blockquote className="flex-1 text-base font-medium italic leading-relaxed text-charcoal-900">
         &ldquo;{testimonial.content}&rdquo;
       </blockquote>
 
-      {/* Wedding type tag */}
-      <div>
-        <span className="inline-flex items-center text-xs font-semibold text-[var(--color-brand-primary)] bg-maroon-50 px-3 py-1.5 rounded-full border border-maroon-100">
-          <Sparkles size={12} className="mr-1.5 text-[var(--color-brand-primary)]" aria-hidden="true" />
-          {testimonial.weddingType}
-        </span>
-      </div>
+      {/* Wedding experience type */}
+      {testimonial.weddingType && (
+        <div>
+          <span className="inline-flex items-center rounded-full border border-maroon-100 bg-maroon-50 px-3 py-1.5 text-xs font-semibold text-[var(--color-brand-primary)]">
+            <Sparkles
+              size={12}
+              className="mr-1.5 text-[var(--color-brand-primary)]"
+              aria-hidden="true"
+            />
+            {testimonial.weddingType}
+          </span>
+        </div>
+      )}
 
-      {/* Author */}
-      <footer className="flex items-center gap-3 pt-4 border-t border-warm-100">
-        <div className="relative w-11 h-11 rounded-full overflow-hidden flex-shrink-0 border-2 border-[var(--color-brand-secondary)]/30">
+      {/* Guest information */}
+      <footer className="flex items-center gap-3 border-t border-warm-100 pt-4">
+        <div className="relative h-11 w-11 flex-shrink-0 overflow-hidden rounded-full border-2 border-[var(--color-brand-secondary)]/30">
           <Image
             src={testimonial.avatar}
-            alt={testimonial.name}
+            alt={`${testimonial.name} profile`}
             fill
             sizes="44px"
             className="object-cover"
           />
         </div>
-        <div>
-          <div className="font-bold text-charcoal-900 text-base">
+
+        <div className="min-w-0">
+          <div className="truncate text-base font-bold text-charcoal-900">
             {testimonial.name}
           </div>
-          <div className="text-sm font-medium text-charcoal-500 mt-0.5">
-            {testimonial.role} · {testimonial.date}
+
+          <div className="mt-0.5 text-sm font-medium text-charcoal-500">
+            {testimonial.role}
+            {testimonial.date ? ` · ${testimonial.date}` : ""}
           </div>
         </div>
       </footer>
@@ -84,73 +98,119 @@ function TestimonialCard({ testimonial }: { testimonial: Testimonial }) {
   );
 }
 
-export function Testimonials({ testimonials }: TestimonialsProps) {
+export function Testimonials({
+  testimonials,
+}: TestimonialsProps) {
   return (
-    <>
-      <section
-        id="testimonials"
-        className="section-padding relative overflow-hidden"
-        aria-labelledby="testimonials-heading"
+    <section
+      id="testimonials"
+      className="section-padding relative overflow-hidden"
+      aria-labelledby="testimonials-heading"
+      style={{
+        background:
+          "linear-gradient(180deg, var(--color-warm-50) 0%, var(--color-warm-100) 50%, var(--color-warm-50) 100%)",
+      }}
+    >
+      {/* Subtle brand glow */}
+      <div
+        className="pointer-events-none absolute bottom-0 right-0 h-96 w-96 rounded-full blur-3xl opacity-[0.06]"
         style={{
-          background: "linear-gradient(180deg, var(--color-warm-50) 0%, var(--color-warm-100) 50%, var(--color-warm-50) 100%)",
+          background: "var(--color-brand-primary)",
         }}
-      >
-        {/* Subtle brand glow */}
-        <div
-          className="pointer-events-none absolute bottom-0 right-0 w-96 h-96 rounded-full blur-3xl opacity-[0.06]"
-          style={{ background: "var(--color-brand-primary)" }}
-          aria-hidden="true"
+        aria-hidden="true"
+      />
+
+      <div className="container-luxury relative z-10">
+        <SectionHeader
+          id="testimonials-heading"
+          label="Guest Experiences"
+          title="Stories From Indian Weddings"
+          highlightedWord="Indian Weddings"
+          description="Discover what guests have to say about experiencing Indian wedding traditions, celebrations and hospitality through WeddingWithIndia."
+          className="mb-14"
+          theme="light"
         />
 
-        <div className="container-luxury relative z-10">
-          <SectionHeader
-            id="testimonials-heading"
-            label="Guest Stories"
-            title="Voices from Our Celebrations"
-            highlightedWord="Celebrations"
-            description="Real experiences from travellers who stepped into an Indian family celebration they'll never forget."
-            className="mb-14"
-            theme="light"
-          />
-
+        {testimonials.length > 0 ? (
           <div
-            className="grid grid-cols-1 md:grid-cols-2 gap-6"
+            className="grid grid-cols-1 gap-6 md:grid-cols-2"
             role="list"
-            aria-label="Guest testimonials"
+            aria-label="Guest experiences"
           >
             {testimonials.map((testimonial) => (
-              <div key={testimonial.id} role="listitem">
+              <div
+                key={testimonial.id}
+                role="listitem"
+              >
                 <TestimonialCard testimonial={testimonial} />
               </div>
             ))}
           </div>
-
-          {/* Pre-launch trust editorial note — honest and premium-feeling */}
+        ) : (
           <div
-            className="mt-14 rounded-2xl border border-warm-200 p-8 flex flex-col sm:flex-row items-center gap-6"
-            style={{
-              background: "linear-gradient(135deg, white 0%, var(--color-warm-50) 100%)",
-            }}
+            className="mx-auto max-w-2xl rounded-2xl border border-warm-200 bg-white p-8 text-center sm:p-10"
+            role="status"
           >
             <div
-              className="flex-shrink-0 w-14 h-14 rounded-2xl flex items-center justify-center"
-              style={{ background: "linear-gradient(135deg, var(--color-maroon-50), var(--color-warm-100))" }}
+              className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl"
+              style={{
+                background:
+                  "linear-gradient(135deg, var(--color-maroon-50), var(--color-warm-100))",
+              }}
               aria-hidden="true"
             >
-              <Heart size={24} className="text-[var(--color-brand-primary)]" />
+              <Heart
+                size={24}
+                className="text-[var(--color-brand-primary)]"
+              />
             </div>
-            <div className="text-center sm:text-left">
-              <p className="font-bold text-charcoal-900 text-lg mb-1">
-                Be among the first to experience this
-              </p>
-              <p className="text-charcoal-500 text-sm leading-relaxed max-w-xl">
-                WeddingWithIndia is now welcoming its founding guests. Every review and story
-                shared here comes from a real celebration. Yours could be next.
-              </p>
-            </div>
+
+            <h3 className="mb-2 text-lg font-bold text-charcoal-900">
+              Guest stories are coming soon
+            </h3>
+
+            <p className="mx-auto max-w-xl text-sm leading-relaxed text-charcoal-500">
+              As more international guests experience Indian weddings through
+              WeddingWithIndia, their stories and feedback will appear here.
+            </p>
+          </div>
+        )}
+
+        {/* Transparent trust message */}
+        <div
+          className="mt-14 flex flex-col items-center gap-6 rounded-2xl border border-warm-200 p-8 sm:flex-row"
+          style={{
+            background:
+              "linear-gradient(135deg, white 0%, var(--color-warm-50) 100%)",
+          }}
+        >
+          <div
+            className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-2xl"
+            style={{
+              background:
+                "linear-gradient(135deg, var(--color-maroon-50), var(--color-warm-100))",
+            }}
+            aria-hidden="true"
+          >
+            <Heart
+              size={24}
+              className="text-[var(--color-brand-primary)]"
+            />
+          </div>
+
+          <div className="text-center sm:text-left">
+            <p className="mb-1 text-lg font-bold text-charcoal-900">
+              Every wedding creates a story
+            </p>
+
+            <p className="max-w-xl text-sm leading-relaxed text-charcoal-500">
+              WeddingWithIndia connects international guests with Indian
+              wedding experiences. Guest feedback helps future visitors
+              understand what it is like to take part in these celebrations.
+            </p>
           </div>
         </div>
-      </section>
-    </>
+      </div>
+    </section>
   );
 }

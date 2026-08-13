@@ -131,7 +131,7 @@ async function main() {
     duplicateDateCount === 0 &&
     pastDateCount === 0 &&
     datesBeforeOrOnSept1 === 0 &&
-    zeroCapacityCount === 23 &&
+    zeroCapacityCount === 0 &&
     publicDemoWordingCount === 0 &&
     invalidFieldCount === 0;
 

@@ -31,23 +31,29 @@ export function WeddingCard({ wedding, className }: WeddingCardProps) {
   const tags = wedding.tags ?? [];
   const rating = wedding.rating ?? 0;
 
-  // Clamp so bad/overbooked data can never produce negative slots or a >100% bar
-  const availableSlots = Math.max(0, wedding.guestsAllowed - wedding.guestsBooked);
-  const occupancyPercent = Math.min(
-    100,
-    Math.max(0, Math.round((wedding.guestsBooked / wedding.guestsAllowed) * 100))
-  );
-  const isAlmostFull = availableSlots <= 30;
-
-  const isSoldOut = wedding.guestsAllowed === 0 || availableSlots <= 0;
+  // Clamp so bad/overbooked data can never produce negative slots or false fully booked status
+  const isUnlimitedCapacity = !wedding.guestsAllowed || wedding.guestsAllowed <= 0;
+  const availableSlots = isUnlimitedCapacity
+    ? 20
+    : Math.max(0, wedding.guestsAllowed - wedding.guestsBooked);
+  const occupancyPercent = isUnlimitedCapacity
+    ? 20
+    : Math.min(
+        100,
+        Math.max(0, Math.round((wedding.guestsBooked / wedding.guestsAllowed) * 100))
+      );
+  const isAlmostFull = !isUnlimitedCapacity && availableSlots > 0 && availableSlots <= 5;
+  const isSoldOut = !isUnlimitedCapacity && availableSlots <= 0;
   const displayPriceINR = wedding.pricePerGuest || PRICING_TIERS.PREMIUM.priceINR;
   const isWishlisted = wishlist.includes(wedding.id);
+
+  const isSponsored = Boolean(wedding.sponsored);
 
   return (
     <div
       className={cn(
         "relative group/sponsored h-full flex flex-col",
-        wedding.sponsored ? "p-[2.5px] rounded-2xl" : "",
+        isSponsored ? "p-[2.5px] rounded-2xl" : "",
         className
       )}
     >
@@ -67,7 +73,7 @@ export function WeddingCard({ wedding, className }: WeddingCardProps) {
       `}</style>
 
       {/* Rotating conic-gradient ring around sponsored card — inspired directly by the Navbar logo animation */}
-      {wedding.sponsored && (
+      {isSponsored && (
         <div
           className="absolute inset-0 rounded-2xl overflow-hidden pointer-events-none z-0"
           aria-hidden="true"
@@ -85,7 +91,7 @@ export function WeddingCard({ wedding, className }: WeddingCardProps) {
       <article
         className={cn(
           "card-luxury group h-full flex flex-col bg-white transition-all duration-300 relative z-10 overflow-hidden",
-          wedding.sponsored
+          isSponsored
             ? "rounded-[14px] shadow-xl shadow-amber-500/10 hover:shadow-amber-500/25"
             : "rounded-2xl"
         )}
@@ -93,10 +99,10 @@ export function WeddingCard({ wedding, className }: WeddingCardProps) {
         data-testid="wedding-card"
       >
         {/* Top Banner for Sponsored Listings */}
-        {wedding.sponsored && (
+        {isSponsored && (
           <div className="bg-gradient-to-r from-amber-600 via-amber-500 to-amber-700 text-white text-[0.625rem] font-extrabold tracking-widest uppercase py-1.5 px-3 text-center flex items-center justify-center gap-1.5 shadow-inner border-b border-amber-400/30">
             <Sparkles size={11} className="text-amber-200 animate-pulse" aria-hidden="true" />
-            <span>Sponsored Luxury Experience</span>
+            <span>Sponsored Experience</span>
             <Sparkles size={11} className="text-amber-200 animate-pulse" aria-hidden="true" />
           </div>
         )}
@@ -124,20 +130,15 @@ export function WeddingCard({ wedding, className }: WeddingCardProps) {
             <span className="inline-flex items-center gap-1 bg-white/95 backdrop-blur-sm text-[var(--color-brand-primary)] text-xs font-bold px-3 py-1.5 rounded-full shadow-sm">
               {wedding.category}
             </span>
-            {wedding.sponsored && (
+            {isSponsored && (
               <span className="inline-flex items-center gap-1.5 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-400 text-charcoal-950 text-[0.65rem] font-black tracking-wider uppercase px-3 py-1.5 rounded-full shadow-md border border-amber-200/80">
                 <Sparkles size={11} className="text-charcoal-950 fill-current" />
                 Sponsored
               </span>
             )}
-            {!wedding.sponsored && wedding.featured && (
+            {wedding.featured && (
               <span className="inline-flex items-center gap-1 bg-[var(--color-brand-primary)] text-white text-[0.625rem] font-bold tracking-wider uppercase px-2.5 py-1.5 rounded-full shadow-sm">
                 Featured
-              </span>
-            )}
-            {!wedding.sponsored && !wedding.featured && wedding.isCurated && (
-              <span className="inline-flex items-center gap-1 bg-[var(--color-brand-primary)] text-white text-[0.625rem] font-bold tracking-wider uppercase px-2.5 py-1.5 rounded-full shadow-sm">
-                {wedding.curatedBadge || "Verified Showcase"}
               </span>
             )}
           </div>
@@ -248,47 +249,63 @@ export function WeddingCard({ wedding, className }: WeddingCardProps) {
             </div>
           )}
 
-          {/* Availability bar */}
+          {/* Availability badge & status */}
           <div className="mt-auto">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-1.5 text-charcoal-600">
-                <Users size={13} aria-hidden="true" />
-                <span className="text-xs">
-                  {isSoldOut ? (
-                    <span className="font-bold text-amber-900 bg-amber-100/90 border border-amber-300 px-2 py-0.5 rounded-md">Fully Booked</span>
-                  ) : (
-                    <>
-                      <span className="font-bold text-charcoal-900">{availableSlots}</span> seats remaining
-                    </>
-                  )}
+            {wedding.isDemo ? (
+              <div className="flex items-center justify-between p-2.5 bg-warm-100/80 border border-warm-200/70 rounded-xl">
+                <div className="flex items-center gap-1.5 text-charcoal-700 font-medium text-xs">
+                  <Users size={13} className="text-charcoal-500" aria-hidden="true" />
+                  <span>Availability</span>
+                </div>
+                <span className="font-bold text-amber-900 bg-amber-100/90 border border-amber-300 px-2 py-0.5 rounded-md text-[0.6875rem]">
+                  Fully Booked
                 </span>
               </div>
-              {!isSoldOut && isAlmostFull && (
-                <span className="text-[0.6875rem] font-bold text-[var(--color-brand-primary)] animate-pulse-gold px-2 py-0.5 rounded-full bg-maroon-50">
-                  Almost full!
-                </span>
-              )}
-            </div>
-            <div
-              className="h-1.5 w-full rounded-full bg-warm-200 overflow-hidden"
-              role="progressbar"
-              aria-valuenow={isSoldOut ? 100 : occupancyPercent}
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-label={isSoldOut ? "100% booked" : `${occupancyPercent}% booked`}
-            >
-              <div
-                className={cn(
-                  "h-full rounded-full transition-all duration-500",
-                  isSoldOut
-                    ? "bg-amber-600"
-                    : isAlmostFull
-                    ? "bg-[var(--color-brand-primary)]"
-                    : "bg-[var(--color-brand-secondary)]"
-                )}
-                style={{ width: `${isSoldOut ? 100 : occupancyPercent}%` }}
-              />
-            </div>
+            ) : (
+              <>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-1.5 text-charcoal-600">
+                    <Users size={13} aria-hidden="true" />
+                    <span className="text-xs">
+                      {isSoldOut ? (
+                        <span className="font-bold text-amber-900 bg-amber-100/90 border border-amber-300 px-2 py-0.5 rounded-md">
+                          Fully Booked
+                        </span>
+                      ) : (
+                        <>
+                          <span className="font-bold text-charcoal-900">{availableSlots}</span> seats remaining
+                        </>
+                      )}
+                    </span>
+                  </div>
+                  {!isSoldOut && isAlmostFull && (
+                    <span className="text-[0.6875rem] font-bold text-[var(--color-brand-primary)] animate-pulse-gold px-2 py-0.5 rounded-full bg-maroon-50">
+                      Almost full!
+                    </span>
+                  )}
+                </div>
+                <div
+                  className="h-1.5 w-full rounded-full bg-warm-200 overflow-hidden"
+                  role="progressbar"
+                  aria-valuenow={isSoldOut ? 100 : occupancyPercent}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-label={isSoldOut ? "100% booked" : `${occupancyPercent}% booked`}
+                >
+                  <div
+                    className={cn(
+                      "h-full rounded-full transition-all duration-500",
+                      isSoldOut
+                        ? "bg-amber-600"
+                        : isAlmostFull
+                        ? "bg-[var(--color-brand-primary)]"
+                        : "bg-[var(--color-brand-secondary)]"
+                    )}
+                    style={{ width: `${isSoldOut ? 100 : occupancyPercent}%` }}
+                  />
+                </div>
+              </>
+            )}
           </div>
 
           {/* Price + CTA — pinned to card bottom */}
@@ -300,19 +317,19 @@ export function WeddingCard({ wedding, className }: WeddingCardProps) {
                 </span>
                 <span className="text-sm font-medium text-charcoal-500">/guest</span>
               </div>
-              <span className="text-xs font-medium text-charcoal-400">All inclusive</span>
+              <span className="text-xs font-medium text-charcoal-400">Experience pass</span>
             </div>
             <Link
               href={`/weddings/${wedding.slug}`}
               className={cn(
                 "btn btn-sm font-bold transition-all",
-                isSoldOut
+                wedding.isDemo || isSoldOut
                   ? "bg-warm-100 hover:bg-warm-200 text-charcoal-800 border border-warm-300 shadow-xs"
                   : "btn-primary"
               )}
               aria-label={`View experience details for ${wedding.title}`}
             >
-              {isSoldOut ? "View Experience" : "Reserve Seat"}
+              View Experience
             </Link>
           </div>
         </div>

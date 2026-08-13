@@ -84,9 +84,9 @@ function FieldChevron() {
 const TRUST_STATS = [
   {
     icon: <ShieldCheck size={15} strokeWidth={2} aria-hidden="true" />,
-    value: "100%",
-    label: "Verified Hosts",
-    description: "Every family personally vetted",
+    value: "Authentic",
+    label: "Cultural Heritage",
+    description: "Handpicked Indian traditions",
   },
   {
     icon: <Star size={15} strokeWidth={2} aria-hidden="true" />,

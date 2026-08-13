@@ -159,6 +159,24 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    const { resolveCulturalProfileDefaults, validateWeddingAuthenticity } = await import("@/lib/culture");
+
+    const parsedReligion = religion || "Hindu";
+    const cultDefaults = resolveCulturalProfileDefaults(parsedReligion, state || city, undefined);
+
+    const cultValidation = validateWeddingAuthenticity({
+      religion: parsedReligion,
+      title: `${coupleNames} Wedding`,
+      description: story || "",
+    });
+
+    if (!cultValidation.isValid) {
+      return NextResponse.json(
+        { error: `Cultural Authenticity Error: ${cultValidation.errors.join("; ")}` },
+        { status: 400 }
+      );
+    }
+
     let wedding;
     let isUpdate = false;
 
@@ -172,6 +190,13 @@ export async function POST(req: NextRequest) {
           description: story || `A beautiful wedding celebration in ${city}.`,
           location: `${venue || city}, ${city}, ${state || ""}`.trim(),
           category: religion || "Traditional",
+          religion: parsedReligion,
+          region: state || city || cultDefaults.region,
+          community: cultDefaults.community,
+          foodContext: cultDefaults.foodContext,
+          dressExpectations: cultDefaults.dressExpectations,
+          guestRules: cultDefaults.guestRules,
+          etiquetteNotes: cultDefaults.etiquetteNotes,
           date: new Date(weddingDate),
           capacity: intlGuestCapacity || 10,
           mainImageUrl: photoUrl || existingWedding.mainImageUrl || "https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=800&q=80",
@@ -188,12 +213,35 @@ export async function POST(req: NextRequest) {
           description: story || `A beautiful wedding celebration in ${city}.`,
           location: `${venue || city}, ${city}, ${state || ""}`.trim(),
           category: religion || "Traditional",
+          religion: parsedReligion,
+          region: state || city || cultDefaults.region,
+          community: cultDefaults.community,
+          foodContext: cultDefaults.foodContext,
+          dressExpectations: cultDefaults.dressExpectations,
+          guestRules: cultDefaults.guestRules,
+          etiquetteNotes: cultDefaults.etiquetteNotes,
           date: new Date(weddingDate),
           pricePerGuest: 16000, // Tier 2 default
           capacity: intlGuestCapacity || 10,
           mainImageUrl: photoUrl || "https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=800&q=80",
           status: "DRAFT",
           hostCoupleId: coupleProfile.id,
+          events: {
+            create: cultDefaults.defaultCeremonies.map((c) => ({
+              name: c.name,
+              description: c.description,
+              date: new Date(weddingDate),
+              startTime: c.defaultTimeRange.split("-")[0]?.trim() || "17:00",
+              endTime: c.defaultTimeRange.split("-")[1]?.trim() || "22:00",
+              location: `${venue || city}, ${city}`,
+            })),
+          },
+          traditions: {
+            create: cultDefaults.defaultTraditions.map((t) => ({
+              name: t.name,
+              description: t.description,
+            })),
+          },
         },
       });
     }

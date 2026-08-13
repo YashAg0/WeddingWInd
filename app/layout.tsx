@@ -7,7 +7,6 @@ import LayoutVisibilityWrapper from "@/components/layout/LayoutVisibilityWrapper
 import CookieConsent from "@/components/ui/CookieConsent";
 import Script from "next/script";
 import { Toaster } from "sonner";
-import { BUSINESS_METRICS } from "@/lib/constants/business-metrics";
 import { RoyalBackground } from "@/components/ui/RoyalBackground";
 
 // Fonts disabled via Next.js builder due to Turbopack network failures
@@ -50,7 +49,7 @@ export const metadata: Metadata = {
     siteName: "Wedding With India",
     title: "Wedding With India — Attend Authentic Indian Weddings",
     description:
-      `Experience the magic of authentic Indian weddings as an honoured guest. Browse our exclusive collection of ${BUSINESS_METRICS.WEDDINGS_HOSTED} verified celebrations across India.`,
+      "Experience the magic of authentic Indian weddings as an honoured guest. Browse our handpicked collection of verified cultural wedding celebrations across India.",
     images: [
       {
         url: "/og-image.jpg",

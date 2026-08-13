@@ -10,8 +10,8 @@ const LEDGER_ITEMS = [
   },
   {
     icon: <BadgeCheck size={16} aria-hidden="true" />,
-    value: "100% Verified",
-    label: "Every guest pass checked",
+    value: "Guest Hospitality",
+    label: "Dedicated orientation & support",
   },
   {
     icon: <ShieldCheck size={16} aria-hidden="true" />,

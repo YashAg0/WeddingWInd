@@ -5,14 +5,29 @@ import { SlidersHorizontal, RotateCcw, Bookmark } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { saveSearchAction } from "@/lib/actions/discovery";
+import { CANONICAL_RELIGIONS, type ReligionType } from "@/lib/culture";
 
-// Filter options
+// Canonical filter options
 const styles = ["Royal", "Punjabi", "South Indian", "Beach", "Destination", "Traditional"];
-const religions = ["Hinduism", "Sikhism", "Christianity", "Islam", "Jainism"];
+const religions: ReligionType[] = CANONICAL_RELIGIONS;
 const luxuryLevels = ["Premium", "Luxury", "Ultra-Luxury"];
 const languages = ["English", "Hindi", "Punjabi", "Tamil", "Telugu", "Malayalam"];
 
-export function FilterSidebar() {
+interface FilterSidebarProps {
+  religionCounts?: Record<string, number>;
+  styleCounts?: Record<string, number>;
+  minPriceInSystem?: number;
+  maxPriceInSystem?: number;
+  totalWeddingsCount?: number;
+}
+
+export function FilterSidebar({
+  religionCounts,
+  styleCounts,
+  minPriceInSystem = 100,
+  maxPriceInSystem = 25000,
+  totalWeddingsCount,
+}: FilterSidebarProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
@@ -33,7 +48,6 @@ export function FilterSidebar() {
     }
   };
 
-
   // Helper to read query values
   const getParamArray = (key: string) => {
     const val = searchParams.get(key);
@@ -44,7 +58,7 @@ export function FilterSidebar() {
   const selectedReligions = getParamArray("religions");
   const selectedLux = getParamArray("luxuryLevels");
   const selectedLangs = getParamArray("languages");
-  const maxBudget = searchParams.get("maxBudget") || "5000";
+  const maxBudget = searchParams.get("maxBudget") || maxPriceInSystem.toString();
   const minSlots = searchParams.get("minSlots") || "0";
   const duration = searchParams.get("duration") || "";
 
@@ -75,12 +89,20 @@ export function FilterSidebar() {
   };
 
   return (
-    <aside className="w-full flex flex-col gap-6" aria-label="Filters">
+    <aside
+      className="w-full flex flex-col gap-6 max-h-[calc(100vh-7rem)] overflow-y-auto overscroll-contain pr-1.5 scrollbar-thin"
+      aria-label="Filters"
+    >
       {/* Header */}
       <div className="flex items-center justify-between pb-4 border-b border-warm-200">
         <div className="flex items-center gap-2 text-charcoal-900">
           <SlidersHorizontal size={16} />
           <h2 className="font-display font-bold text-base uppercase tracking-wider">Filters</h2>
+          {totalWeddingsCount !== undefined && (
+            <span className="text-xs text-charcoal-400 font-sans font-normal">
+              ({totalWeddingsCount})
+            </span>
+          )}
         </div>
         <button
           onClick={handleClearAll}
@@ -97,17 +119,25 @@ export function FilterSidebar() {
           Wedding Style
         </h3>
         <div className="flex flex-col gap-2">
-          {styles.map((style) => (
-            <label key={style} className="flex items-center gap-2.5 text-sm text-charcoal-600 cursor-pointer hover:text-charcoal-900 transition-colors">
-              <input
-                type="checkbox"
-                checked={selectedStyles.includes(style.toLowerCase())}
-                onChange={() => handleToggle("styles", selectedStyles, style.toLowerCase())}
-                className="rounded border-warm-300 text-[var(--color-brand-primary)] focus:ring-[var(--color-brand-primary)] w-4 h-4"
-              />
-              {style}
-            </label>
-          ))}
+          {styles.map((style) => {
+            const count = styleCounts?.[style];
+            return (
+              <label key={style} className="flex items-center justify-between text-sm text-charcoal-600 cursor-pointer hover:text-charcoal-900 transition-colors">
+                <div className="flex items-center gap-2.5">
+                  <input
+                    type="checkbox"
+                    checked={selectedStyles.includes(style.toLowerCase())}
+                    onChange={() => handleToggle("styles", selectedStyles, style.toLowerCase())}
+                    className="rounded border-warm-300 text-[var(--color-brand-primary)] focus:ring-[var(--color-brand-primary)] w-4 h-4"
+                  />
+                  <span>{style}</span>
+                </div>
+                {count !== undefined && (
+                  <span className="text-xs text-charcoal-400 font-mono">({count})</span>
+                )}
+              </label>
+            );
+          })}
         </div>
       </div>
 
@@ -125,16 +155,16 @@ export function FilterSidebar() {
         </div>
         <input
           type="range"
-          min="500"
-          max="5000"
+          min={minPriceInSystem}
+          max={maxPriceInSystem}
           step="250"
           value={maxBudget}
           onChange={(e) => updateQuery("maxBudget", e.target.value)}
           className="w-full h-1.5 bg-warm-200 rounded-lg appearance-none cursor-pointer accent-[var(--color-brand-primary)]"
         />
-        <div className="flex justify-between text-[0.6875rem] text-charcoal-400">
-          <span>$500</span>
-          <span>$5,000+</span>
+        <div className="flex justify-between text-[0.6875rem] text-charcoal-400 font-mono">
+          <span>${minPriceInSystem.toLocaleString()}</span>
+          <span>${maxPriceInSystem.toLocaleString()}</span>
         </div>
       </div>
 
@@ -165,20 +195,28 @@ export function FilterSidebar() {
       {/* Religion Filter */}
       <div className="space-y-3">
         <h3 className="font-sans font-bold text-xs text-charcoal-800 uppercase tracking-widest">
-          Religion
+          Religion &amp; Faith
         </h3>
         <div className="flex flex-col gap-2">
-          {religions.map((rel) => (
-            <label key={rel} className="flex items-center gap-2.5 text-sm text-charcoal-600 cursor-pointer hover:text-charcoal-900 transition-colors">
-              <input
-                type="checkbox"
-                checked={selectedReligions.includes(rel.toLowerCase())}
-                onChange={() => handleToggle("religions", selectedReligions, rel.toLowerCase())}
-                className="rounded border-warm-300 text-[var(--color-brand-primary)] focus:ring-[var(--color-brand-primary)] w-4 h-4"
-              />
-              {rel}
-            </label>
-          ))}
+          {religions.map((rel) => {
+            const count = religionCounts?.[rel];
+            return (
+              <label key={rel} className="flex items-center justify-between text-sm text-charcoal-600 cursor-pointer hover:text-charcoal-900 transition-colors">
+                <div className="flex items-center gap-2.5">
+                  <input
+                    type="checkbox"
+                    checked={selectedReligions.includes(rel.toLowerCase())}
+                    onChange={() => handleToggle("religions", selectedReligions, rel.toLowerCase())}
+                    className="rounded border-warm-300 text-[var(--color-brand-primary)] focus:ring-[var(--color-brand-primary)] w-4 h-4"
+                  />
+                  <span>{rel}</span>
+                </div>
+                {count !== undefined && (
+                  <span className="text-xs text-charcoal-400 font-mono">({count})</span>
+                )}
+              </label>
+            );
+          })}
         </div>
       </div>
 
@@ -257,6 +295,5 @@ export function FilterSidebar() {
         {isSaving ? "Saving..." : "Save This Search"}
       </button>
     </aside>
-
   );
 }

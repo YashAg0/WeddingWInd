@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { Star, MapPin, ShieldCheck, CheckCircle, XCircle, Sparkles, Shirt, Utensils, Landmark, Hotel, Globe, Palette } from "lucide-react";
+import { Star, MapPin, ShieldCheck, CheckCircle, XCircle, Sparkles, Shirt, Utensils, Landmark, Hotel, Globe } from "lucide-react";
 import { getWeddings, getWeddingBySlug } from "@/lib/actions";
 import { WeddingGallery } from "@/components/wedding/WeddingGallery";
 import { WeddingTimeline } from "@/components/wedding/WeddingTimeline";
@@ -89,10 +89,10 @@ export default async function WeddingDetailPage({ params }: PageProps) {
       },
     },
     image: wedding.coupleImage ? [wedding.coupleImage] : [],
-    offers: {
+    offers: wedding.isDemo ? undefined : {
       "@type": "Offer",
       price: wedding.pricePerGuest,
-      priceCurrency: wedding.currency || "USD",
+      priceCurrency: wedding.currency || "INR",
       availability: (wedding.guestsAllowed - wedding.guestsBooked) > 0 ? "https://schema.org/InStock" : "https://schema.org/SoldOut",
       url: `https://weddingwithindia.com/weddings/${wedding.slug}`,
     },
@@ -157,14 +157,18 @@ export default async function WeddingDetailPage({ params }: PageProps) {
             </div>
           </div>
 
-          <div className="flex items-center gap-3 bg-white border border-warm-200/50 p-4 rounded-2xl shadow-sm self-start">
-            <div className="text-center px-4 border-r border-warm-200">
+          <div className="flex items-center gap-2 bg-white border border-warm-200/50 p-4 rounded-2xl shadow-sm self-start">
+            <div className="text-center px-3 border-r border-warm-200">
               <div className="text-xs text-charcoal-400 uppercase font-bold tracking-wider mb-0.5">Duration</div>
               <div className="font-display font-bold text-sm text-charcoal-800">{wedding.durationDays} Days</div>
             </div>
-            <div className="text-center px-4">
-              <div className="text-xs text-charcoal-400 uppercase font-bold tracking-wider mb-0.5 font-sans">Religion</div>
-              <div className="font-display font-bold text-sm text-charcoal-800">{wedding.religion || "Any"}</div>
+            <div className="text-center px-3 border-r border-warm-200">
+              <div className="text-xs text-charcoal-400 uppercase font-bold tracking-wider mb-0.5">Religion</div>
+              <div className="font-display font-bold text-sm text-maroon-800">{wedding.religion || "Hindu"}</div>
+            </div>
+            <div className="text-center px-3">
+              <div className="text-xs text-charcoal-400 uppercase font-bold tracking-wider mb-0.5">Region</div>
+              <div className="font-display font-bold text-sm text-charcoal-800">{wedding.region || "India"}</div>
             </div>
           </div>
         </div>
@@ -182,7 +186,7 @@ export default async function WeddingDetailPage({ params }: PageProps) {
           {/* LEFT: Story + Details */}
           <div className="lg:col-span-2 space-y-12">
 
-            {/* ─── COUPLE PORTRAIT & STORY — restoring to live site layout ─── */}
+            {/* ─── COUPLE PORTRAIT & STORY ─── */}
             <section
               className="bg-white border border-warm-200/50 p-6 sm:p-8 rounded-3xl shadow-sm space-y-4"
               aria-labelledby="story-heading"
@@ -200,7 +204,7 @@ export default async function WeddingDetailPage({ params }: PageProps) {
               aria-labelledby="couple-heading"
             >
               <h2 id="couple-heading" className="font-display font-bold text-xl text-charcoal-900 border-b border-warm-100 pb-3">
-                Meet the Couple
+                Meet the Host Couple
               </h2>
               <div className="flex flex-col sm:flex-row items-center gap-6">
                 <div className="relative w-28 h-28 rounded-full overflow-hidden border-4 border-warm-100 shadow-md flex-shrink-0">
@@ -259,54 +263,62 @@ export default async function WeddingDetailPage({ params }: PageProps) {
 
             <div className="h-px w-full bg-gradient-to-r from-transparent via-gold-300/50 to-transparent my-10" aria-hidden="true" />
 
-            {/* ─── Practical Info ─── */}
+            {/* ─── Practical Info & Cultural Realism ─── */}
             <section
               className="bg-white border border-warm-200/50 p-6 sm:p-8 rounded-3xl shadow-sm space-y-6"
               aria-labelledby="practical-heading"
             >
               <h2 id="practical-heading" className="font-display font-bold text-2xl text-charcoal-900">
-                Practical Information
+                Cultural Experience &amp; Guest Guidelines
               </h2>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Theme */}
+                {/* Cultural Profile */}
                 <div className="space-y-2">
                   <h3 className="font-sans font-bold text-xs text-charcoal-400 uppercase tracking-widest flex items-center gap-1.5">
-                    <Palette size={14} className="text-maroon-800" /> Wedding Theme
+                    <Globe size={14} className="text-maroon-800" /> Cultural Identity
                   </h3>
-                  <p className="text-charcoal-600 text-sm leading-relaxed">
-                    {wedding.theme || "Traditional Indian Celebration"}
+                  <p className="text-charcoal-800 font-semibold text-sm leading-relaxed">
+                    {wedding.religion} • {wedding.community || wedding.ethnicity || "Traditional"} ({wedding.region || "India"})
                   </p>
-                </div>
-
-                {/* Ethnicity */}
-                <div className="space-y-2">
-                  <h3 className="font-sans font-bold text-xs text-charcoal-400 uppercase tracking-widest flex items-center gap-1.5">
-                    <Globe size={14} className="text-maroon-800" /> Culture &amp; Ethnicity
-                  </h3>
-                  <p className="text-charcoal-600 text-sm leading-relaxed">
-                    {wedding.ethnicity || "Multicultural"}
+                  <p className="text-charcoal-500 text-xs">
+                    Theme: {wedding.theme || "Traditional Celebration"}
                   </p>
                 </div>
 
                 {/* Dress code */}
                 <div className="space-y-2">
                   <h3 className="font-sans font-bold text-xs text-charcoal-400 uppercase tracking-widest flex items-center gap-1.5">
-                    <Shirt size={14} className="text-maroon-800" /> Dress Code
+                    <Shirt size={14} className="text-maroon-800" /> Dress Code Expectations
                   </h3>
-                  <p className="text-charcoal-600 text-sm leading-relaxed">
+                  <p className="text-charcoal-700 text-sm leading-relaxed">
                     {wedding.dressCode}
                   </p>
                 </div>
-                
+
                 {/* Culinary style */}
                 <div className="space-y-2">
                   <h3 className="font-sans font-bold text-xs text-charcoal-400 uppercase tracking-widest flex items-center gap-1.5">
-                    <Utensils size={14} className="text-maroon-800" /> Culinary Experience
+                    <Utensils size={14} className="text-maroon-800" /> Authentic Culinary Feast
                   </h3>
-                  <p className="text-charcoal-600 text-sm leading-relaxed">
+                  <p className="text-charcoal-700 text-sm leading-relaxed">
                     {wedding.foodDescription}
                   </p>
+                </div>
+
+                {/* Guest Rules & Etiquette */}
+                <div className="space-y-2">
+                  <h3 className="font-sans font-bold text-xs text-charcoal-400 uppercase tracking-widest flex items-center gap-1.5">
+                    <Landmark size={14} className="text-maroon-800" /> Guest Participation &amp; Etiquette
+                  </h3>
+                  <p className="text-charcoal-700 text-sm leading-relaxed">
+                    {wedding.guestRules || "Global guests welcome as honored family observers & participants."}
+                  </p>
+                  {wedding.etiquetteNotes && (
+                    <p className="text-amber-800 text-xs bg-amber-50/60 p-2.5 rounded-xl border border-amber-200/50 mt-1">
+                      💡 <strong>Etiquette Note:</strong> {wedding.etiquetteNotes}
+                    </p>
+                  )}
                 </div>
 
                 {/* Venue Details */}

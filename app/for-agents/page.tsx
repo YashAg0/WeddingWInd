@@ -104,7 +104,7 @@ export default function ForAgentsPage() {
                 {hostRate}% Qualifying Booking Value
               </h3>
               <p className="text-charcoal-600 text-xs sm:text-sm leading-relaxed">
-                Refer Indian families who share their celebration as verified hosts. Earn {hostRate}% of qualifying core booking value (avg <strong>{formatCurrencyINR(hostCommissionINR)}</strong>) when guests complete their attendance.
+                Refer Indian families who share their celebration as host couples. Earn {hostRate}% of qualifying core booking value (avg <strong>{formatCurrencyINR(hostCommissionINR)}</strong>) when guests complete their attendance.
               </p>
               <ul className="space-y-2 text-xs text-charcoal-600">
                 <li className="flex items-center gap-2">

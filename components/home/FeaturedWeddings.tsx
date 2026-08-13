@@ -3,13 +3,14 @@ import { ArrowRight, Sparkles } from "lucide-react";
 import { WeddingCard } from "@/components/wedding/WeddingCard";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import type { Wedding } from "@/types";
-import { BUSINESS_METRICS } from "@/lib/constants/business-metrics";
 
 interface FeaturedWeddingsProps {
   weddings: Wedding[];
 }
 
 export function FeaturedWeddings({ weddings }: FeaturedWeddingsProps) {
+  const displayWeddings = weddings.slice(0, 6);
+
   return (
     <section
       id="featured-weddings"
@@ -60,7 +61,7 @@ export function FeaturedWeddings({ weddings }: FeaturedWeddingsProps) {
             label="Featured Weddings"
             title="Handpicked Celebrations"
             highlightedWord="Celebrations"
-            description="Verified, curated, and ready to welcome you. Every listing meets our luxury standard."
+            description="Handpicked wedding experiences from across India, thoughtfully curated for international guests."
             align="left"
             theme="light"
           />
@@ -93,7 +94,7 @@ export function FeaturedWeddings({ weddings }: FeaturedWeddingsProps) {
               Celebrations Coming Soon
             </h3>
             <p className="text-charcoal-500 text-base max-w-md mx-auto leading-relaxed">
-              Our first curated Indian wedding experiences are being carefully verified.
+              Explore our curated selection of Indian wedding experiences.
               Reserve your place on the early-access list.
             </p>
             <Link href="/weddings" className="btn btn-primary mt-6 inline-flex">
@@ -106,7 +107,7 @@ export function FeaturedWeddings({ weddings }: FeaturedWeddingsProps) {
             role="list"
             aria-label="Featured wedding listings"
           >
-            {weddings.map((wedding) => (
+            {displayWeddings.map((wedding) => (
               <div key={wedding.id} role="listitem" className="h-full">
                 <WeddingCard wedding={wedding} />
               </div>
@@ -115,10 +116,10 @@ export function FeaturedWeddings({ weddings }: FeaturedWeddingsProps) {
         )}
 
         {/* Load more CTA */}
-        {weddings.length > 0 && (
+        {displayWeddings.length > 0 && (
           <div className="mt-12 text-center">
             <Link href="/weddings" className="btn btn-primary btn-lg group">
-              Explore Our Indian Weddings
+              Explore All Indian Weddings
               <ArrowRight
                 size={18}
                 className="group-hover:translate-x-0.5 transition-transform"
@@ -126,7 +127,7 @@ export function FeaturedWeddings({ weddings }: FeaturedWeddingsProps) {
               />
             </Link>
             <p className="text-sm text-charcoal-600 font-medium mt-4">
-              {BUSINESS_METRICS.WEDDINGS_HOSTED} weddings across India and beyond
+              Explore handpicked wedding experiences from across India
             </p>
           </div>
         )}

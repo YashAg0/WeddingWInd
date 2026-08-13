@@ -6,6 +6,7 @@ import { requireAuth } from "../auth";
 import { UserRole, ReputationEntityType } from "@prisma/client";
 import { calculateBayesianRating } from "../services/trust-score";
 import { submitReviewAction, voteReviewHelpfulAction, replyToReviewAction } from "./reviews";
+import { isSponsorshipActive } from "../wedding-dto";
 
 /**
  * Searches weddings based on multi-faceted filters, sorting models, and relevance scores.
@@ -197,11 +198,11 @@ export async function searchWeddingsAction(
       // 7. Calculate relevance score
       const lowTrustPenalty = trustScore < 50 ? 50 : 0;
       const fraudPenalty = hasUnresolvedFraud ? 30 : 0;
+      const activeSponsored = isSponsorshipActive(w);
 
       const relevanceScore =
-        (w.sponsored ? 1000 : 0) +
+        (activeSponsored ? 1000 : 0) +
         (w.featured ? 500 : 0) +
-        (w.featured ? 40 : 0) +
         (cappedBoost * 8) +
         (trustScore * 0.4) +
         (ratings.bayesianRating * 4) +
