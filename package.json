@@ -9,7 +9,7 @@
     "start": "next start",
     "lint": "eslint",
     "type-check": "tsc --noEmit",
-    "test": "jest --passWithNoTests",
+    "test": "jest",
     "e2e": "playwright test",
     "bootstrap": "node scripts/bootstrap.js",
     "setup": "node scripts/bootstrap.js",

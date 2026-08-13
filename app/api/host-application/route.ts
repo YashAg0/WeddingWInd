@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Ensure couple profile exists
+    // Ensure couple profile exists with P2002 race protection
     let coupleProfile = await prisma.coupleProfile.findUnique({
       where: { userId: user.id },
       include: {
@@ -81,22 +81,38 @@ export async function POST(req: NextRequest) {
     });
 
     if (!coupleProfile) {
-      coupleProfile = await prisma.coupleProfile.create({
-        data: {
-          userId: user.id,
-          weddingDate: new Date(weddingDate),
-          weddingLocation: `${venue || city}, ${city}, ${state || ""}`.trim(),
-          expectedGuests: intlGuestCapacity || 10,
-          languagesSpoken: "English",
-          familyBio: story || "",
-        },
-        include: {
-          weddings: {
-            where: { isDemo: false, deletedAt: null },
-            orderBy: { updatedAt: "desc" },
+      try {
+        coupleProfile = await prisma.coupleProfile.create({
+          data: {
+            userId: user.id,
+            weddingDate: new Date(weddingDate),
+            weddingLocation: `${venue || city}, ${city}, ${state || ""}`.trim(),
+            expectedGuests: intlGuestCapacity || 10,
+            languagesSpoken: "English",
+            familyBio: story || "",
           },
-        },
-      });
+          include: {
+            weddings: {
+              where: { isDemo: false, deletedAt: null },
+              orderBy: { updatedAt: "desc" },
+            },
+          },
+        });
+      } catch (createErr: any) {
+        if (createErr?.code === "P2002") {
+          coupleProfile = await prisma.coupleProfile.findUnique({
+            where: { userId: user.id },
+            include: {
+              weddings: {
+                where: { isDemo: false, deletedAt: null },
+                orderBy: { updatedAt: "desc" },
+              },
+            },
+          });
+        } else {
+          throw createErr;
+        }
+      }
     } else {
       // Update couple profile fields
       await prisma.coupleProfile.update({
@@ -108,6 +124,10 @@ export async function POST(req: NextRequest) {
           familyBio: story || "",
         },
       });
+    }
+
+    if (!coupleProfile) {
+      return NextResponse.json({ error: "Failed to resolve couple profile." }, { status: 500 });
     }
 
     // Check for existing application by ID or by host couple relationship
@@ -125,6 +145,18 @@ export async function POST(req: NextRequest) {
     if (!existingWedding && coupleProfile.weddings && coupleProfile.weddings.length > 0) {
       // Pick the active non-demo wedding to update rather than creating a duplicate
       existingWedding = coupleProfile.weddings[0];
+    }
+
+    // Secondary concurrency check: query DB directly in case another request created a wedding moments ago
+    if (!existingWedding) {
+      existingWedding = await prisma.wedding.findFirst({
+        where: {
+          hostCoupleId: coupleProfile.id,
+          isDemo: false,
+          deletedAt: null,
+        },
+        orderBy: { updatedAt: "desc" },
+      });
     }
 
     let wedding;

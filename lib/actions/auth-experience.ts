@@ -121,7 +121,7 @@ export async function resolveAuthenticatedUserExperience(): Promise<Authenticate
 
     // TRAVELER
     if (user.role === UserRole.TRAVELER) {
-      const isCompleted = !!user.travelerProfile || user.status === "ACTIVE";
+      const isCompleted = user.status === "ACTIVE";
       return {
         state: isCompleted ? "EXISTING_TRAVELER" : "NEW_USER",
         role: "traveler",

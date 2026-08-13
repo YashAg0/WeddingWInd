@@ -144,7 +144,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         !!(dbUser as any).verification
       );
       const isAgentWithData = dbUser.role === "AGENT" && !!dbUser.agentProfile;
-      const isTravelerWithData = dbUser.role === "TRAVELER" && (!!dbUser.travelerProfile || dbUser.status === "ACTIVE");
+      const isTravelerWithData = dbUser.role === "TRAVELER" && dbUser.status === "ACTIVE";
       const isAdminOrCoordinator = dbUser.role === "ADMIN" || dbUser.role === "COORDINATOR";
       const isOnboarded = dbUser.status === "ACTIVE" || isAdminOrCoordinator || isCoupleWithData || isAgentWithData || isTravelerWithData;
       const roleStr = dbUser.role.toLowerCase() as UserRole;

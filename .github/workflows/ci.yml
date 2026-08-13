@@ -30,7 +30,7 @@ jobs:
       - name: Generate Prisma Client
         run: npx prisma generate
         env:
-          DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/ci_db"
+          DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/ci_db?pgbouncer=true"
 
       - name: TypeScript type check
         run: npm run type-check
@@ -59,13 +59,13 @@ jobs:
       - name: Generate Prisma Client
         run: npx prisma generate
         env:
-          DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/ci_db"
+          DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/ci_db?pgbouncer=true"
 
       - name: Build
         run: npm run build
         env:
           # Build-time env vars (use CI secrets in real deployments)
-          DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/ci_db"
+          DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/ci_db?pgbouncer=true"
           NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || 'pk_test_placeholder' }}
           CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY || 'sk_test_placeholder' }}
           STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY || 'sk_test_placeholder_build' }}
@@ -73,6 +73,7 @@ jobs:
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY || 're_placeholder' }}
           UPLOADTHING_SECRET: ${{ secrets.UPLOADTHING_SECRET || 'sk_placeholder' }}
           UPLOADTHING_APP_ID: ${{ secrets.UPLOADTHING_APP_ID || 'placeholder' }}
+          GUEST_PASS_ENCRYPTION_KEY: ${{ secrets.GUEST_PASS_ENCRYPTION_KEY || '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef' }}
           NEXT_PUBLIC_APP_URL: "https://weddingwithindia.com"
 
       - name: Upload build artifact
@@ -103,9 +104,18 @@ jobs:
       - name: Generate Prisma Client
         run: npx prisma generate
         env:
-          DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/ci_db"
+          DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/ci_db?pgbouncer=true"
 
       - name: Run unit tests
-        run: npm test -- --passWithNoTests
+        run: npm test -- --no-coverage
         env:
-          DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/ci_db"
+          DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/ci_db?pgbouncer=true"
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || 'pk_test_e2e_mock_key_wedding_with_india' }}
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY || 'sk_test_e2e_mock_key_wedding_with_india' }}
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY || 'sk_test_e2e_mock_key_wedding_with_india' }}
+          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET || 'whsec_e2e_mock_key_wedding_with_india' }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY || 're_e2e_mock_key_wedding_with_india' }}
+          UPLOADTHING_SECRET: ${{ secrets.UPLOADTHING_SECRET || 'sk_live_e2e_mock_key_wedding_with_india' }}
+          UPLOADTHING_APP_ID: ${{ secrets.UPLOADTHING_APP_ID || 'app_e2e_mock_id_wedding_with_india' }}
+          GUEST_PASS_ENCRYPTION_KEY: ${{ secrets.GUEST_PASS_ENCRYPTION_KEY || '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef' }}
+          NEXT_PUBLIC_APP_URL: "http://localhost:3000"
