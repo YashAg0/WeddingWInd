@@ -29,8 +29,8 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL(APP_URL),
   title: {
-    default: "Wedding With India — Attend Authentic Indian Weddings",
-    template: "%s | Wedding With India",
+    default: "WeddingWithIndia — Attend Authentic Indian Weddings",
+    template: "%s | WeddingWithIndia",
   },
   description:
     "The world's first marketplace to attend authentic Indian weddings. Join authentic celebrations in Rajasthan, Goa, Punjab, and Kerala as an honoured guest. Reserve your seat today.",
@@ -43,14 +43,14 @@ export const metadata: Metadata = {
     "cultural travel India",
     "wedding guest experience",
   ],
-  authors: [{ name: "Wedding With India" }],
-  creator: "Wedding With India",
+  authors: [{ name: "WeddingWithIndia" }],
+  creator: "WeddingWithIndia",
   openGraph: {
     type: "website",
     locale: "en_US",
     url: APP_URL,
-    siteName: "Wedding With India",
-    title: "Wedding With India — Attend Authentic Indian Weddings",
+    siteName: "WeddingWithIndia",
+    title: "WeddingWithIndia — Attend Authentic Indian Weddings",
     description:
       "Experience the magic of authentic Indian weddings as an honoured guest. Browse our handpicked collection of verified cultural wedding celebrations across India.",
     images: [
@@ -58,13 +58,13 @@ export const metadata: Metadata = {
         url: "/og-image.jpg",
         width: 1200,
         height: 630,
-        alt: "Wedding With India — Authentic Indian Wedding Experiences",
+        alt: "WeddingWithIndia — Authentic Indian Wedding Experiences",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Wedding With India — Attend Authentic Indian Weddings",
+    title: "WeddingWithIndia — Attend Authentic Indian Weddings",
     description:
       "Experience the magic of authentic Indian weddings. Browse our exclusive collection of verified celebrations across India.",
     images: ["/og-image.jpg"],
@@ -89,10 +89,11 @@ export const metadata: Metadata = {
     shortcut: "/favicon.ico",
     apple: "/apple-icon.png",
   },
+  applicationName: "WeddingWithIndia",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Wedding With India",
+    title: "WeddingWithIndia",
   },
   formatDetection: {
     telephone: false,
@@ -107,7 +108,7 @@ export const metadata: Metadata = {
 const organizationJsonLd = {
   "@context": "https://schema.org",
   "@type": "Organization",
-  name: "Wedding With India",
+  name: "WeddingWithIndia",
   url: APP_URL,
   logo: `${APP_URL}/images/logos/logo.png`,
   description:
@@ -129,7 +130,7 @@ const organizationJsonLd = {
 const websiteJsonLd = {
   "@context": "https://schema.org",
   "@type": "WebSite",
-  name: "Wedding With India",
+  name: "WeddingWithIndia",
   url: APP_URL,
   potentialAction: {
     "@type": "SearchAction",

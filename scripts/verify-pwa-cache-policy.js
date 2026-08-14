@@ -2,7 +2,7 @@
  * scripts/verify-pwa-cache-policy.js
  *
  * Automated verification of PWA Cache Policy & Maintenance:
- * 1. Confirms explicit cache naming and versioning.
+ * 1. Confirms explicit cache naming and versioning (v2).
  * 2. Confirms obsolete cache purging on activate event.
  * 3. Confirms image cache quota capping and trimming.
  * 4. Confirms graceful fallback for corrupt/failed cache operations.
@@ -27,12 +27,13 @@ function runCachePolicyAudit() {
     swContent.includes("CACHE_VERSION") &&
     swContent.includes("CACHE_STATIC") &&
     swContent.includes("CACHE_IMAGES") &&
-    swContent.includes("CACHE_OFFLINE")
+    swContent.includes("CACHE_OFFLINE") &&
+    swContent.includes('CACHE_VERSION = "v2"')
   ) {
-    console.log("✅ Cache Versioning: Explicit semantic cache namespaces defined.");
+    console.log("✅ Cache Versioning: Explicit semantic cache namespaces defined (Version v2).");
     checksPassed++;
   } else {
-    console.error("❌ FAILED: SW lacks explicit cache namespaces and version constant.");
+    console.error("❌ FAILED: SW lacks explicit cache namespaces or version constant v2.");
     errors++;
   }
 

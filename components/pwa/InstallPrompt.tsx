@@ -9,6 +9,7 @@ export function InstallPrompt() {
   const { isInstalled, isInstallable, installApp, isInstallDismissed, dismissInstallPrompt } = usePwa();
   const [isIos, setIsIos] = useState(false);
   const [showIosGuide, setShowIosGuide] = useState(false);
+  const [isReadyToDisplay, setIsReadyToDisplay] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -21,10 +22,29 @@ export function InstallPrompt() {
     if (isIosDevice && !isStandalone) {
       setIsIos(true);
     }
+
+    // Delay prompt presentation so first-time visitors can understand the website first
+    const timer = setTimeout(() => {
+      setIsReadyToDisplay(true);
+    }, 4000);
+
+    return () => clearTimeout(timer);
   }, []);
 
-  // Do not show if already installed, or user dismissed prompt within 7 days
-  if (isInstalled || isInstallDismissed) {
+  // Handle escape key to close iOS guide
+  useEffect(() => {
+    if (!showIosGuide) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setShowIosGuide(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [showIosGuide]);
+
+  // Do not show if already installed, user dismissed prompt within cooldown period, or delay timer not reached
+  if (isInstalled || isInstallDismissed || !isReadyToDisplay) {
     return null;
   }
 
@@ -45,16 +65,16 @@ export function InstallPrompt() {
             <div className="w-10 h-10 rounded-xl overflow-hidden bg-maroon-800 shrink-0 relative flex items-center justify-center">
               <Image
                 src="/icons/icon-192x192.png"
-                alt="Wedding With India App"
+                alt="WeddingWithIndia"
                 width={40}
                 height={40}
                 className="object-cover"
               />
             </div>
             <div>
-              <h2 className="text-xs font-bold text-charcoal-900 leading-tight">Install Wedding With India</h2>
+              <h2 className="text-xs font-bold text-charcoal-900 leading-tight">Get the WeddingWithIndia App</h2>
               <p className="text-[11px] text-charcoal-500 mt-0.5 leading-snug">
-                Fast cultural wedding discovery & passes on your home screen.
+                Fast cultural wedding discovery & guest passes on your home screen.
               </p>
             </div>
           </div>

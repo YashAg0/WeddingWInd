@@ -747,10 +747,20 @@ a:focus-visible {
 
 /* Standalone app enhancements */
 @media all and (display-mode: standalone) {
+  html, body {
+    overscroll-behavior-y: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
   button,
-  a {
+  a,
+  input,
+  select,
+  textarea {
     -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
   }
 }
+
 
 

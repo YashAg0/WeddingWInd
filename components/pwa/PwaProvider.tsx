@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { RefreshCw, Wifi, WifiOff } from "lucide-react";
+import { AppLaunchScreen } from "./AppLaunchScreen";
 
 interface PwaContextType {
   isInstalled: boolean;
@@ -79,7 +80,7 @@ export function PwaProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // Check standalone mode
+  // Check standalone mode across Android, iOS, and Desktop
   useEffect(() => {
     if (typeof window === "undefined") return;
 
@@ -135,7 +136,7 @@ export function PwaProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
 
-    // Register service worker in production environments
+    // Register service worker in production environments or when forced
     const isProduction = process.env.NODE_ENV === "production";
     const isPwaForced = process.env.NEXT_PUBLIC_ENABLE_PWA === "true";
 
@@ -252,6 +253,9 @@ export function PwaProvider({ children }: { children: React.ReactNode }) {
         isInstallDismissed,
       }}
     >
+      {/* Short Branded Standalone Launch Screen */}
+      <AppLaunchScreen isStandalone={isInstalled} />
+
       {children}
 
       {/* Non-intrusive Update Notification Banner */}

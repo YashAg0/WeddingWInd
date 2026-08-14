@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { WifiOff, RefreshCw, Home } from "lucide-react";
 
 export default function OfflinePage() {
@@ -13,6 +13,18 @@ export default function OfflinePage() {
       window.location.reload();
     }
   };
+
+  // Auto-reload when connection is restored
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const handleOnline = () => {
+      window.location.reload();
+    };
+
+    window.addEventListener("online", handleOnline);
+    return () => window.removeEventListener("online", handleOnline);
+  }, []);
 
   return (
     <div className="min-h-[80vh] flex items-center justify-center px-4 py-12">

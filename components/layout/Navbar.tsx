@@ -229,6 +229,16 @@ export default function Navbar() {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [isMobileOpen, activeDropdown, showCurrencyPicker]);
 
+  // Mobile Back button / popstate handling: close drawer on back swipe/press
+  useEffect(() => {
+    if (!isMobileOpen) return;
+    const handlePopState = () => {
+      setIsMobileOpen(false);
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [isMobileOpen]);
+
   const unreadCount = notifications.filter((n) => !n.read).length;
   const isHomepage = pathname === "/";
   const isExploreActive = pathname === "/weddings" || pathname.startsWith("/weddings/");
@@ -340,75 +350,74 @@ export default function Navbar() {
         )}
         role="banner"
       >
-        <div className="container-luxury">
-          {/* Floating glass capsule — a flat top-of-page bar on the
-              transparent hero, condensing into a rounded, blurred pill
-              once scrolled or on any non-transparent page. */}
+        <div className="w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Floating glass capsule */}
           <div
             className={cn(
-              "flex items-center justify-between w-full min-w-0 h-16 px-4 sm:px-6 rounded-[2rem] transition-all duration-500",
+              "flex items-center justify-between w-full min-w-0 h-16 px-4 sm:px-6 lg:px-6 xl:px-8 rounded-full transition-all duration-300 gap-4",
               isTransparent
                 ? "bg-transparent"
-                : "bg-white/90 backdrop-blur-xl border border-white/60 shadow-[0_8px_32px_0_rgba(122,31,43,0.14)]"
+                : "bg-white/95 backdrop-blur-xl border border-warm-200/80 shadow-[0_8px_32px_0_rgba(122,31,43,0.12)]"
             )}
           >
-            {/* Logo */}
-            <Link
-              href="/"
-              className={cn("flex items-center gap-2.5 group flex-shrink-0 rounded-xl", FOCUS_RING)}
-              aria-label="Wedding With India — Home"
-            >
-              <div className="relative w-10 h-10 flex-shrink-0">
-                {!prefersReducedMotion && (
-                  <div
-                    className="absolute inset-[-3px] rounded-xl opacity-70 animate-spin"
-                    style={{
-                      background:
-                        "conic-gradient(from 0deg, var(--color-brand-primary), var(--color-brand-secondary), var(--color-brand-primary))",
-                      animationDuration: "6s",
-                    }}
-                    aria-hidden="true"
-                  />
-                )}
-                <div className="relative w-10 h-10 rounded-xl bg-[var(--color-brand-primary)] flex items-center justify-center overflow-hidden transition-transform duration-300 group-hover:scale-105 group-hover:rotate-6">
-                  <Image
-                    src="/images/logos/logo.png"
-                    alt="Wedding With India Logo"
-                    width={40}
-                    height={40}
-                    className="w-full h-full object-cover rounded-xl"
-                    priority
-                  />
+            {/* Left Column: Brand Area */}
+            <div className="flex items-center justify-start flex-shrink-0">
+              <Link
+                href="/"
+                className={cn("flex items-center gap-3 group rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-secondary)]", FOCUS_RING)}
+                aria-label="WeddingWithIndia — Home"
+              >
+                <div className="relative w-10 h-10 flex-shrink-0">
+                  {!prefersReducedMotion && (
+                    <div
+                      className="absolute inset-[-3px] rounded-xl opacity-70 animate-spin"
+                      style={{
+                        background:
+                          "conic-gradient(from 0deg, var(--color-brand-primary), var(--color-brand-secondary), var(--color-brand-primary))",
+                        animationDuration: "6s",
+                      }}
+                      aria-hidden="true"
+                    />
+                  )}
+                  <div className="relative w-10 h-10 rounded-xl bg-[var(--color-brand-primary)] flex items-center justify-center overflow-hidden transition-transform duration-300 group-hover:scale-105 group-hover:rotate-6 shadow-xs">
+                    <Image
+                      src="/images/logos/logo.png"
+                      alt="WeddingWithIndia Logo"
+                      width={40}
+                      height={40}
+                      className="w-full h-full object-cover rounded-xl"
+                      priority
+                    />
+                  </div>
                 </div>
-              </div>
-              <div className="hidden sm:flex flex-col justify-center leading-none">
-                <span
-                  className={cn(
-                    "font-display font-bold text-[1.05rem] leading-tight tracking-tight whitespace-nowrap transition-colors",
-                    isTransparent ? "text-white" : "text-[var(--color-brand-primary)]"
-                  )}
-                >
-                  Wedding With India
-                </span>
-                <span
-                  className={cn(
-                    "text-[0.625rem] font-semibold uppercase tracking-wider whitespace-nowrap mt-0.5 transition-colors",
-                    isTransparent ? "text-white/75" : "text-[var(--color-brand-secondary)]"
-                  )}
-                >
-                  Attend Indian Weddings
-                </span>
-              </div>
-            </Link>
+                <div className="hidden sm:flex flex-col justify-center leading-tight flex-shrink-0">
+                  <span
+                    className={cn(
+                      "font-display font-bold text-[1.05rem] leading-tight tracking-tight whitespace-nowrap transition-colors",
+                      isTransparent ? "text-white" : "text-[var(--color-brand-primary)]"
+                    )}
+                  >
+                    WeddingWithIndia
+                  </span>
+                  <span
+                    className={cn(
+                      "text-[0.625rem] font-semibold uppercase tracking-wider whitespace-nowrap mt-0.5 transition-colors",
+                      isTransparent ? "text-white/80" : "text-[var(--color-brand-secondary)]"
+                    )}
+                  >
+                    Attend Indian Weddings
+                  </span>
+                </div>
+              </Link>
+            </div>
 
-            {/* Desktop Nav */}
+            {/* Center Column: Desktop Navigation */}
             <nav
-              className="relative hidden lg:flex items-center gap-0.5 flex-shrink-0"
+              className="hidden xl:flex items-center justify-center gap-1 2xl:gap-1.5 flex-shrink-0"
               aria-label="Primary navigation"
               onMouseLeave={() => setHoveredKey(null)}
             >
-              {/* Signature element: a soft gradient spotlight that glides
-                  beneath whichever nav item is hovered or active. */}
+              {/* Sliding spotlight indicator */}
               <span
                 aria-hidden="true"
                 className={cn(
@@ -442,7 +451,7 @@ export default function Navbar() {
                       type="button"
                       onClick={() => toggleDropdown(item.label)}
                       className={cn(
-                        "relative z-10 flex items-center h-10 gap-1 px-3 rounded-full font-medium text-sm whitespace-nowrap transition-colors duration-200",
+                        "relative z-10 flex items-center justify-center h-10 gap-1.5 px-3.5 rounded-full font-medium text-sm whitespace-nowrap transition-colors duration-200 cursor-pointer",
                         FOCUS_RING,
                         isTransparent
                           ? "text-white/90 hover:text-white"
@@ -456,27 +465,21 @@ export default function Navbar() {
                       aria-expanded={activeDropdown === item.label}
                       aria-current={isExploreActive ? "page" : undefined}
                     >
-                      {item.label}
+                      <span>{item.label}</span>
                       <ChevronDown
                         size={14}
                         className={cn(
-                          "transition-transform duration-200",
+                          "transition-transform duration-200 shrink-0",
                           activeDropdown === item.label && "rotate-180"
                         )}
                         aria-hidden="true"
                       />
                     </button>
 
-                    {/* Dropdown — a plain disclosure of nav links, not an
-                        application "menu": there's no arrow-key roving focus
-                        here, so role="menu"/"menuitem" would promise
-                        keyboard behaviour this doesn't implement. Visibility
-                        (not just opacity) is toggled so closed links drop
-                        out of the tab order instead of staying invisibly
-                        focusable. */}
+                    {/* Dropdown Menu */}
                     <div
                       className={cn(
-                        "absolute top-full left-0 mt-2 w-64 rounded-2xl bg-white shadow-[0_8px_40px_0_rgba(0,0,0,0.14)] border border-warm-200/60 overflow-hidden origin-top-left transition-[opacity,transform,visibility] duration-200",
+                        "absolute top-full left-0 mt-2 w-64 rounded-2xl bg-white shadow-[0_8px_40px_0_rgba(0,0,0,0.14)] border border-warm-200/80 overflow-hidden origin-top-left transition-[opacity,transform,visibility] duration-200 z-50",
                         activeDropdown === item.label
                           ? "visible opacity-100 scale-100"
                           : "invisible opacity-0 scale-95"
@@ -523,7 +526,7 @@ export default function Navbar() {
                     onMouseEnter={() => setHoveredKey(item.label)}
                     aria-current={isActiveHref(pathname, item.href) ? "page" : undefined}
                     className={cn(
-                      "relative z-10 flex items-center h-10 px-3 rounded-full font-medium text-sm whitespace-nowrap transition-colors duration-200",
+                      "relative z-10 flex items-center justify-center h-10 px-3.5 rounded-full font-medium text-sm whitespace-nowrap transition-colors duration-200 cursor-pointer",
                       FOCUS_RING,
                       isTransparent
                         ? "text-white/90 hover:text-white"
@@ -538,13 +541,14 @@ export default function Navbar() {
               )}
             </nav>
 
-            <div className="hidden lg:flex items-center gap-3 ml-4 flex-shrink-0">
-              <div className="relative" ref={currencyPickerRef}>
+            {/* Right Column: Desktop Action Controls */}
+            <div className="hidden xl:flex items-center justify-end gap-2.5 2xl:gap-3 flex-shrink-0">
+              <div className="relative flex-shrink-0" ref={currencyPickerRef}>
                 <button
                   type="button"
                   onClick={() => setShowCurrencyPicker((v) => !v)}
                   className={cn(
-                    "h-10 w-10 rounded-full flex items-center justify-center flex-shrink-0 transition-colors",
+                    "h-10 w-10 rounded-full flex items-center justify-center flex-shrink-0 transition-colors cursor-pointer",
                     FOCUS_RING,
                     isTransparent ? "text-white/90 hover:bg-white/10" : "text-charcoal-600 hover:bg-warm-100"
                   )}
@@ -576,23 +580,23 @@ export default function Navbar() {
                 </div>
               </div>
 
-              {/* PWA App Install Quick CTA */}
-              <InstallButton variant="navbar" className="hidden xl:inline-flex" />
+              {/* PWA App Install Quick CTA - visible on screens where space is abundant */}
+              <InstallButton variant="navbar" isTransparent={isTransparent} className="hidden min-[1380px]:inline-flex flex-shrink-0" />
 
               {loading ? (
                 /* Loading skeleton — prevents layout shift */
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-shrink-0">
                   <div className="w-8 h-8 rounded-full bg-charcoal-100 animate-pulse" />
                   <div className="w-20 h-8 rounded-full bg-charcoal-100 animate-pulse" />
                 </div>
               ) : user ? (
                 /* Signed in state */
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-shrink-0">
                   {/* Notification bell */}
                   <Link
                     href="/dashboard/notifications"
                     className={cn(
-                      "relative h-10 w-10 flex items-center justify-center rounded-full transition-colors duration-200",
+                      "relative h-10 w-10 flex items-center justify-center rounded-full transition-colors duration-200 flex-shrink-0",
                       FOCUS_RING,
                       isTransparent
                         ? "text-white/80 hover:text-white hover:bg-white/10"
@@ -620,7 +624,7 @@ export default function Navbar() {
                   <Link
                     href="/dashboard"
                     className={cn(
-                      "flex items-center gap-2 h-10 pl-1.5 pr-3 rounded-full font-semibold text-sm whitespace-nowrap transition-all duration-200",
+                      "flex items-center gap-2 h-10 pl-1.5 pr-3.5 rounded-full font-semibold text-sm whitespace-nowrap transition-all duration-200 flex-shrink-0",
                       FOCUS_RING,
                       isTransparent
                         ? "text-white hover:bg-white/10 border border-white/30"
@@ -628,10 +632,10 @@ export default function Navbar() {
                     )}
                     aria-label="Go to your dashboard"
                   >
-                    <div className="rounded-full p-[2px] bg-[image:var(--gradient-brand)]">
+                    <div className="rounded-full p-[2px] bg-[image:var(--gradient-brand)] flex-shrink-0">
                       <UserAvatar avatar={user.avatar} name={user.name} size={24} />
                     </div>
-                    <span className="hidden xl:inline max-w-[100px] truncate">{user.name.split(" ")[0]}</span>
+                    <span className="hidden 2xl:inline max-w-[100px] truncate">{user.name.split(" ")[0]}</span>
                     <LayoutDashboard size={14} aria-hidden="true" />
                   </Link>
                 </div>
@@ -640,7 +644,7 @@ export default function Navbar() {
                   <Link
                     href="/login"
                     className={cn(
-                      "flex items-center justify-center h-10 px-5 text-sm font-semibold rounded-full whitespace-nowrap transition-colors duration-200",
+                      "flex items-center justify-center h-10 px-4 text-sm font-semibold rounded-full whitespace-nowrap transition-colors duration-200 cursor-pointer flex-shrink-0",
                       FOCUS_RING,
                       isTransparent
                         ? "text-white/90 hover:text-white hover:bg-white/10"
@@ -652,24 +656,24 @@ export default function Navbar() {
                   <Link
                     href="/weddings"
                     className={cn(
-                      "flex items-center justify-center gap-1.5 h-10 px-5 text-sm font-semibold rounded-2xl whitespace-nowrap transition-all duration-200",
+                      "flex items-center justify-center gap-1.5 h-10 px-5 text-sm font-semibold rounded-full whitespace-nowrap transition-all duration-200 cursor-pointer shadow-sm flex-shrink-0",
                       FOCUS_RING,
-                      "text-white bg-[var(--color-brand-primary)] hover:bg-[var(--color-brand-primary)]/90 shadow-sm"
+                      "text-white bg-[var(--color-brand-primary)] hover:bg-[var(--color-brand-primary)]/90"
                     )}
                   >
-                    <Heart size={15} aria-hidden="true" />
-                    Attend a Wedding
+                    <Heart size={15} className="shrink-0" aria-hidden="true" />
+                    <span>Attend a Wedding</span>
                   </Link>
                 </>
               )}
             </div>
 
-            {/* Mobile menu toggle */}
+            {/* Mobile menu toggle button */}
             <button
               ref={mobileToggleRef}
               type="button"
               className={cn(
-                "lg:hidden h-10 w-10 flex items-center justify-center rounded-full transition-colors duration-200",
+                "xl:hidden h-10 w-10 flex items-center justify-center rounded-full transition-colors duration-200 cursor-pointer flex-shrink-0",
                 FOCUS_RING,
                 isTransparent ? "text-white hover:bg-white/10" : "text-charcoal-700 hover:bg-charcoal-100"
               )}
@@ -687,14 +691,15 @@ export default function Navbar() {
       {/* Mobile Menu Overlay — visibility (not just opacity/pointer-events)
           is toggled so the whole drawer drops out of the tab order the
           instant it's closed, while still playing its slide/fade-out
-          transition first. */}
+          transition first. Now handles everything below `xl`, matching
+          the toggle button and desktop nav/actions above. */}
       <div
         id="mobile-menu"
         role="dialog"
         aria-modal="true"
         aria-label="Navigation menu"
         className={cn(
-          "fixed inset-0 z-[60] lg:hidden overflow-hidden transition-[opacity,visibility] duration-300",
+          "fixed inset-0 z-[60] xl:hidden overflow-hidden transition-[opacity,visibility] duration-300",
           isMobileOpen ? "block opacity-100 pointer-events-auto" : "hidden opacity-0 pointer-events-none"
         )}
       >
@@ -718,14 +723,14 @@ export default function Navbar() {
               <div className="w-8 h-8 rounded-lg bg-[var(--color-brand-primary)] flex items-center justify-center overflow-hidden">
                 <Image
                   src="/images/logos/logo.png"
-                  alt="Wedding With India Logo"
+                  alt="WeddingWithIndia Logo"
                   width={32}
                   height={32}
                   className="w-full h-full object-cover rounded-lg"
                 />
               </div>
               <span className="font-display font-bold text-[var(--color-brand-primary)] text-sm">
-                Wedding With India
+                WeddingWithIndia
               </span>
             </Link>
             <button

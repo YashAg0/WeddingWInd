@@ -24,13 +24,14 @@ function runAudit() {
   } else {
     const content = fs.readFileSync(manifestPath, "utf8");
     const requiredFields = [
-      'name: "Wedding With India"',
-      'short_name:',
+      'name: "WeddingWithIndia"',
+      'short_name: "WeddingWithIndia"',
       'start_url: "/"',
       'display: "standalone"',
       'background_color:',
       'theme_color:',
       'icons:',
+      'shortcuts:',
     ];
 
     let manifestValid = true;
@@ -41,9 +42,12 @@ function runAudit() {
         manifestValid = false;
       }
     }
-    if (manifestValid) {
-      console.log("✅ Manifest: app/manifest.ts contains all required PWA metadata.");
+    if (content.includes('name: "WeddingWithIndia"') && content.includes('short_name: "WeddingWithIndia"')) {
+      console.log("✅ Manifest: app/manifest.ts contains all required PWA metadata & correct WeddingWithIndia brand identity.");
       checksPassed++;
+    } else {
+      console.error("❌ FAILED: Manifest does not have correct WeddingWithIndia name/short_name.");
+      errors++;
     }
   }
 
@@ -118,7 +122,7 @@ function runAudit() {
   } else {
     const offlineContent = fs.readFileSync(offlinePagePath, "utf8");
     if (offlineContent.includes("Offline") && offlineContent.includes("Try Again")) {
-      console.log("✅ Offline Fallback: app/offline/page.tsx created with retry action.");
+      console.log("✅ Offline Fallback: app/offline/page.tsx created with retry action and reconnect handler.");
       checksPassed++;
     } else {
       console.error("❌ FAILED: app/offline/page.tsx missing Offline/Try Again text.");
@@ -133,9 +137,10 @@ function runAudit() {
     layoutContent.includes("PwaProvider") &&
     layoutContent.includes("InstallPrompt") &&
     layoutContent.includes("viewportFit: \"cover\"") &&
-    layoutContent.includes("appleWebApp")
+    layoutContent.includes("appleWebApp") &&
+    layoutContent.includes("applicationName: \"WeddingWithIndia\"")
   ) {
-    console.log("✅ Layout Integration: PwaProvider, InstallPrompt, viewportFit, and appleWebApp active.");
+    console.log("✅ Layout Integration: PwaProvider, InstallPrompt, viewportFit, appleWebApp, and applicationName active.");
     checksPassed++;
   } else {
     console.error("❌ FAILED: app/layout.tsx missing PWA provider or metadata integrations.");

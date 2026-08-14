@@ -1,15 +1,15 @@
 /**
  * WeddingWithIndia — Production Service Worker
- * Version: 1.0.0
+ * Version: 2.0.0
  *
  * Architecture:
  * - Cache-First / SWR: Static app shell assets (JS, CSS, Fonts, Icons)
  * - Network-First / SWR: Public wedding images (capped LRU)
- * - Network-First + Offline Fallback: Public HTML navigation
+ * - Strict Network-First + Offline Fallback: Public HTML navigation (eliminates stale chunk mismatches)
  * - STRICT NETWORK ONLY: All Auth, API, Stripe, Dashboard, and Booking mutations
  */
 
-const CACHE_VERSION = "v1";
+const CACHE_VERSION = "v2";
 const CACHE_STATIC = `wwi-static-${CACHE_VERSION}`;
 const CACHE_IMAGES = `wwi-images-${CACHE_VERSION}`;
 const CACHE_OFFLINE = `wwi-offline-${CACHE_VERSION}`;
@@ -20,6 +20,7 @@ const PRECACHE_ASSETS = [
   "/offline",
   "/favicon.ico",
   "/apple-icon.png",
+  "/icon.png",
   "/icons/icon-192x192.png",
   "/icons/icon-512x512.png",
   "/icons/maskable-icon-192x192.png",
@@ -53,11 +54,12 @@ function isTransactionalOrPrivate(url) {
   const pathname = url.pathname;
   const hostname = url.hostname;
 
-  // Third-party auth and payments
+  // Third-party auth, payment, upload, and analytics APIs
   if (
     hostname.includes("clerk") ||
     hostname.includes("stripe.com") ||
     hostname.includes("uploadthing.com") ||
+    hostname.includes("utfs.io") ||
     hostname.includes("google-analytics.com") ||
     hostname.includes("googletagmanager.com")
   ) {
@@ -136,23 +138,17 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // 2. NAVIGATION REQUESTS (HTML documents)
+  // 2. NAVIGATION REQUESTS (HTML documents) - Strict Network First
   if (request.mode === "navigate") {
     event.respondWith(
       (async () => {
         try {
-          // Network-first for fresh navigation
+          // Network-first for fresh live navigation and up-to-date scripts
           const networkResponse = await fetch(request);
           return networkResponse;
         } catch (fetchErr) {
-          // If offline, check if page is cached, else serve offline fallback
+          // Offline fallback
           try {
-            const staticCache = await caches.open(CACHE_STATIC);
-            const cachedPage = await staticCache.match(request);
-            if (cachedPage) {
-              return cachedPage;
-            }
-
             const offlineCache = await caches.open(CACHE_OFFLINE);
             const fallback = await offlineCache.match("/offline");
             if (fallback) {
@@ -176,14 +172,15 @@ self.addEventListener("fetch", (event) => {
     url.hostname === "fonts.gstatic.com" ||
     url.pathname.startsWith("/icons/") ||
     url.pathname === "/favicon.ico" ||
-    url.pathname === "/apple-icon.png"
+    url.pathname === "/apple-icon.png" ||
+    url.pathname === "/icon.png"
   ) {
     event.respondWith(
       (async () => {
         const cache = await caches.open(CACHE_STATIC);
         const cachedResponse = await cache.match(request);
 
-        // Fetch in background to revalidate
+        // Fetch in background to revalidate (SWR)
         const fetchPromise = fetch(request)
           .then((networkResponse) => {
             if (networkResponse && networkResponse.status === 200) {
