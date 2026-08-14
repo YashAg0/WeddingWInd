@@ -77,7 +77,7 @@ export default function GuestAccountPage() {
             </div>
             <h3 className="font-display font-bold text-xl text-charcoal-900">No Past Reservations Found</h3>
             <p className="text-xs text-charcoal-500 max-w-sm mx-auto">
-              You haven&apos;t booked an authentic Indian wedding experience yet. Explore our verified verified celebrations to reserve your spot!
+              You haven&apos;t booked an Indian wedding experience yet. Explore our curated celebrations to reserve your spot!
             </p>
             <div className="pt-2">
               <Link href="/weddings" className="btn btn-primary px-6 py-2.5 text-xs font-bold">
@@ -127,7 +127,7 @@ export default function GuestAccountPage() {
                     {/* Phase 4.3: Post-booking clarity sequence */}
                     <div className="bg-warm-50 p-4 rounded-2xl border border-warm-200/80 space-y-2">
                       <span className="text-[0.625rem] font-bold text-charcoal-500 uppercase tracking-widest block">Post-Booking Flow & Next Steps:</span>
-                      <div className="grid grid-cols-3 gap-2 text-[0.6875rem] text-charcoal-600 font-medium">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[0.6875rem] text-charcoal-600 font-medium">
                         <div className="flex items-center gap-1.5 text-emerald-700 font-bold">
                           <CheckCircle2 size={13} /> 1. Booking Confirmed
                         </div>

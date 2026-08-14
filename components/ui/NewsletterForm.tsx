@@ -25,7 +25,7 @@ export function NewsletterForm() {
 
   return (
     <form
-      className="flex w-full max-w-md gap-3"
+      className="flex flex-col sm:flex-row w-full max-w-md gap-3"
       onSubmit={handleSubmit}
       aria-label="Newsletter signup"
     >
@@ -40,11 +40,11 @@ export function NewsletterForm() {
         placeholder="Enter your email"
         autoComplete="email"
         required
-        className="flex-1 bg-white/10 border border-white/20 rounded-full px-5 py-3 text-sm text-white placeholder:text-white/70 focus:outline-none focus:border-[var(--color-brand-secondary)] focus:bg-white/15 transition-all duration-200"
+        className="flex-1 w-full bg-white/10 border border-white/20 rounded-full px-5 py-3 text-sm text-white placeholder:text-white/70 focus:outline-none focus:border-[var(--color-brand-secondary)] focus:bg-white/15 transition-all duration-200"
       />
       <button
         type="submit"
-        className="btn btn-secondary btn-sm flex-shrink-0 group"
+        className="btn btn-secondary btn-sm w-full sm:w-auto flex-shrink-0 group justify-center"
         aria-label="Subscribe to newsletter"
       >
         Subscribe

@@ -291,7 +291,7 @@ export default function AdminHostDetailPage() {
 
         {/* Right Column (1 Col): Admin Review & Approval Actions */}
         <div className="space-y-6">
-          <div className="bg-white border border-warm-200/60 p-6 sm:p-8 rounded-3xl shadow-sm space-y-6 sticky top-28">
+          <div className="bg-white border border-warm-200/60 p-6 sm:p-8 rounded-3xl shadow-sm space-y-6 sticky top-28 z-20">
             <div className="border-b border-warm-100 pb-3">
               <h3 className="font-display font-bold text-lg text-charcoal-900 flex items-center gap-2">
                 <ShieldCheck size={20} className="text-amber-700" />

@@ -46,7 +46,7 @@ export function FeaturedWeddings({ weddings }: FeaturedWeddingsProps) {
 
       {/* Soft warm glow top */}
       <div
-        className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-64 -z-0"
+        className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-[600px] h-64 -z-0"
         style={{
           background: "radial-gradient(ellipse at center, rgba(201,151,42,0.07) 0%, transparent 70%)",
         }}

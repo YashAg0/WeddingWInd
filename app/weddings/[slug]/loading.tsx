@@ -1,6 +1,6 @@
 export default function WeddingDetailLoading() {
   return (
-    <div className="min-h-screen bg-warm-50 pt-24 pb-20">
+    <div className="min-h-[85vh] flex flex-col bg-warm-50 pt-24 pb-20">
       
       {/* Header Container Loader */}
       <header className="container-luxury mt-4 flex flex-col gap-4">
@@ -24,7 +24,7 @@ export default function WeddingDetailLoading() {
 
       {/* Image Gallery Loader */}
       <div className="container-luxury mt-6">
-        <div className="grid grid-cols-4 grid-rows-2 gap-3 h-[450px] rounded-3xl overflow-hidden bg-white p-3 border border-warm-200/50">
+        <div className="grid grid-cols-1 md:grid-cols-4 grid-rows-2 gap-3 h-[300px] md:h-[450px] rounded-3xl overflow-hidden bg-white p-3 border border-warm-200/50">
           <div className="col-span-2 row-span-2 bg-warm-100 animate-pulse rounded-2xl" />
           <div className="bg-warm-100 animate-pulse rounded-xl" />
           <div className="bg-warm-100 animate-pulse rounded-xl" />

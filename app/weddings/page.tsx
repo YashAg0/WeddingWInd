@@ -188,7 +188,7 @@ export default async function WeddingsPage({ searchParams }: PageProps) {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start mt-2">
           
           {/* Desktop Filter Sidebar */}
-          <div className="hidden lg:block lg:col-span-1 sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto overscroll-contain pr-1 bg-white border border-warm-200/60 rounded-3xl p-5 shadow-card scrollbar-thin">
+          <div className="hidden lg:block lg:col-span-1 sticky top-24 z-20 max-h-[calc(100vh-7rem)] overflow-y-auto overscroll-contain pr-1 bg-white border border-warm-200/60 rounded-3xl p-5 shadow-card scrollbar-thin">
             <Suspense fallback={<div className="h-96 bg-warm-100 rounded-2xl animate-pulse" />}>
               <FilterSidebar
                 religionCounts={religionCounts}

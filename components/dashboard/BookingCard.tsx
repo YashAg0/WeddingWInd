@@ -228,7 +228,7 @@ export default function BookingCard({ booking, onCancel }: BookingCardProps) {
             <span>Payment Receipt / Invoice Summary</span>
             <span className="text-[#6b1026]">Invoice ID: {activePayment.id}</span>
           </div>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <div>
               <span className="text-charcoal-400 font-semibold block uppercase text-[0.625rem]">Charged To</span>
               <span className="font-bold text-charcoal-800">{user?.name} ({user?.email})</span>
@@ -297,7 +297,7 @@ export default function BookingCard({ booking, onCancel }: BookingCardProps) {
               <label className="text-xs font-bold text-charcoal-700 uppercase tracking-widest block border-b border-warm-100 pb-1">
                 Rate Specific Dimensions (1 to 5 Stars)
               </label>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {[
                   { label: "Culture & Rituals", key: "ratingCulture" },
                   { label: "Food & Feast", key: "ratingFood" },

@@ -1,12 +1,12 @@
 export default function WeddingsLoading() {
   return (
-    <div className="min-h-screen bg-warm-50 pt-24 pb-16">
+    <div className="min-h-[85vh] flex flex-col bg-warm-50 pt-24 pb-16">
       <div className="container-luxury flex flex-col gap-8">
         
         {/* Search header container loader */}
         <div className="text-center max-w-2xl mx-auto space-y-3 mt-4">
-          <div className="h-9 w-64 bg-warm-200/60 rounded mx-auto animate-pulse" />
-          <div className="h-4 w-96 bg-warm-100/60 rounded mx-auto animate-pulse" />
+          <div className="h-9 w-full max-w-xs bg-warm-200/60 rounded mx-auto animate-pulse" />
+          <div className="h-4 w-full max-w-sm bg-warm-100/60 rounded mx-auto animate-pulse" />
         </div>
 
         {/* Search bar loader */}

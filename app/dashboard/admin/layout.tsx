@@ -57,7 +57,7 @@ export default async function AdminLayout({
   // This is NOT an "admin required" error — it's a database connectivity issue.
   if (dbError) {
     return (
-      <div className="min-h-screen bg-warm-50/50 pt-28 pb-20 flex items-center justify-center">
+      <div className="min-h-[85vh] bg-warm-50/50 pt-28 pb-20 flex flex-col items-center justify-center">
         <div className="container-luxury max-w-xl mx-auto">
           <div className="bg-white border border-amber-200 rounded-3xl p-10 shadow-sm space-y-4 text-center">
             <div className="w-14 h-14 rounded-2xl bg-amber-50 text-amber-700 flex items-center justify-center mx-auto text-2xl font-bold">

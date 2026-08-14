@@ -82,7 +82,7 @@ export function StickyBookingCard({ wedding }: StickyBookingCardProps) {
             disabled
             className="btn btn-secondary btn-sm px-4 py-2.5 bg-amber-50 text-amber-900 border border-amber-300 text-xs font-bold cursor-not-allowed"
           >
-            Showcase Experience
+            Fully Booked
           </button>
         ) : isSoldOut ? (
           <button

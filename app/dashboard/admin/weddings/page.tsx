@@ -366,7 +366,7 @@ export default async function AdminWeddingsPage({
                     <p className="text-charcoal-500 text-xs line-clamp-2 leading-relaxed">{w.description}</p>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2 text-[0.6875rem] text-charcoal-600 font-medium">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[0.6875rem] text-charcoal-600 font-medium">
                     <div className="flex items-center gap-1.5">
                       <MapPin size={12} className="text-maroon-600" />
                       <span>{w.location}</span>

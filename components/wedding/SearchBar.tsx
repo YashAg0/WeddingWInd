@@ -73,7 +73,7 @@ export function SearchBar({ onToggleMobileFilters }: SearchBarProps) {
       className="w-full max-w-4xl mx-auto z-10"
       aria-label="Search weddings"
     >
-      <div className="glass rounded-3xl p-2.5 flex flex-col md:flex-row gap-2 shadow-[0_16px_48px_-12px_rgba(0,0,0,0.1)] border border-white">
+      <div className="glass rounded-3xl p-2.5 flex flex-col lg:flex-row gap-2 shadow-[0_16px_48px_-12px_rgba(0,0,0,0.1)] border border-white">
         
         {/* Destination Input */}
         <div className="flex-1 flex items-center gap-3 bg-white/70 hover:bg-white focus-within:bg-white rounded-2xl px-4 py-3 transition-colors duration-200 border border-warm-200/50">
@@ -98,7 +98,7 @@ export function SearchBar({ onToggleMobileFilters }: SearchBarProps) {
         </div>
 
         {/* Vertical Divider */}
-        <div className="hidden md:block w-px self-stretch bg-warm-200/60" aria-hidden="true" />
+        <div className="hidden lg:block w-px self-stretch bg-warm-200/60" aria-hidden="true" />
 
         {/* Wedding Style Dropdown */}
         <div className="flex-1 flex items-center gap-3 bg-white/70 hover:bg-white focus-within:bg-white rounded-2xl px-4 py-3 transition-colors duration-200 border border-warm-200/50">
@@ -128,7 +128,7 @@ export function SearchBar({ onToggleMobileFilters }: SearchBarProps) {
         </div>
 
         {/* Vertical Divider */}
-        <div className="hidden md:block w-px self-stretch bg-warm-200/60" aria-hidden="true" />
+        <div className="hidden lg:block w-px self-stretch bg-warm-200/60" aria-hidden="true" />
 
         {/* Date Selector */}
         <div className="flex-1 flex items-center gap-3 bg-white/70 hover:bg-white focus-within:bg-white rounded-2xl px-4 py-3 transition-colors duration-200 border border-warm-200/50">
@@ -151,12 +151,12 @@ export function SearchBar({ onToggleMobileFilters }: SearchBarProps) {
         </div>
 
         {/* Form Controls */}
-        <div className="flex items-center gap-2 pt-2 md:pt-0">
+        <div className="flex items-center gap-2 pt-2 lg:pt-0">
           {onToggleMobileFilters && (
             <button
               type="button"
               onClick={onToggleMobileFilters}
-              className="md:hidden flex items-center justify-center p-3.5 rounded-2xl bg-white border border-warm-200 text-charcoal-700 hover:bg-warm-50 active:scale-95 transition-all flex-1"
+              className="lg:hidden flex items-center justify-center p-3.5 rounded-2xl bg-white border border-warm-200 text-charcoal-700 hover:bg-warm-50 active:scale-95 transition-all flex-1"
               aria-label="Show filters"
             >
               <SlidersHorizontal size={18} />
@@ -174,10 +174,10 @@ export function SearchBar({ onToggleMobileFilters }: SearchBarProps) {
           </button>
           <button
             type="submit"
-            className="btn btn-primary rounded-2xl px-6 py-4 shadow-lg hover:shadow-xl active:scale-95 transition-all flex-1 md:flex-initial flex items-center justify-center gap-2"
+            className="btn btn-primary rounded-2xl px-6 py-4 shadow-lg hover:shadow-xl active:scale-95 transition-all flex-1 lg:flex-initial flex items-center justify-center gap-2"
           >
             <Search size={18} />
-            <span className="md:hidden lg:inline">Search</span>
+            <span className="lg:hidden xl:inline">Search</span>
           </button>
         </div>
       </div>

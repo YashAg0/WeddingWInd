@@ -157,18 +157,18 @@ export default async function WeddingDetailPage({ params }: PageProps) {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 bg-white border border-warm-200/50 p-4 rounded-2xl shadow-sm self-start">
-            <div className="text-center px-3 border-r border-warm-200">
-              <div className="text-xs text-charcoal-400 uppercase font-bold tracking-wider mb-0.5">Duration</div>
-              <div className="font-display font-bold text-sm text-charcoal-800">{wedding.durationDays} Days</div>
+          <div className="flex flex-wrap sm:flex-nowrap items-center justify-between sm:justify-start gap-1.5 sm:gap-2 bg-white border border-warm-200/50 p-3 sm:p-4 rounded-2xl shadow-sm w-full sm:w-auto max-w-full self-start">
+            <div className="text-center px-2 sm:px-3 border-r border-warm-200 flex-1 sm:flex-initial">
+              <div className="text-[10px] sm:text-xs text-charcoal-400 uppercase font-bold tracking-wider mb-0.5">Duration</div>
+              <div className="font-display font-bold text-xs sm:text-sm text-charcoal-800">{wedding.durationDays} Days</div>
             </div>
-            <div className="text-center px-3 border-r border-warm-200">
-              <div className="text-xs text-charcoal-400 uppercase font-bold tracking-wider mb-0.5">Religion</div>
-              <div className="font-display font-bold text-sm text-maroon-800">{wedding.religion || "Hindu"}</div>
+            <div className="text-center px-2 sm:px-3 border-r border-warm-200 flex-1 sm:flex-initial">
+              <div className="text-[10px] sm:text-xs text-charcoal-400 uppercase font-bold tracking-wider mb-0.5">Religion</div>
+              <div className="font-display font-bold text-xs sm:text-sm text-maroon-800">{wedding.religion || "Hindu"}</div>
             </div>
-            <div className="text-center px-3">
-              <div className="text-xs text-charcoal-400 uppercase font-bold tracking-wider mb-0.5">Region</div>
-              <div className="font-display font-bold text-sm text-charcoal-800">{wedding.region || "India"}</div>
+            <div className="text-center px-2 sm:px-3 flex-1 sm:flex-initial">
+              <div className="text-[10px] sm:text-xs text-charcoal-400 uppercase font-bold tracking-wider mb-0.5">Region</div>
+              <div className="font-display font-bold text-xs sm:text-sm text-charcoal-800">{wedding.region || "India"}</div>
             </div>
           </div>
         </div>

@@ -230,7 +230,7 @@ export default function ClientCaseDetailActions({
         <h4 className="font-display font-bold text-charcoal-900 border-b border-warm-100 pb-2">
           Escrow holds & suspension controls
         </h4>
-        <div className="grid grid-cols-2 gap-3 text-center">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-center">
           <button
             onClick={handleToggleHold}
             disabled={loading}

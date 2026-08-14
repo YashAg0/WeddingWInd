@@ -16,7 +16,7 @@ import { SectionHeader } from "@/components/ui/SectionHeader";
 
 export default function AboutContent() {
   return (
-    <main className="min-h-screen bg-warm-50 pt-28 pb-20">
+    <main className="min-h-[85vh] flex flex-col bg-warm-50 pt-24 lg:pt-28 pb-16 lg:pb-20">
 
       {/* =========================================================
           HERO

@@ -344,9 +344,8 @@ export default function Navbar() {
               transparent hero, condensing into a rounded, blurred pill
               once scrolled or on any non-transparent page. */}
           <div
-            style={{ paddingLeft: "24px", paddingRight: "36px" }}
             className={cn(
-              "flex items-center justify-between w-full min-w-0 h-16 rounded-[2rem] transition-all duration-500",
+              "flex items-center justify-between w-full min-w-0 h-16 px-4 sm:px-6 rounded-[2rem] transition-all duration-500",
               isTransparent
                 ? "bg-transparent"
                 : "bg-white/90 backdrop-blur-xl border border-white/60 shadow-[0_8px_32px_0_rgba(122,31,43,0.14)]"
@@ -648,7 +647,6 @@ export default function Navbar() {
                   </Link>
                   <Link
                     href="/weddings"
-                    style={{ marginRight: "8px" }}
                     className={cn(
                       "flex items-center justify-center gap-1.5 h-10 px-5 text-sm font-semibold rounded-2xl whitespace-nowrap transition-all duration-200",
                       FOCUS_RING,
@@ -692,8 +690,8 @@ export default function Navbar() {
         aria-modal="true"
         aria-label="Navigation menu"
         className={cn(
-          "fixed inset-0 z-[60] lg:hidden transition-[opacity,visibility] duration-300",
-          isMobileOpen ? "visible opacity-100" : "invisible opacity-0"
+          "fixed inset-0 z-[60] lg:hidden overflow-hidden transition-[opacity,visibility] duration-300",
+          isMobileOpen ? "block opacity-100 pointer-events-auto" : "hidden opacity-0 pointer-events-none"
         )}
       >
         {/* Backdrop */}

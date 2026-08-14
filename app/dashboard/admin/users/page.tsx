@@ -508,7 +508,7 @@ export default function AdminUsersPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                 <div className="bg-warm-50 p-3 rounded-xl border border-warm-200/50">
                   <span className="text-[0.625rem] font-bold uppercase tracking-wider text-charcoal-400 block">User ID</span>
                   <span className="font-mono text-charcoal-800 truncate block">{inspectUser.id}</span>

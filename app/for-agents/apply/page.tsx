@@ -161,7 +161,7 @@ export default function AgentApplicationPage() {
                 </div>
                 <div>
                   <label className="text-xs font-bold text-charcoal-700 block mb-1">Country & City *</label>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <input
                       type="text"
                       required

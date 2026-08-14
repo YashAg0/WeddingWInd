@@ -273,7 +273,7 @@ export function ClientAdminReviews({ initialReviews, auditLogs: initialLogs }: C
         </div>
       ) : (
         // History tab logs
-        <div className="bg-white border border-warm-200/50 rounded-[2rem] overflow-hidden shadow-sm">
+        <div className="bg-white border border-warm-200/50 rounded-[2rem] overflow-x-auto shadow-sm">
           <table className="w-full text-left border-collapse" role="table">
             <thead>
               <tr className="border-b border-warm-200 text-[0.6875rem] font-bold text-charcoal-500 uppercase tracking-widest bg-warm-50">

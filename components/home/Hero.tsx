@@ -84,9 +84,9 @@ function FieldChevron() {
 const TRUST_STATS = [
   {
     icon: <ShieldCheck size={15} strokeWidth={2} aria-hidden="true" />,
-    value: "Authentic",
-    label: "Cultural Heritage",
-    description: "Handpicked Indian traditions",
+    value: "Cultural",
+    label: "Wedding Traditions",
+    description: "Thoughtfully curated for guests",
   },
   {
     icon: <Star size={15} strokeWidth={2} aria-hidden="true" />,
@@ -212,7 +212,7 @@ export function Hero({ stats: _stats }: HeroProps) {
     >
       {/* Background image layer */}
       <motion.div
-        className="absolute inset-0 z-0 will-change-transform"
+        className="absolute inset-0 z-0 will-change-transform overflow-hidden"
         style={{ y: isReducedMotion ? 0 : bgY }}
         aria-hidden="true"
       >

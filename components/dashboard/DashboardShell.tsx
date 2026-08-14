@@ -33,7 +33,7 @@ function DashboardShellContent({ children }: { children: React.ReactNode }) {
   // Loading state: auth/DB sync in progress
   if (loading) {
     return (
-      <div className="min-h-screen bg-warm-50 flex items-center justify-center flex-col gap-3">
+      <div className="min-h-[85vh] flex flex-col items-center justify-center bg-warm-50 gap-3">
         <div className="w-8 h-8 rounded-full border-4 border-maroon-100 border-t-maroon-800 animate-spin" />
         <span className="text-xs font-bold text-charcoal-400 uppercase tracking-widest">Loading Dashboard...</span>
       </div>
@@ -51,7 +51,7 @@ function DashboardShellContent({ children }: { children: React.ReactNode }) {
     };
 
     return (
-      <div className="min-h-screen bg-warm-50 flex items-center justify-center p-4">
+      <div className="min-h-[85vh] flex flex-col items-center justify-center bg-warm-50 p-4">
         <div className="max-w-md w-full bg-white border border-amber-200 rounded-3xl p-10 shadow-sm space-y-5 text-center">
           <div className="w-14 h-14 rounded-2xl bg-amber-50 text-amber-700 flex items-center justify-center mx-auto">
             <WifiOff size={24} />
@@ -87,7 +87,7 @@ function DashboardShellContent({ children }: { children: React.ReactNode }) {
   // Loading after DB failure — redirect is pending
   if (!user && !dbOffline) {
     return (
-      <div className="min-h-screen bg-warm-50 flex items-center justify-center flex-col gap-3">
+      <div className="min-h-[85vh] flex flex-col items-center justify-center bg-warm-50 gap-3">
         <div className="w-8 h-8 rounded-full border-4 border-maroon-100 border-t-maroon-800 animate-spin" />
         <span className="text-xs font-bold text-charcoal-400 uppercase tracking-widest">Redirecting...</span>
       </div>
@@ -156,7 +156,7 @@ function DashboardShellContent({ children }: { children: React.ReactNode }) {
 export default function DashboardShell({ children }: { children: React.ReactNode }) {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-warm-50 flex items-center justify-center flex-col gap-3">
+      <div className="min-h-[85vh] flex flex-col items-center justify-center bg-warm-50 gap-3">
         <div className="w-8 h-8 rounded-full border-4 border-maroon-100 border-t-maroon-800 animate-spin" />
         <span className="text-xs font-bold text-charcoal-400 uppercase tracking-widest">Loading Workspace...</span>
       </div>

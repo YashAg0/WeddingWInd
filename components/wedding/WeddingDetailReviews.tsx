@@ -149,7 +149,7 @@ export function WeddingDetailReviews({ weddingId: _weddingId, reviews, userId }:
           <span className="text-charcoal-400 font-sans font-bold text-xs uppercase tracking-widest">
             Overall Rating
           </span>
-          <div className="font-display font-bold text-5xl text-charcoal-900 leading-tight">
+          <div className="font-display font-bold text-3xl sm:text-5xl text-charcoal-900 leading-tight">
             {overallAvg || "N/A"}
           </div>
           <div className="flex items-center gap-0.5">
