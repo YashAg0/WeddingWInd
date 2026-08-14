@@ -1,13 +1,13 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { prisma } from "../prisma";
+import { prisma, withDbRetry } from "../prisma";
 import { requireAuth, syncAndGetDbUser } from "../auth";
 export { syncAndGetDbUser };
 import { UserRole, BookingStatus, PaymentStatus, VerificationStatus, WeddingStatus, ReferralStatus, CancellationReasonCode, CancellationActor } from "@prisma/client";
 import { stripe } from "../stripe";
 import { rateLimit } from "../rate-limit";
-import { getWeddingRatingAggregate, getPublishedReviewWhere } from "../services/trust-score";
+import { getBatchWeddingRatingAggregates, getPublishedReviewWhere } from "../services/trust-score";
 import {
   sendHostApprovalWithPaymentLinkEmail,
   sendRefundConfirmationEmail,
@@ -540,13 +540,24 @@ export async function createBookingAction(data: {
       throw new Error("Cannot book a wedding experience that occurred in the past.");
     }
 
-    // 4. No duplicate active booking (PENDING, APPROVED, COMPLETED)
+    // 4. No duplicate active booking (PENDING, APPROVED, PAID, CONFIRMED, etc.)
     const existingActive = await tx.booking.findFirst({
       where: {
         travelerId: traveler.id,
         weddingId: data.weddingId,
-        status: { in: [BookingStatus.PENDING, BookingStatus.APPROVED, BookingStatus.COMPLETED] }
-      }
+        status: {
+          in: [
+            BookingStatus.PENDING,
+            BookingStatus.APPROVED,
+            BookingStatus.PAID,
+            BookingStatus.CONFIRMED,
+            BookingStatus.CHECKED_IN,
+            BookingStatus.ATTENDED,
+            BookingStatus.READY_FOR_EVENT,
+            BookingStatus.COMPLETED,
+          ],
+        },
+      },
     });
     if (existingActive) {
       throw new Error("You already have an active reservation request or booking for this wedding.");
@@ -556,11 +567,21 @@ export async function createBookingAction(data: {
     const approvedGuests = await tx.booking.aggregate({
       where: {
         weddingId: data.weddingId,
-        status: { in: [BookingStatus.APPROVED, BookingStatus.COMPLETED] }
+        status: {
+          in: [
+            BookingStatus.APPROVED,
+            BookingStatus.PAID,
+            BookingStatus.CONFIRMED,
+            BookingStatus.CHECKED_IN,
+            BookingStatus.ATTENDED,
+            BookingStatus.READY_FOR_EVENT,
+            BookingStatus.COMPLETED,
+          ],
+        },
       },
       _sum: {
-        guestsCount: true
-      }
+        guestsCount: true,
+      },
     });
     const currentBookedCount = approvedGuests._sum.guestsCount || 0;
     if (currentBookedCount + data.guestsCount > wedding.capacity) {
@@ -1280,102 +1301,118 @@ export async function fetchDashboardDataAction() {
 
 export const getWeddings = unstable_cache(
   async () => {
-  try {
-    const weddings = await prisma.wedding.findMany({
-      where: { status: "PUBLISHED", suspended: false, deletedAt: null },
-      orderBy: [
-        { sponsored: "desc" },
-        { featured: "desc" },
-        { manualTrendingBoost: "desc" },
-        { createdAt: "desc" },
-      ],
-      include: {
-        hostCouple: {
-          include: { user: true }
-        },
-        gallery: true,
-        events: true,
-        traditions: true,
-        _count: {
-          select: {
-            bookings: {
-              where: {
-                status: {
-                  in: ["APPROVED", "PAID", "CONFIRMED", "COMPLETED", "CHECKED_IN", "ATTENDED", "READY_FOR_EVENT"]
+    try {
+      const weddings = await withDbRetry(
+        () =>
+          prisma.wedding.findMany({
+            where: { status: "PUBLISHED", suspended: false, deletedAt: null },
+            orderBy: [
+              { sponsored: "desc" },
+              { featured: "desc" },
+              { manualTrendingBoost: "desc" },
+              { createdAt: "desc" },
+            ],
+            include: {
+              hostCouple: {
+                include: { user: true }
+              },
+              gallery: true,
+              events: true,
+              traditions: true,
+              _count: {
+                select: {
+                  bookings: {
+                    where: {
+                      status: {
+                        in: ["APPROVED", "PAID", "CONFIRMED", "COMPLETED", "CHECKED_IN", "ATTENDED", "READY_FOR_EVENT"]
+                      }
+                    }
+                  }
                 }
               }
             }
-          }
-        }
+          }),
+        { label: "getWeddings", maxRetries: 3 }
+      );
+
+      if (!weddings || weddings.length === 0) {
+        console.info("[getWeddings] No weddings in database. Serving static fallback featured weddings.");
+        const { featuredWeddings } = await import("../data");
+        return featuredWeddings;
       }
-    });
 
-    if (!weddings || weddings.length === 0) {
-      console.info("[getWeddings] No weddings in database. Serving static fallback featured weddings.");
-      const { featuredWeddings } = await import("../data");
-      return featuredWeddings;
-    }
+      const weddingIds = weddings.map((w) => w.id);
+      const ratingsMap = await getBatchWeddingRatingAggregates(weddingIds);
 
-    const results = await Promise.all(
-      weddings.map(async (w) => {
-        let ratings = { bayesianRating: 0, reviewCount: 0 };
-        try {
-          ratings = await getWeddingRatingAggregate(w.id);
-        } catch {}
-
+      const results = weddings.map((w) => {
+        const ratings = ratingsMap.get(w.id) || { bayesianRating: 0, reviewCount: 0 };
         return toWeddingDTO({
           ...w,
           rating: ratings.reviewCount > 0 ? ratings.bayesianRating : 0,
           reviewCount: ratings.reviewCount,
           guestsBooked: w._count.bookings,
         });
-      })
-    );
-    return results;
-  } catch (err) {
-    console.warn("[getWeddings] Database unreachable or uninitialized. Serving static fallback featured weddings.", err);
-    const { featuredWeddings } = await import("../data");
-    return featuredWeddings;
-  }
-}, ["published-weddings"], { revalidate: 60, tags: ["weddings"] });
+      });
+
+      // Sort with time-aware sponsored priority
+      results.sort((a, b) => {
+        if (a.sponsored !== b.sponsored) return a.sponsored ? -1 : 1;
+        if (a.featured !== b.featured) return a.featured ? -1 : 1;
+        return 0;
+      });
+
+      return results;
+    } catch (err) {
+      console.warn("[getWeddings] Database unreachable or uninitialized. Serving static fallback featured weddings.", err);
+      const { featuredWeddings } = await import("../data");
+      return featuredWeddings;
+    }
+  },
+  ["published-weddings"],
+  { revalidate: 60, tags: ["weddings"] }
+);
 
 export const getHomepageWeddings = unstable_cache(
   async (limit: number = 6) => {
     try {
       const now = new Date();
-      const weddings = await prisma.wedding.findMany({
-        where: {
-          status: "PUBLISHED",
-          suspended: false,
-          deletedAt: null,
-          date: { gte: now },
-        },
-        take: limit,
-        orderBy: [
-          { featured: "desc" },
-          { sponsored: "desc" },
-          { createdAt: "desc" },
-        ],
-        include: {
-          hostCouple: {
-            include: { user: true },
-          },
-          gallery: true,
-          events: true,
-          traditions: true,
-          _count: {
-            select: {
-              bookings: {
-                where: {
-                  status: {
-                    in: ["APPROVED", "PAID", "CONFIRMED", "COMPLETED", "CHECKED_IN", "ATTENDED", "READY_FOR_EVENT"],
+      const weddings = await withDbRetry(
+        () =>
+          prisma.wedding.findMany({
+            where: {
+              status: "PUBLISHED",
+              suspended: false,
+              deletedAt: null,
+              date: { gte: now },
+            },
+            take: limit,
+            orderBy: [
+              { featured: "desc" },
+              { sponsored: "desc" },
+              { createdAt: "desc" },
+            ],
+            include: {
+              hostCouple: {
+                include: { user: true },
+              },
+              gallery: true,
+              events: true,
+              traditions: true,
+              _count: {
+                select: {
+                  bookings: {
+                    where: {
+                      status: {
+                        in: ["APPROVED", "PAID", "CONFIRMED", "COMPLETED", "CHECKED_IN", "ATTENDED", "READY_FOR_EVENT"],
+                      },
+                    },
                   },
                 },
               },
             },
-          },
-        },
-      });
+          }),
+        { label: "getHomepageWeddings", maxRetries: 3 }
+      );
 
       if (!weddings || weddings.length === 0) {
         console.info("[getHomepageWeddings] No weddings in database. Serving static fallback.");
@@ -1383,21 +1420,18 @@ export const getHomepageWeddings = unstable_cache(
         return featuredWeddings.slice(0, limit);
       }
 
-      const results = await Promise.all(
-        weddings.map(async (w) => {
-          let ratings = { bayesianRating: 0, reviewCount: 0 };
-          try {
-            ratings = await getWeddingRatingAggregate(w.id);
-          } catch {}
+      const weddingIds = weddings.map((w) => w.id);
+      const ratingsMap = await getBatchWeddingRatingAggregates(weddingIds);
 
-          return toWeddingDTO({
-            ...w,
-            rating: ratings.reviewCount > 0 ? ratings.bayesianRating : 0,
-            reviewCount: ratings.reviewCount,
-            guestsBooked: w._count.bookings,
-          });
-        })
-      );
+      const results = weddings.map((w) => {
+        const ratings = ratingsMap.get(w.id) || { bayesianRating: 0, reviewCount: 0 };
+        return toWeddingDTO({
+          ...w,
+          rating: ratings.reviewCount > 0 ? ratings.bayesianRating : 0,
+          reviewCount: ratings.reviewCount,
+          guestsBooked: w._count.bookings,
+        });
+      });
       return results;
     } catch (err) {
       console.warn("[getHomepageWeddings] Database unreachable. Serving static fallback.", err);
@@ -1408,6 +1442,71 @@ export const getHomepageWeddings = unstable_cache(
   ["homepage-featured-weddings"],
   { revalidate: 60, tags: ["weddings", "homepage"] }
 );
+
+/**
+ * Bounded query for related weddings on detail pages, eliminating catalog-wide waterfalls.
+ */
+export async function getRelatedWeddings(category: string, excludeWeddingId: string, limit: number = 3) {
+  try {
+    const weddings = await withDbRetry(
+      () =>
+        prisma.wedding.findMany({
+          where: {
+            status: "PUBLISHED",
+            suspended: false,
+            deletedAt: null,
+            id: { not: excludeWeddingId },
+          },
+          take: limit,
+          orderBy: [
+            { category: category ? "asc" : "desc" },
+            { featured: "desc" },
+            { createdAt: "desc" },
+          ],
+          include: {
+            hostCouple: { include: { user: true } },
+            gallery: true,
+            events: true,
+            traditions: true,
+            _count: {
+              select: {
+                bookings: {
+                  where: {
+                    status: {
+                      in: ["APPROVED", "PAID", "CONFIRMED", "COMPLETED", "CHECKED_IN", "ATTENDED", "READY_FOR_EVENT"]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }),
+      { label: "getRelatedWeddings", maxRetries: 3 }
+    );
+
+    if (!weddings || weddings.length === 0) {
+      const { featuredWeddings } = await import("../data");
+      return featuredWeddings.filter((w) => w.id !== excludeWeddingId).slice(0, limit);
+    }
+
+    const weddingIds = weddings.map((w) => w.id);
+    const ratingsMap = await getBatchWeddingRatingAggregates(weddingIds);
+
+    return weddings.map((w) => {
+      const ratings = ratingsMap.get(w.id) || { bayesianRating: 0, reviewCount: 0 };
+      return toWeddingDTO({
+        ...w,
+        rating: ratings.reviewCount > 0 ? ratings.bayesianRating : 0,
+        reviewCount: ratings.reviewCount,
+        guestsBooked: w._count.bookings,
+      });
+    });
+  } catch (err) {
+    console.warn("[getRelatedWeddings] DB query failed, falling back to static:", err);
+    const { featuredWeddings } = await import("../data");
+    return featuredWeddings.filter((w) => w.id !== excludeWeddingId).slice(0, limit);
+  }
+}
 
 /**
  * Maps a review record to a public data transfer object, stripping sensitive data.

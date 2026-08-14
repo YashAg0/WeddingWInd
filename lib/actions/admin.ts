@@ -112,6 +112,7 @@ const adminWeddingSchema = z.object({
   description: z.string().min(20, "Description must be at least 20 characters"),
   location: z.string().min(1, "Location is required"),
   category: z.string().min(1, "Category is required"),
+  religion: z.string().default("Hindu"),
   date: z.string(),
   pricePerGuest: z.number().positive(),
   capacity: z.number().int().positive(),
@@ -123,6 +124,9 @@ const adminWeddingSchema = z.object({
   hostCoupleId: z.string().uuid("Invalid Host Couple Profile ID"),
   status: z.enum(["DRAFT", "PUBLISHED", "COMPLETED"]).default("DRAFT"),
   featured: z.boolean().default(false),
+  sponsored: z.boolean().default(false),
+  sponsorshipStart: z.string().nullable().optional(),
+  sponsorshipEnd: z.string().nullable().optional(),
 });
 
 export async function adminGetWeddingsAction() {
@@ -133,18 +137,30 @@ export async function adminGetWeddingsAction() {
       gallery: true,
       events: true,
       traditions: true,
+      _count: {
+        select: {
+          bookings: {
+            where: {
+              status: {
+                in: ["APPROVED", "PAID", "CONFIRMED", "COMPLETED", "CHECKED_IN", "ATTENDED", "READY_FOR_EVENT"]
+              }
+            }
+          }
+        }
+      }
     },
     orderBy: { createdAt: "desc" },
   });
 }
 
 export async function adminCreateWeddingAction(data: any) {
-  const _admin = await requireRole([UserRole.ADMIN]);
+  const admin = await requireRole([UserRole.ADMIN]);
   const parsed = adminWeddingSchema.parse({
     ...data,
     pricePerGuest: parseFloat(data.pricePerGuest),
     capacity: parseInt(data.capacity),
-    featured: !!data.featured,
+    featured: data.featured === true || data.featured === "true",
+    sponsored: data.sponsored === true || data.sponsored === "true",
   });
 
   // Autogenerate unique slug from title
@@ -156,80 +172,174 @@ export async function adminCreateWeddingAction(data: any) {
     slug = `${slug}-${randomSuffix}`;
   }
 
+  const sponsorshipStart = parsed.sponsorshipStart ? new Date(parsed.sponsorshipStart) : null;
+  const sponsorshipEnd = parsed.sponsorshipEnd ? new Date(parsed.sponsorshipEnd) : null;
+
   const wedding = await prisma.wedding.create({
     data: {
-      ...parsed,
-      slug,
+      title: parsed.title,
+      description: parsed.description,
+      location: parsed.location,
+      category: parsed.category,
+      religion: parsed.religion,
       date: new Date(parsed.date),
+      pricePerGuest: parsed.pricePerGuest,
+      capacity: parsed.capacity,
+      requiredGuests: parsed.requiredGuests,
+      theme: parsed.theme,
+      dressCode: parsed.dressCode,
+      ethnicity: parsed.ethnicity,
+      mainImageUrl: parsed.mainImageUrl,
+      hostCoupleId: parsed.hostCoupleId,
+      status: parsed.status,
+      featured: parsed.featured,
+      sponsored: parsed.sponsored,
+      sponsorshipStart,
+      sponsorshipEnd,
+      slug,
     },
   });
 
-  await createAuditLog("CREATE_WEDDING", "Wedding", wedding.id, `Created wedding experience: "${wedding.title}"`);
+  await createAuditLog("CREATE_WEDDING", "Wedding", wedding.id, `Admin (${admin.email}) created wedding: "${wedding.title}"`);
+  if (parsed.featured) {
+    await createAuditLog("ADMIN_FEATURED_ENABLED", "Wedding", wedding.id, `Admin (${admin.email}) enabled featured on creation for "${wedding.title}"`);
+  }
+  if (parsed.sponsored) {
+    await createAuditLog("ADMIN_SPONSORED_ENABLED", "Wedding", wedding.id, `Admin (${admin.email}) enabled sponsored on creation for "${wedding.title}"`);
+  }
   revalidatePath("/dashboard/admin/weddings");
   revalidatePath("/weddings");
+  revalidatePath("/");
   return { success: true, wedding };
 }
 
 export async function adminUpdateWeddingAction(weddingId: string, data: any) {
-  const _admin = await requireRole([UserRole.ADMIN]);
+  const admin = await requireRole([UserRole.ADMIN]);
+  const existing = await prisma.wedding.findUnique({
+    where: { id: weddingId },
+  });
+  if (!existing) throw new Error("Wedding not found.");
+
   const parsed = adminWeddingSchema.parse({
     ...data,
     pricePerGuest: parseFloat(data.pricePerGuest),
     capacity: parseInt(data.capacity),
-    featured: !!data.featured,
+    featured: data.featured === true || data.featured === "true",
+    sponsored: data.sponsored === true || data.sponsored === "true",
   });
+
+  const sponsorshipStart = parsed.sponsorshipStart ? new Date(parsed.sponsorshipStart) : null;
+  const sponsorshipEnd = parsed.sponsorshipEnd ? new Date(parsed.sponsorshipEnd) : null;
 
   const wedding = await prisma.wedding.update({
     where: { id: weddingId },
     data: {
-      ...parsed,
+      title: parsed.title,
+      description: parsed.description,
+      location: parsed.location,
+      category: parsed.category,
+      religion: parsed.religion,
       date: new Date(parsed.date),
+      pricePerGuest: parsed.pricePerGuest,
+      capacity: parsed.capacity,
+      requiredGuests: parsed.requiredGuests,
+      theme: parsed.theme,
+      dressCode: parsed.dressCode,
+      ethnicity: parsed.ethnicity,
+      mainImageUrl: parsed.mainImageUrl,
+      hostCoupleId: parsed.hostCoupleId,
+      status: parsed.status,
+      featured: parsed.featured,
+      sponsored: parsed.sponsored,
+      sponsorshipStart,
+      sponsorshipEnd,
     },
   });
+
+  // Track featured audit
+  if (existing.featured !== parsed.featured) {
+    const action = parsed.featured ? "ADMIN_FEATURED_ENABLED" : "ADMIN_FEATURED_DISABLED";
+    await createAuditLog(
+      action,
+      "Wedding",
+      wedding.id,
+      `Admin (${admin.email}) changed featured from ${existing.featured} to ${parsed.featured} for "${wedding.title}".`
+    );
+  }
+
+  // Track sponsored audit
+  if (
+    existing.sponsored !== parsed.sponsored ||
+    existing.sponsorshipStart?.toISOString() !== sponsorshipStart?.toISOString() ||
+    existing.sponsorshipEnd?.toISOString() !== sponsorshipEnd?.toISOString()
+  ) {
+    const action = parsed.sponsored !== existing.sponsored
+      ? (parsed.sponsored ? "ADMIN_SPONSORED_ENABLED" : "ADMIN_SPONSORED_DISABLED")
+      : "ADMIN_SPONSORSHIP_UPDATED";
+    await createAuditLog(
+      action,
+      "Wedding",
+      wedding.id,
+      `Admin (${admin.email}) updated sponsorship for "${wedding.title}": sponsored=${parsed.sponsored} (prev=${existing.sponsored}), start=${sponsorshipStart?.toISOString() || "null"}, end=${sponsorshipEnd?.toISOString() || "null"}`
+    );
+  }
 
   await createAuditLog("UPDATE_WEDDING", "Wedding", wedding.id, `Updated wedding details for: "${wedding.title}"`);
   revalidatePath("/dashboard/admin/weddings");
   revalidatePath(`/weddings/${wedding.slug}`);
   revalidatePath("/weddings");
+  revalidatePath("/");
   return { success: true, wedding };
 }
 
 export async function adminDeleteWeddingAction(weddingId: string) {
-  const _admin = await requireRole([UserRole.ADMIN]);
+  const admin = await requireRole([UserRole.ADMIN]);
   const deleted = await prisma.wedding.delete({
     where: { id: weddingId },
   });
 
-  await createAuditLog("DELETE_WEDDING", "Wedding", weddingId, `Deleted wedding experience: "${deleted.title}"`);
+  await createAuditLog("DELETE_WEDDING", "Wedding", weddingId, `Admin (${admin.email}) deleted wedding: "${deleted.title}"`);
   revalidatePath("/dashboard/admin/weddings");
   revalidatePath("/weddings");
+  revalidatePath("/");
   return { success: true };
 }
 
 export async function adminToggleWeddingStatusAction(weddingId: string, status: any) {
-  const _admin = await requireRole([UserRole.ADMIN]);
+  const admin = await requireRole([UserRole.ADMIN]);
   const updated = await prisma.wedding.update({
     where: { id: weddingId },
     data: { status },
   });
 
-  await createAuditLog("TOGGLE_WEDDING_STATUS", "Wedding", weddingId, `Changed status of "${updated.title}" to ${status}`);
+  await createAuditLog("TOGGLE_WEDDING_STATUS", "Wedding", weddingId, `Admin (${admin.email}) changed status of "${updated.title}" to ${status}`);
   revalidatePath("/dashboard/admin/weddings");
   revalidatePath("/weddings");
+  revalidatePath("/");
   return { success: true };
 }
 
 export async function adminToggleWeddingFeaturedAction(weddingId: string, featured: boolean) {
-  const _admin = await requireRole([UserRole.ADMIN]);
+  const admin = await requireRole([UserRole.ADMIN]);
+  const existing = await prisma.wedding.findUnique({ where: { id: weddingId }, select: { id: true, title: true, featured: true } });
+  if (!existing) throw new Error("Wedding not found.");
+
   const updated = await prisma.wedding.update({
     where: { id: weddingId },
     data: { featured },
   });
 
-  await createAuditLog("TOGGLE_WEDDING_FEATURED", "Wedding", weddingId, `Set featured flag for "${updated.title}" to ${featured}`);
+  const action = featured ? "ADMIN_FEATURED_ENABLED" : "ADMIN_FEATURED_DISABLED";
+  await createAuditLog(
+    action,
+    "Wedding",
+    weddingId,
+    `Admin (${admin.email}) set featured flag for "${updated.title}" from ${existing.featured} to ${featured}`
+  );
   revalidatePath("/dashboard/admin/weddings");
   revalidatePath("/weddings");
-  return { success: true };
+  revalidatePath("/");
+  return { success: true, wedding: updated };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1334,11 +1444,54 @@ export async function adminToggleSponsoredAction(
   sponsorshipStart?: Date | string | null,
   sponsorshipEnd?: Date | string | null
 ) {
-  await requireRole([UserRole.ADMIN]);
+  const admin = await requireRole([UserRole.ADMIN]);
 
   const { weddingId: validId } = weddingDiscoveryUpdateSchema.parse({ weddingId });
 
-  const wedding = await prisma.wedding.findUnique({ where: { id: validId }, select: { id: true, title: true } });
+  const wedding = await prisma.wedding.findUnique({
+    where: { id: validId },
+    select: { id: true, title: true, sponsored: true, sponsorshipStart: true, sponsorshipEnd: true }
+  });
+  if (!wedding) throw new Error("Wedding not found.");
+
+  const start = sponsorshipStart ? new Date(sponsorshipStart) : (isSponsored ? (wedding.sponsorshipStart || new Date()) : null);
+  const end = sponsorshipEnd ? new Date(sponsorshipEnd) : (isSponsored ? wedding.sponsorshipEnd : null);
+
+  const updated = await prisma.wedding.update({
+    where: { id: validId },
+    data: {
+      sponsored: isSponsored,
+      sponsorshipStart: isSponsored ? start : null,
+      sponsorshipEnd: isSponsored ? end : null,
+    },
+  });
+
+  const action = isSponsored ? "ADMIN_SPONSORED_ENABLED" : "ADMIN_SPONSORED_DISABLED";
+  await createAuditLog(
+    action,
+    "Wedding",
+    validId,
+    `Admin (${admin.email}) ${isSponsored ? "enabled" : "disabled"} sponsored status for wedding: "${wedding.title}" (prev=${wedding.sponsored}, start=${start?.toISOString() || "null"}, end=${end?.toISOString() || "null"})`
+  );
+
+  revalidatePath("/dashboard/admin/weddings");
+  revalidatePath("/weddings");
+  revalidatePath("/");
+  return { success: true, wedding: updated };
+}
+
+export async function adminUpdateSponsorshipDatesAction(
+  weddingId: string,
+  sponsorshipStart: Date | string | null,
+  sponsorshipEnd: Date | string | null
+) {
+  const admin = await requireRole([UserRole.ADMIN]);
+  const { weddingId: validId } = weddingDiscoveryUpdateSchema.parse({ weddingId });
+
+  const wedding = await prisma.wedding.findUnique({
+    where: { id: validId },
+    select: { id: true, title: true, sponsored: true, sponsorshipStart: true, sponsorshipEnd: true }
+  });
   if (!wedding) throw new Error("Wedding not found.");
 
   const start = sponsorshipStart ? new Date(sponsorshipStart) : null;
@@ -1347,47 +1500,26 @@ export async function adminToggleSponsoredAction(
   const updated = await prisma.wedding.update({
     where: { id: validId },
     data: {
-      sponsored: isSponsored,
       sponsorshipStart: start,
       sponsorshipEnd: end,
     },
   });
 
   await createAuditLog(
-    isSponsored ? "WEDDING_SPONSORED" : "WEDDING_UNSPONSORED",
+    "ADMIN_SPONSORSHIP_UPDATED",
     "Wedding",
     validId,
-    `Admin ${isSponsored ? "enabled" : "disabled"} sponsored status for wedding: "${wedding.title}"`
+    `Admin (${admin.email}) updated sponsorship schedule for "${wedding.title}": start=${start?.toISOString() || "null"}, end=${end?.toISOString() || "null"}`
   );
 
+  revalidatePath("/dashboard/admin/weddings");
   revalidatePath("/weddings");
   revalidatePath("/");
   return { success: true, wedding: updated };
 }
 
 export async function adminToggleFeaturedAction(weddingId: string, isFeatured: boolean) {
-  await requireRole([UserRole.ADMIN]);
-
-  const { weddingId: validId } = weddingDiscoveryUpdateSchema.parse({ weddingId });
-
-  const wedding = await prisma.wedding.findUnique({ where: { id: validId }, select: { id: true, title: true } });
-  if (!wedding) throw new Error("Wedding not found.");
-
-  const updated = await prisma.wedding.update({
-    where: { id: validId },
-    data: { featured: isFeatured },
-  });
-
-  await createAuditLog(
-    isFeatured ? "WEDDING_FEATURED" : "WEDDING_UNFEATURED",
-    "Wedding",
-    validId,
-    `Admin ${isFeatured ? "enabled" : "disabled"} featured status for wedding: "${wedding.title}"`
-  );
-
-  revalidatePath("/weddings");
-  revalidatePath("/");
-  return { success: true, wedding: updated };
+  return await adminToggleWeddingFeaturedAction(weddingId, isFeatured);
 }
 
 export async function adminSetTrendingBoostAction(weddingId: string, boostScore: number) {

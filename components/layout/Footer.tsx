@@ -11,6 +11,7 @@ import {
   Globe2,
 } from "lucide-react";
 import { NewsletterForm } from "@/components/ui/NewsletterForm";
+import { InstallButton } from "@/components/pwa/InstallButton";
 
 /* ===============================================================
    FOOTER NAVIGATION
@@ -335,6 +336,14 @@ export default function Footer() {
                 </a>
               ))}
 
+            </div>
+
+            {/* PWA App Download Link */}
+            <div className="pt-4 border-t border-white/10 mt-6">
+              <div className="text-[0.65rem] font-bold uppercase tracking-[0.14em] text-[var(--color-brand-secondary)] mb-2">
+                Mobile Experience
+              </div>
+              <InstallButton variant="footer" />
             </div>
 
           </div>

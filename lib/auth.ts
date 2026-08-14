@@ -1,5 +1,5 @@
 import { auth, currentUser } from "@clerk/nextjs/server";
-import { prisma } from "./prisma";
+import { prisma, withDbRetry } from "./prisma";
 import { UserRole, UserStatus } from "@prisma/client";
 
 /**
@@ -13,6 +13,13 @@ export async function getSession() {
   }
 }
 
+async function safeDbCall<T>(fn: () => Promise<T>, options?: any): Promise<T> {
+  if (typeof withDbRetry === "function") {
+    return await withDbRetry(fn, options);
+  }
+  return await fn();
+}
+
 /**
  * Gets the detailed User model from PostgreSQL database using Clerk userId.
  * Returns null if user is not authenticated or not found in DB.
@@ -23,14 +30,18 @@ export async function getDbUser() {
     const session = await getSession();
     if (!session?.userId) return null;
 
-    return await prisma.user.findUnique({
-      where: { clerkUserId: session.userId },
-      include: {
-        travelerProfile: true,
-        coupleProfile: true,
-        agentProfile: true
-      }
-    });
+    return await safeDbCall(
+      () =>
+        prisma.user.findUnique({
+          where: { clerkUserId: session.userId },
+          include: {
+            travelerProfile: true,
+            coupleProfile: true,
+            agentProfile: true,
+          },
+        }),
+      { label: "getDbUser", maxRetries: 3 }
+    );
   } catch (err) {
     console.warn("[getDbUser] PostgreSQL unavailable:", err);
     return null;
@@ -62,24 +73,28 @@ export async function syncAndGetDbUser() {
 
   // FAST PATH: Check if user is already synced by Clerk ID (indexed lookup, zero transaction lock)
   try {
-    const fastUser = await prisma.user.findUnique({
-      where: { clerkUserId: clerkUser.id },
-      include: {
-        travelerProfile: true,
-        coupleProfile: {
+    const fastUser = await safeDbCall(
+      () =>
+        prisma.user.findUnique({
+          where: { clerkUserId: clerkUser.id },
           include: {
-            weddings: {
-              where: { isDemo: false },
-              orderBy: { createdAt: "desc" },
-              take: 1,
+            travelerProfile: true,
+            coupleProfile: {
+              include: {
+                weddings: {
+                  where: { isDemo: false },
+                  orderBy: { createdAt: "desc" },
+                  take: 1,
+                },
+              },
             },
+            agentProfile: true,
+            coordinatorProfile: true,
+            verification: true,
           },
-        },
-        agentProfile: true,
-        coordinatorProfile: true,
-        verification: true,
-      },
-    });
+        }),
+      { label: "syncAndGetDbUser:fastPath", maxRetries: 3 }
+    );
 
     if (fastUser && fastUser.status !== UserStatus.BANNED) {
       return fastUser;

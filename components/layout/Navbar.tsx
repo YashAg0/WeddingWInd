@@ -8,6 +8,7 @@ import { Menu, X, ChevronDown, Heart, Globe, Bell, LayoutDashboard, User } from 
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import { useCurrency } from "@/context/CurrencyContext";
+import { InstallButton } from "@/components/pwa/InstallButton";
 
 interface NavItem {
   label: string;
@@ -575,6 +576,9 @@ export default function Navbar() {
                 </div>
               </div>
 
+              {/* PWA App Install Quick CTA */}
+              <InstallButton variant="navbar" className="hidden xl:inline-flex" />
+
               {loading ? (
                 /* Loading skeleton — prevents layout shift */
                 <div className="flex items-center gap-2">
@@ -849,6 +853,11 @@ export default function Navbar() {
                 </Link>
               </>
             )}
+
+            {/* PWA App Action in Mobile Drawer */}
+            <div className="pt-2 border-t border-warm-200">
+              <InstallButton variant="mobile-menu" onActionComplete={() => setIsMobileOpen(false)} />
+            </div>
           </div>
         </div>
       </div>

@@ -8,6 +8,8 @@ import CookieConsent from "@/components/ui/CookieConsent";
 import Script from "next/script";
 import { Toaster } from "sonner";
 import { RoyalBackground } from "@/components/ui/RoyalBackground";
+import { PwaProvider } from "@/components/pwa/PwaProvider";
+import { InstallPrompt } from "@/components/pwa/InstallPrompt";
 
 // Fonts disabled via Next.js builder due to Turbopack network failures
 // Using native <link> tags in the head instead.
@@ -20,7 +22,8 @@ const APP_URL = "https://weddingwithindia.com";
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#6b1026",
+  viewportFit: "cover",
+  themeColor: "#7B1113",
 };
 
 export const metadata: Metadata = {
@@ -85,6 +88,14 @@ export const metadata: Metadata = {
     icon: "/favicon.ico",
     shortcut: "/favicon.ico",
     apple: "/apple-icon.png",
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Wedding With India",
+  },
+  formatDetection: {
+    telephone: false,
   },
   verification: {
     // Add Google Search Console verification token when available
@@ -181,11 +192,14 @@ export default function RootLayout({
           </noscript>
 
           <RoyalBackground />
-          <AuthProvider>
-            <CurrencyProvider>
-              <LayoutVisibilityWrapper>{children}</LayoutVisibilityWrapper>
-            </CurrencyProvider>
-          </AuthProvider>
+          <PwaProvider>
+            <AuthProvider>
+              <CurrencyProvider>
+                <LayoutVisibilityWrapper>{children}</LayoutVisibilityWrapper>
+              </CurrencyProvider>
+            </AuthProvider>
+            <InstallPrompt />
+          </PwaProvider>
 
           {/* Cookie Consent — loads before analytics */}
           <CookieConsent gaId={GA_ID} />

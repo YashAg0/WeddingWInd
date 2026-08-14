@@ -80,5 +80,66 @@ export async function isDatabaseAvailable(): Promise<boolean> {
   }
 }
 
+/**
+ * Checks if a Prisma or database error is transient (connectivity, pool exhaustion, network blip).
+ */
+export function isTransientDbError(err: any): boolean {
+  if (!err) return false;
+  const msg = (err.message || "").toLowerCase();
+  const name = err.name || "";
+  const code = err.code || "";
+
+  if (name === "PrismaClientInitializationError") return true;
+  if (["P1000", "P1001", "P1002", "P1008", "P1011", "P1017"].includes(code)) return true;
+  if (
+    msg.includes("can't reach database server") ||
+    msg.includes("cannot reach database server") ||
+    msg.includes("connection pool exhausted") ||
+    msg.includes("connection closed") ||
+    msg.includes("connection timeout") ||
+    msg.includes("etimedout") ||
+    msg.includes("econnreset") ||
+    msg.includes("econnrefused") ||
+    msg.includes("socket has been ended") ||
+    msg.includes("terminating connection due to administrator command")
+  ) {
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Executes a database operation with exponential backoff and jitter for transient failures.
+ * Useful for read operations, session synchronization, and health checks under slow or jittery connections.
+ */
+export async function withDbRetry<T>(
+  fn: () => Promise<T>,
+  options: { maxRetries?: number; initialDelayMs?: number; label?: string } = {}
+): Promise<T> {
+  const isTest = process.env.NODE_ENV === "test";
+  const maxRetries = isTest ? 1 : (options.maxRetries ?? 3);
+  const initialDelayMs = isTest ? 0 : (options.initialDelayMs ?? 200);
+  const label = options.label ? `[${options.label}] ` : "";
+
+  let lastError: any;
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (err: any) {
+      lastError = err;
+      if (!isTransientDbError(err) || attempt >= maxRetries) {
+        throw err;
+      }
+      const delay = initialDelayMs * Math.pow(2, attempt - 1) + Math.random() * 100;
+      console.warn(`${label}Transient DB error on attempt ${attempt}/${maxRetries}. Retrying in ${Math.round(delay)}ms...`);
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+  }
+
+  throw lastError;
+}
+
 export default prisma;
 export { prisma };
+

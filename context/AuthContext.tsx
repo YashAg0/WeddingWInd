@@ -207,7 +207,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // Listen to Clerk state
+  // Listen to Clerk state and auto-reconnect on tab focus / network recovery
   useEffect(() => {
     if (isLoaded) {
       if (isSignedIn) {
@@ -227,6 +227,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }
   }, [isLoaded, isSignedIn, clerkUser, refreshData]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible" && isSignedIn && isLoaded) {
+        refreshData();
+      }
+    };
+
+    const handleOnline = () => {
+      if (isSignedIn && isLoaded) {
+        refreshData();
+      }
+    };
+
+    window.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("online", handleOnline);
+
+    return () => {
+      window.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("online", handleOnline);
+    };
+  }, [isSignedIn, isLoaded, refreshData]);
 
   // Auth helper redirections
   const login = () => {

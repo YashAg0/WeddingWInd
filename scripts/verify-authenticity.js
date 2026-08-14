@@ -1,7 +1,23 @@
+const fs = require("fs");
+const path = require("path");
 const { PrismaClient } = require("@prisma/client");
 
+if (!process.env.DATABASE_URL) {
+  try {
+    const envContent = fs.readFileSync(path.resolve(__dirname, "../.env"), "utf8");
+    for (const line of envContent.split("\n")) {
+      const match = line.match(/^\s*([\w_]+)\s*=\s*(.*)?\s*$/);
+      if (match && !process.env[match[1]]) {
+        process.env[match[1]] = match[2].replace(/^["']|["']$/g, "").trim();
+      }
+    }
+  } catch {}
+}
+
 const dbUrl = process.env.DATABASE_URL || "";
-const connectionUrl = dbUrl + (dbUrl.includes("?") ? "&" : "?") + "pgbouncer=true&connection_limit=1";
+const connectionUrl = dbUrl.includes("connect_timeout=")
+  ? dbUrl
+  : dbUrl + (dbUrl.includes("?") ? "&" : "?") + "connect_timeout=15";
 
 const prisma = new PrismaClient({
   datasources: {

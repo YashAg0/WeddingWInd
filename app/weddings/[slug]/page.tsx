@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { Star, MapPin, ShieldCheck, CheckCircle, XCircle, Sparkles, Shirt, Utensils, Landmark, Hotel, Globe } from "lucide-react";
-import { getWeddings, getWeddingBySlug } from "@/lib/actions";
+import { getWeddingBySlug, getRelatedWeddings } from "@/lib/actions";
 import { WeddingGallery } from "@/components/wedding/WeddingGallery";
 import { WeddingTimeline } from "@/components/wedding/WeddingTimeline";
 import { BookingSidebar } from "@/components/wedding/BookingSidebar";
@@ -58,17 +58,12 @@ export default async function WeddingDetailPage({ params }: PageProps) {
     notFound();
   }
 
-  let dbUser = null;
-  try {
-    dbUser = await getDbUser();
-  } catch {}
+  // Parallelize user session and bounded related weddings queries
+  const [dbUser, relatedWeddings] = await Promise.all([
+    getDbUser().catch(() => null),
+    getRelatedWeddings(wedding.category, wedding.id, 3),
+  ]);
   const userId = dbUser?.id || null;
-
-  // Related weddings (same category or high rating, excluding current)
-  const weddingsList = await getWeddings();
-  const relatedWeddings = weddingsList
-    .filter((w) => w.id !== wedding.id)
-    .slice(0, 3);
 
   const eventJsonLd = {
     "@context": "https://schema.org",

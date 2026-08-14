@@ -15,6 +15,8 @@ const _isPublicRoute = createRouteMatcher([
   "/login(.*)",
   "/signup(.*)",
   "/wishlist/shared(.*)",
+  "/offline",
+  "/manifest.webmanifest",
   "/api/health",
   "/api/webhooks(.*)",
   "/sitemap.xml",

@@ -195,6 +195,12 @@ model Wedding {
   @@index([sponsored])
   @@index([isDemo])
   @@index([createdAt])
+  @@index([status, suspended, deletedAt, date])
+  @@index([status, featured, sponsored])
+  @@index([sponsored, sponsorshipStart, sponsorshipEnd])
+  @@index([religion])
+  @@index([category])
+  @@index([pricePerGuest])
 }
 
 model WeddingGallery {
@@ -338,6 +344,7 @@ model Review {
 
   @@index([bookingId, type])
   @@index([travelerId])
+  @@index([status, type])
 }
 
 model Notification {
@@ -605,6 +612,9 @@ model ContactSubmission {
   message   String
   status    ContactStatus @default(NEW)
   createdAt DateTime      @default(now())
+
+  @@index([status, createdAt])
+  @@index([email])
 }
 
 model NewsletterSubscriber {
@@ -667,6 +677,10 @@ model AuditLog {
   userName  String
   details   String?
   createdAt DateTime @default(now())
+
+  @@index([action, createdAt])
+  @@index([entity, entityId])
+  @@index([userId])
 }
 
 model Conversation {

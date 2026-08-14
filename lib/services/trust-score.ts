@@ -263,3 +263,91 @@ export async function getWeddingRatingAggregate(weddingId: string) {
     categoryAverages
   };
 }
+
+/**
+ * High-performance batch rating aggregate service that calculates review scores
+ * for multiple weddings in a single database query, eliminating N+1 waterfalls.
+ */
+export async function getBatchWeddingRatingAggregates(weddingIds: string[]): Promise<Map<string, any>> {
+  const result = new Map<string, any>();
+  if (!weddingIds || weddingIds.length === 0) return result;
+
+  const defaultAggregate = {
+    averageRating: 4.5,
+    reviewCount: 0,
+    bayesianRating: 4.5,
+    starDistribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
+    categoryAverages: {
+      culture: null,
+      food: null,
+      hospitality: null,
+      safety: null,
+      accommodation: null,
+      experience: null,
+    },
+  };
+
+  for (const id of weddingIds) {
+    result.set(id, { ...defaultAggregate, starDistribution: { ...defaultAggregate.starDistribution } });
+  }
+
+  const reviews = await prisma.review.findMany({
+    where: getPublishedReviewWhere({
+      booking: { weddingId: { in: weddingIds } },
+      type: "TRAVELER_TO_WEDDING",
+    }),
+    include: {
+      booking: {
+        select: { weddingId: true },
+      },
+    },
+  });
+
+  const reviewsByWedding = new Map<string, typeof reviews>();
+  for (const r of reviews) {
+    const wid = r.booking.weddingId;
+    if (!reviewsByWedding.has(wid)) reviewsByWedding.set(wid, []);
+    reviewsByWedding.get(wid)!.push(r);
+  }
+
+  for (const [wid, weddingReviews] of reviewsByWedding.entries()) {
+    const reviewCount = weddingReviews.length;
+    if (reviewCount === 0) continue;
+
+    const averageRating = parseFloat((weddingReviews.reduce((sum, r) => sum + r.rating, 0) / reviewCount).toFixed(2));
+    const C = 4.5;
+    const m = 3;
+    const bayesianRating = parseFloat(((averageRating * reviewCount + C * m) / (reviewCount + m)).toFixed(2));
+
+    const starDistribution: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    weddingReviews.forEach((r) => {
+      const star = Math.max(1, Math.min(5, Math.round(r.rating)));
+      starDistribution[star] = (starDistribution[star] || 0) + 1;
+    });
+
+    const getAvg = (field: keyof (typeof weddingReviews)[0]) => {
+      const valid = weddingReviews.filter((r) => r[field] !== null && r[field] !== undefined);
+      if (valid.length === 0) return null;
+      const sum = valid.reduce((acc, r) => acc + (r[field] as number), 0);
+      return parseFloat((sum / valid.length).toFixed(2));
+    };
+
+    result.set(wid, {
+      averageRating,
+      reviewCount,
+      bayesianRating,
+      starDistribution,
+      categoryAverages: {
+        culture: getAvg("ratingCulture"),
+        food: getAvg("ratingFood"),
+        hospitality: getAvg("ratingHospitality"),
+        safety: getAvg("ratingSafety"),
+        accommodation: getAvg("ratingAccommodation"),
+        experience: getAvg("ratingExperience"),
+      },
+    });
+  }
+
+  return result;
+}
+

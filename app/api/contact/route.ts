@@ -46,13 +46,34 @@ export async function POST(req: Request) {
     }
 
     const fullSubject = role ? `[${String(role).toUpperCase()}] ${subject.trim()}` : subject.trim();
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanMessage = message.trim();
+
+    // Idempotency check: if identical message from same email was submitted within last 60 seconds, return existing
+    const oneMinuteAgo = new Date(Date.now() - 60 * 1000);
+    const existing = await prisma.contactSubmission.findFirst({
+      where: {
+        email: cleanEmail,
+        subject: fullSubject,
+        message: cleanMessage,
+        createdAt: { gte: oneMinuteAgo },
+      },
+    });
+
+    if (existing) {
+      return NextResponse.json({
+        success: true,
+        message: "Message received successfully.",
+        id: existing.id,
+      });
+    }
 
     const submission = await prisma.contactSubmission.create({
       data: {
         name: name.trim(),
-        email: email.trim().toLowerCase(),
+        email: cleanEmail,
         subject: fullSubject,
-        message: message.trim(),
+        message: cleanMessage,
         status: "NEW",
       },
     });

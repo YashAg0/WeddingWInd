@@ -6,6 +6,7 @@ import { UserRole } from "@prisma/client";
 
 export type UserExperienceState =
   | "AUTH_LOADING"
+  | "UNAUTHENTICATED"
   | "DB_UNAVAILABLE"
   | "NEW_USER"
   | "EXISTING_TRAVELER"
@@ -39,9 +40,9 @@ export async function resolveAuthenticatedUserExperience(): Promise<Authenticate
 
     if (!dbUser) {
       return {
-        state: "NEW_USER",
+        state: "UNAUTHENTICATED",
         role: "traveler",
-        onboardingRequired: true,
+        onboardingRequired: false,
         hasHostApplication: false,
       };
     }
