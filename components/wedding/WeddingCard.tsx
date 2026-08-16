@@ -126,8 +126,9 @@ export function WeddingCard({ wedding, className }: WeddingCardProps) {
           />
 
           {/* Category & Discovery badges */}
-          <div className="absolute top-3 left-3 flex items-center gap-1.5 flex-wrap z-10">
+          <div className="absolute top-3 left-3 right-14 flex items-center gap-1.5 flex-wrap z-10">
             <span className="inline-flex items-center gap-1 bg-white/95 backdrop-blur-sm text-[var(--color-brand-primary)] text-xs font-bold px-3 py-1.5 rounded-full shadow-sm">
+
               {wedding.category}
             </span>
             {isSponsored && (

@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma, withDbRetry } from "../prisma";
 import { requireAuth, syncAndGetDbUser } from "../auth";
 export { syncAndGetDbUser };
-import { UserRole, BookingStatus, PaymentStatus, VerificationStatus, WeddingStatus, ReferralStatus, CancellationReasonCode, CancellationActor } from "@prisma/client";
+import { UserRole, BookingStatus, PaymentStatus, VerificationStatus, WeddingStatus, ReferralStatus, CancellationReasonCode, CancellationActor, WeddingSide } from "@prisma/client";
 import { stripe } from "../stripe";
 import { rateLimit } from "../rate-limit";
 import { getBatchWeddingRatingAggregates, getPublishedReviewWhere } from "../services/trust-score";
@@ -25,6 +25,10 @@ import {
 import { unstable_cache } from "next/cache";
 import { env } from "../env";
 import { toWeddingDTO } from "../wedding-dto";
+import {
+  CAPACITY_HOLDING_BOOKING_STATUSES,
+  ACTIVE_RESERVATION_STATUSES,
+} from "../booking-statuses";
 
 /**
  * 1. Action to update User Role during onboarding or settings.
@@ -362,15 +366,39 @@ export async function deleteWedding(weddingId: string) {
   });
   if (!coupleProfile) throw new Error("Couple profile not found.");
 
-  const existing = await prisma.wedding.findUnique({ where: { id: weddingId } });
+  const existing = await prisma.wedding.findUnique({
+    where: { id: weddingId },
+    include: { bookings: true }
+  });
   if (!existing) throw new Error("Wedding experience not found.");
   if (existing.hostCoupleId !== coupleProfile.id) {
     throw new Error("Forbidden: You can only delete wedding experiences you host.");
   }
 
-  await prisma.wedding.delete({
-    where: { id: weddingId }
-  });
+  const hasActiveBookings = existing.bookings.some((b) =>
+    CAPACITY_HOLDING_BOOKING_STATUSES.includes(b.status)
+  );
+
+  if (hasActiveBookings) {
+    throw new Error("Cannot delete a wedding experience with active, paid, or confirmed guest bookings. Please contact support to cancel or archive this event.");
+  }
+
+  if (existing.bookings.length > 0) {
+    // Soft delete to maintain historical booking and financial integrity
+    await prisma.wedding.update({
+      where: { id: weddingId },
+      data: {
+        status: WeddingStatus.DRAFT,
+        deletedAt: new Date(),
+        suspended: true,
+      }
+    });
+  } else {
+    // Hard delete is safe only when zero historical booking records exist
+    await prisma.wedding.delete({
+      where: { id: weddingId }
+    });
+  }
 
   revalidatePath("/weddings");
   revalidatePath("/dashboard/celebrations");
@@ -404,6 +432,10 @@ export async function getMyWeddings() {
           }
         },
         select: { guestsCount: true }
+      },
+      sponsorshipRequests: {
+        where: { status: "PENDING" },
+        select: { id: true, status: true, requestedAt: true }
       }
     }
   });
@@ -425,10 +457,15 @@ export async function getMyWeddings() {
     mainImageUrl: w.mainImageUrl,
     status: w.status,
     featured: w.featured,
+    sponsored: w.sponsored,
+    sponsorshipStart: w.sponsorshipStart?.toISOString() || null,
+    sponsorshipEnd: w.sponsorshipEnd?.toISOString() || null,
     totalBookings: w._count.bookings,
-    confirmedGuests: w.bookings.reduce((sum, b) => sum + b.guestsCount, 0)
+    confirmedGuests: w.bookings.reduce((sum, b) => sum + b.guestsCount, 0),
+    pendingSponsorshipRequest: w.sponsorshipRequests[0] || null,
   }));
 }
+
 
 /**
  * 5. Wishlist Management Action
@@ -482,6 +519,7 @@ export async function createBookingAction(data: {
   weddingId: string;
   date: string;
   guestsCount: number;
+  attendanceSide?: string;
   // NOTE: pricePerGuest and totalAmount are intentionally NOT accepted from the client.
   // The server recalculates authoritative pricing from the database to prevent price injection.
 }) {
@@ -510,6 +548,9 @@ export async function createBookingAction(data: {
   await assertCanBook(user.id);
 
   const booking = await prisma.$transaction(async (tx) => {
+    // 0. Concurrency lock on Wedding row to serialize simultaneous booking attempts
+    await tx.$queryRaw`SELECT id FROM "Wedding" WHERE id = ${data.weddingId} FOR UPDATE`;
+
     // 1. Fetch wedding with host couple information
     const wedding = await tx.wedding.findUnique({
       where: { id: data.weddingId },
@@ -540,22 +581,13 @@ export async function createBookingAction(data: {
       throw new Error("Cannot book a wedding experience that occurred in the past.");
     }
 
-    // 4. No duplicate active booking (PENDING, APPROVED, PAID, CONFIRMED, etc.)
+    // 4. No duplicate active booking (PENDING, AWAITING_PAYMENT, APPROVED, PAID, CONFIRMED, etc.)
     const existingActive = await tx.booking.findFirst({
       where: {
         travelerId: traveler.id,
         weddingId: data.weddingId,
         status: {
-          in: [
-            BookingStatus.PENDING,
-            BookingStatus.APPROVED,
-            BookingStatus.PAID,
-            BookingStatus.CONFIRMED,
-            BookingStatus.CHECKED_IN,
-            BookingStatus.ATTENDED,
-            BookingStatus.READY_FOR_EVENT,
-            BookingStatus.COMPLETED,
-          ],
+          in: ACTIVE_RESERVATION_STATUSES,
         },
       },
     });
@@ -563,20 +595,12 @@ export async function createBookingAction(data: {
       throw new Error("You already have an active reservation request or booking for this wedding.");
     }
 
-    // 5. Check guest capacity
+    // 5. Check guest capacity across all capacity-holding statuses
     const approvedGuests = await tx.booking.aggregate({
       where: {
         weddingId: data.weddingId,
         status: {
-          in: [
-            BookingStatus.APPROVED,
-            BookingStatus.PAID,
-            BookingStatus.CONFIRMED,
-            BookingStatus.CHECKED_IN,
-            BookingStatus.ATTENDED,
-            BookingStatus.READY_FOR_EVENT,
-            BookingStatus.COMPLETED,
-          ],
+          in: CAPACITY_HOLDING_BOOKING_STATUSES,
         },
       },
       _sum: {
@@ -593,6 +617,15 @@ export async function createBookingAction(data: {
     const serverPricePerGuest = wedding.pricePerGuest;
     const serverTotalAmount = serverPricePerGuest * data.guestsCount;
 
+    // 7. Validate and sanitize attendanceSide — never trust client enum strings directly.
+    const VALID_SIDES: WeddingSide[] = [WeddingSide.BRIDE_SIDE, WeddingSide.GROOM_SIDE, WeddingSide.OPEN];
+    const sanitizedSide: WeddingSide = (
+      data.attendanceSide && VALID_SIDES.includes(data.attendanceSide as WeddingSide)
+        ? (data.attendanceSide as WeddingSide)
+        : WeddingSide.BRIDE_SIDE
+    );
+
+
     const createdBooking = await tx.booking.create({
       data: {
         travelerId: traveler.id,
@@ -601,7 +634,8 @@ export async function createBookingAction(data: {
         guestsCount: data.guestsCount,
         pricePerGuest: serverPricePerGuest,
         totalAmount: serverTotalAmount,
-        status: BookingStatus.PENDING
+        status: BookingStatus.PENDING,
+        attendanceSide: sanitizedSide,
       }
     });
 
@@ -678,6 +712,91 @@ export async function cancelBookingAction(
   return { success: true, cancellationRequestId: request.id };
 }
 
+/**
+ * Allow a traveler to update their attendance-side preference on an existing booking.
+ * Guests can update this anytime up until check-in or event completion.
+ */
+export async function updateBookingSideAction(bookingId: string, attendanceSide: string) {
+  const user = await requireAuth();
+
+  // Validate the side value server-side
+  const VALID_SIDES: WeddingSide[] = [WeddingSide.BRIDE_SIDE, WeddingSide.GROOM_SIDE, WeddingSide.OPEN];
+  if (!VALID_SIDES.includes(attendanceSide as WeddingSide)) {
+    throw new Error("Invalid attendance side value. Must be BRIDE_SIDE, GROOM_SIDE, or OPEN.");
+  }
+
+  const traveler = await prisma.travelerProfile.findUnique({ where: { userId: user.id } });
+  if (!traveler) throw new Error("Traveler profile not found.");
+
+  const booking = await prisma.booking.findUnique({
+    where: { id: bookingId },
+    include: {
+      wedding: { select: { id: true, title: true, date: true, status: true, suspended: true } },
+      guestPasses: { include: { checkIns: true } },
+    }
+  });
+  if (!booking) throw new Error("Booking not found.");
+
+  // Ownership check
+  if (booking.travelerId !== traveler.id) {
+    throw new Error("Forbidden: You cannot modify a booking you do not own.");
+  }
+
+  // Check ineligible booking states
+  if (booking.status === BookingStatus.CANCELLED || booking.status === BookingStatus.REFUNDED || booking.status === BookingStatus.REJECTED) {
+    throw new Error(`Attendance preference cannot be changed on a ${booking.status.toLowerCase()} booking.`);
+  }
+
+  // Check event lifecycle
+  if (booking.wedding.status === WeddingStatus.COMPLETED || booking.wedding.suspended) {
+    throw new Error("Attendance preference cannot be changed because this wedding celebration is no longer active.");
+  }
+
+  const eventDate = new Date(booking.wedding.date);
+  const now = new Date();
+  if (eventDate < now) {
+    throw new Error("Attendance preference cannot be changed because the celebration date has already passed.");
+  }
+
+  // Check if guest has already checked in
+  const hasCheckedIn = booking.guestPasses?.some((gp) => gp.checkIns && gp.checkIns.length > 0);
+  if (hasCheckedIn) {
+    throw new Error("Attendance preference cannot be changed after check-in at the wedding venue.");
+  }
+
+  const previousSide = booking.attendanceSide;
+
+  await prisma.booking.update({
+    where: { id: bookingId },
+    data: { attendanceSide: attendanceSide as WeddingSide }
+  });
+
+  // Audit trail
+  try {
+    await prisma.auditLog.create({
+      data: {
+        action: "UPDATE_ATTENDANCE_SIDE",
+        entity: "Booking",
+        entityId: bookingId,
+        userId: user.id,
+        userName: user.name || user.email || "Guest",
+        details: JSON.stringify({
+          weddingId: booking.wedding.id,
+          weddingTitle: booking.wedding.title,
+          previousSide,
+          newSide: attendanceSide,
+        }),
+      },
+    });
+  } catch (auditErr) {
+    console.warn("[updateBookingSideAction] Audit log write failed:", auditErr);
+  }
+
+  revalidatePath("/dashboard/bookings");
+  revalidatePath("/dashboard");
+  return { success: true, attendanceSide };
+}
+
 export async function handleGuestApplicationAction(appId: string, status: "approved" | "rejected") {
   const user = await requireAuth();
   if (user.role !== UserRole.COUPLE) {
@@ -707,12 +826,20 @@ export async function handleGuestApplicationAction(appId: string, status: "appro
       throw new Error("Forbidden: You are not the host couple of this wedding experience.");
     }
 
+    if (booking.status !== BookingStatus.PENDING) {
+      throw new Error("Only pending booking requests can be approved or declined.");
+    }
+
+
     if (status === "approved") {
-      // Check capacity once more before approving
+      // Concurrency lock on Wedding row to serialize simultaneous approvals
+      await tx.$queryRaw`SELECT id FROM "Wedding" WHERE id = ${booking.weddingId} FOR UPDATE`;
+
+      // Check capacity atomically across all capacity-holding statuses before approving
       const approvedGuests = await tx.booking.aggregate({
         where: {
           weddingId: booking.weddingId,
-          status: { in: [BookingStatus.APPROVED, BookingStatus.PAID, BookingStatus.COMPLETED] }
+          status: { in: CAPACITY_HOLDING_BOOKING_STATUSES }
         },
         _sum: {
           guestsCount: true
@@ -775,6 +902,9 @@ export async function handleGuestApplicationAction(appId: string, status: "appro
   revalidatePath("/dashboard/bookings");
   return { success: true };
 }
+
+export const respondToBookingAction = handleGuestApplicationAction;
+
 
 export async function createCheckoutSessionAction(bookingId: string) {
   const user = await requireAuth();
@@ -1103,14 +1233,16 @@ export async function markNotificationsReadAction() {
 export async function fetchDashboardDataAction() {
   const dbUser = await requireAuth();
 
-  const notifications = await prisma.notification.findMany({
-    where: { userId: dbUser.id },
-    orderBy: { createdAt: "desc" }
-  });
-
-  const verification = await prisma.verification.findUnique({
-    where: { userId: dbUser.id }
-  });
+  const [notifications, verification] = await Promise.all([
+    withDbRetry(() => prisma.notification.findMany({
+      where: { userId: dbUser.id },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+    }), { label: "fetchDash:notifs" }).catch(() => []),
+    withDbRetry(() => prisma.verification.findUnique({
+      where: { userId: dbUser.id },
+    }), { label: "fetchDash:verif" }).catch(() => null),
+  ]);
 
   let bookings: any[] = [];
   let wishlist: string[] = [];
@@ -1125,37 +1257,43 @@ export async function fetchDashboardDataAction() {
   let pendingVerifications: any[] = [];
 
   if (dbUser.role === UserRole.TRAVELER && dbUser.travelerProfile) {
-    bookings = await prisma.booking.findMany({
-      where: { travelerId: dbUser.travelerProfile.id },
-      include: { wedding: true, payments: { include: { refunds: true } } },
-      orderBy: { createdAt: "desc" }
-    });
+    const [travelerBookings, wishEntries] = await Promise.all([
+      withDbRetry(() => prisma.booking.findMany({
+        where: { travelerId: dbUser.travelerProfile!.id },
+        include: { wedding: true, payments: { include: { refunds: true } } },
+        orderBy: { createdAt: "desc" },
+      }), { label: "fetchDash:travelerBookings" }).catch(() => []),
+      withDbRetry(() => prisma.wishlist.findMany({
+        where: { travelerId: dbUser.travelerProfile!.id },
+        include: { wedding: true },
+      }), { label: "fetchDash:wishlist" }).catch(() => []),
+    ]);
 
-    const wishEntries = await prisma.wishlist.findMany({
-      where: { travelerId: dbUser.travelerProfile.id },
-      include: { wedding: true }
-    });
-    wishlist = wishEntries.map((w) => w.wedding.slug);
+    bookings = travelerBookings;
+    wishlist = wishEntries.map((w: any) => w.wedding.slug);
   } else if (dbUser.role === UserRole.COUPLE && dbUser.coupleProfile) {
-    bookings = await prisma.booking.findMany({
-      where: { wedding: { hostCoupleId: dbUser.coupleProfile.id } },
-      include: { wedding: true, traveler: { include: { user: true } }, payments: true },
-      orderBy: { createdAt: "desc" }
-    });
+    const [coupleBookings, hosted] = await Promise.all([
+      withDbRetry(() => prisma.booking.findMany({
+        where: { wedding: { hostCoupleId: dbUser.coupleProfile!.id } },
+        include: { wedding: true, traveler: { include: { user: true } }, payments: true },
+        orderBy: { createdAt: "desc" },
+      }), { label: "fetchDash:coupleBookings" }).catch(() => []),
+      withDbRetry(() => prisma.wedding.findFirst({
+        where: { hostCoupleId: dbUser.coupleProfile!.id },
+      }), { label: "fetchDash:hosted" }).catch(() => null),
+    ]);
 
+    bookings = coupleBookings;
     guestApplications = bookings.map((b) => ({
       id: b.id,
-      travelerName: b.traveler.fullName,
-      travelerCountry: b.traveler.country,
-      travelerAvatar: b.traveler.user.avatar || "https://i.pravatar.cc/80?img=5",
+      travelerName: b.traveler?.fullName || "Guest",
+      travelerCountry: b.traveler?.country || "",
+      travelerAvatar: b.traveler?.user?.avatar || "https://i.pravatar.cc/80?img=5",
       budget: `$${(b.totalAmount).toLocaleString()}`,
       message: `Requested slot for ${b.wedding.title}. Price: $${b.pricePerGuest}/guest.`,
       status: b.status === BookingStatus.PENDING ? "pending" : b.status === BookingStatus.AWAITING_PAYMENT ? "awaiting_payment" : b.status === BookingStatus.PAID ? "approved" : "rejected"
     }));
 
-    const hosted = await prisma.wedding.findFirst({
-      where: { hostCoupleId: dbUser.coupleProfile.id }
-    });
     if (hosted) {
       hostWedding = {
         id: hosted.id,
@@ -1177,41 +1315,63 @@ export async function fetchDashboardDataAction() {
 
     paidGuests = paidBookings.map((b) => ({
       id: b.id,
-      travelerName: b.traveler.fullName,
+      travelerName: b.traveler?.fullName || "Guest",
       guestsCount: b.guestsCount,
       amount: b.totalAmount,
       date: b.date.toISOString().split("T")[0]
     }));
   } else if (dbUser.role === UserRole.ADMIN) {
-    allPayments = await prisma.payment.findMany({
-      include: { booking: { include: { traveler: true, wedding: true } } },
-      orderBy: { createdAt: "desc" }
-    });
+    const [adminPayments, adminRefunds, adminVerifs] = await Promise.all([
+      withDbRetry(() => prisma.payment.findMany({
+        include: { booking: { include: { traveler: true, wedding: true } } },
+        orderBy: { createdAt: "desc" },
+        take: 30,
+      }), { label: "fetchDash:adminPayments" }).catch(() => []),
+      withDbRetry(() => prisma.booking.findMany({
+        where: { status: BookingStatus.REFUNDED },
+        include: { traveler: true, wedding: true, payments: { include: { refunds: true } } },
+        orderBy: { updatedAt: "desc" },
+        take: 30,
+      }), { label: "fetchDash:adminRefunds" }).catch(() => []),
+      withDbRetry(() => prisma.verification.findMany({
+        where: { status: VerificationStatus.PENDING },
+        include: { user: true },
+        orderBy: { submissionDate: "desc" },
+        take: 30,
+      }), { label: "fetchDash:adminVerifs" }).catch(() => []),
+    ]);
 
-    refundQueue = await prisma.booking.findMany({
-      where: { status: BookingStatus.REFUNDED },
-      include: { traveler: true, wedding: true, payments: { include: { refunds: true } } },
-      orderBy: { updatedAt: "desc" }
-    });
-
-    pendingVerifications = await prisma.verification.findMany({
-      where: { status: VerificationStatus.PENDING },
-      include: { user: true },
-      orderBy: { submissionDate: "desc" }
-    });
+    allPayments = adminPayments;
+    refundQueue = adminRefunds;
+    pendingVerifications = adminVerifs;
   }
+
 
   return {
     bookings: bookings.map((b) => {
       let mappedStatus: "upcoming" | "pending" | "rejected" | "cancelled" | "past" | "awaiting_payment" | "approved" | "refunded" = "pending";
-      if (b.status === BookingStatus.PAID || b.status === BookingStatus.READY_FOR_EVENT || b.status === BookingStatus.CHECKED_IN) mappedStatus = "upcoming";
-      else if (b.status === BookingStatus.APPROVED) mappedStatus = "approved";
-      else if (b.status === BookingStatus.AWAITING_PAYMENT) mappedStatus = "awaiting_payment";
-      else if (b.status === BookingStatus.PENDING) mappedStatus = "pending";
-      else if (b.status === BookingStatus.REJECTED) mappedStatus = "rejected";
-      else if (b.status === BookingStatus.CANCELLED) mappedStatus = "cancelled";
-      else if (b.status === BookingStatus.REFUNDED) mappedStatus = "refunded";
-      else if (b.status === BookingStatus.COMPLETED || b.status === BookingStatus.ATTENDED) mappedStatus = "past";
+      if (
+        b.status === BookingStatus.PAID ||
+        b.status === BookingStatus.CONFIRMED ||
+        b.status === BookingStatus.READY_FOR_EVENT ||
+        b.status === BookingStatus.CHECKED_IN
+      ) {
+        mappedStatus = "upcoming";
+      } else if (b.status === BookingStatus.APPROVED) {
+        mappedStatus = "approved";
+      } else if (b.status === BookingStatus.AWAITING_PAYMENT) {
+        mappedStatus = "awaiting_payment";
+      } else if (b.status === BookingStatus.PENDING) {
+        mappedStatus = "pending";
+      } else if (b.status === BookingStatus.REJECTED) {
+        mappedStatus = "rejected";
+      } else if (b.status === BookingStatus.CANCELLED) {
+        mappedStatus = "cancelled";
+      } else if (b.status === BookingStatus.REFUNDED) {
+        mappedStatus = "refunded";
+      } else if (b.status === BookingStatus.COMPLETED || b.status === BookingStatus.ATTENDED) {
+        mappedStatus = "past";
+      }
 
       return {
         id: b.id,
@@ -1222,8 +1382,11 @@ export async function fetchDashboardDataAction() {
         date: b.date.toISOString().split("T")[0],
         pricePerGuest: b.pricePerGuest,
         guestsCount: b.guestsCount,
+        attendanceSide: b.attendanceSide,
         status: mappedStatus,
-        payments: b.payments || []
+        payments: b.payments || [],
+        guestName: (b as any).traveler ? (b as any).traveler.fullName : undefined,
+        guestCountry: (b as any).traveler ? (b as any).traveler.country : undefined,
       };
     }),
     wishlist,
@@ -1572,10 +1735,31 @@ export const getWeddingBySlug = unstable_cache(
       }
     });
 
+    if (w && Boolean(w.deletedAt)) {
+      return null;
+    }
+
     if (!w) {
       const { featuredWeddings } = await import("../data");
       return featuredWeddings.find((fw) => fw.slug === slug) || null;
     }
+
+    if (w.status && w.status !== WeddingStatus.PUBLISHED && (w.status as string) !== "PUBLISHED") {
+
+      let authorized = false;
+      try {
+        const user = await requireAuth();
+        if (user.role === UserRole.ADMIN) {
+          authorized = true;
+        } else if (user.role === UserRole.COUPLE && w.hostCouple?.userId === user.id) {
+          authorized = true;
+        }
+      } catch {
+        authorized = false;
+      }
+      if (!authorized) return null;
+    }
+
 
     let ratings = { bayesianRating: 0, reviewCount: 0 };
     try {
@@ -1682,3 +1866,105 @@ export const getWeddingBySlug = unstable_cache(
     return featuredWeddings.find((fw) => fw.slug === slug) || null;
   }
 }, ["wedding-by-slug"], { revalidate: 3600, tags: ["weddings"] });
+
+// ─── Sponsorship Request Actions ──────────────────────────────────────────────
+
+/**
+ * Host couple requests marketplace sponsorship for one of their weddings.
+ * One active request per wedding is enforced by the unique constraint on (weddingId, status=PENDING).
+ */
+export async function requestSponsorshipAction(data: {
+  weddingId: string;
+  message?: string;
+  budget?: string;
+}) {
+  const user = await requireAuth();
+  if (user.role !== UserRole.COUPLE) {
+    throw new Error("Only host couples can request sponsorship for their weddings.");
+  }
+
+  const couple = await prisma.coupleProfile.findUnique({ where: { userId: user.id } });
+  if (!couple) throw new Error("Couple profile not found.");
+
+  // Verify wedding ownership
+  const wedding = await prisma.wedding.findUnique({
+    where: { id: data.weddingId },
+    select: { id: true, title: true, hostCoupleId: true, status: true, sponsored: true }
+  });
+  if (!wedding) throw new Error("Wedding not found.");
+  if (wedding.hostCoupleId !== couple.id) throw new Error("Forbidden: You do not own this wedding.");
+  if (wedding.status !== WeddingStatus.PUBLISHED) {
+    throw new Error("Only published weddings can be submitted for sponsorship.");
+  }
+  if (wedding.sponsored) throw new Error("This wedding is already sponsored.");
+
+  // Check for an existing pending request (unique constraint on weddingId + PENDING status)
+  const existing = await prisma.sponsorshipRequest.findFirst({
+    where: { weddingId: data.weddingId, status: "PENDING" }
+  });
+  if (existing) {
+    throw new Error("A sponsorship request for this wedding is already pending admin review.");
+  }
+
+  await prisma.sponsorshipRequest.create({
+    data: {
+      weddingId: data.weddingId,
+      coupleId: couple.id,
+      message: data.message || null,
+      budget: data.budget || null,
+      status: "PENDING",
+    }
+  });
+
+  // Notify admins — find all ADMIN users
+  const admins = await prisma.user.findMany({
+    where: { role: UserRole.ADMIN, deletedAt: null },
+    select: { id: true }
+  });
+  if (admins.length > 0) {
+    await prisma.notification.createMany({
+      data: admins.map((a) => ({
+        userId: a.id,
+        title: "Sponsorship Request",
+        message: `A host couple has requested marketplace sponsorship for "${wedding.title}". Review in the admin dashboard.`,
+        type: "REQUEST" as const,
+      }))
+    });
+  }
+
+  revalidatePath("/dashboard/listings");
+  return { success: true };
+}
+
+/**
+ * Host couple cancels their pending sponsorship request.
+ */
+export async function cancelSponsorshipRequestAction(requestId: string) {
+  const user = await requireAuth();
+  if (user.role !== UserRole.COUPLE) {
+    throw new Error("Only host couples can cancel their sponsorship requests.");
+  }
+
+  const couple = await prisma.coupleProfile.findUnique({ where: { userId: user.id } });
+  if (!couple) throw new Error("Couple profile not found.");
+
+  const request = await prisma.sponsorshipRequest.findUnique({
+    where: { id: requestId },
+    include: { wedding: { select: { hostCoupleId: true, title: true } } }
+  });
+  if (!request) throw new Error("Sponsorship request not found.");
+  if (request.wedding.hostCoupleId !== couple.id) {
+    throw new Error("Forbidden: You do not own the wedding linked to this request.");
+  }
+  if (request.status !== "PENDING") {
+    throw new Error("Only pending sponsorship requests can be cancelled.");
+  }
+
+  await prisma.sponsorshipRequest.update({
+    where: { id: requestId },
+    data: { status: "CANCELLED", reviewedAt: new Date() }
+  });
+
+  revalidatePath("/dashboard/listings");
+  return { success: true };
+}

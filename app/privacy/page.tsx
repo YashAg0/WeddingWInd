@@ -9,26 +9,33 @@ import {
 } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy | Wedding With India",
+  title: "Privacy Policy",
   description:
-    "Learn how Wedding With India collects, uses, protects, shares, retains and manages personal information for guests, hosts, agents and visitors.",
+    "Learn how WeddingWithIndia collects, uses, protects, shares, retains, and manages personal information for guests, hosts, agents, and visitors.",
   keywords: [
-    "Wedding With India privacy policy",
-    "Wedding With India data protection",
+    "WeddingWithIndia privacy policy",
+    "WeddingWithIndia data protection",
     "Indian wedding platform privacy",
-    "Wedding With India personal data",
-    "Wedding With India GDPR",
-    "Wedding With India DPDP",
-    "Indian wedding travel privacy",
+    "WeddingWithIndia personal data",
+    "WeddingWithIndia GDPR",
+    "WeddingWithIndia DPDP",
   ],
   alternates: {
-    canonical: "/privacy",
+    canonical: "https://weddingwithindia.com/privacy",
   },
   openGraph: {
-    title: "Privacy Policy | Wedding With India",
+    title: "Privacy Policy | WeddingWithIndia",
     description:
-      "How Wedding With India handles personal information, verification data, bookings, payments, communications and cookies.",
+      "How WeddingWithIndia handles personal information, verification data, bookings, payments, communications, and cookies.",
+    url: "https://weddingwithindia.com/privacy",
+    siteName: "WeddingWithIndia",
     type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Privacy Policy | WeddingWithIndia",
+    description:
+      "How WeddingWithIndia handles personal information, verification data, bookings, payments, and communications.",
   },
   robots: {
     index: true,

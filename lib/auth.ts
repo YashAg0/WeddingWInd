@@ -40,7 +40,7 @@ export async function getDbUser() {
             agentProfile: true,
           },
         }),
-      { label: "getDbUser", maxRetries: 3 }
+      { label: "getDbUser" }
     );
   } catch (err) {
     console.warn("[getDbUser] PostgreSQL unavailable:", err);
@@ -93,7 +93,7 @@ export async function syncAndGetDbUser() {
             verification: true,
           },
         }),
-      { label: "syncAndGetDbUser:fastPath", maxRetries: 3 }
+      { label: "syncAndGetDbUser:fastPath" }
     );
 
     if (fastUser && fastUser.status !== UserStatus.BANNED) {

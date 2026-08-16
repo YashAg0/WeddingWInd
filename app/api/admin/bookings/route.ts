@@ -45,24 +45,41 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: "Invalid status" }, { status: 400 });
     }
 
-    const updated = await prisma.booking.update({
-      where: { id: bookingId },
-      data: { status: status as BookingStatus },
-      include: {
-        wedding: { select: { title: true } },
-        traveler: { include: { user: { select: { name: true } } } }
-      }
-    });
+    const targetStatus = status as BookingStatus;
 
-    await prisma.auditLog.create({
-      data: {
-        action: "ADMIN_BOOKING_STATUS_CHANGE",
-        entity: "Booking",
-        entityId: bookingId,
-        userId: admin.id,
-        userName: admin.name || admin.email,
-        details: `Booking ${bookingId} status changed to ${status}. Wedding: ${updated.wedding.title}. Guest: ${updated.traveler.user.name}.`,
+    const updated = await prisma.$transaction(async (tx) => {
+      const b = await tx.booking.update({
+        where: { id: bookingId },
+        data: { status: targetStatus },
+        include: {
+          wedding: { select: { title: true } },
+          traveler: { include: { user: { select: { name: true } } } }
+        }
+      });
+
+      if (
+        targetStatus === BookingStatus.CANCELLED ||
+        targetStatus === BookingStatus.REJECTED ||
+        targetStatus === BookingStatus.REFUNDED
+      ) {
+        await tx.guestPass.updateMany({
+          where: { bookingId, status: "ACTIVE" },
+          data: { status: "REVOKED" }
+        });
       }
+
+      await tx.auditLog.create({
+        data: {
+          action: "ADMIN_BOOKING_STATUS_CHANGE",
+          entity: "Booking",
+          entityId: bookingId,
+          userId: admin.id,
+          userName: admin.name || admin.email,
+          details: `Booking ${bookingId} status changed to ${status}. Wedding: ${b.wedding.title}. Guest: ${b.traveler.user.name || "Guest"}.`,
+        }
+      });
+
+      return b;
     });
 
     return NextResponse.json({ booking: updated });

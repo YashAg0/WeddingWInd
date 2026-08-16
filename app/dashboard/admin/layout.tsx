@@ -1,22 +1,27 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
-import { prisma } from "@/lib/prisma";
+import { prisma, withDbRetry } from "@/lib/prisma";
+import { syncAndGetDbUser } from "@/lib/auth";
 import { RefreshCw } from "lucide-react";
+
+export const metadata: Metadata = {
+  title: "Admin Portal",
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
 
 /**
  * Admin Route Guard — Server Component Layout
  *
  * Enforces RBAC for all /dashboard/admin/* routes:
  * 1. Requires a valid Clerk session (redirects to /login if missing).
- * 2. Performs a direct DB lookup to verify User.role === "ADMIN".
- * 3. If the DB is unreachable, shows a clear service-unavailable screen
+ * 2. Performs a resilient DB lookup to verify User.role === "ADMIN".
+ * 3. Uses bounded retry with exponential backoff for transient DB/pool stalls.
+ * 4. If the DB is unreachable after retries, shows a clear service-unavailable screen
  *    — NOT an "admin required" error, because DB failure ≠ authorization failure.
- *
- * Security guarantees:
- * - Admin access is NEVER granted on DB failure (fail-closed).
- * - The redirect to /?error=admin_required is used ONLY when the user is
- *   authenticated but their DB role is not ADMIN.
- * - Database connectivity errors are reported separately.
  */
 export default async function AdminLayout({
   children,
@@ -35,26 +40,32 @@ export default async function AdminLayout({
     redirect("/login?redirect_url=/dashboard/admin");
   }
 
-  // Attempt direct DB role lookup with a generous timeout.
-  // We do NOT use a separate isDatabaseAvailable() pre-ping here because:
-  // 1. It would double the DB round-trips on cold start.
-  // 2. The role lookup IS the availability check — if it succeeds, DB is available.
   let userRole: string | null = null;
   let dbError: Error | null = null;
 
   try {
-    const dbUser = await prisma.user.findUnique({
-      where: { clerkUserId: session.userId },
-      select: { role: true }
-    });
-    userRole = dbUser?.role ?? null;
+    const role = await withDbRetry(async () => {
+      let dbUser = await prisma.user.findUnique({
+        where: { clerkUserId: session.userId },
+        select: { role: true },
+      });
+
+      if (!dbUser) {
+        // Attempt sync in case account was recently provisioned
+        const synced = await syncAndGetDbUser();
+        dbUser = synced ? { role: synced.role } : null;
+      }
+
+      return dbUser?.role ?? null;
+    }, { label: "AdminLayout:roleCheck", maxRetries: 3 });
+
+    userRole = role;
   } catch (err: any) {
     dbError = err;
     console.error("[AdminLayout] Database error during role check:", err.name, err.code, err.message);
   }
 
-  // DB unreachable — cannot verify admin role. Show a service-unavailable screen.
-  // This is NOT an "admin required" error — it's a database connectivity issue.
+  // DB unreachable — cannot verify admin role. Show a service-unavailable screen with retry.
   if (dbError) {
     return (
       <div className="min-h-[85vh] bg-warm-50/50 pt-28 pb-20 flex flex-col items-center justify-center">
@@ -68,21 +79,20 @@ export default async function AdminLayout({
             </h1>
             <p className="text-charcoal-600 text-sm leading-relaxed">
               The admin panel requires a live database connection to verify your administrator role.
-              The database is temporarily unreachable — this is likely a brief connectivity issue
-              with the Supabase database. Your authentication is valid.
+              The database is temporarily unreachable — this is likely a brief connectivity issue.
+              Your authentication is valid.
             </p>
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-left text-xs text-amber-900 space-y-1">
               <p className="font-bold">What to do:</p>
-              <p>1. Wait 10–30 seconds for the database connection to warm up.</p>
-              <p>2. Refresh this page to retry.</p>
-              <p>3. If the issue persists, check the Supabase project status dashboard.</p>
+              <p>1. Wait a moment for the database connection to warm up.</p>
+              <p>2. Click Retry below.</p>
             </div>
             <a
               href="/dashboard/admin"
               className="inline-flex items-center gap-2 mt-4 px-6 py-2.5 bg-maroon-800 text-white text-sm font-semibold rounded-xl hover:bg-maroon-900 transition-colors"
             >
               <RefreshCw size={14} />
-              Retry
+              Retry Connection
             </a>
           </div>
         </div>

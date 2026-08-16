@@ -207,12 +207,17 @@ export async function validateGuestPassAction(rawToken: string, weddingId: strin
 export async function checkInGuestAction(rawToken: string, weddingId: string, deviceMetadata?: string) {
   const user = await requireAuth();
 
-  // Validate scanner role
+  // Validate scanner role: Admin, Host Couple, or Coordinator
   const couple = await prisma.coupleProfile.findUnique({
     where: { userId: user.id },
   });
+  const coordinator = await prisma.coordinatorProfile.findUnique({
+    where: { userId: user.id },
+  });
   const isAdmin = user.role === UserRole.ADMIN;
-  if (!couple && !isAdmin) {
+  const isCoordinator = !!coordinator || user.role === UserRole.COORDINATOR;
+
+  if (!couple && !isCoordinator && !isAdmin) {
     throw new Error("Unauthorized check-in scanning privileges.");
   }
 
@@ -239,8 +244,14 @@ export async function checkInGuestAction(rawToken: string, weddingId: string, de
       return { success: false, result: "WRONG_EVENT" };
     }
 
-    // Verify authorized scanner
-    if (!isAdmin && couple?.id !== pass.booking.wedding.hostCoupleId) {
+    // Verify authorized scanner for this specific event
+    const isAuthorizedHost = couple && couple.id === pass.booking.wedding.hostCoupleId;
+    const isAuthorizedCoordinator = coordinator && (
+      coordinator.assignedWeddingId === weddingId ||
+      coordinator.assignedEventTitle === pass.booking.wedding.title
+    );
+
+    if (!isAdmin && !isAuthorizedHost && !isAuthorizedCoordinator) {
       throw new Error("Unauthorized for this wedding event.");
     }
 
@@ -353,8 +364,13 @@ export async function manualCheckInAction(bookingId: string, notes?: string) {
   const couple = await prisma.coupleProfile.findUnique({
     where: { userId: user.id },
   });
+  const coordinator = await prisma.coordinatorProfile.findUnique({
+    where: { userId: user.id },
+  });
   const isAdmin = user.role === UserRole.ADMIN;
-  if (!couple && !isAdmin) throw new Error("Unauthorized.");
+  const isCoordinator = !!coordinator || user.role === UserRole.COORDINATOR;
+
+  if (!couple && !isCoordinator && !isAdmin) throw new Error("Unauthorized.");
 
   return await prisma.$transaction(async (tx) => {
     const booking = await tx.booking.findUnique({
@@ -363,7 +379,14 @@ export async function manualCheckInAction(bookingId: string, notes?: string) {
     });
 
     if (!booking) throw new Error("Booking not found.");
-    if (!isAdmin && couple?.id !== booking.wedding.hostCoupleId) {
+
+    const isAuthorizedHost = couple && couple.id === booking.wedding.hostCoupleId;
+    const isAuthorizedCoordinator = coordinator && (
+      coordinator.assignedWeddingId === booking.weddingId ||
+      coordinator.assignedEventTitle === booking.wedding.title
+    );
+
+    if (!isAdmin && !isAuthorizedHost && !isAuthorizedCoordinator) {
       throw new Error("Unauthorized.");
     }
 
@@ -410,8 +433,13 @@ export async function markAttendanceAction(bookingId: string, status: "ATTENDED"
   const couple = await prisma.coupleProfile.findUnique({
     where: { userId: user.id },
   });
+  const coordinator = await prisma.coordinatorProfile.findUnique({
+    where: { userId: user.id },
+  });
   const isAdmin = user.role === UserRole.ADMIN;
-  if (!couple && !isAdmin) throw new Error("Unauthorized.");
+  const isCoordinator = !!coordinator || user.role === UserRole.COORDINATOR;
+
+  if (!couple && !isCoordinator && !isAdmin) throw new Error("Unauthorized.");
 
   return await prisma.$transaction(async (tx) => {
     const booking = await tx.booking.findUnique({
@@ -420,7 +448,14 @@ export async function markAttendanceAction(bookingId: string, status: "ATTENDED"
     });
 
     if (!booking) throw new Error("Booking not found.");
-    if (!isAdmin && couple?.id !== booking.wedding.hostCoupleId) {
+
+    const isAuthorizedHost = couple && couple.id === booking.wedding.hostCoupleId;
+    const isAuthorizedCoordinator = coordinator && (
+      coordinator.assignedWeddingId === booking.weddingId ||
+      coordinator.assignedEventTitle === booking.wedding.title
+    );
+
+    if (!isAdmin && !isAuthorizedHost && !isAuthorizedCoordinator) {
       throw new Error("Unauthorized.");
     }
 

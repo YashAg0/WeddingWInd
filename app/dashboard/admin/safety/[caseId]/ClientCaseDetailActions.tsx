@@ -8,6 +8,7 @@ import {
   adminRestrictUserAction,
   adminRevokeRestrictionAction,
   adminResolveCaseAction,
+  adminToggleWeddingSuspensionAction,
 } from "@/lib/actions/safety";
 import { processApprovedRefund } from "@/lib/services/refunds";
 import { CaseSeverity, CaseStatus, RestrictionType } from "@prisma/client";
@@ -22,6 +23,7 @@ interface ClientCaseDetailActionsProps {
   subjectUserId: string | null;
   activeRestrictions: Array<{ id: string; type: RestrictionType; reasonCode: string }>;
   bookingId: string | null;
+  weddingId?: string | null;
   cancellationRequests: Array<{ id: string; status: string; eligibleRefundAmount: number }>;
 }
 
@@ -33,7 +35,8 @@ export default function ClientCaseDetailActions({
   initialSuspended,
   subjectUserId,
   activeRestrictions,
-  bookingId,
+  bookingId: _bookingId,
+  weddingId,
   cancellationRequests,
 }: ClientCaseDetailActionsProps) {
   const router = useRouter();
@@ -83,21 +86,18 @@ export default function ClientCaseDetailActions({
   };
 
   const handleToggleSuspension = async () => {
+    const targetWeddingId = weddingId;
+    if (!targetWeddingId) {
+      setError("No wedding event is associated with this safety case.");
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
-      if (bookingId) {
-        // Find wedding first
-        const { adminToggleWeddingSuspensionAction } = require("@/lib/actions/safety");
-        const safetyCase = await fetch(`/api/safety/cases/${caseId}`).then(res => res.json());
-        if (safetyCase?.weddingId) {
-          await adminToggleWeddingSuspensionAction(safetyCase.weddingId, !suspended, caseId);
-          setSuspended(!suspended);
-          router.refresh();
-        }
-      }
+      await adminToggleWeddingSuspensionAction(targetWeddingId, !suspended, caseId);
+      setSuspended(!suspended);
+      router.refresh();
     } catch (err: any) {
-      // Direct action fallback
       setError(err.message || "Failed to toggle wedding suspension.");
     } finally {
       setLoading(false);

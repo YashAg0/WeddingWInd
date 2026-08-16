@@ -1,14 +1,25 @@
 "use client";
 
-
 import Image from "next/image";
 import React, { useState } from "react";
 import { toast } from "sonner";
 import { useAuth, Booking } from "@/context/AuthContext";
 import { useCurrency } from "@/context/CurrencyContext";
-import { MapPin, Calendar, Users, XCircle, Printer, CreditCard, Receipt, Star } from "lucide-react";
+import {
+  MapPin,
+  Calendar,
+  Users,
+  XCircle,
+  Printer,
+  CreditCard,
+  Receipt,
+  Star,
+  Sparkles,
+  Check,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { submitReviewAction } from "@/lib/actions/reviews";
+import { updateBookingSideAction } from "@/lib/actions";
 
 interface BookingCardProps {
   booking: Booking;
@@ -21,6 +32,10 @@ export default function BookingCard({ booking, onCancel }: BookingCardProps) {
   const [showInvoice, setShowInvoice] = useState(false);
   const [paying, setPaying] = useState(false);
   const [showReviewModal, setShowReviewModal] = useState(false);
+  const [showSideModal, setShowSideModal] = useState(false);
+  const [currentSide, setCurrentSide] = useState<string>(booking.attendanceSide || "OPEN");
+  const [selectedSideOption, setSelectedSideOption] = useState<string>(booking.attendanceSide || "OPEN");
+  const [updatingSide, setUpdatingSide] = useState(false);
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState("");
   const [submittingReview, setSubmittingReview] = useState(false);
@@ -30,8 +45,36 @@ export default function BookingCard({ booking, onCancel }: BookingCardProps) {
     ratingExperience: 5,
     ratingCulture: 5,
     ratingSafety: 5,
-    ratingAccommodation: 5
+    ratingAccommodation: 5,
   });
+
+  const isEligibleToChangeSide =
+    booking.status !== "past" &&
+    booking.status !== "cancelled" &&
+    booking.status !== "refunded" &&
+    booking.status !== "rejected";
+
+  const handleSaveSidePreference = async () => {
+    setUpdatingSide(true);
+    try {
+      await updateBookingSideAction(booking.id, selectedSideOption);
+      setCurrentSide(selectedSideOption);
+      toast.success(
+        `Side preference updated to ${
+          selectedSideOption === "BRIDE_SIDE"
+            ? "Bride's Side"
+            : selectedSideOption === "GROOM_SIDE"
+            ? "Groom's Side"
+            : "Open / Flexible"
+        }!`
+      );
+      setShowSideModal(false);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update side preference.");
+    } finally {
+      setUpdatingSide(false);
+    }
+  };
 
   const handleSubmitReview = async () => {
     setSubmittingReview(true);
@@ -40,7 +83,7 @@ export default function BookingCard({ booking, onCancel }: BookingCardProps) {
         bookingId: booking.id,
         rating,
         comment,
-        ...categoryRatings
+        ...categoryRatings,
       });
       toast.success(`Review submitted successfully! Status: ${res.status}`);
       setShowReviewModal(false);
@@ -121,7 +164,6 @@ export default function BookingCard({ booking, onCancel }: BookingCardProps) {
 
   return (
     <div className="bg-white border border-warm-200/50 rounded-2xl overflow-hidden shadow-sm flex flex-col p-4 hover:shadow-md transition-shadow duration-200">
-      
       <div className="flex flex-col sm:flex-row gap-4">
         {/* Wedding Image frame */}
         <div className="w-full sm:w-36 h-28 rounded-xl overflow-hidden flex-shrink-0 relative bg-warm-100">
@@ -142,7 +184,7 @@ export default function BookingCard({ booking, onCancel }: BookingCardProps) {
               </h3>
               {getStatusBadge()}
             </div>
-            
+
             <p className="flex items-center gap-1.5 text-xs text-charcoal-500 font-medium">
               <MapPin size={12} className="text-maroon-600 flex-shrink-0" />
               <span className="truncate">{booking.location}</span>
@@ -161,6 +203,45 @@ export default function BookingCard({ booking, onCancel }: BookingCardProps) {
             <span className="text-[var(--color-brand-primary)]">
               Total: {formatPrice(booking.pricePerGuest * booking.guestsCount).primary}
             </span>
+          </div>
+
+          {/* Wedding Experience: Attendance Side Preference */}
+          <div className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-warm-50/70 border border-warm-150 text-xs">
+            <div className="flex items-center gap-2 min-w-0">
+              <Sparkles size={14} className="text-[var(--color-brand-secondary)] flex-shrink-0" />
+              <div className="min-w-0">
+                <span className="text-[0.625rem] font-bold text-charcoal-400 uppercase tracking-wider block">
+                  Your Side of Celebration
+                </span>
+                <span className="font-bold text-charcoal-800 truncate block">
+                  {currentSide === "BRIDE_SIDE"
+                    ? "👰 Bride's Side"
+                    : currentSide === "GROOM_SIDE"
+                    ? "🤵 Groom's Side"
+                    : "🌟 Open / Flexible"}
+                </span>
+              </div>
+            </div>
+
+            {isEligibleToChangeSide ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedSideOption(currentSide);
+                  setShowSideModal(true);
+                }}
+                className="px-2.5 py-1 rounded-lg border border-warm-200 bg-white text-[var(--color-brand-primary)] hover:bg-warm-50 text-[0.6875rem] font-bold uppercase tracking-wider transition-colors cursor-pointer flex-shrink-0"
+              >
+                Change
+              </button>
+            ) : (
+              <span
+                className="text-[0.625rem] text-charcoal-400 font-medium italic"
+                title="Preference changes are closed for past or cancelled celebrations."
+              >
+                Locked
+              </span>
+            )}
           </div>
 
           {/* Action Row */}
@@ -182,7 +263,7 @@ export default function BookingCard({ booking, onCancel }: BookingCardProps) {
               <Printer size={12} />
               Ticket
             </button>
-            
+
             {booking.status === "awaiting_payment" && (
               <button
                 onClick={handlePay}
@@ -253,6 +334,104 @@ export default function BookingCard({ booking, onCancel }: BookingCardProps) {
         </div>
       )}
 
+      {/* Side Selection Modal */}
+      {showSideModal && (
+        <div className="fixed inset-0 bg-charcoal-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white border border-warm-200 rounded-[2.5rem] p-6 sm:p-8 max-w-md w-full shadow-2xl space-y-6 animate-scale-in text-left">
+            <div className="space-y-1">
+              <h3 className="font-display font-bold text-xl text-charcoal-900">
+                Choose Your Side
+              </h3>
+              <p className="text-charcoal-500 text-xs leading-relaxed">
+                Which side of the celebration would you like to experience with {booking.weddingTitle}?
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              {/* Bride Side Option */}
+              <button
+                type="button"
+                onClick={() => setSelectedSideOption("BRIDE_SIDE")}
+                className={`w-full p-4 rounded-2xl border text-left transition-all flex items-start gap-3 cursor-pointer ${
+                  selectedSideOption === "BRIDE_SIDE"
+                    ? "border-maroon-700 bg-maroon-50/50 shadow-sm ring-1 ring-maroon-700"
+                    : "border-warm-200 hover:border-warm-300 bg-white"
+                }`}
+              >
+                <div className="w-8 h-8 rounded-xl bg-rose-100 flex items-center justify-center text-base flex-shrink-0">
+                  👰
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between">
+                    <span className="font-display font-bold text-sm text-charcoal-900">
+                      Bride&apos;s Side
+                    </span>
+                    {selectedSideOption === "BRIDE_SIDE" && (
+                      <Check size={16} className="text-maroon-700" />
+                    )}
+                  </div>
+                  <p className="text-xs text-charcoal-500 mt-0.5 leading-relaxed">
+                    Join the bride&apos;s family for mehendi, joyful rituals, and celebratory dance ceremonies.
+                  </p>
+                </div>
+              </button>
+
+              {/* Groom Side Option */}
+              <button
+                type="button"
+                onClick={() => setSelectedSideOption("GROOM_SIDE")}
+                className={`w-full p-4 rounded-2xl border text-left transition-all flex items-start gap-3 cursor-pointer ${
+                  selectedSideOption === "GROOM_SIDE"
+                    ? "border-maroon-700 bg-maroon-50/50 shadow-sm ring-1 ring-maroon-700"
+                    : "border-warm-200 hover:border-warm-300 bg-white"
+                }`}
+              >
+                <div className="w-8 h-8 rounded-xl bg-amber-100 flex items-center justify-center text-base flex-shrink-0">
+                  🤵
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between">
+                    <span className="font-display font-bold text-sm text-charcoal-900">
+                      Groom&apos;s Side
+                    </span>
+                    {selectedSideOption === "GROOM_SIDE" && (
+                      <Check size={16} className="text-maroon-700" />
+                    )}
+                  </div>
+                  <p className="text-xs text-charcoal-500 mt-0.5 leading-relaxed">
+                    Join the baraat procession, groom&apos;s arrival, and royal celebratory feasts.
+                  </p>
+                </div>
+              </button>
+            </div>
+
+            <p className="text-[0.6875rem] text-charcoal-500 font-medium">
+              Your choice helps us personalize your experience. You can change this preference before the celebration.
+            </p>
+
+
+            {/* Action Buttons */}
+            <div className="flex justify-end gap-3 pt-2 border-t border-warm-100">
+              <button
+                type="button"
+                onClick={() => setShowSideModal(false)}
+                className="px-4 py-2 rounded-xl border border-warm-200 text-charcoal-600 text-xs font-bold uppercase tracking-wider hover:bg-warm-50 cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={updatingSide}
+                onClick={handleSaveSidePreference}
+                className="px-5 py-2 rounded-xl bg-[#6b1026] text-white text-xs font-bold uppercase tracking-wider hover:bg-[#520c1d] disabled:opacity-50 cursor-pointer"
+              >
+                {updatingSide ? "Saving..." : "Save Preference"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Review Modal Dialogue */}
       {showReviewModal && (
         <div className="fixed inset-0 bg-charcoal-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -304,7 +483,7 @@ export default function BookingCard({ booking, onCancel }: BookingCardProps) {
                   { label: "Hospitality & Host", key: "ratingHospitality" },
                   { label: "Safety & Hygiene", key: "ratingSafety" },
                   { label: "Accommodation/Lodging", key: "ratingAccommodation" },
-                  { label: "Overall Event Management", key: "ratingExperience" }
+                  { label: "Overall Event Management", key: "ratingExperience" },
                 ].map((dim) => (
                   <div key={dim.key} className="space-y-1">
                     <span className="text-xs font-semibold text-charcoal-600 block">{dim.label}</span>
@@ -316,7 +495,7 @@ export default function BookingCard({ booking, onCancel }: BookingCardProps) {
                           onClick={() =>
                             setCategoryRatings((prev) => ({
                               ...prev,
-                              [dim.key]: s
+                              [dim.key]: s,
                             }))
                           }
                           className="hover:scale-110 transition-transform cursor-pointer"
@@ -373,7 +552,6 @@ export default function BookingCard({ booking, onCancel }: BookingCardProps) {
           </div>
         </div>
       )}
-
     </div>
   );
 }

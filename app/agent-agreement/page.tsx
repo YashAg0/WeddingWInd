@@ -11,25 +11,32 @@ import {
 } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Partner & Referral Agent Agreement | Wedding With India",
+  title: "Partner & Referral Agent Agreement",
   description:
-    "Terms governing referral partners, travel professionals and agents who introduce travelers or host families to Wedding With India.",
+    "Terms governing referral partners, travel professionals, and agents who introduce travelers or host families to WeddingWithIndia.",
   keywords: [
-    "Wedding With India agent agreement",
-    "Wedding With India referral partner",
+    "WeddingWithIndia agent agreement",
+    "WeddingWithIndia referral partner",
     "travel agent partnership India",
     "wedding travel referral commission",
-    "Wedding With India commission",
-    "travel partner agreement",
+    "WeddingWithIndia commission",
   ],
   alternates: {
-    canonical: "/agent-agreement",
+    canonical: "https://weddingwithindia.com/agent-agreement",
   },
   openGraph: {
-    title: "Partner & Referral Agent Agreement | Wedding With India",
+    title: "Partner & Referral Agent Agreement | WeddingWithIndia",
     description:
-      "Terms, eligibility, commissions, referrals, brand use and responsibilities for Wedding With India referral partners.",
+      "Terms, eligibility, commissions, referrals, brand use, and responsibilities for WeddingWithIndia referral partners.",
+    url: "https://weddingwithindia.com/agent-agreement",
+    siteName: "WeddingWithIndia",
     type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Partner & Referral Agent Agreement | WeddingWithIndia",
+    description:
+      "Terms, eligibility, commissions, referrals, brand use, and responsibilities for WeddingWithIndia referral partners.",
   },
   robots: {
     index: true,

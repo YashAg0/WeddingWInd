@@ -11,26 +11,32 @@ import {
 } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "DPDP Act & India Privacy Rights | Wedding With India",
+  title: "DPDP Act & India Privacy Rights",
   description:
-    "Learn how Wedding With India approaches personal data protection under India's Digital Personal Data Protection Act, 2023 and applicable rules, including notices, consent, security and user rights.",
+    "Learn how WeddingWithIndia approaches personal data protection under India's Digital Personal Data Protection Act, 2023, including notices, consent, security, and user rights.",
   keywords: [
-    "Wedding With India DPDP",
+    "WeddingWithIndia DPDP",
     "DPDP Act 2023",
     "India data protection",
     "Digital Personal Data Protection Act",
-    "Wedding With India privacy",
-    "Indian privacy rights",
-    "DPDP compliance",
+    "WeddingWithIndia privacy",
   ],
   alternates: {
-    canonical: "/dpdp",
+    canonical: "https://weddingwithindia.com/dpdp",
   },
   openGraph: {
-    title: "DPDP Act & India Privacy Rights | Wedding With India",
+    title: "DPDP Act & India Privacy Rights | WeddingWithIndia",
     description:
-      "Information about personal-data protection and privacy rights for users of Wedding With India in India.",
+      "Information about personal data protection and privacy rights for users of WeddingWithIndia in India.",
+    url: "https://weddingwithindia.com/dpdp",
+    siteName: "WeddingWithIndia",
     type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "DPDP Act & India Privacy Rights | WeddingWithIndia",
+    description:
+      "Information about personal data protection and privacy rights for users of WeddingWithIndia in India.",
   },
   robots: {
     index: true,

@@ -10,26 +10,34 @@ import {
 } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Safety & Security Standards | Wedding With India",
+  title: "Safety & Security Standards",
   description:
-    "Learn how Wedding With India approaches guest and host verification, booking safety, privacy, reporting, emergency support and responsible participation in Indian wedding experiences.",
+    "Learn how WeddingWithIndia approaches guest and host verification, booking safety, privacy, reporting, emergency support, and responsible participation.",
   keywords: [
-    "Wedding With India safety",
+    "WeddingWithIndia safety",
     "Indian wedding guest safety",
     "Indian wedding travel safety",
-    "Wedding With India verification",
+    "WeddingWithIndia verification",
     "Indian wedding experience safety",
-    "Wedding With India security",
+    "WeddingWithIndia security",
     "Indian wedding tourism safety",
   ],
   alternates: {
-    canonical: "/safety",
+    canonical: "https://weddingwithindia.com/safety",
   },
   openGraph: {
-    title: "Safety & Security Standards | Wedding With India",
+    title: "Safety & Security Standards | WeddingWithIndia",
     description:
-      "Our approach to identity verification, safer bookings, guest and host trust, reporting and support.",
+      "Our approach to identity verification, safer bookings, guest and host trust, reporting, and support.",
+    url: "https://weddingwithindia.com/safety",
+    siteName: "WeddingWithIndia",
     type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Safety & Security Standards | WeddingWithIndia",
+    description:
+      "Our approach to identity verification, safer bookings, guest and host trust, reporting, and support.",
   },
   robots: {
     index: true,

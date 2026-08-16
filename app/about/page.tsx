@@ -28,7 +28,7 @@ export default function AboutPage() {
           className="inline-flex items-center gap-2 bg-maroon-50 text-[var(--color-brand-primary)] text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-full border border-maroon-100/50"
         >
           <Compass size={13} aria-hidden="true" />
-          About Wedding With India
+          About WeddingWithIndia
         </motion.div>
 
         <motion.h1
@@ -50,7 +50,7 @@ export default function AboutPage() {
           transition={{ duration: 0.6, delay: 0.2 }}
           className="text-charcoal-500 text-base sm:text-lg leading-relaxed max-w-2xl mx-auto"
         >
-          Wedding With India is building a platform for international
+          WeddingWithIndia is building a platform for international
           travelers who want to experience Indian weddings and culture through
           genuine, respectful connections with host families.
         </motion.p>
@@ -79,7 +79,7 @@ export default function AboutPage() {
               </p>
 
               <p className="text-charcoal-600 text-sm sm:text-base leading-relaxed">
-                Wedding With India is designed to make it possible for
+                WeddingWithIndia is designed to make it possible for
                 international travelers to discover these celebrations through
                 structured experiences while respecting the privacy, wishes and
                 traditions of the families involved.
@@ -150,11 +150,11 @@ export default function AboutPage() {
           />
 
           <p className="text-charcoal-600 text-sm sm:text-base leading-relaxed">
-            Founded by <strong>Tanishq Gupta</strong> in July together with a team of co-founders and friends, Wedding With India was born from a simple observation: a wedding can reveal more about a culture in a few hours than a conventional sightseeing itinerary can reveal in days.
+            Founded by <strong>Tanishq Gupta</strong> in July together with a team of co-founders and friends, WeddingWithIndia was born from a simple observation: a wedding can reveal more about a culture in a few hours than a conventional sightseeing itinerary can reveal in days.
           </p>
 
           <p className="text-charcoal-600 text-sm sm:text-base leading-relaxed">
-            The mission behind Wedding With India is to create a structured, responsible way for international visitors to participate in authentic Indian wedding celebrations when participating host families choose to welcome them.
+            The mission behind WeddingWithIndia is to create a structured, responsible way for international visitors to participate in authentic Indian wedding celebrations when participating host families choose to welcome them.
           </p>
 
           <p className="text-charcoal-700 text-sm sm:text-base leading-relaxed font-semibold">
@@ -166,7 +166,7 @@ export default function AboutPage() {
               <div className="relative w-16 h-16 rounded-full overflow-hidden shrink-0 border-2 border-maroon-100/70 shadow-sm">
                 <Image
                   src="/images/founder/founder.png"
-                  alt="Tanishq Gupta, Founder of Wedding With India"
+                  alt="Tanishq Gupta, Founder of WeddingWithIndia"
                   fill
                   sizes="64px"
                   className="object-cover"
@@ -177,7 +177,7 @@ export default function AboutPage() {
                   Tanishq Gupta
                 </h4>
                 <p className="text-xs text-charcoal-500 font-medium">
-                  Founder, Wedding With India
+                  Founder, WeddingWithIndia
                 </p>
                 <Link
                   href="/founder/tanishq-gupta"

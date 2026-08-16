@@ -12,6 +12,10 @@ interface MailPayload {
  * Sends a transactional email using the Resend API.
  */
 export async function sendEmail({ to, subject, html }: MailPayload) {
+  if (process.env.NODE_ENV === "test" || !process.env.RESEND_API_KEY || process.env.RESEND_API_KEY === "re_mock_key") {
+    return { success: true, data: { id: "mock_test_email_id" } };
+  }
+
   try {
     const data = await resend.emails.send({
       from: "Wedding With India <noreply@weddingwithindia.com>",
@@ -25,6 +29,7 @@ export async function sendEmail({ to, subject, html }: MailPayload) {
     return { success: false, error };
   }
 }
+
 
 /**
  * 1. Welcome Email Template

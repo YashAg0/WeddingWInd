@@ -10,7 +10,7 @@ const baseUrl = "https://weddingwithindia.com";
  * If DB is offline at build time, falls back to static routes only.
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  // Static routes with priorities
+  // Static canonical public routes
   const staticRoutes: MetadataRoute.Sitemap = [
     {
       url: baseUrl,
@@ -23,6 +23,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: new Date(),
       changeFrequency: "hourly",
       priority: 0.9,
+    },
+    {
+      url: `${baseUrl}/weddings/map`,
+      lastModified: new Date(),
+      changeFrequency: "weekly",
+      priority: 0.8,
     },
     {
       url: `${baseUrl}/how-it-works`,
@@ -49,6 +55,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.6,
     },
     {
+      url: `${baseUrl}/for-agents/apply`,
+      lastModified: new Date(),
+      changeFrequency: "monthly",
+      priority: 0.5,
+    },
+    {
       url: `${baseUrl}/about`,
       lastModified: new Date(),
       changeFrequency: "monthly",
@@ -65,6 +77,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: new Date(),
       changeFrequency: "monthly",
       priority: 0.6,
+    },
+    {
+      url: `${baseUrl}/coordinators/apply`,
+      lastModified: new Date(),
+      changeFrequency: "monthly",
+      priority: 0.5,
     },
     {
       url: `${baseUrl}/list-wedding`,
@@ -167,14 +185,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Dynamic Indian Wedding Experience routes
   let weddingRoutes: MetadataRoute.Sitemap = [];
   try {
-    const { prisma } = await import("@/lib/prisma");
-    const weddings = await prisma.wedding.findMany({
-      where: { status: "PUBLISHED" },
-      select: { slug: true, updatedAt: true },
-      orderBy: { updatedAt: "desc" },
-    });
+    const { prisma, withDbRetry } = await import("@/lib/prisma");
+    const weddings = await withDbRetry(() =>
+      prisma.wedding.findMany({
+        where: { status: "PUBLISHED", suspended: false, deletedAt: null },
+        select: { slug: true, updatedAt: true },
+        orderBy: { updatedAt: "desc" },
+      })
+    );
 
-    if (weddings.length > 0) {
+    if (weddings && weddings.length > 0) {
       weddingRoutes = weddings.map((wedding) => ({
         url: `${baseUrl}/weddings/${wedding.slug}`,
         lastModified: wedding.updatedAt,

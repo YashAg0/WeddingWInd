@@ -21,11 +21,25 @@ import {
 export const revalidate = 60;
 
 export const metadata: Metadata = {
-  title: "Wedding With India — Attend Authentic Indian Weddings",
+  title: "Indian Weddings for International Guests | WeddingWithIndia",
   description:
-    "The world's most trusted platform to attend authentic Indian weddings. Join authentic celebrations in Rajasthan, Goa, Punjab, and Kerala as an honoured guest. Explore handpicked curated celebrations across India.",
+    "The premier platform to attend authentic Indian weddings. Join genuine cultural celebrations in Rajasthan, Goa, Punjab, and Kerala as an honoured guest.",
   alternates: {
     canonical: "https://weddingwithindia.com",
+  },
+  openGraph: {
+    title: "Indian Weddings for International Guests | WeddingWithIndia",
+    description:
+      "The premier platform to attend authentic Indian weddings. Join genuine cultural celebrations in Rajasthan, Goa, Punjab, and Kerala as an honoured guest.",
+    url: "https://weddingwithindia.com",
+    siteName: "WeddingWithIndia",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Indian Weddings for International Guests | WeddingWithIndia",
+    description:
+      "The premier platform to attend authentic Indian weddings. Join genuine cultural celebrations in Rajasthan, Goa, Punjab, and Kerala as an honoured guest.",
   },
 };
 

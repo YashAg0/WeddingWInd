@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Users, Heart, Share2, ShieldCheck, Check, Info, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -14,6 +14,7 @@ import {
   formatSecondaryCurrency
 } from "@/lib/constants/financial-model";
 import { useCurrency } from "@/context/CurrencyContext";
+import { WeddingSideSelector, type WeddingSideValue } from "@/components/wedding/WeddingSideSelector";
 
 interface BookingSidebarProps {
   wedding: Wedding;
@@ -27,6 +28,7 @@ export function BookingSidebar({ wedding }: BookingSidebarProps) {
   const basePriceINR = wedding.pricePerGuest || 12000;
   const [selectedTierKey, setSelectedTierKey] = useState<string>("BUDGET");
   const [guestsCount, setGuestsCount] = useState(1);
+  const [attendanceSide, setAttendanceSide] = useState<WeddingSideValue>("BRIDE_SIDE");
   const [isSaved, setIsSaved] = useState(false);
   const [isShared, setIsShared] = useState(false);
   const [isBooked, setIsBooked] = useState(false);
@@ -35,6 +37,33 @@ export function BookingSidebar({ wedding }: BookingSidebarProps) {
   const availableSlots = Math.max(0, wedding.guestsAllowed - wedding.guestsBooked);
   const isShowcase = wedding.isDemo === true;
   const isSoldOut = isShowcase || wedding.guestsAllowed === 0 || availableSlots <= 0;
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      // 1. Check URL parameters
+      const params = new URLSearchParams(window.location.search);
+      const sideParam = params.get("side")?.toUpperCase();
+      if (sideParam === "BRIDE" || sideParam === "BRIDE_SIDE") {
+        setAttendanceSide("BRIDE_SIDE");
+      } else if (sideParam === "GROOM" || sideParam === "GROOM_SIDE") {
+        setAttendanceSide("GROOM_SIDE");
+      } else if (sideParam === "OPEN") {
+        setAttendanceSide("OPEN");
+      }
+
+      // 2. Restore intent from sessionStorage if returning from authentication
+      try {
+        const stored = sessionStorage.getItem(`pending_booking_${wedding.id}`);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed.tier) setSelectedTierKey(parsed.tier);
+          if (parsed.guestsCount) setGuestsCount(Number(parsed.guestsCount));
+          if (parsed.attendanceSide) setAttendanceSide(parsed.attendanceSide);
+          sessionStorage.removeItem(`pending_booking_${wedding.id}`);
+        }
+      } catch {}
+    }
+  }, [wedding.id]);
 
   const dynamicTiers: Record<string, { id: string; name: string; priceINR: number; description: string; popular?: boolean }> = {
     BUDGET: {
@@ -73,6 +102,16 @@ export function BookingSidebar({ wedding }: BookingSidebarProps) {
       return;
     }
     if (!user) {
+      try {
+        sessionStorage.setItem(
+          `pending_booking_${wedding.id}`,
+          JSON.stringify({
+            tier: selectedTierKey,
+            guestsCount,
+            attendanceSide,
+          })
+        );
+      } catch {}
       const currentPath = window.location.pathname + window.location.search;
       router.push(`/login?redirect_url=${encodeURIComponent(currentPath)}`);
       return;
@@ -91,6 +130,7 @@ export function BookingSidebar({ wedding }: BookingSidebarProps) {
         date: wedding.date,
         pricePerGuest: activeTier.priceINR,
         guestsCount,
+        attendanceSide,
         status: "pending"
       });
       setIsBooked(true);
@@ -170,6 +210,13 @@ export function BookingSidebar({ wedding }: BookingSidebarProps) {
           })}
         </div>
       </div>
+
+      {/* Wedding Side Selector */}
+      <WeddingSideSelector
+        value={attendanceSide}
+        onChange={setAttendanceSide}
+        disabled={isSoldOut}
+      />
 
       {/* Guests Count Select */}
       <div className="flex flex-col gap-1.5">

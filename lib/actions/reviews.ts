@@ -116,6 +116,27 @@ export async function submitReviewAction(params: {
   if (!success) {
     throw new Error("RATE_LIMIT_EXCEEDED: You are submitting reviews too quickly. Please try again later.");
   }
+
+  // Validate rating bounds (1 to 5)
+  if (typeof params.rating !== "number" || params.rating < 1 || params.rating > 5 || !Number.isInteger(params.rating)) {
+    throw new Error("INVALID_RATING: Rating must be an integer between 1 and 5.");
+  }
+  const categoryFields = [
+    params.ratingFood,
+    params.ratingHospitality,
+    params.ratingExperience,
+    params.ratingCulture,
+    params.ratingSafety,
+    params.ratingAccommodation,
+    params.ratingOrganization,
+    params.ratingValue,
+    params.ratingCommunication,
+  ];
+  for (const cat of categoryFields) {
+    if (cat !== undefined && cat !== null && (typeof cat !== "number" || cat < 1 || cat > 5)) {
+      throw new Error("INVALID_CATEGORY_RATING: Category ratings must be between 1 and 5.");
+    }
+  }
   
   // Decide review type based on role
   let reviewType: ReviewType = params.reviewType || ReviewType.TRAVELER_TO_WEDDING;
@@ -278,6 +299,27 @@ export async function editReviewAction(params: {
   const { success } = await rateLimit("editReview", user.id, { limit: 5, window: 60 });
   if (!success) {
     throw new Error("RATE_LIMIT_EXCEEDED: You are editing reviews too quickly. Please try again later.");
+  }
+
+  // Validate rating bounds (1 to 5)
+  if (typeof params.rating !== "number" || params.rating < 1 || params.rating > 5 || !Number.isInteger(params.rating)) {
+    throw new Error("INVALID_RATING: Rating must be an integer between 1 and 5.");
+  }
+  const editCategoryFields = [
+    params.ratingFood,
+    params.ratingHospitality,
+    params.ratingExperience,
+    params.ratingCulture,
+    params.ratingSafety,
+    params.ratingAccommodation,
+    params.ratingOrganization,
+    params.ratingValue,
+    params.ratingCommunication,
+  ];
+  for (const cat of editCategoryFields) {
+    if (cat !== undefined && cat !== null && (typeof cat !== "number" || cat < 1 || cat > 5)) {
+      throw new Error("INVALID_CATEGORY_RATING: Category ratings must be between 1 and 5.");
+    }
   }
 
   let attempts = 0;

@@ -105,7 +105,9 @@ describe("Fail-Closed Database Auth (R4) — lib/auth.ts", () => {
   beforeEach(() => {
     clearDbAliveCache();
     jest.clearAllMocks();
+    jest.spyOn(prisma.user, "findUnique").mockRejectedValue(new Error("Can't reach database server"));
   });
+
 
   it("syncAndGetDbUser() throws SERVICE_UNAVAILABLE when the DB transaction fails (fail-closed)", async () => {
     // syncAndGetDbUser() attempts the $transaction directly — no separate health pre-ping.

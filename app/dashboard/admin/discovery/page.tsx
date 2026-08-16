@@ -25,7 +25,7 @@ export default function AdminDiscoveryPage() {
 
   const loadData = useCallback(async () => {
     try {
-      if (user?.role !== "admin") return;
+      if (user?.role?.toLowerCase() !== "admin") return;
       
       const statsData = await adminGetDiscoveryStats();
       setStats(statsData);
@@ -59,7 +59,7 @@ export default function AdminDiscoveryPage() {
     }
   };
 
-  if (user?.role !== "admin") {
+  if (user?.role?.toLowerCase() !== "admin") {
     return (
       <div className="p-8 text-center bg-red-50 text-red-650 rounded-2xl border border-red-100 max-w-md mx-auto space-y-2 mt-8">
         <AlertOctagon className="mx-auto" size={24} />

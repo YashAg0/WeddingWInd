@@ -40,6 +40,7 @@ interface ClientOperationsCenterProps {
     guestsCount: number;
     totalAmount: number;
     status: string;
+    attendanceSide?: string;
     traveler: {
       fullName: string;
       country: string;
@@ -236,6 +237,7 @@ export default function ClientOperationsCenter({ wedding, bookings: initialBooki
                     <thead>
                       <tr className="bg-warm-50/50 text-charcoal-500 font-bold border-b border-warm-100">
                         <th className="p-3">Guest Name / Origin</th>
+                        <th className="p-3">Side</th>
                         <th className="p-3">Count</th>
                         <th className="p-3">Status</th>
                         <th className="p-3">Readiness</th>
@@ -253,6 +255,21 @@ export default function ClientOperationsCenter({ wedding, bookings: initialBooki
                             <td className="p-3">
                               <div className="font-bold text-charcoal-900">{b.traveler.fullName}</div>
                               <div className="text-[10px] text-charcoal-500">{b.traveler.country}</div>
+                            </td>
+                            <td className="p-3">
+                              {b.attendanceSide === "BRIDE_SIDE" ? (
+                                <span className="inline-flex items-center gap-1 text-[9px] font-bold text-rose-800 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200">
+                                  Bride&apos;s Side
+                                </span>
+                              ) : b.attendanceSide === "GROOM_SIDE" ? (
+                                <span className="inline-flex items-center gap-1 text-[9px] font-bold text-sky-800 bg-sky-50 px-2 py-0.5 rounded-full border border-sky-200">
+                                  Groom&apos;s Side
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 text-[9px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+                                  Flexible
+                                </span>
+                              )}
                             </td>
                             <td className="p-3 font-semibold">{b.guestsCount}</td>
                             <td className="p-3">

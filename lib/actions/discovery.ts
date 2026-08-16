@@ -2,11 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "../prisma";
-import { requireAuth } from "../auth";
+import { requireAuth, requireRole } from "../auth";
 import { UserRole, ReputationEntityType } from "@prisma/client";
 import { calculateBayesianRating } from "../services/trust-score";
 import { submitReviewAction, voteReviewHelpfulAction, replyToReviewAction } from "./reviews";
 import { isSponsorshipActive } from "../wedding-dto";
+import { createAuditLog } from "./admin";
 
 /**
  * Searches weddings based on multi-faceted filters, sorting models, and relevance scores.
@@ -40,6 +41,7 @@ export async function searchWeddingsAction(
     status: "PUBLISHED",
     suspended: false,
     isDemo: false,
+    deletedAt: null,
   };
 
   // String Search Query (Title, Location, Category/Style, Description)
@@ -283,6 +285,7 @@ export async function recommendWeddingAction(preferences: {
     where: {
       status: "PUBLISHED",
       suspended: false,
+      deletedAt: null,
       pricePerGuest: { lte: preferences.budget },
       capacity: { gte: preferences.groupSize },
     },
@@ -350,7 +353,7 @@ export async function getPersonalizedRecommendations() {
     if (!traveler) {
       // Return trending/featured fallback
       return prisma.wedding.findMany({
-        where: { status: "PUBLISHED", suspended: false },
+        where: { status: "PUBLISHED", suspended: false, deletedAt: null },
         orderBy: { manualTrendingBoost: "desc" },
         take: 4,
       });
@@ -374,6 +377,7 @@ export async function getPersonalizedRecommendations() {
       where: {
         status: "PUBLISHED",
         suspended: false,
+        deletedAt: null,
         id: { notIn: interactingIds },
         ...(preferredCategories.length > 0
           ? { category: { in: preferredCategories } }
@@ -428,7 +432,17 @@ export async function saveSearchAction(name: string, filters: any) {
 }
 
 export async function deleteSavedSearch(id: string) {
-  const _user = await requireAuth();
+  const user = await requireAuth();
+
+  const existing = await prisma.savedSearch.findUnique({
+    where: { id },
+  });
+  if (!existing) {
+    throw new Error("Saved search not found.");
+  }
+  if (existing.userId !== user.id && user.role !== UserRole.ADMIN) {
+    throw new Error("Forbidden: You do not own this saved search.");
+  }
 
   await prisma.savedSearch.delete({
     where: { id },
@@ -439,11 +453,21 @@ export async function deleteSavedSearch(id: string) {
 }
 
 export async function renameSavedSearch(id: string, name: string) {
-  const _user = await requireAuth();
+  const user = await requireAuth();
+
+  const existing = await prisma.savedSearch.findUnique({
+    where: { id },
+  });
+  if (!existing) {
+    throw new Error("Saved search not found.");
+  }
+  if (existing.userId !== user.id && user.role !== UserRole.ADMIN) {
+    throw new Error("Forbidden: You do not own this saved search.");
+  }
 
   const updated = await prisma.savedSearch.update({
     where: { id },
-    data: { name },
+    data: { name: name.trim() },
   });
 
   revalidatePath("/dashboard");
@@ -643,16 +667,24 @@ export async function adminGetDiscoveryStats() {
 }
 
 export async function adminSetManualBoost(weddingId: string, boostScore: number) {
-  const user = await requireAuth();
-  if (user.role !== UserRole.ADMIN) throw new Error("Admin only.");
+  const admin = await requireRole([UserRole.ADMIN]);
 
   const updated = await prisma.wedding.update({
     where: { id: weddingId },
     data: {
-      manualTrendingBoost: boostScore,
+      manualTrendingBoost: Math.max(0.0, Math.min(boostScore, 5.0)),
     },
   });
 
-  revalidatePath(`/weddings`);
+  await createAuditLog(
+    "SET_MANUAL_BOOST",
+    "Wedding",
+    weddingId,
+    `Admin (${admin.email}) set manual trending boost on "${updated.title}" to ${boostScore}`
+  );
+
+  revalidatePath("/weddings");
+  revalidatePath(`/weddings/${updated.slug}`);
+  revalidatePath("/");
   return updated;
 }

@@ -9,25 +9,32 @@ import {
 } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "GDPR & EU Privacy Rights | Wedding With India",
+  title: "GDPR & EU Privacy Rights",
   description:
-    "Learn about GDPR and EU/EEA privacy rights, lawful processing, international transfers, data access, deletion, objection and other privacy requests at Wedding With India.",
+    "Learn about GDPR and EU/EEA privacy rights, lawful processing, international transfers, and privacy requests at WeddingWithIndia.",
   keywords: [
-    "Wedding With India GDPR",
-    "Wedding With India EU privacy",
+    "WeddingWithIndia GDPR",
+    "WeddingWithIndia EU privacy",
     "GDPR privacy rights",
     "EU data protection",
     "EEA privacy rights",
-    "Wedding With India data protection",
   ],
   alternates: {
-    canonical: "/gdpr",
+    canonical: "https://weddingwithindia.com/gdpr",
   },
   openGraph: {
-    title: "GDPR & EU Privacy Rights | Wedding With India",
+    title: "GDPR & EU Privacy Rights | WeddingWithIndia",
     description:
-      "Information about GDPR and EU/EEA privacy rights when using Wedding With India.",
+      "Information about GDPR and EU/EEA privacy rights when using WeddingWithIndia.",
+    url: "https://weddingwithindia.com/gdpr",
+    siteName: "WeddingWithIndia",
     type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "GDPR & EU Privacy Rights | WeddingWithIndia",
+    description:
+      "Information about GDPR and EU/EEA privacy rights when using WeddingWithIndia.",
   },
   robots: {
     index: true,

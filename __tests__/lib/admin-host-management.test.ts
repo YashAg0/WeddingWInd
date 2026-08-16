@@ -31,6 +31,12 @@ jest.mock("@/lib/prisma", () => ({
     auditLog: {
       create: jest.fn(),
     },
+    $transaction: jest.fn(async (cb) => {
+      if (typeof cb === "function") {
+        return cb(prisma);
+      }
+      return cb;
+    }),
   },
 }));
 
@@ -187,7 +193,7 @@ describe("Admin Host Applications Management", () => {
 
     expect(prisma.wedding.update).toHaveBeenCalledWith({
       where: { id: "wedding-2" },
-      data: { status: "REJECTED" },
+      data: { status: "DRAFT" },
     });
     expect(prisma.verification.upsert).toHaveBeenCalledWith(
       expect.objectContaining({

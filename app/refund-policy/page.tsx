@@ -8,25 +8,32 @@ import {
 } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Refund & Payment Protection Policy | Wedding With India",
+  title: "Refund & Payment Protection Policy",
   description:
-    "Learn how Wedding With India handles booking cancellations, refunds, payment failures, host cancellations, event changes and payment-related disputes.",
+    "Learn how WeddingWithIndia handles booking cancellations, refunds, payment failures, host cancellations, and payment-related disputes.",
   keywords: [
-    "Wedding With India refund policy",
-    "Wedding With India cancellation policy",
+    "WeddingWithIndia refund policy",
+    "WeddingWithIndia cancellation policy",
     "Indian wedding booking refund",
-    "Wedding With India payment protection",
+    "WeddingWithIndia payment protection",
     "Indian wedding experience cancellation",
-    "Wedding With India booking cancellation",
   ],
   alternates: {
-    canonical: "/refund-policy",
+    canonical: "https://weddingwithindia.com/refund-policy",
   },
   openGraph: {
-    title: "Refund & Payment Protection Policy | Wedding With India",
+    title: "Refund & Payment Protection Policy | WeddingWithIndia",
     description:
-      "Clear cancellation and refund rules for Wedding With India bookings and Indian wedding experiences.",
+      "Clear cancellation and refund rules for WeddingWithIndia bookings and Indian wedding experiences.",
+    url: "https://weddingwithindia.com/refund-policy",
+    siteName: "WeddingWithIndia",
     type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Refund & Payment Protection Policy | WeddingWithIndia",
+    description:
+      "Clear cancellation and refund rules for WeddingWithIndia bookings and Indian wedding experiences.",
   },
   robots: {
     index: true,

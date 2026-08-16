@@ -14,14 +14,14 @@ import {
 import { SectionHeader } from "@/components/ui/SectionHeader";
 
 export const metadata: Metadata = {
-  title: "Tanishq Gupta — Founder of Wedding With India | Startup Builder",
+  title: "Tanishq Gupta — Founder & Startup Builder",
   description:
-    "Official profile of Tanishq Gupta, founder of Wedding With India. Technology builder, creator of BigTechJournals, and guest speaker at MNIT Jaipur.",
+    "Official profile of Tanishq Gupta, founder of WeddingWithIndia. Technology builder, creator of BigTechJournals, and guest speaker at MNIT Jaipur.",
   keywords: [
     "Tanishq Gupta",
     "Tanishq Gupta founder",
-    "Tanishq Gupta Wedding With India",
-    "Wedding With India founder",
+    "Tanishq Gupta WeddingWithIndia",
+    "WeddingWithIndia founder",
     "BigTechJournals Tanishq Gupta",
     "Tanishq Gupta MNIT Jaipur",
   ],
@@ -29,26 +29,26 @@ export const metadata: Metadata = {
     canonical: "https://weddingwithindia.com/founder/tanishq-gupta",
   },
   openGraph: {
-    title: "Tanishq Gupta — Founder of Wedding With India",
+    title: "Tanishq Gupta — Founder & Startup Builder | WeddingWithIndia",
     description:
-      "Tanishq Gupta is the founder of Wedding With India, building cultural immersion experiences for international travelers.",
+      "Tanishq Gupta is the founder of WeddingWithIndia, building cultural immersion experiences for international travelers.",
     url: "https://weddingwithindia.com/founder/tanishq-gupta",
-    siteName: "Wedding With India",
+    siteName: "WeddingWithIndia",
     type: "profile",
     images: [
       {
         url: "https://weddingwithindia.com/images/founder/founder.png",
         width: 800,
         height: 800,
-        alt: "Tanishq Gupta, Founder of Wedding With India",
+        alt: "Tanishq Gupta, Founder of WeddingWithIndia",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Tanishq Gupta — Founder of Wedding With India",
+    title: "Tanishq Gupta — Founder & Startup Builder | WeddingWithIndia",
     description:
-      "Technology builder and founder of Wedding With India. Learn about his journey, BigTechJournals, and platform mission.",
+      "Technology builder and founder of WeddingWithIndia. Learn about his journey, BigTechJournals, and platform mission.",
     images: ["https://weddingwithindia.com/images/founder/founder.png"],
   },
 };
@@ -63,13 +63,13 @@ export default function FounderPage() {
     image: "https://weddingwithindia.com/images/founder/founder.png",
     worksFor: {
       "@type": "Organization",
-      name: "Wedding With India",
+      name: "WeddingWithIndia",
       url: "https://weddingwithindia.com",
       logo: "https://weddingwithindia.com/images/logos/logo.png",
     },
     url: "https://weddingwithindia.com/founder/tanishq-gupta",
     description:
-      "Founder of Wedding With India, technology builder, creator of BigTechJournals, and guest speaker at MNIT Jaipur.",
+      "Founder of WeddingWithIndia, technology builder, creator of BigTechJournals, and guest speaker at MNIT Jaipur.",
     knowsAbout: [
       "Startup Building",
       "Digital Platforms",

@@ -2,25 +2,32 @@ import { Metadata } from "next";
 import { UserCheck, Clock, ShieldCheck, AlertTriangle } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Traveler Guest Agreement | Wedding With India",
+  title: "Traveler Guest Agreement",
   description:
-    "Traveler Guest Agreement for guests attending authentic Indian wedding experiences through Wedding With India, including guest conduct, safety, cultural respect, bookings, cancellations, media consent and responsibilities.",
+    "Traveler Guest Agreement for guests attending authentic Indian wedding experiences through WeddingWithIndia, including guest conduct, safety, and cultural respect.",
   keywords: [
     "Indian wedding guest agreement",
-    "Wedding With India guest terms",
+    "WeddingWithIndia guest terms",
     "Indian wedding experience",
     "foreign guests Indian weddings",
     "Indian wedding travel",
-    "wedding tourism India",
   ],
   alternates: {
-    canonical: "/traveler-agreement",
+    canonical: "https://weddingwithindia.com/traveler-agreement",
   },
   openGraph: {
-    title: "Traveler Guest Agreement | Wedding With India",
+    title: "Traveler Guest Agreement | WeddingWithIndia",
     description:
-      "Terms and responsibilities for travelers participating in Indian wedding experiences through Wedding With India.",
+      "Terms and responsibilities for travelers participating in Indian wedding experiences through WeddingWithIndia.",
+    url: "https://weddingwithindia.com/traveler-agreement",
+    siteName: "WeddingWithIndia",
     type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Traveler Guest Agreement | WeddingWithIndia",
+    description:
+      "Terms and responsibilities for travelers participating in Indian wedding experiences through WeddingWithIndia.",
   },
   robots: {
     index: true,

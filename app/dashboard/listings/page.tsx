@@ -1,6 +1,6 @@
 import { requireRole } from "@/lib/auth";
 import { UserRole } from "@prisma/client";
-import { createWedding, editWedding, deleteWedding, getMyWeddings } from "@/lib/actions";
+import { createWedding, editWedding, deleteWedding, getMyWeddings, requestSponsorshipAction, cancelSponsorshipRequestAction } from "@/lib/actions";
 import {
   Calendar as CalendarIcon,
   MapPin,
@@ -12,6 +12,9 @@ import {
   Palette,
   Globe2,
   Eye,
+  Sparkles,
+  Zap,
+  Clock,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -66,6 +69,22 @@ export default async function CoupleListingsPage({
     "use server";
     const id = formData.get("id") as string;
     await deleteWedding(id);
+    redirect("/dashboard/listings");
+  }
+
+  async function handleRequestSponsorship(formData: FormData) {
+    "use server";
+    const weddingId = formData.get("weddingId") as string;
+    const message = (formData.get("message") as string) || undefined;
+    const budget = (formData.get("budget") as string) || undefined;
+    await requestSponsorshipAction({ weddingId, message, budget });
+    redirect("/dashboard/listings");
+  }
+
+  async function handleCancelSponsorshipRequest(formData: FormData) {
+    "use server";
+    const requestId = formData.get("requestId") as string;
+    await cancelSponsorshipRequestAction(requestId);
     redirect("/dashboard/listings");
   }
 
@@ -313,11 +332,24 @@ export default async function CoupleListingsPage({
               <div key={w.id} className="border border-warm-200/60 rounded-2xl overflow-hidden flex flex-col justify-between hover:shadow-md transition-shadow bg-warm-50/10">
                 <div className="relative h-44 w-full bg-warm-200">
                   <Image src={w.mainImageUrl} alt={w.title} fill className="object-cover" />
-                  <span className={`absolute top-3 right-3 text-[0.625rem] font-bold uppercase px-2 py-0.5 rounded ${
-                    w.status === "PUBLISHED" ? "bg-emerald-500 text-white" : w.status === "COMPLETED" ? "bg-charcoal-500 text-white" : "bg-warm-500 text-white"
-                  }`}>
-                    {w.status}
-                  </span>
+                  <div className="absolute top-3 right-3 flex gap-1.5">
+                    {w.sponsored && (
+                      <span className="text-[0.5625rem] font-bold uppercase px-2 py-0.5 rounded bg-gradient-to-r from-amber-500 to-yellow-400 text-charcoal-950 flex items-center gap-1">
+                        <Sparkles size={9} />
+                        Sponsored
+                      </span>
+                    )}
+                    {w.featured && !w.sponsored && (
+                      <span className="text-[0.5625rem] font-bold uppercase px-2 py-0.5 rounded bg-[var(--color-brand-primary)] text-white">
+                        Featured
+                      </span>
+                    )}
+                    <span className={`text-[0.625rem] font-bold uppercase px-2 py-0.5 rounded ${
+                      w.status === "PUBLISHED" ? "bg-emerald-500 text-white" : w.status === "COMPLETED" ? "bg-charcoal-500 text-white" : "bg-warm-500 text-white"
+                    }`}>
+                      {w.status}
+                    </span>
+                  </div>
                 </div>
 
                 <div className="p-5 flex-1 space-y-4 flex flex-col justify-between">
@@ -356,6 +388,69 @@ export default async function CoupleListingsPage({
                       </div>
                     )}
                   </div>
+
+                  {/* Sponsorship Status Row */}
+                  {w.status === "PUBLISHED" && (
+                    <div className="pt-2 border-t border-warm-100">
+                      {w.sponsored ? (
+                        <div className="flex items-center gap-2 p-2 rounded-xl bg-amber-50 border border-amber-200">
+                          <Sparkles size={12} className="text-amber-600 flex-shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[0.625rem] font-bold text-amber-800 uppercase tracking-wide">Sponsored Listing Active</p>
+                            {w.sponsorshipEnd && (
+                              <p className="text-[0.5625rem] text-amber-700">
+                                Expires {new Date(w.sponsorshipEnd).toLocaleDateString()}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      ) : w.pendingSponsorshipRequest ? (
+                        <div className="space-y-1.5">
+                          <div className="flex items-center gap-2 p-2 rounded-xl bg-blue-50 border border-blue-200">
+                            <Clock size={12} className="text-blue-600 flex-shrink-0" />
+                            <p className="text-[0.625rem] font-bold text-blue-800">Sponsorship request pending review</p>
+                          </div>
+                          <form action={handleCancelSponsorshipRequest}>
+                            <input type="hidden" name="requestId" value={w.pendingSponsorshipRequest.id} />
+                            <button
+                              type="submit"
+                              className="text-[0.5625rem] font-semibold text-charcoal-500 hover:text-rose-600 underline underline-offset-2 transition-colors w-full text-left cursor-pointer"
+                            >
+                              Cancel request
+                            </button>
+                          </form>
+                        </div>
+                      ) : (
+                        <details className="group">
+                          <summary className="flex items-center gap-1.5 cursor-pointer text-[0.625rem] font-bold text-[var(--color-brand-secondary)] hover:text-amber-600 transition-colors list-none">
+                            <Zap size={11} />
+                            Request marketplace sponsorship
+                          </summary>
+                          <form action={handleRequestSponsorship} className="mt-2 space-y-2">
+                            <input type="hidden" name="weddingId" value={w.id} />
+                            <textarea
+                              name="message"
+                              rows={2}
+                              placeholder="Why would sponsorship benefit your listing? (optional)"
+                              className="w-full text-[0.6875rem] border border-warm-200 rounded-xl px-3 py-2 text-charcoal-700 bg-white resize-none focus:outline-none focus:border-maroon-300"
+                            />
+                            <input
+                              type="text"
+                              name="budget"
+                              placeholder="Preferred sponsorship budget (optional)"
+                              className="w-full text-[0.6875rem] border border-warm-200 rounded-xl px-3 py-2 text-charcoal-700 bg-white focus:outline-none focus:border-maroon-300"
+                            />
+                            <button
+                              type="submit"
+                              className="w-full text-[0.625rem] font-bold uppercase tracking-wider bg-gradient-to-r from-amber-500 to-yellow-400 text-charcoal-950 py-2 rounded-xl hover:opacity-90 transition-opacity cursor-pointer"
+                            >
+                              Submit Request
+                            </button>
+                          </form>
+                        </details>
+                      )}
+                    </div>
+                  )}
 
                   <div className="pt-3 border-t border-warm-150 flex items-center justify-between">
                     <span className="font-display font-bold text-xs text-charcoal-900">

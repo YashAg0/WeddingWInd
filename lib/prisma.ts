@@ -117,8 +117,8 @@ export async function withDbRetry<T>(
   options: { maxRetries?: number; initialDelayMs?: number; label?: string } = {}
 ): Promise<T> {
   const isTest = process.env.NODE_ENV === "test";
-  const maxRetries = isTest ? 1 : (options.maxRetries ?? 3);
-  const initialDelayMs = isTest ? 0 : (options.initialDelayMs ?? 200);
+  const maxRetries = isTest ? (options.maxRetries ?? 1) : (options.maxRetries ?? 3);
+  const initialDelayMs = options.initialDelayMs ?? (isTest ? 0 : 200);
   const label = options.label ? `[${options.label}] ` : "";
 
   let lastError: any;
@@ -131,9 +131,11 @@ export async function withDbRetry<T>(
       if (!isTransientDbError(err) || attempt >= maxRetries) {
         throw err;
       }
-      const delay = initialDelayMs * Math.pow(2, attempt - 1) + Math.random() * 100;
-      console.warn(`${label}Transient DB error on attempt ${attempt}/${maxRetries}. Retrying in ${Math.round(delay)}ms...`);
-      await new Promise((resolve) => setTimeout(resolve, delay));
+      const delay = isTest ? (options.initialDelayMs ?? 0) : (initialDelayMs * Math.pow(2, attempt - 1) + Math.random() * 100);
+      if (delay > 0) {
+        console.warn(`${label}Transient DB error on attempt ${attempt}/${maxRetries}. Retrying in ${Math.round(delay)}ms...`);
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      }
     }
   }
 

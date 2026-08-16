@@ -190,6 +190,7 @@ export default async function AdminCaseDetailPage({ params }: { params: Promise<
             subjectUserId={safetyCase.subjectUserId || null}
             activeRestrictions={activeRestrictions}
             bookingId={safetyCase.bookingId}
+            weddingId={safetyCase.weddingId || safetyCase.booking?.weddingId || null}
             cancellationRequests={safetyCase.booking?.cancellationRequests || []}
           />
         </div>

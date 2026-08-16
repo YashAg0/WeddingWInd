@@ -134,7 +134,7 @@ export function WeddingGallery({ images, title }: WeddingGalleryProps) {
                   >
                     <Image
                       src={img}
-                      alt={`Thumbnail ${i + 1}`}
+                      alt={`${title} photo thumbnail ${i + 1}`}
                       fill
                       sizes="56px"
                       className="object-cover"

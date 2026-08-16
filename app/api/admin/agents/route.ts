@@ -46,53 +46,55 @@ export async function PATCH(req: NextRequest) {
 
     if (action === "approve") {
       // Set verifiedChecks = true on AgentProfile, set user.status = ACTIVE
-      const [updatedProfile] = await Promise.all([
-        prisma.agentProfile.update({
+      const updatedProfile = await prisma.$transaction(async (tx) => {
+        const profile = await tx.agentProfile.update({
           where: { id: agentProfileId },
           data: { verifiedChecks: true },
-          include: { user: true }
-        }),
-        prisma.user.update({
-          where: { id: agentProfile.userId },
-          data: { status: "ACTIVE" }
-        })
-      ]);
+          include: { user: true },
+        });
 
-      await prisma.auditLog.create({
-        data: {
-          action: "ADMIN_AGENT_APPROVE",
-          entity: "AgentProfile",
-          entityId: agentProfileId,
-          userId: admin.id,
-          userName: admin.name || admin.email,
-          details: `Agent ${agentProfile.user.name} approved. Referral code: ${agentProfile.referralCode}`,
-        }
+        await tx.user.update({
+          where: { id: agentProfile.userId },
+          data: { status: "ACTIVE" },
+        });
+
+        await tx.auditLog.create({
+          data: {
+            action: "ADMIN_AGENT_APPROVE",
+            entity: "AgentProfile",
+            entityId: agentProfileId,
+            userId: admin.id,
+            userName: admin.name || admin.email,
+            details: `Agent ${agentProfile.user.name || agentProfile.user.email} approved. Referral code: ${agentProfile.referralCode}`,
+          },
+        });
+
+        return profile;
       });
 
       return NextResponse.json({ agent: updatedProfile, referralCode: agentProfile.referralCode });
 
     } else if (action === "reject") {
-      const [updatedProfile] = await Promise.all([
-        prisma.agentProfile.update({
+      // Reject agent application without banning the user's primary traveler account
+      const updatedProfile = await prisma.$transaction(async (tx) => {
+        const profile = await tx.agentProfile.update({
           where: { id: agentProfileId },
           data: { verifiedChecks: false },
-          include: { user: true }
-        }),
-        prisma.user.update({
-          where: { id: agentProfile.userId },
-          data: { status: "BANNED" }
-        })
-      ]);
+          include: { user: true },
+        });
 
-      await prisma.auditLog.create({
-        data: {
-          action: "ADMIN_AGENT_REJECT",
-          entity: "AgentProfile",
-          entityId: agentProfileId,
-          userId: admin.id,
-          userName: admin.name || admin.email,
-          details: `Agent ${agentProfile.user.name} application declined.`,
-        }
+        await tx.auditLog.create({
+          data: {
+            action: "ADMIN_AGENT_REJECT",
+            entity: "AgentProfile",
+            entityId: agentProfileId,
+            userId: admin.id,
+            userName: admin.name || admin.email,
+            details: `Agent ${agentProfile.user.name || agentProfile.user.email} application declined.`,
+          },
+        });
+
+        return profile;
       });
 
       return NextResponse.json({ agent: updatedProfile });

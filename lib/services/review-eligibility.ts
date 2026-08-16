@@ -62,8 +62,9 @@ export async function evaluateReviewEligibility(params: {
 
     // B. Verify booking attendance state
     const validStates: BookingStatus[] = [
+      BookingStatus.CHECKED_IN,
       BookingStatus.ATTENDED,
-      BookingStatus.COMPLETED
+      BookingStatus.COMPLETED,
     ];
     if (!validStates.includes(booking.status)) {
       return {

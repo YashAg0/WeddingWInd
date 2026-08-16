@@ -142,11 +142,9 @@ export function resolveUserRole(user: any): ExtendedRole {
     return "SUPER_ADMIN";
   }
   if (user.role === UserRole.ADMIN) {
-    if (user.email?.includes("coordinator") || user.clerkUserId?.includes("coordinator")) {
-      return "COORDINATOR";
-    }
     return "ADMIN";
   }
+  if (user.role === UserRole.COORDINATOR) return "COORDINATOR";
   if (user.role === UserRole.COUPLE) return "COUPLE";
   if (user.role === UserRole.AGENT) return "AGENT";
   return "TRAVELER";

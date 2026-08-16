@@ -68,7 +68,7 @@ jest.mock("@/lib/prisma", () => ({
       findMany: jest.fn(async () => mockWebhookEvents),
       findUnique: jest.fn(async ({ where }) => ({
         id: where.id,
-        stripeEventId: "evt_123",
+        stripeEventId: "mock_evt_123",
         type: "payment_intent.succeeded",
         status: "FAILED",
       })),

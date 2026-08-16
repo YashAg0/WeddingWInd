@@ -50,6 +50,7 @@ model User {
   restrictionsCreated    UserRestriction[]         @relation("RestrictionsCreatedBy")
   restrictionsRevoked    UserRestriction[]         @relation("RestrictionsRevokedBy")
   restrictions           UserRestriction[]         @relation("UserRestrictions")
+  deviceSessions         UserDeviceSession[]
   verification           Verification?
 
   @@index([email])
@@ -133,12 +134,15 @@ model CoordinatorProfile {
   status             String    @default("PENDING")
   assignedEventTitle String?
   assignedDate       String?
+  assignedWeddingId  String?
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
   deletedAt          DateTime?
   user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assignedWedding    Wedding?  @relation(fields: [assignedWeddingId], references: [id], onDelete: SetNull)
 
   @@index([userId])
+  @@index([assignedWeddingId])
 }
 
 model Wedding {
@@ -186,7 +190,9 @@ model Wedding {
   itinerary           WeddingItineraryItem[]
   badges              WeddingQualityBadge[]
   traditions          WeddingTradition[]
-  wishlists           Wishlist[]
+  wishlists            Wishlist[]
+  coordinators         CoordinatorProfile[]
+  sponsorshipRequests  SponsorshipRequest[]
 
   @@index([hostCoupleId])
   @@index([slug])
@@ -201,6 +207,26 @@ model Wedding {
   @@index([religion])
   @@index([category])
   @@index([pricePerGuest])
+}
+
+model SponsorshipRequest {
+  id          String                   @id @default(uuid())
+  weddingId   String
+  coupleId    String
+  status      SponsorshipRequestStatus @default(PENDING)
+  message     String?
+  budget      String?
+  requestedAt DateTime                 @default(now())
+  reviewedAt  DateTime?
+  reviewedBy  String?
+  adminNotes  String?
+  wedding     Wedding                  @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+
+  @@index([weddingId, status])
+  @@index([weddingId])
+  @@index([status])
+  @@index([requestedAt])
+
 }
 
 model WeddingGallery {
@@ -251,6 +277,7 @@ model Booking {
   pricePerGuest        Float
   totalAmount          Float
   status               BookingStatus         @default(PENDING)
+  attendanceSide       WeddingSide           @default(OPEN)
   createdAt            DateTime              @default(now())
   updatedAt            DateTime              @updatedAt
   deletedAt            DateTime?
@@ -271,6 +298,7 @@ model Booking {
   @@index([travelerId])
   @@index([weddingId])
   @@index([status])
+  @@index([attendanceSide])
   @@index([createdAt])
 }
 
@@ -471,6 +499,7 @@ model Commission {
   @@index([paymentId])
   @@index([status])
   @@index([createdAt])
+  @@index([agentId, status, payoutRequestId])
 }
 
 model AgentReferral {
@@ -1372,6 +1401,24 @@ model Coupon {
   updatedAt       DateTime  @updatedAt
 }
 
+model UserDeviceSession {
+  id           String    @id @default(uuid())
+  userId       String
+  deviceId     String
+  deviceName   String?
+  ipAddress    String?
+  userAgent    String?
+  lastActiveAt DateTime  @default(now())
+  createdAt    DateTime  @default(now())
+  revokedAt    DateTime?
+  expiresAt    DateTime?
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, deviceId])
+  @@index([userId, revokedAt])
+  @@index([deviceId])
+}
+
 enum UserRole {
   TRAVELER
   COUPLE
@@ -1635,4 +1682,17 @@ enum FraudSignalType {
   UNVERIFIED_EXPERIENCE
   SELF_REVIEW
   CONFLICT_OF_INTEREST
+}
+
+enum WeddingSide {
+  BRIDE_SIDE
+  GROOM_SIDE
+  OPEN
+}
+
+enum SponsorshipRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
 }

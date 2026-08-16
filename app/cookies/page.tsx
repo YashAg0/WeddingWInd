@@ -10,11 +10,11 @@ import {
 } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Cookie Policy | Wedding With India",
+  title: "Cookie Policy",
   description:
-    "Learn how Wedding With India uses cookies and similar technologies for essential functionality, preferences, analytics and security.",
+    "Learn how WeddingWithIndia uses cookies and similar technologies for essential functionality, preferences, analytics, and security.",
   keywords: [
-    "Wedding With India cookie policy",
+    "WeddingWithIndia cookie policy",
     "cookie policy",
     "cookies",
     "website cookies",
@@ -22,13 +22,21 @@ export const metadata: Metadata = {
     "privacy",
   ],
   alternates: {
-    canonical: "/cookies",
+    canonical: "https://weddingwithindia.com/cookies",
   },
   openGraph: {
-    title: "Cookie Policy | Wedding With India",
+    title: "Cookie Policy | WeddingWithIndia",
     description:
-      "How Wedding With India uses cookies and similar technologies.",
+      "How WeddingWithIndia uses cookies and similar technologies.",
+    url: "https://weddingwithindia.com/cookies",
+    siteName: "WeddingWithIndia",
     type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Cookie Policy | WeddingWithIndia",
+    description:
+      "How WeddingWithIndia uses cookies and similar technologies.",
   },
   robots: {
     index: true,

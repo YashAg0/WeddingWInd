@@ -45,11 +45,7 @@ export default async function AdminBookingsPage({
   async function handleCancel(formData: FormData) {
     "use server";
     const bId = formData.get("id") as string;
-    // We can call the base cancel action (simulating the traveler cancellation or a forced cancellation)
-    await prisma.booking.update({
-      where: { id: bId },
-      data: { status: BookingStatus.CANCELLED },
-    });
+    await adminOverrideBookingStatusAction(bId, BookingStatus.CANCELLED, "Admin cancelled booking via dashboard");
     redirect("/dashboard/admin/bookings");
   }
 

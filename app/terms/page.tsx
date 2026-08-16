@@ -9,25 +9,32 @@ import {
 } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Terms of Service | Wedding With India",
+  title: "Terms of Service",
   description:
-    "Read the Terms of Service governing accounts, bookings, Indian wedding experiences, payments, cancellations, guest and host responsibilities, platform use, safety and disputes on Wedding With India.",
+    "Read the Terms of Service governing accounts, bookings, Indian wedding experiences, payments, cancellations, guest and host responsibilities on WeddingWithIndia.",
   keywords: [
-    "Wedding With India terms of service",
+    "WeddingWithIndia terms of service",
     "Indian wedding experience terms",
-    "Wedding With India booking terms",
+    "WeddingWithIndia booking terms",
     "Indian wedding travel terms",
-    "Wedding With India cancellation policy",
-    "Wedding With India platform terms",
+    "WeddingWithIndia platform terms",
   ],
   alternates: {
-    canonical: "/terms",
+    canonical: "https://weddingwithindia.com/terms",
   },
   openGraph: {
-    title: "Terms of Service | Wedding With India",
+    title: "Terms of Service | WeddingWithIndia",
     description:
-      "The terms governing use of Wedding With India, including bookings, experiences, payments, cancellations, conduct and platform responsibilities.",
+      "The terms governing use of WeddingWithIndia, including bookings, experiences, payments, cancellations, and platform responsibilities.",
+    url: "https://weddingwithindia.com/terms",
+    siteName: "WeddingWithIndia",
     type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Terms of Service | WeddingWithIndia",
+    description:
+      "The terms governing use of WeddingWithIndia, including bookings, experiences, payments, cancellations, and platform responsibilities.",
   },
   robots: {
     index: true,

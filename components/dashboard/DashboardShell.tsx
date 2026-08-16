@@ -7,13 +7,24 @@ import DashboardHeader from "./DashboardHeader";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { RefreshCw, WifiOff } from "lucide-react";
+import { RefreshCw, WifiOff, ShieldAlert, LogOut } from "lucide-react";
+import DeviceLimitModal from "@/components/auth/DeviceLimitModal";
 
 function DashboardShellContent({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { user, loading, dbOffline, refreshData } = useAuth();
+  const {
+    user,
+    loading,
+    dbOffline,
+    authState,
+    activeDeviceSessions,
+    refreshData,
+    logout,
+    retryConnection,
+  } = useAuth();
+
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [retrying, setRetrying] = useState(false);
 
@@ -21,32 +32,90 @@ function DashboardShellContent({ children }: { children: React.ReactNode }) {
   React.useEffect(() => {
     if (!loading) {
       const fullUrl = searchParams.toString() ? `${pathname}?${searchParams.toString()}` : pathname;
-      if (!user && !dbOffline) {
-        // Not authenticated and DB is fine → redirect to login
+
+      // Only redirect to login when genuinely unauthenticated and NOT in a temporary failure or device limit state
+      if (
+        !user &&
+        !dbOffline &&
+        authState !== "TEMPORARY_CONNECTION_FAILURE" &&
+        authState !== "DEVICE_LIMIT_REACHED" &&
+        authState !== "SESSION_REVOKED"
+      ) {
         router.replace(`/login?redirect_url=${encodeURIComponent(fullUrl)}`);
-      } else if (user && !user.onboarded && !dbOffline) {
+      } else if (
+        user &&
+        !user.onboarded &&
+        !dbOffline &&
+        authState === "READY"
+      ) {
         router.replace(`/onboarding?redirect_url=${encodeURIComponent(fullUrl)}`);
       }
     }
-  }, [user, loading, dbOffline, router, pathname, searchParams]);
+  }, [user, loading, dbOffline, authState, router, pathname, searchParams]);
 
   // Loading state: auth/DB sync in progress
   if (loading) {
     return (
       <div className="min-h-[85vh] flex flex-col items-center justify-center bg-warm-50 gap-3">
         <div className="w-8 h-8 rounded-full border-4 border-maroon-100 border-t-maroon-800 animate-spin" />
-        <span className="text-xs font-bold text-charcoal-400 uppercase tracking-widest">Loading Dashboard...</span>
+        <span className="text-xs font-bold text-charcoal-400 uppercase tracking-widest">
+          {authState === "AUTHENTICATING" ? "Verifying Session & Devices..." : "Loading Dashboard..."}
+        </span>
       </div>
     );
   }
 
-  // DB is offline AND user is null: the session may be valid but we can't verify it.
-  // Show a DB-unavailable screen — NOT a "guest user" fallback.
-  // This correctly communicates: "You may be authenticated, but we can't confirm it."
-  if (dbOffline && !user) {
+  // 1. DEVICE LIMIT REACHED: Maximum 2 devices active
+  if (authState === "DEVICE_LIMIT_REACHED") {
+    return (
+      <div className="min-h-screen bg-warm-50 flex items-center justify-center p-4">
+        <DeviceLimitModal
+          isOpen={true}
+          activeSessions={activeDeviceSessions}
+          onDeviceRevoked={async () => {
+            await refreshData();
+          }}
+          onCancelLogout={logout}
+        />
+      </div>
+    );
+  }
+
+  // 2. SESSION REVOKED: This device was logged out by the user from another session
+  if (authState === "SESSION_REVOKED") {
+    return (
+      <div className="min-h-[85vh] flex flex-col items-center justify-center bg-warm-50 p-4">
+        <div className="max-w-md w-full bg-white border border-warm-200 rounded-3xl p-10 shadow-sm space-y-5 text-center">
+          <div className="w-14 h-14 rounded-2xl bg-amber-50 text-amber-700 flex items-center justify-center mx-auto">
+            <ShieldAlert size={24} />
+          </div>
+          <h1 className="font-display font-bold text-xl text-charcoal-900">
+            Device Session Revoked
+          </h1>
+          <p className="text-charcoal-600 text-sm leading-relaxed">
+            This device session has been logged out from another active session or security checkpoint.
+            Please sign in again to continue.
+          </p>
+          <div className="pt-2">
+            <button
+              onClick={logout}
+              className="inline-flex items-center gap-2 px-6 py-2.5 bg-maroon-800 text-white text-sm font-semibold rounded-xl hover:bg-maroon-900 transition-colors"
+            >
+              <LogOut size={14} />
+              Sign In Again
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 3. TEMPORARY CONNECTION FAILURE: Database / network temporary unavailability
+  // Never treat as unauthenticated!
+  if ((dbOffline && !user) || authState === "TEMPORARY_CONNECTION_FAILURE") {
     const handleRetry = async () => {
       setRetrying(true);
-      await refreshData();
+      await retryConnection();
       setRetrying(false);
     };
 
@@ -57,11 +126,11 @@ function DashboardShellContent({ children }: { children: React.ReactNode }) {
             <WifiOff size={24} />
           </div>
           <h1 className="font-display font-bold text-xl text-charcoal-900">
-            Dashboard Temporarily Unavailable
+            Connection Interrupted
           </h1>
           <p className="text-charcoal-600 text-sm leading-relaxed">
-            We&apos;re having trouble connecting to the database to verify your session.
-            This is a temporary connectivity issue — your login is not affected.
+            We&apos;re having trouble connecting to verify your dashboard session.
+            This is a temporary connectivity issue — your session is safe.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <button
@@ -70,7 +139,7 @@ function DashboardShellContent({ children }: { children: React.ReactNode }) {
               className="inline-flex items-center gap-2 px-6 py-2.5 bg-maroon-800 text-white text-sm font-semibold rounded-xl hover:bg-maroon-900 transition-colors disabled:opacity-60"
             >
               <RefreshCw size={14} className={retrying ? "animate-spin" : ""} />
-              {retrying ? "Retrying..." : "Retry Connection"}
+              {retrying ? "Reconnecting..." : "Retry Connection"}
             </button>
             <Link
               href="/"
@@ -96,7 +165,6 @@ function DashboardShellContent({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex h-screen bg-warm-50 overflow-hidden font-sans">
-      
       {/* Desktop Sidebar */}
       <div className="hidden lg:block h-full flex-shrink-0">
         <Sidebar />
@@ -134,7 +202,7 @@ function DashboardShellContent({ children }: { children: React.ReactNode }) {
         {dbOffline && user && (
           // DB went offline AFTER the user was already synced — show a non-blocking banner
           <div className="bg-amber-500 text-white text-xs px-4 py-2 flex items-center justify-between font-semibold">
-            <span>⚠️ Database connection interrupted — some data may be stale.</span>
+            <span>⚠️ Database connection interrupted — some dashboard data may be stale.</span>
             <button
               onClick={() => refreshData()}
               className="bg-white text-amber-900 px-3 py-1 rounded font-bold hover:bg-amber-100 transition"
@@ -155,12 +223,14 @@ function DashboardShellContent({ children }: { children: React.ReactNode }) {
 
 export default function DashboardShell({ children }: { children: React.ReactNode }) {
   return (
-    <Suspense fallback={
-      <div className="min-h-[85vh] flex flex-col items-center justify-center bg-warm-50 gap-3">
-        <div className="w-8 h-8 rounded-full border-4 border-maroon-100 border-t-maroon-800 animate-spin" />
-        <span className="text-xs font-bold text-charcoal-400 uppercase tracking-widest">Loading Workspace...</span>
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="min-h-[85vh] flex flex-col items-center justify-center bg-warm-50 gap-3">
+          <div className="w-8 h-8 rounded-full border-4 border-maroon-100 border-t-maroon-800 animate-spin" />
+          <span className="text-xs font-bold text-charcoal-400 uppercase tracking-widest">Loading Workspace...</span>
+        </div>
+      }
+    >
       <DashboardShellContent>{children}</DashboardShellContent>
     </Suspense>
   );

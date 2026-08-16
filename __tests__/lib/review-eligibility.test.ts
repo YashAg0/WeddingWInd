@@ -164,7 +164,7 @@ describe("Review Directions & Eligibility Lifecycle Verification", () => {
       });
     };
 
-    it("should reject CHECKED_IN for traveler", async () => {
+    it("should allow CHECKED_IN for traveler on past event", async () => {
       setupTravelerUser();
       (prisma.booking.findUnique as jest.Mock).mockResolvedValue({
         id: "booking-id",
@@ -180,8 +180,8 @@ describe("Review Directions & Eligibility Lifecycle Verification", () => {
         reviewType: ReviewType.TRAVELER_TO_WEDDING,
       });
 
-      expect(res.eligible).toBe(false);
-      expect(res.reasonCode).toBe("INVALID_ATTENDANCE");
+      expect(res.eligible).toBe(true);
+      expect(res.reasonCode).toBe("ELIGIBLE");
     });
 
     it("should reject PAID status traveler reviews", async () => {

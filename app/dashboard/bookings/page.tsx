@@ -98,6 +98,7 @@ export default function BookingsPage() {
                   <tr className="border-b border-warm-200 text-xs font-bold text-charcoal-500 uppercase tracking-widest bg-warm-50">
                     <th className="p-4 rounded-tl-xl">Guest</th>
                     <th className="p-4">Origin</th>
+                    <th className="p-4">Celebration Side</th>
                     <th className="p-4">Attendees</th>
                     <th className="p-4">Date</th>
                     <th className="p-4 rounded-tr-xl">Status</th>
@@ -108,6 +109,21 @@ export default function BookingsPage() {
                     <tr key={b.id}>
                       <td className="p-4 font-bold text-charcoal-900">{b.guestName || "Guest"}</td>
                       <td className="p-4">{b.guestCountry || "—"}</td>
+                      <td className="p-4">
+                        {b.attendanceSide === "BRIDE_SIDE" ? (
+                          <span className="inline-flex items-center gap-1 text-[0.6875rem] font-bold text-rose-800 bg-rose-50 px-2.5 py-1 rounded-full border border-rose-200">
+                            👰 Bride&apos;s Side
+                          </span>
+                        ) : b.attendanceSide === "GROOM_SIDE" ? (
+                          <span className="inline-flex items-center gap-1 text-[0.6875rem] font-bold text-sky-800 bg-sky-50 px-2.5 py-1 rounded-full border border-sky-200">
+                            🤵 Groom&apos;s Side
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-[0.6875rem] font-bold text-amber-800 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200">
+                            🌟 Open / Flexible
+                          </span>
+                        )}
+                      </td>
                       <td className="p-4">{b.guestsCount} guest(s)</td>
                       <td className="p-4">{b.date}</td>
                       <td className="p-4">

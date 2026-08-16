@@ -36,7 +36,7 @@ export default function AdminMessagesCMSPage() {
   };
 
   useEffect(() => {
-    if (user?.role === "admin") {
+    if (user?.role?.toLowerCase() === "admin") {
       loadConversations();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -53,7 +53,7 @@ export default function AdminMessagesCMSPage() {
     downloadAnchor.remove();
   };
 
-  if (user?.role !== "admin") {
+  if (user?.role?.toLowerCase() !== "admin") {
     return (
       <div className="p-8 text-center bg-red-50 text-red-650 rounded-2xl border border-red-100 max-w-md mx-auto space-y-2 mt-8">
         <AlertTriangle className="mx-auto" size={24} />

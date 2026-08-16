@@ -192,6 +192,27 @@ export async function calculateCommission(
 }
 
 /**
+ * Automatically settles all matured commissions whose 14-day hold period has passed.
+ * Transitions status: PENDING -> APPROVED (idempotent).
+ */
+export async function settleMaturedCommissionsAction(agentId?: string) {
+  const whereClause: any = {
+    status: CommissionStatus.PENDING,
+    availableAt: { lte: new Date() },
+  };
+  if (agentId) {
+    whereClause.agentId = agentId;
+  }
+
+  return await prisma.commission.updateMany({
+    where: whereClause,
+    data: {
+      status: CommissionStatus.APPROVED,
+    },
+  });
+}
+
+/**
  * Submits payout request and locks commissions in transaction.
  */
 export async function submitPayoutRequestAction(data: z.infer<typeof payoutRequestSchema>) {
@@ -209,6 +230,9 @@ export async function submitPayoutRequestAction(data: z.infer<typeof payoutReque
     throw new Error("HELD: Your payout requests are currently held due to an active safety case or investigation.");
   }
 
+  // Settle any matured commissions first
+  await settleMaturedCommissionsAction(agent.id);
+
   const payload = payoutRequestSchema.parse(data);
 
   // Fetch approved & payable commissions not assigned to any payout requests
@@ -218,15 +242,25 @@ export async function submitPayoutRequestAction(data: z.infer<typeof payoutReque
       status: CommissionStatus.APPROVED,
       payoutRequestId: null,
     },
+    orderBy: { createdAt: "asc" },
   });
 
-  const payableBalance = commissions.reduce((sum, c) => sum + c.commissionAmount, 0);
-
-  if (payableBalance < payload.amount) {
-    throw new Error("Insufficient payable balance.");
+  const totalPayable = commissions.reduce((sum, c) => sum + c.commissionAmount, 0);
+  if (totalPayable < payload.amount) {
+    throw new Error(`Insufficient payable balance. Available: $${totalPayable.toFixed(2)}, Requested: $${payload.amount.toFixed(2)}.`);
   }
 
-  // Use database transaction to guarantee consistency and lock rows
+  // Greedily lock only the commissions required to cover the requested payout amount
+  let allocatedSum = 0;
+  const commissionsToLock: typeof commissions = [];
+  for (const c of commissions) {
+    if (allocatedSum < payload.amount) {
+      commissionsToLock.push(c);
+      allocatedSum += c.commissionAmount;
+    }
+  }
+
+  // Use database transaction to guarantee consistency and lock selected rows
   const payout = await prisma.$transaction(async (tx) => {
     // Create PayoutRequest
     const req = await tx.payoutRequest.create({
@@ -238,9 +272,8 @@ export async function submitPayoutRequestAction(data: z.infer<typeof payoutReque
       },
     });
 
-    // Link commissions to this request and move status to LOCKED
-    // This prevents concurrent double requests
-    for (const c of commissions) {
+    // Link only the selected commissions to this request and move status to LOCKED
+    for (const c of commissionsToLock) {
       await tx.commission.update({
         where: { id: c.id },
         data: {
@@ -380,6 +413,9 @@ export async function getAgentGrowthStats() {
     where: { userId: user.id },
   });
   if (!agent) throw new Error("Agent profile not found.");
+
+  // Automatically settle any matured commissions past 14 days
+  await settleMaturedCommissionsAction(agent.id);
 
   // Funnel analytics queries
   const clicks = await prisma.agentReferral.count({
@@ -526,9 +562,25 @@ export async function generateBookingCommissionAction(
         referredUserId: travelerUserId,
         status: { in: [ReferralStatus.SIGNED_UP, ReferralStatus.ONBOARDED, ReferralStatus.QUALIFIED] },
       },
+      include: { agent: true },
     });
 
     if (!referral) return { success: false, reason: "No active referral found for this user." };
+
+    // Security: Check for self-referral abuse (Agent referring their own traveler account)
+    if (referral.agent.userId === travelerUserId) {
+      await tx.referralFraudFlag.create({
+        data: {
+          agentId: referral.agentId,
+          referralId: referral.id,
+          reason: "SELF_REFERRAL_COMMISSION_ATTEMPT",
+          severity: "HIGH",
+          status: "OPEN",
+          details: "Agent attempted to claim referral commission on their own booking reservation.",
+        },
+      });
+      return { success: false, reason: "Self-referral commissions are prohibited." };
+    }
 
     const idempotencyKey = `BOOKING_PAYMENT:${paymentId}:${referral.agentId}`;
 

@@ -203,7 +203,7 @@ describe("Reputation Engine tests", () => {
       (prisma.booking.findUnique as jest.Mock).mockResolvedValue({
         id: "booking-id",
         travelerId: "my-traveler-id",
-        status: BookingStatus.CHECKED_IN,
+        status: BookingStatus.PENDING,
         wedding: { hostCoupleId: "host-id", date: new Date(Date.now() - 10000) },
         payments: [],
         refunds: []

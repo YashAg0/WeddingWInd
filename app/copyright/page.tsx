@@ -12,26 +12,32 @@ import {
 } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Copyright, Intellectual Property & DMCA | Wedding With India",
+  title: "Copyright, Intellectual Property & DMCA",
   description:
-    "Copyright, intellectual property, user content, image rights and copyright complaint procedures for Wedding With India.",
+    "Copyright, intellectual property, user content, image rights, and copyright complaint procedures for WeddingWithIndia.",
   keywords: [
-    "Wedding With India copyright",
-    "Wedding With India DMCA",
+    "WeddingWithIndia copyright",
+    "WeddingWithIndia DMCA",
     "copyright policy India",
     "copyright infringement notice",
     "intellectual property policy",
-    "image rights",
-    "user generated content policy",
   ],
   alternates: {
-    canonical: "/copyright",
+    canonical: "https://weddingwithindia.com/copyright",
   },
   openGraph: {
-    title: "Copyright & Intellectual Property | Wedding With India",
+    title: "Copyright, Intellectual Property & DMCA | WeddingWithIndia",
     description:
-      "Copyright, intellectual property and content complaint procedures for Wedding With India.",
+      "Copyright, intellectual property, and content complaint procedures for WeddingWithIndia.",
+    url: "https://weddingwithindia.com/copyright",
+    siteName: "WeddingWithIndia",
     type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Copyright, Intellectual Property & DMCA | WeddingWithIndia",
+    description:
+      "Copyright, intellectual property, and content complaint procedures for WeddingWithIndia.",
   },
   robots: {
     index: true,

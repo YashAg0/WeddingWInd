@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { ShieldCheck, Users, Compass, DollarSign, ArrowRight, Building2, AlertCircle } from "lucide-react";
+import { ShieldCheck, Users, Compass, DollarSign, ArrowRight, Building2, AlertCircle, RefreshCw } from "lucide-react";
 import { formatCurrencyINR, formatSecondaryCurrency } from "@/lib/constants/financial-model";
 
 interface OverviewData {
@@ -21,27 +21,33 @@ interface OverviewData {
 export default function AdminOverviewPage() {
   const [data, setData] = useState<OverviewData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadOverview = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/admin/overview");
+      const json = await res.json();
+      if (res.ok) {
+        setData(json);
+      } else {
+        setError(json.error || "Failed to load live metrics.");
+      }
+    } catch (err: any) {
+      console.error("Failed to load admin overview:", err);
+      setError("Network or database connection issue. Please retry.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    async function loadOverview() {
-      try {
-        const res = await fetch("/api/admin/overview");
-        const json = await res.json();
-        if (res.ok) {
-          setData(json);
-        }
-      } catch (err) {
-        console.error("Failed to load admin overview:", err);
-      } finally {
-        setLoading(false);
-      }
-    }
     loadOverview();
-  }, []);
+  }, [loadOverview]);
 
   return (
     <div className="space-y-10">
-      
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-warm-200 pb-6">
         <div>
@@ -53,10 +59,36 @@ export default function AdminOverviewPage() {
             Real-Time Platform Dashboard
           </h1>
         </div>
-        <span className="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-xl">
-          Internal Admin Authorized
-        </span>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={loadOverview}
+            disabled={loading}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-warm-200 text-xs font-semibold text-charcoal-700 rounded-xl hover:bg-warm-50 transition-colors disabled:opacity-60"
+            title="Refresh overview metrics"
+          >
+            <RefreshCw size={13} className={loading ? "animate-spin" : ""} />
+            {loading ? "Refreshing..." : "Refresh"}
+          </button>
+          <span className="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-xl">
+            Internal Admin Authorized
+          </span>
+        </div>
       </div>
+
+      {error && (
+        <div className="p-4 bg-amber-50 border border-amber-200 text-amber-900 text-xs rounded-2xl flex items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <AlertCircle size={16} className="text-amber-700 flex-shrink-0" />
+            <span>{error}</span>
+          </div>
+          <button
+            onClick={loadOverview}
+            className="px-3 py-1 bg-amber-800 text-white rounded-lg font-semibold hover:bg-amber-900 transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      )}
 
       {/* Phase 2.3: Live Real-Time Aggregate Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -178,32 +210,31 @@ export default function AdminOverviewPage() {
         </Link>
       </div>
 
-        {/* Phase 2.3: Bookings Status Breakdown Widget */}
-        <div className="bg-white border border-warm-200/60 p-6 rounded-3xl shadow-sm space-y-4">
-          <h3 className="font-display font-bold text-lg text-charcoal-900">Bookings by Status Breakdown</h3>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            {data?.bookingsByStatus && Object.keys(data.bookingsByStatus).length > 0 ? (
-              Object.entries(data.bookingsByStatus).map(([status, count]) => (
-                <div key={status} className="bg-warm-50 p-4 rounded-2xl border border-warm-200 text-center">
-                  <span className="text-[0.625rem] font-bold uppercase tracking-wider text-charcoal-500 block mb-1">{status}</span>
-                  <span className="font-display font-bold text-2xl text-charcoal-900">{count}</span>
-                </div>
-              ))
-            ) : (
-              <div className="col-span-4 text-xs text-charcoal-400 text-center py-4">No active booking status data.</div>
-            )}
-          </div>
+      {/* Phase 2.3: Bookings Status Breakdown Widget */}
+      <div className="bg-white border border-warm-200/60 p-6 rounded-3xl shadow-sm space-y-4">
+        <h3 className="font-display font-bold text-lg text-charcoal-900">Bookings by Status Breakdown</h3>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          {data?.bookingsByStatus && Object.keys(data.bookingsByStatus).length > 0 ? (
+            Object.entries(data.bookingsByStatus).map(([status, count]) => (
+              <div key={status} className="bg-warm-50 p-4 rounded-2xl border border-warm-200 text-center">
+                <span className="text-[0.625rem] font-bold uppercase tracking-wider text-charcoal-500 block mb-1">{status}</span>
+                <span className="font-display font-bold text-2xl text-charcoal-900">{count}</span>
+              </div>
+            ))
+          ) : (
+            <div className="col-span-4 text-xs text-charcoal-400 text-center py-4">No active booking status data.</div>
+          )}
         </div>
+      </div>
 
-        {/* Operational Notice */}
-        <div className="bg-warm-100/70 border border-warm-200 p-5 rounded-2xl text-xs text-charcoal-600 space-y-1">
-          <div className="font-bold text-charcoal-900 flex items-center gap-2">
-            <AlertCircle size={14} className="text-amber-700" />
-            <span>Internal Compliance Note:</span>
-          </div>
-          <p>This administrative panel operationalizes all verification gates, anti-MLM rules, and financial commission splits defined in Numbers.pdf. All status transitions directly update end-user dashboards and record AuditLogs in PostgreSQL.</p>
+      {/* Operational Notice */}
+      <div className="bg-warm-100/70 border border-warm-200 p-5 rounded-2xl text-xs text-charcoal-600 space-y-1">
+        <div className="font-bold text-charcoal-900 flex items-center gap-2">
+          <AlertCircle size={14} className="text-amber-700" />
+          <span>Internal Compliance Note:</span>
         </div>
-
+        <p>This administrative panel operationalizes all verification gates, anti-MLM rules, and financial commission splits defined in Numbers.pdf. All status transitions directly update end-user dashboards and record AuditLogs in PostgreSQL.</p>
+      </div>
     </div>
   );
 }

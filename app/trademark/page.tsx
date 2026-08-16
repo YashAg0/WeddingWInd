@@ -2,25 +2,31 @@ import { Metadata } from "next";
 import { Award, Clock, ShieldCheck, AlertTriangle } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Trademark & Brand Policy | Wedding With India",
+  title: "Trademark & Brand Policy",
   description:
-    "Official trademark, copyright and brand usage policy for Wedding With India, including permitted and prohibited use of the Wedding With India name, logo and brand assets.",
+    "Official trademark and brand usage policy for WeddingWithIndia, including guidelines for brand assets and logos.",
   keywords: [
-    "Wedding With India trademark",
-    "Wedding With India logo",
-    "Wedding With India brand guidelines",
-    "Wedding With India brand policy",
-    "Indian wedding platform",
-    "Indian wedding travel brand",
+    "WeddingWithIndia trademark",
+    "WeddingWithIndia logo",
+    "WeddingWithIndia brand guidelines",
+    "WeddingWithIndia brand policy",
   ],
   alternates: {
-    canonical: "/trademark",
+    canonical: "https://weddingwithindia.com/trademark",
   },
   openGraph: {
-    title: "Trademark & Brand Policy | Wedding With India",
+    title: "Trademark & Brand Policy | WeddingWithIndia",
     description:
-      "Guidelines for using the Wedding With India name, logo and other brand assets.",
+      "Guidelines for using the WeddingWithIndia name, logo, and brand assets.",
+    url: "https://weddingwithindia.com/trademark",
+    siteName: "WeddingWithIndia",
     type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Trademark & Brand Policy | WeddingWithIndia",
+    description:
+      "Guidelines for using the WeddingWithIndia name, logo, and brand assets.",
   },
   robots: {
     index: true,

@@ -38,6 +38,10 @@ const mockPrisma = {
   notification: {
     create: jest.fn(),
   },
+  $transaction: jest.fn(async (cb) => {
+    if (typeof cb === "function") return cb(mockPrisma);
+    return cb;
+  }),
 };
 
 jest.mock("@/lib/prisma", () => ({

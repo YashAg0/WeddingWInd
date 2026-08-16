@@ -3,12 +3,13 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "../prisma";
 import { requireRole } from "../auth";
-import { UserRole, BookingStatus, PaymentStatus, VerificationStatus, ReputationEntityType, ReputationEventType } from "@prisma/client";
+import { UserRole, BookingStatus, PaymentStatus, VerificationStatus, WeddingStatus, ReputationEntityType, ReputationEventType } from "@prisma/client";
 import { z } from "zod";
 import { sendVerificationApprovedEmail, sendVerificationRejectedEmail } from "../email";
 import crypto from "crypto";
 import { logReputationEvent } from "../services/reputation";
 import { stripe } from "../stripe";
+import { CAPACITY_HOLDING_BOOKING_STATUSES } from "../booking-statuses";
 
 // Helper function to log audit events
 export async function createAuditLog(
@@ -294,11 +295,28 @@ export async function adminUpdateWeddingAction(weddingId: string, data: any) {
 
 export async function adminDeleteWeddingAction(weddingId: string) {
   const admin = await requireRole([UserRole.ADMIN]);
-  const deleted = await prisma.wedding.delete({
+  const wedding = await prisma.wedding.findUnique({
     where: { id: weddingId },
+    include: { bookings: true }
   });
+  if (!wedding) throw new Error("Wedding not found.");
 
-  await createAuditLog("DELETE_WEDDING", "Wedding", weddingId, `Admin (${admin.email}) deleted wedding: "${deleted.title}"`);
+  if (wedding.bookings && wedding.bookings.length > 0) {
+    await prisma.wedding.update({
+      where: { id: weddingId },
+      data: {
+        status: WeddingStatus.DRAFT,
+        deletedAt: new Date(),
+        suspended: true,
+      }
+    });
+  } else {
+    await prisma.wedding.delete({
+      where: { id: weddingId },
+    });
+  }
+
+  await createAuditLog("DELETE_WEDDING", "Wedding", weddingId, `Admin (${admin.email}) deleted/archived wedding: "${wedding.title}"`);
   revalidatePath("/dashboard/admin/weddings");
   revalidatePath("/weddings");
   revalidatePath("/");
@@ -897,15 +915,52 @@ export async function adminOverrideBookingStatusAction(
   await prisma.$transaction(async (tx) => {
     const booking = await tx.booking.findUnique({
       where: { id: bookingId },
-      include: { traveler: true },
+      include: { traveler: true, wedding: true },
     });
 
     if (!booking) throw new Error("Booking not found.");
+
+    // If transitioning from a non-capacity-holding status to a capacity-holding status, enforce capacity limit
+    if (
+      CAPACITY_HOLDING_BOOKING_STATUSES.includes(status) &&
+      !CAPACITY_HOLDING_BOOKING_STATUSES.includes(booking.status)
+    ) {
+      await tx.$queryRaw`SELECT id FROM "Wedding" WHERE id = ${booking.weddingId} FOR UPDATE`;
+
+      const currentHeld = await tx.booking.aggregate({
+        where: {
+          weddingId: booking.weddingId,
+          status: { in: CAPACITY_HOLDING_BOOKING_STATUSES },
+          id: { not: booking.id },
+        },
+        _sum: { guestsCount: true },
+      });
+      const currentBookedCount = currentHeld._sum.guestsCount || 0;
+      if (currentBookedCount + booking.guestsCount > booking.wedding.capacity) {
+        throw new Error(
+          `Cannot override booking status: wedding capacity exceeded. Available spots: ${
+            booking.wedding.capacity - currentBookedCount
+          }.`
+        );
+      }
+    }
 
     const updatedBooking = await tx.booking.update({
       where: { id: bookingId },
       data: { status },
     });
+
+    // Invalidate active guest passes if booking is cancelled, rejected, or refunded
+    if (
+      status === BookingStatus.CANCELLED ||
+      status === BookingStatus.REJECTED ||
+      status === BookingStatus.REFUNDED
+    ) {
+      await tx.guestPass.updateMany({
+        where: { bookingId, status: "ACTIVE" },
+        data: { status: "REVOKED" },
+      });
+    }
 
     // Write timeline and override audit details if linked to a case
     if (caseId) {
@@ -1297,9 +1352,15 @@ export async function adminProcessHostPayoutAction(paymentId: string) {
 
   if (hostStripeId) {
     try {
+      const payoutCurrency = (payment.currency || "USD").toLowerCase();
+      const zeroDecimalCurrencies = ["jpy", "krw", "vnd", "clp", "pyg"];
+      const transferAmount = zeroDecimalCurrencies.includes(payoutCurrency)
+        ? Math.round(payment.amount)
+        : Math.round(payment.amount * 100);
+
       const transfer = await stripe.transfers.create({
-        amount: Math.round(payment.amount * 100), // amount in cents
-        currency: "usd",
+        amount: transferAmount,
+        currency: payoutCurrency,
         destination: hostStripeId,
         metadata: {
           paymentId: payment.id,
@@ -1457,6 +1518,10 @@ export async function adminToggleSponsoredAction(
   const start = sponsorshipStart ? new Date(sponsorshipStart) : (isSponsored ? (wedding.sponsorshipStart || new Date()) : null);
   const end = sponsorshipEnd ? new Date(sponsorshipEnd) : (isSponsored ? wedding.sponsorshipEnd : null);
 
+  if (isSponsored && start && end && end <= start) {
+    throw new Error("Sponsorship end date must be after the start date.");
+  }
+
   const updated = await prisma.wedding.update({
     where: { id: validId },
     data: {
@@ -1496,6 +1561,10 @@ export async function adminUpdateSponsorshipDatesAction(
 
   const start = sponsorshipStart ? new Date(sponsorshipStart) : null;
   const end = sponsorshipEnd ? new Date(sponsorshipEnd) : null;
+
+  if (start && end && end <= start) {
+    throw new Error("Sponsorship end date must be after the start date.");
+  }
 
   const updated = await prisma.wedding.update({
     where: { id: validId },
@@ -1665,67 +1734,70 @@ export async function adminReviewHostApplicationAction(
   const reviewNote = notes || `Host application review: status set to ${reviewStatus}`;
 
   // Map review status to database enums
-  let targetWeddingStatus: any = "DRAFT";
+  let targetWeddingStatus: WeddingStatus = WeddingStatus.DRAFT;
   let targetVerificationStatus: VerificationStatus = VerificationStatus.PENDING;
   let targetUserStatus: any = "ONBOARDING";
 
   if (reviewStatus === "APPROVED") {
-    targetWeddingStatus = "PUBLISHED";
+    targetWeddingStatus = WeddingStatus.PUBLISHED;
     targetVerificationStatus = VerificationStatus.APPROVED;
     targetUserStatus = "ACTIVE";
   } else if (reviewStatus === "REJECTED") {
-    targetWeddingStatus = "REJECTED";
+    targetWeddingStatus = WeddingStatus.DRAFT;
     targetVerificationStatus = VerificationStatus.REJECTED;
     targetUserStatus = "ONBOARDING";
   } else if (reviewStatus === "NEED_MORE_DOCUMENTS") {
-    targetWeddingStatus = "DRAFT";
+    targetWeddingStatus = WeddingStatus.DRAFT;
     targetVerificationStatus = VerificationStatus.NEED_MORE_DOCUMENTS;
     targetUserStatus = "ONBOARDING";
   } else if (reviewStatus === "UNDER_REVIEW") {
-    targetWeddingStatus = "DRAFT";
+    targetWeddingStatus = WeddingStatus.DRAFT;
     targetVerificationStatus = VerificationStatus.UNDER_REVIEW;
     targetUserStatus = "ONBOARDING";
   }
 
-  // Update Wedding Status
-  const updatedWedding = await prisma.wedding.update({
-    where: { id: weddingId },
-    data: { status: targetWeddingStatus },
+  // Atomically persist Wedding, User, Verification and Notification updates
+  const updatedWedding = await prisma.$transaction(async (tx) => {
+    const updated = await tx.wedding.update({
+      where: { id: weddingId },
+      data: { status: targetWeddingStatus },
+    });
+
+    if (hostUserId) {
+      await tx.user.update({
+        where: { id: hostUserId },
+        data: { status: targetUserStatus },
+      });
+
+      await tx.verification.upsert({
+        where: { userId: hostUserId },
+        create: {
+          userId: hostUserId,
+          status: targetVerificationStatus,
+          notes: reviewNote,
+          reviewedBy: admin.name || admin.email,
+          expiryDate: reviewStatus === "APPROVED" ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000) : null,
+        },
+        update: {
+          status: targetVerificationStatus,
+          notes: reviewNote,
+          reviewedBy: admin.name || admin.email,
+          expiryDate: reviewStatus === "APPROVED" ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000) : null,
+        },
+      });
+
+      await tx.notification.create({
+        data: {
+          userId: hostUserId,
+          title: reviewStatus === "APPROVED" ? "Host Application Approved!" : "Host Application Update",
+          message: reviewNote,
+          type: reviewStatus === "APPROVED" ? "SUCCESS" : reviewStatus === "REJECTED" ? "ALERT" : "INFO",
+        },
+      });
+    }
+
+    return updated;
   });
-
-  // Update Host User & Verification if present
-  if (hostUserId) {
-    await prisma.user.update({
-      where: { id: hostUserId },
-      data: { status: targetUserStatus },
-    });
-
-    await prisma.verification.upsert({
-      where: { userId: hostUserId },
-      create: {
-        userId: hostUserId,
-        status: targetVerificationStatus,
-        notes: reviewNote,
-        reviewedBy: admin.name || admin.email,
-        expiryDate: reviewStatus === "APPROVED" ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000) : null,
-      },
-      update: {
-        status: targetVerificationStatus,
-        notes: reviewNote,
-        reviewedBy: admin.name || admin.email,
-        expiryDate: reviewStatus === "APPROVED" ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000) : null,
-      },
-    });
-
-    // Send Notification
-    await prisma.notification.create({
-      data: {
-        userId: hostUserId,
-        title: reviewStatus === "APPROVED" ? "Host Application Approved!" : "Host Application Update",
-        message: reviewNote,
-        type: reviewStatus === "APPROVED" ? "SUCCESS" : reviewStatus === "REJECTED" ? "ALERT" : "INFO",
-      },
-    });
 
     // Send Emails
     const hostUser = wedding.hostCouple?.user;
@@ -1747,7 +1819,6 @@ export async function adminReviewHostApplicationAction(
         console.warn("Badge evaluation warning on host review:", err);
       }
     }
-  }
 
   await createAuditLog(
     "REVIEW_HOST_APPLICATION",
@@ -1764,4 +1835,123 @@ export async function adminReviewHostApplicationAction(
   revalidatePath(`/weddings/${wedding.slug}`);
 
   return { success: true, wedding: updatedWedding };
+}
+
+// ─── Admin: Sponsorship Request Review ────────────────────────────────────────
+
+/**
+ * Admin reviews a pending host sponsorship request.
+ * On APPROVED: auto-enables sponsored flag on the linked wedding.
+ * Notifies the host couple of the decision.
+ */
+export async function adminReviewSponsorshipRequestAction(
+  requestId: string,
+  decision: "APPROVED" | "REJECTED",
+  adminNotes?: string,
+  sponsorshipStart?: string | null,
+  sponsorshipEnd?: string | null
+) {
+  const admin = await requireRole([UserRole.ADMIN]);
+
+  const request = await prisma.sponsorshipRequest.findUnique({
+    where: { id: requestId },
+    include: {
+      wedding: {
+        include: {
+          hostCouple: { include: { user: true } }
+        }
+      }
+    }
+  });
+  if (!request) throw new Error("Sponsorship request not found.");
+  if (request.status !== "PENDING") {
+    throw new Error("Only pending sponsorship requests can be reviewed.");
+  }
+
+  if (decision === "APPROVED" && sponsorshipStart && sponsorshipEnd) {
+    const start = new Date(sponsorshipStart);
+    const end = new Date(sponsorshipEnd);
+    if (end <= start) {
+      throw new Error("Sponsorship end date must be after the start date.");
+    }
+  }
+
+  const now = new Date();
+
+  await prisma.$transaction(async (tx) => {
+    // 1. Update the request record
+    await tx.sponsorshipRequest.update({
+      where: { id: requestId },
+      data: {
+        status: decision,
+        reviewedAt: now,
+        reviewedBy: admin.email,
+        adminNotes: adminNotes || null,
+      }
+    });
+
+    // 2. If approved, enable sponsorship on the wedding
+    if (decision === "APPROVED") {
+      await tx.wedding.update({
+        where: { id: request.weddingId },
+        data: {
+          sponsored: true,
+          sponsorshipStart: sponsorshipStart ? new Date(sponsorshipStart) : now,
+          sponsorshipEnd: sponsorshipEnd ? new Date(sponsorshipEnd) : null,
+        }
+      });
+    }
+
+    // 3. Notify host couple if user exists
+    const hostUserId = request.wedding.hostCouple?.user?.id || request.wedding.hostCouple?.userId;
+    if (hostUserId) {
+      await tx.notification.create({
+        data: {
+          userId: hostUserId,
+          title: decision === "APPROVED" ? "Sponsorship Approved!" : "Sponsorship Request Update",
+          message: decision === "APPROVED"
+            ? `Your sponsorship request for "${request.wedding.title}" has been approved. Your wedding is now featured as a Sponsored listing in the marketplace.`
+            : `Your sponsorship request for "${request.wedding.title}" was not approved at this time.${adminNotes ? ` Admin note: ${adminNotes}` : ""}`,
+          type: decision === "APPROVED" ? "SUCCESS" : "INFO",
+        }
+      });
+    }
+  });
+
+  await createAuditLog(
+    decision === "APPROVED" ? "ADMIN_SPONSORSHIP_REQUEST_APPROVED" : "ADMIN_SPONSORSHIP_REQUEST_REJECTED",
+    "SponsorshipRequest",
+    requestId,
+    `Admin (${admin.email}) ${decision.toLowerCase()} sponsorship request for wedding "${request.wedding.title}" (requestId=${requestId})${adminNotes ? `. Notes: ${adminNotes}` : ""}`
+  );
+
+  revalidatePath("/dashboard/admin/weddings");
+  revalidatePath("/dashboard/admin/weddings/sponsorship");
+  revalidatePath("/weddings");
+  revalidatePath("/");
+  return { success: true };
+}
+
+/**
+ * Fetch all pending sponsorship requests for the admin queue.
+ */
+export async function adminGetSponsorshipRequestsAction(status?: string) {
+  await requireRole([UserRole.ADMIN]);
+
+  const where = status ? { status: status as any } : { status: "PENDING" as any };
+
+  const requests = await prisma.sponsorshipRequest.findMany({
+    where,
+    include: {
+      wedding: {
+        include: {
+          hostCouple: { include: { user: true } },
+          _count: { select: { bookings: { where: { status: { in: ["APPROVED", "PAID", "CONFIRMED", "COMPLETED"] } } } } }
+        }
+      }
+    },
+    orderBy: { requestedAt: "asc" }
+  });
+
+  return requests;
 }

@@ -505,26 +505,22 @@ export async function isFinanciallyHeld({
   weddingId?: string;
   userId?: string;
 }): Promise<boolean> {
-  const conditions: Prisma.SafetyCaseWhereInput[] = [{ financialHold: true }];
+  const orConditions: Prisma.SafetyCaseWhereInput[] = [];
 
-  if (bookingId) {
-    conditions.push({ bookingId });
-  }
-  if (weddingId) {
-    conditions.push({ weddingId });
-  }
+  if (bookingId) orConditions.push({ bookingId });
+  if (weddingId) orConditions.push({ weddingId });
   if (userId) {
-    conditions.push({
-      OR: [
-        { reportedById: userId },
-        { subjectUserId: userId },
-      ],
-    });
+    orConditions.push({ reportedById: userId });
+    orConditions.push({ subjectUserId: userId });
   }
+
+  if (orConditions.length === 0) return false;
 
   const activeHold = await prisma.safetyCase.findFirst({
     where: {
-      AND: conditions,
+      financialHold: true,
+      status: { notIn: [CaseStatus.RESOLVED, CaseStatus.CLOSED] },
+      OR: orConditions,
     },
   });
 

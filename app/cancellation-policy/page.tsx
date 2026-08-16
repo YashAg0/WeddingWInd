@@ -10,23 +10,31 @@ import {
 } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Cancellation Policy | Wedding With India",
+  title: "Cancellation Policy",
   description:
-    "Cancellation and booking-change terms for travelers, host families and Wedding With India experiences.",
+    "Cancellation and booking-change terms for travelers, host families, and WeddingWithIndia experiences.",
   keywords: [
-    "Wedding With India cancellation policy",
+    "WeddingWithIndia cancellation policy",
     "Indian wedding booking cancellation",
     "wedding experience refund",
-    "Wedding With India refund",
+    "WeddingWithIndia refund",
   ],
   alternates: {
-    canonical: "/cancellation-policy",
+    canonical: "https://weddingwithindia.com/cancellation-policy",
   },
   openGraph: {
-    title: "Cancellation Policy | Wedding With India",
+    title: "Cancellation Policy | WeddingWithIndia",
     description:
-      "Understand cancellation, event changes, host cancellations and refund procedures for Wedding With India experiences.",
+      "Understand cancellation, event changes, host cancellations, and refund procedures for WeddingWithIndia experiences.",
+    url: "https://weddingwithindia.com/cancellation-policy",
+    siteName: "WeddingWithIndia",
     type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Cancellation Policy | WeddingWithIndia",
+    description:
+      "Understand cancellation, event changes, host cancellations, and refund procedures for WeddingWithIndia experiences.",
   },
   robots: {
     index: true,

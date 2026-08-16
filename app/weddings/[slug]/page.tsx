@@ -19,26 +19,48 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   if (!wedding) {
     return {
       title: 'Wedding Not Found',
-    };
-  }
-
-  // Demo weddings must not be indexed as real marketplace inventory
-  if (wedding.isDemo) {
-    return {
-      title: `${wedding.title} — ${wedding.location}`,
-      description: `Explore ${wedding.title} in ${wedding.location}. ${wedding.category} wedding celebration.`,
       robots: {
         index: false,
         follow: false,
       },
     };
   }
-  
+
+  const pageTitle = `Attend ${wedding.title} in ${wedding.location}`;
+  const pageDescription = `Experience ${wedding.title} in ${wedding.location}. Authentic ${wedding.category} celebration. Discover itinerary, cultural customs, and guest invitation details.`;
+  const canonicalUrl = `https://weddingwithindia.com/weddings/${resolvedParams.slug}`;
+  const weddingImg = wedding.imageUrl || wedding.coupleImage;
+
   return {
-    title: `${wedding.title} — ${wedding.location}`,
-    description: `Attend ${wedding.title} in ${wedding.location}. ${wedding.category} wedding celebration. Reserve your honorary guest seat starting from ₹${wedding.pricePerGuest?.toLocaleString() || '0'}/guest.`,
+    title: pageTitle,
+    description: pageDescription,
+    alternates: {
+      canonical: canonicalUrl,
+    },
     openGraph: {
-      images: [wedding.imageUrl || wedding.coupleImage],
+      title: `${pageTitle} | WeddingWithIndia`,
+      description: pageDescription,
+      url: canonicalUrl,
+      siteName: "WeddingWithIndia",
+      type: "website",
+      images: weddingImg ? [{ url: weddingImg, alt: `${wedding.title} in ${wedding.location}` }] : [],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${pageTitle} | WeddingWithIndia`,
+      description: pageDescription,
+      images: weddingImg ? [weddingImg] : [],
+    },
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        "max-video-preview": -1,
+        "max-image-preview": "large",
+        "max-snippet": -1,
+      },
     },
   };
 }
@@ -69,9 +91,8 @@ export default async function WeddingDetailPage({ params }: PageProps) {
     "@context": "https://schema.org",
     "@type": "Event",
     name: wedding.title,
-    description: wedding.story,
+    description: wedding.story || `Authentic ${wedding.category} Indian wedding celebration in ${wedding.location}.`,
     startDate: wedding.date ? new Date(wedding.date).toISOString() : undefined,
-
     eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
     eventStatus: "https://schema.org/EventScheduled",
     location: {
@@ -83,8 +104,8 @@ export default async function WeddingDetailPage({ params }: PageProps) {
         addressCountry: "IN",
       },
     },
-    image: wedding.coupleImage ? [wedding.coupleImage] : [],
-    offers: wedding.isDemo ? undefined : {
+    image: wedding.coupleImage || wedding.imageUrl ? [wedding.coupleImage || wedding.imageUrl] : [],
+    offers: {
       "@type": "Offer",
       price: wedding.pricePerGuest,
       priceCurrency: wedding.currency || "INR",
@@ -93,9 +114,34 @@ export default async function WeddingDetailPage({ params }: PageProps) {
     },
     organizer: {
       "@type": "Organization",
-      name: "Wedding With India",
+      name: "WeddingWithIndia",
       url: "https://weddingwithindia.com",
     },
+  };
+
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Home",
+        item: "https://weddingwithindia.com",
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "Weddings",
+        item: "https://weddingwithindia.com/weddings",
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: wedding.title,
+        item: `https://weddingwithindia.com/weddings/${wedding.slug}`,
+      },
+    ],
   };
 
   return (
@@ -103,6 +149,10 @@ export default async function WeddingDetailPage({ params }: PageProps) {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(eventJsonLd).replace(/</g, "\\u003c") }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd).replace(/</g, "\\u003c") }}
       />
 
       <header className="container-luxury mt-4 flex flex-col gap-4">

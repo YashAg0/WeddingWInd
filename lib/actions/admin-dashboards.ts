@@ -1,6 +1,6 @@
 "use server";
 
-import { prisma } from "../prisma";
+import { prisma, withDbRetry } from "../prisma";
 import { requireRole } from "../auth";
 import { UserRole, PaymentStatus } from "@prisma/client";
 
@@ -19,18 +19,20 @@ export async function getFinanceDashboardAction() {
     commissions,
     payouts
   ] = await Promise.all([
-    prisma.payment.count(),
-    prisma.payment.aggregate({
+    withDbRetry(() => prisma.payment.count(), { label: "finance:count" }).catch(() => 0),
+    withDbRetry(() => prisma.payment.aggregate({
       _sum: { amount: true },
+      where: { status: PaymentStatus.PAID }
+    }), { label: "finance:grossVolume" }).catch(() => ({ _sum: { amount: 0 } })),
+    withDbRetry(() => prisma.refund.aggregate({
+      _sum: { amount: true },
+      where: { status: { in: ["COMPLETED", "SUCCEEDED"] } }
+    }), { label: "finance:refundedVolume" }).catch(() => ({ _sum: { amount: 0 } })),
+    withDbRetry(() => prisma.commission.aggregate({
+      _sum: { commissionAmount: true },
       where: { status: "PAID" }
-    }),
-    prisma.refund.aggregate({
-      _sum: { amount: true }
-    }),
-    prisma.commission.aggregate({
-      _sum: { commissionAmount: true }
-    }),
-    prisma.payment.findMany({
+    }), { label: "finance:commissions" }).catch(() => ({ _sum: { commissionAmount: 0 } })),
+    withDbRetry(() => prisma.payment.findMany({
       take: 20,
       include: {
         booking: {
@@ -39,17 +41,17 @@ export async function getFinanceDashboardAction() {
         refunds: true,
       },
       orderBy: { createdAt: "desc" },
-    }),
-    prisma.commission.findMany({
+    }), { label: "finance:payments" }).catch(() => []),
+    withDbRetry(() => prisma.commission.findMany({
       take: 20,
       include: { agent: { include: { user: true } } },
       orderBy: { createdAt: "desc" },
-    }),
-    prisma.payout.findMany({
+    }), { label: "finance:commissionsList" }).catch(() => []),
+    withDbRetry(() => prisma.payout.findMany({
       take: 20,
       include: { payment: true },
       orderBy: { createdAt: "desc" },
-    })
+    }), { label: "finance:payouts" }).catch(() => [])
   ]);
 
   const grossVolume = grossVolumeAgg._sum.amount || 0;
@@ -82,25 +84,24 @@ export async function getSupportDashboardAction() {
     conversations,
     disputePayments
   ] = await Promise.all([
-    prisma.contactSubmission.count(),
-    prisma.conversation.count(),
-    prisma.contactSubmission.findMany({
+    withDbRetry(() => prisma.contactSubmission.count(), { label: "support:contactCount" }).catch(() => 0),
+    withDbRetry(() => prisma.conversation.count(), { label: "support:convoCount" }).catch(() => 0),
+    withDbRetry(() => prisma.contactSubmission.findMany({
       take: 20,
       orderBy: { createdAt: "desc" },
-    }),
-    prisma.conversation.findMany({
+    }), { label: "support:contactSubmissions" }).catch(() => []),
+    withDbRetry(() => prisma.conversation.findMany({
       take: 20,
       include: {
         participants: { include: { user: true } },
         messages: { orderBy: { createdAt: "desc" }, take: 1 },
       },
       orderBy: { updatedAt: "desc" },
-    }),
-    // DISPUTED isn't a valid PaymentStatus in schema.prisma, but we'll leave it as is if it's meant to be typed loosely
-    prisma.payment.findMany({
+    }), { label: "support:conversations" }).catch(() => []),
+    withDbRetry(() => prisma.payment.findMany({
       where: { status: PaymentStatus.FAILED },
       include: { booking: { include: { traveler: true, wedding: true } } },
-    })
+    }), { label: "support:disputes" }).catch(() => [])
   ]);
 
   return {
@@ -127,26 +128,26 @@ export async function getOperationsDashboardAction() {
     activeWeddings,
     recentCheckIns
   ] = await Promise.all([
-    prisma.verification.count({ where: { status: "PENDING" } }),
-    prisma.wedding.count({ where: { status: "PUBLISHED" } }),
-    prisma.guestCheckIn.count(),
-    prisma.verification.findMany({
+    withDbRetry(() => prisma.verification.count({ where: { status: "PENDING" } }), { label: "ops:verifCount" }).catch(() => 0),
+    withDbRetry(() => prisma.wedding.count({ where: { status: "PUBLISHED" } }), { label: "ops:weddingCount" }).catch(() => 0),
+    withDbRetry(() => prisma.guestCheckIn.count(), { label: "ops:checkinCount" }).catch(() => 0),
+    withDbRetry(() => prisma.verification.findMany({
       take: 20,
       where: { status: "PENDING" },
       include: { user: true },
       orderBy: { createdAt: "desc" },
-    }),
-    prisma.wedding.findMany({
+    }), { label: "ops:pendingVerifs" }).catch(() => []),
+    withDbRetry(() => prisma.wedding.findMany({
       take: 20,
       where: { status: "PUBLISHED" },
       include: { hostCouple: { include: { user: true } } },
       orderBy: { createdAt: "desc" },
-    }),
-    prisma.guestCheckIn.findMany({
+    }), { label: "ops:weddings" }).catch(() => []),
+    withDbRetry(() => prisma.guestCheckIn.findMany({
       take: 25,
       include: { guestPass: { include: { booking: { include: { traveler: true, wedding: true } } } } },
       orderBy: { createdAt: "desc" },
-    })
+    }), { label: "ops:checkins" }).catch(() => [])
   ]);
 
   return {
@@ -170,26 +171,26 @@ export async function getGrowthDashboardAction() {
     referralsCount,
     newsletterSubscribers,
     agentReferrals,
-    searchAnalytics
+    searchAnalytics,
+    coupons
   ] = await Promise.all([
-    prisma.newsletterSubscriber.count(),
-    prisma.agentReferral.count(),
-    prisma.newsletterSubscriber.findMany({
+    withDbRetry(() => prisma.newsletterSubscriber.count(), { label: "growth:subCount" }).catch(() => 0),
+    withDbRetry(() => prisma.agentReferral.count(), { label: "growth:refCount" }).catch(() => 0),
+    withDbRetry(() => prisma.newsletterSubscriber.findMany({
       take: 20,
       orderBy: { createdAt: "desc" },
-    }),
-    prisma.agentReferral.findMany({
+    }), { label: "growth:subscribers" }).catch(() => []),
+    withDbRetry(() => prisma.agentReferral.findMany({
       take: 20,
       include: { agent: { include: { user: true } } },
       orderBy: { createdAt: "desc" },
-    }),
-    prisma.searchAnalytics.findMany({
+    }), { label: "growth:agentRefs" }).catch(() => []),
+    withDbRetry(() => prisma.searchAnalytics.findMany({
       orderBy: { createdAt: "desc" },
       take: 30,
-    })
+    }), { label: "growth:search" }).catch(() => []),
+    withDbRetry(() => prisma.coupon.findMany({ orderBy: { createdAt: "desc" } }), { label: "growth:coupons" }).catch(() => [])
   ]);
-
-  const coupons = await prisma.coupon.findMany({ orderBy: { createdAt: "desc" } });
 
   return {
     subscribersCount,

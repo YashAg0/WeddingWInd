@@ -20,13 +20,23 @@ export async function createStripeCheckoutAction(bookingId: string, couponCode?:
     where: { id: bookingId },
     include: {
       traveler: { include: { user: true } },
-      wedding: true,
+      wedding: { include: { hostCouple: { include: { user: true } } } },
     },
   });
 
   if (!booking) throw new Error("Booking reservation not found.");
   if (booking.traveler.userId !== user.id && user.role !== UserRole.ADMIN) {
     throw new Error("Forbidden: You do not own this booking.");
+  }
+
+  const origin = process.env.NEXT_PUBLIC_APP_URL || "https://weddingwithindia.com";
+
+  if (
+    booking.status === BookingStatus.PAID ||
+    booking.status === BookingStatus.CONFIRMED ||
+    booking.status === BookingStatus.COMPLETED
+  ) {
+    return { success: true, url: `${origin}/dashboard/bookings?already_paid=true` };
   }
 
   let finalAmount = booking.totalAmount;
@@ -60,8 +70,6 @@ export async function createStripeCheckoutAction(bookingId: string, couponCode?:
     taxPct = config.taxPercent ?? 18.0;
   }
 
-  const origin = process.env.NEXT_PUBLIC_APP_URL || "https://weddingwithindia.com";
-
   // $0 Bypass
   if (finalAmount <= 0) {
     const rawToken = crypto.randomBytes(32).toString("hex");
@@ -71,6 +79,18 @@ export async function createStripeCheckoutAction(bookingId: string, couponCode?:
     const mockId = `pi_mock_${Date.now()}`;
 
     await prisma.$transaction(async (tx) => {
+      // Row lock and re-check booking status
+      const freshBooking = await tx.booking.findUnique({
+        where: { id: booking.id },
+      });
+      if (
+        !freshBooking ||
+        freshBooking.status === BookingStatus.PAID ||
+        freshBooking.status === BookingStatus.CONFIRMED
+      ) {
+        return;
+      }
+
       const payment = await tx.payment.create({
         data: {
           bookingId: booking.id,
@@ -108,12 +128,32 @@ export async function createStripeCheckoutAction(bookingId: string, couponCode?:
         },
       });
       
+      await tx.transaction.create({
+        data: {
+          paymentId: payment.id,
+          type: "CHARGE",
+          amount: 0,
+          status: "SUCCESS",
+          referenceId: mockId,
+          metadata: JSON.stringify({ couponCode: couponCode || "FREE_PASS", isZeroDollar: true }),
+        },
+      });
+
       await tx.notification.create({
         data: {
-          userId: booking.wedding.hostCoupleId,
+          userId: booking.wedding.hostCouple.userId,
           title: "Guest Booked via Coupon!",
-          message: `${booking.traveler.user.name} has completed their reservation for ${booking.wedding.title} using a $0 coupon.`,
+          message: `${booking.traveler.fullName || booking.traveler.user.name || "A traveler"} has completed their reservation for ${booking.wedding.title} using a promotional coupon.`,
           type: "BOOKING_APPROVED",
+        },
+      });
+
+      await tx.notification.create({
+        data: {
+          userId: booking.traveler.userId,
+          title: "Reservation Confirmed!",
+          message: `Your booking for ${booking.wedding.title} is confirmed. Your digital guest pass has been generated.`,
+          type: "SUCCESS",
         },
       });
     });
@@ -284,7 +324,7 @@ export async function processPartialRefundAction(paymentId: string, partialAmoun
  * 4. Retry Failed Webhook Event (Admin Control)
  */
 export async function retryStripeWebhookEventAction(eventId: string) {
-  await requireRole([UserRole.ADMIN]);
+  const admin = await requireRole([UserRole.ADMIN]);
 
   const eventRecord = await prisma.stripeWebhookEvent.findUnique({
     where: { id: eventId },
@@ -292,12 +332,76 @@ export async function retryStripeWebhookEventAction(eventId: string) {
 
   if (!eventRecord) throw new Error("Webhook event record not found.");
 
+  let reprocessDetails = "Marked processed";
+
+  // If stripeEventId is valid, retrieve event from Stripe and re-process idempotent booking mutations
+  if (eventRecord.stripeEventId && !eventRecord.stripeEventId.startsWith("mock_")) {
+    try {
+      const stripeEvent = await stripe.events.retrieve(eventRecord.stripeEventId);
+      if (stripeEvent.type === "checkout.session.completed") {
+        const session = stripeEvent.data.object as any;
+        const bookingId = session.client_reference_id || session.metadata?.bookingId;
+        if (bookingId) {
+          const booking = await prisma.booking.findUnique({
+            where: { id: bookingId },
+            include: {
+              wedding: true,
+              guestPasses: true,
+              payments: { where: { status: PaymentStatus.PAID } },
+            },
+          });
+          if (booking && booking.status !== BookingStatus.PAID && booking.payments.length === 0) {
+            const rawToken = crypto.randomBytes(32).toString("hex");
+            const tokenHash = hashPassToken(rawToken);
+            const passCode = `WWI-PASS-${crypto.randomBytes(4).toString("hex").toUpperCase()}`;
+            const encrypted = encryptPass(rawToken);
+            const paymentIntentId = (typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id) ?? session.id;
+
+            await prisma.$transaction(async (tx) => {
+              await tx.payment.create({
+                data: {
+                  bookingId: booking.id,
+                  amount: booking.totalAmount,
+                  currency: session.currency?.toUpperCase() || "USD",
+                  stripePaymentIntentId: paymentIntentId,
+                  stripeChargeId: session.id,
+                  status: PaymentStatus.PAID,
+                },
+              });
+
+              await tx.booking.update({
+                where: { id: bookingId },
+                data: { status: BookingStatus.PAID },
+              });
+
+              if (booking.guestPasses.length === 0) {
+                await tx.guestPass.create({
+                  data: {
+                    bookingId: booking.id,
+                    passCode,
+                    encryptedToken: encrypted,
+                    qrTokenHash: tokenHash,
+                    expiresAt: new Date(booking.wedding.date.getTime() + 24 * 60 * 60 * 1000),
+                    status: "ACTIVE",
+                  },
+                });
+              }
+            });
+            reprocessDetails = `Re-processed checkout session for booking ${bookingId}`;
+          }
+        }
+      }
+    } catch (stripeErr: any) {
+      console.warn("[retryStripeWebhookEventAction] Stripe event retrieve note:", stripeErr.message);
+    }
+  }
+
   await prisma.stripeWebhookEvent.update({
     where: { id: eventId },
-    data: { status: "PROCESSED", processedAt: new Date() },
+    data: { status: "PROCESSED", processedAt: new Date(), errorMessage: null },
   });
 
-  await createAuditLog("RETRY_WEBHOOK", "StripeWebhookEvent", eventId, `Admin manually retried webhook event ${eventRecord.stripeEventId}`);
+  await createAuditLog("RETRY_WEBHOOK", "StripeWebhookEvent", eventId, `Admin (${admin.email}) retried webhook event ${eventRecord.stripeEventId}: ${reprocessDetails}`);
 
   revalidatePath("/dashboard/admin/payments");
   return { success: true };

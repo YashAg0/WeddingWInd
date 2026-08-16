@@ -222,13 +222,22 @@ export default async function AdminWeddingsPage({
           </p>
         </div>
         {!action && (
-          <Link
-            href="/dashboard/admin/weddings?action=create"
-            className="inline-flex items-center gap-2 bg-[var(--color-brand-primary)] text-white text-xs font-bold uppercase tracking-wider px-4 py-2.5 rounded-xl hover:opacity-90 transition-opacity"
-          >
-            <Plus size={14} />
-            Create Celebration
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/dashboard/admin/weddings/sponsorship"
+              className="inline-flex items-center gap-2 border border-amber-300 bg-amber-50 text-amber-800 text-xs font-bold uppercase tracking-wider px-4 py-2.5 rounded-xl hover:bg-amber-100 transition-colors"
+            >
+              <Zap size={14} className="text-amber-600" />
+              Sponsorship Queue
+            </Link>
+            <Link
+              href="/dashboard/admin/weddings?action=create"
+              className="inline-flex items-center gap-2 bg-[var(--color-brand-primary)] text-white text-xs font-bold uppercase tracking-wider px-4 py-2.5 rounded-xl hover:opacity-90 transition-opacity"
+            >
+              <Plus size={14} />
+              Create Celebration
+            </Link>
+          </div>
         )}
       </div>
 

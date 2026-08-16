@@ -183,13 +183,13 @@ export default function Footer() {
             <Link
               href="/"
               className="inline-flex items-center gap-3 mb-6 group"
-              aria-label="Wedding With India — Home"
+              aria-label="WeddingWithIndia — Home"
             >
 
               <div className="w-11 h-11 rounded-xl bg-[var(--color-brand-primary)] flex items-center justify-center overflow-hidden shrink-0">
                 <Image
                   src="/images/logos/logo.png"
-                  alt="Wedding With India"
+                  alt="WeddingWithIndia"
                   width={44}
                   height={44}
                   className="w-full h-full object-cover rounded-xl"
@@ -199,7 +199,7 @@ export default function Footer() {
               <div className="flex flex-col leading-none">
 
                 <span className="font-display font-bold text-white text-base">
-                  Wedding With India
+                  WeddingWithIndia
                 </span>
 
                 <span className="text-[0.58rem] font-medium uppercase tracking-[0.14em] text-[var(--color-brand-secondary)] mt-1">
@@ -453,7 +453,7 @@ export default function Footer() {
           <div className="flex flex-col lg:flex-row items-center justify-between gap-4">
 
             <p className="text-xs sm:text-sm text-white/40 text-center lg:text-left">
-              © {currentYear} Wedding With India. All rights reserved.
+              © {currentYear} WeddingWithIndia. All rights reserved.
             </p>
 
             <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs sm:text-sm text-white/40">

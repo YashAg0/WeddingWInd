@@ -10,24 +10,32 @@ import {
 } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Coordinator Agreement | Wedding With India",
+  title: "Coordinator Agreement",
   description:
-    "Coordinator engagement terms covering event duties, guest support, conduct, confidentiality, safety escalation, compensation and assignment requirements.",
+    "Coordinator engagement terms covering event duties, guest support, conduct, confidentiality, and safety escalation on WeddingWithIndia.",
   keywords: [
-    "Wedding With India coordinator agreement",
+    "WeddingWithIndia coordinator agreement",
     "event coordinator agreement",
     "wedding event coordinator",
-    "Wedding With India coordinator",
+    "WeddingWithIndia coordinator",
     "event operations agreement",
   ],
   alternates: {
-    canonical: "/coordinator-agreement",
+    canonical: "https://weddingwithindia.com/coordinator-agreement",
   },
   openGraph: {
-    title: "Coordinator Agreement | Wedding With India",
+    title: "Coordinator Agreement | WeddingWithIndia",
     description:
-      "Terms and operational standards for Wedding With India experience coordinators.",
+      "Terms and operational standards for WeddingWithIndia experience coordinators.",
+    url: "https://weddingwithindia.com/coordinator-agreement",
+    siteName: "WeddingWithIndia",
     type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Coordinator Agreement | WeddingWithIndia",
+    description:
+      "Terms and operational standards for WeddingWithIndia experience coordinators.",
   },
   robots: {
     index: true,

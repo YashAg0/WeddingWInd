@@ -8,25 +8,32 @@ import {
 } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Host Family Agreement | Wedding With India",
+  title: "Host Family Agreement",
   description:
-    "Host Family Agreement covering eligibility, listing responsibilities, guest access, payments, cancellations, safety, privacy and host obligations on Wedding With India.",
+    "Host Family Agreement covering eligibility, listing responsibilities, guest access, payments, and safety on WeddingWithIndia.",
   keywords: [
-    "Wedding With India host agreement",
+    "WeddingWithIndia host agreement",
     "Indian wedding host agreement",
-    "Wedding With India host family",
+    "WeddingWithIndia host family",
     "host Indian wedding experience",
-    "Wedding With India host terms",
-    "Indian wedding experience host",
+    "WeddingWithIndia host terms",
   ],
   alternates: {
-    canonical: "/host-agreement",
+    canonical: "https://weddingwithindia.com/host-agreement",
   },
   openGraph: {
-    title: "Host Family Agreement | Wedding With India",
+    title: "Host Family Agreement | WeddingWithIndia",
     description:
-      "Terms and responsibilities for hosts offering eligible Indian wedding experiences through Wedding With India.",
+      "Terms and responsibilities for hosts offering Indian wedding experiences through WeddingWithIndia.",
+    url: "https://weddingwithindia.com/host-agreement",
+    siteName: "WeddingWithIndia",
     type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Host Family Agreement | WeddingWithIndia",
+    description:
+      "Terms and responsibilities for hosts offering Indian wedding experiences through WeddingWithIndia.",
   },
   robots: {
     index: true,

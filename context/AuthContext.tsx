@@ -20,8 +20,20 @@ import {
   submitVerificationAction,
   reviewVerificationAction
 } from "@/lib/actions";
+import { validateDeviceSessionAction, revokeDeviceSessionAction } from "@/lib/actions/device-session";
+import { DeviceSessionDTO } from "@/lib/services/device-session";
+import { getOrCreateClientDeviceId, getClientDeviceName } from "@/lib/device-client";
 
 export type UserRole = "traveler" | "couple" | "agent" | "admin" | "coordinator";
+
+export type AuthState =
+  | "INITIALIZING"
+  | "AUTHENTICATING"
+  | "READY"
+  | "TEMPORARY_CONNECTION_FAILURE"
+  | "DEVICE_LIMIT_REACHED"
+  | "SESSION_REVOKED"
+  | "FORBIDDEN";
 
 export interface User {
   id: string;
@@ -60,6 +72,7 @@ export interface Booking {
   date: string;
   pricePerGuest: number;
   guestsCount: number;
+  attendanceSide?: "BRIDE_SIDE" | "GROOM_SIDE" | "OPEN";
   status: "upcoming" | "pending" | "rejected" | "cancelled" | "past" | "awaiting_payment" | "approved" | "refunded";
   payments?: any[];
 }
@@ -77,6 +90,8 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   dbOffline: boolean;
+  authState: AuthState;
+  activeDeviceSessions: DeviceSessionDTO[];
   bookings: Booking[];
   wishlist: string[];
   notifications: Notification[];
@@ -101,6 +116,8 @@ interface AuthContextType {
   submitVerification: (data: any) => Promise<void>;
   reviewVerification: (verificationId: string, status: "APPROVED" | "REJECTED" | "UNDER_REVIEW", notes?: string) => Promise<void>;
   refreshData: () => Promise<void>;
+  revokeDeviceSession: (sessionId: string) => Promise<void>;
+  retryConnection: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -113,6 +130,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [dbOffline, setDbOffline] = useState(false);
+  const [authState, setAuthState] = useState<AuthState>("INITIALIZING");
+  const [activeDeviceSessions, setActiveDeviceSessions] = useState<DeviceSessionDTO[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [wishlist, setWishlist] = useState<string[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -122,22 +141,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [adminStats, setAdminStats] = useState<any>(null);
   const [verification, setVerification] = useState<any>(null);
 
-  // Function to refresh state data from Postgres.
-  // SEC-002: When the DB is unreachable (syncAndGetDbUser throws), user stays null
-  // and dbOffline=true. We NEVER grant a role or set user state from stale/mock data.
+  // Function to refresh state data from Postgres and validate multi-device session.
   const refreshData = useCallback(async () => {
+    if (!isSignedIn) {
+      setUser(null);
+      setDbOffline(false);
+      setAuthState("INITIALIZING");
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
+    setAuthState("AUTHENTICATING");
+
     try {
       const dbUser = await syncAndGetDbUser();
       if (!dbUser) {
-        // Not authenticated (Clerk session absent or user not found)
-        setUser(null);
-        setDbOffline(false);
+        // Clerk is signed in but DB sync returned null
+        setDbOffline(true);
+        setAuthState("TEMPORARY_CONNECTION_FAILURE");
         setLoading(false);
         return;
       }
 
-      // DB is available and returned a real user record
+      // DB is available and returned user record
       const isCoupleWithData = dbUser.role === "COUPLE" && (
         !!dbUser.coupleProfile || 
         ((dbUser.coupleProfile as any)?.weddings && (dbUser.coupleProfile as any).weddings.length > 0) || 
@@ -149,7 +176,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const isOnboarded = dbUser.status === "ACTIVE" || isAdminOrCoordinator || isCoupleWithData || isAgentWithData || isTravelerWithData;
       const roleStr = dbUser.role.toLowerCase() as UserRole;
 
-      setUser({
+      const loadedUser: User = {
         id: dbUser.id,
         name: dbUser.name || dbUser.email.split("@")[0],
         email: dbUser.email,
@@ -175,8 +202,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         organization: dbUser.agentProfile?.organization || "",
         experienceYears: dbUser.agentProfile?.experienceYears,
         targetAudience: dbUser.agentProfile?.targetAudience || ""
-      });
+      };
 
+      setUser(loadedUser);
+
+      // Validate device session atomically (max 2 active devices)
+      try {
+        const deviceId = getOrCreateClientDeviceId();
+        const deviceName = getClientDeviceName();
+        const deviceRes = await validateDeviceSessionAction(deviceId, { deviceName });
+
+        if (deviceRes.status === "DEVICE_LIMIT_REACHED") {
+          setActiveDeviceSessions(deviceRes.activeSessions);
+          setAuthState("DEVICE_LIMIT_REACHED");
+          setLoading(false);
+          return;
+        }
+
+        if (deviceRes.status === "REVOKED") {
+          setAuthState("SESSION_REVOKED");
+          setLoading(false);
+          return;
+        }
+
+        // Active session verified
+        setAuthState("READY");
+        setDbOffline(false);
+      } catch (deviceErr) {
+        console.warn("Device session validation warning (graceful fallback):", deviceErr);
+        setAuthState("READY");
+      }
+
+      // Load non-critical dashboard data
       try {
         const dashData = await fetchDashboardDataAction();
         if (dashData) {
@@ -190,22 +247,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setVerification(dashData.verification || null);
         }
       } catch (err) {
-        // Dashboard data fetch failed after user sync succeeded.
-        // Mark DB offline but do NOT clear the user record — user is still authenticated.
         console.warn("Dashboard data fetch warning (transient DB error?):", err);
         setDbOffline(true);
       }
     } catch (err) {
-      // syncAndGetDbUser() threw — DB is unavailable.
-      // SEC-002: user stays null (do not set to stale/mock data), mark DB offline.
-      // The DashboardShell will show the DB-offline banner and a retry button.
       console.error("[AuthContext] DB unavailable during user sync:", err);
-      setUser(null);
+      // Fail safely: preserve authentication state, mark connection failure
       setDbOffline(true);
+      setAuthState("TEMPORARY_CONNECTION_FAILURE");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [isSignedIn]);
 
   // Listen to Clerk state and auto-reconnect on tab focus / network recovery
   useEffect(() => {
@@ -215,6 +268,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else {
         setUser(null);
         setDbOffline(false);
+        setAuthState("INITIALIZING");
         setBookings([]);
         setWishlist([]);
         setNotifications([]);
@@ -252,6 +306,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, [isSignedIn, isLoaded, refreshData]);
 
+  const revokeDeviceSession = async (sessionId: string) => {
+    await revokeDeviceSessionAction(sessionId);
+    await refreshData();
+  };
+
+  const retryConnection = async () => {
+    await refreshData();
+  };
+
   // Auth helper redirections
   const login = () => {
     router.push("/login");
@@ -264,6 +327,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = async () => {
     setLoading(true);
     await signOut();
+    setUser(null);
+    setAuthState("INITIALIZING");
     router.push("/");
   };
 
@@ -305,87 +370,58 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const toggleWishlist = async (weddingId: string) => {
     await toggleWishlistAction(weddingId);
-    await refreshData();
+    setWishlist(prev => prev.includes(weddingId) ? prev.filter(id => id !== weddingId) : [...prev, weddingId]);
   };
 
-  const addBooking = async (bookingData: Omit<Booking, "id">) => {
-    setLoading(true);
-    await createBookingAction({
-      weddingId: bookingData.weddingId,
-      guestsCount: bookingData.guestsCount,
-      date: bookingData.date,
-      // pricePerGuest and totalAmount are intentionally omitted — the server
-      // calculates authoritative pricing from the wedding's DB record.
+  const addBooking = async (booking: Omit<Booking, "id">) => {
+    const res = await createBookingAction({
+      weddingId: booking.weddingId,
+      date: typeof booking.date === "string" ? booking.date : new Date(booking.date).toISOString(),
+      guestsCount: booking.guestsCount,
+      attendanceSide: booking.attendanceSide as any,
     });
-    await refreshData();
+    if (res.success && res.booking) {
+      await refreshData();
+    }
   };
 
   const cancelBooking = async (bookingId: string) => {
-    setLoading(true);
     await cancelBookingAction(bookingId);
     await refreshData();
   };
 
   const markNotificationsRead = async () => {
     await markNotificationsReadAction();
-    await refreshData();
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
   };
 
   const handleGuestApplication = async (appId: string, status: "approved" | "rejected") => {
-    setLoading(true);
     await handleGuestApplicationAction(appId, status);
     await refreshData();
   };
 
-  const checkoutBooking = async (bookingId: string) => {
-    setLoading(true);
-    try {
-      const res = await createCheckoutSessionAction(bookingId);
-      if (res?.success && res.url) {
-        return res.url;
-      }
-    } catch (err) {
-      console.error("Stripe checkout redirection failed:", err);
-    } finally {
-      setLoading(false);
+
+  const checkoutBooking = async (bookingId: string): Promise<string | null> => {
+    const res = await createCheckoutSessionAction(bookingId);
+    if (res.url) {
+      return res.url;
     }
     return null;
   };
 
   const refundBooking = async (bookingId: string) => {
-    setLoading(true);
-    try {
-      await refundBookingAction(bookingId);
-      await refreshData();
-    } catch (err) {
-      console.error("Refund processing failed:", err);
-    } finally {
-      setLoading(false);
-    }
+    await refundBookingAction(bookingId);
+    await refreshData();
   };
 
   const submitVerification = async (data: any) => {
-    setLoading(true);
-    try {
-      await submitVerificationAction(data);
-      await refreshData();
-    } catch (err) {
-      console.error("Verification submission failed:", err);
-    } finally {
-      setLoading(false);
-    }
+    await submitVerificationAction(data);
+    await refreshData();
   };
 
   const reviewVerification = async (verificationId: string, status: "APPROVED" | "REJECTED" | "UNDER_REVIEW", notes?: string) => {
-    setLoading(true);
-    try {
-      await reviewVerificationAction(verificationId, status, notes);
-      await refreshData();
-    } catch (err) {
-      console.error("Verification review failed:", err);
-    } finally {
-      setLoading(false);
-    }
+    await reviewVerificationAction(verificationId, status, notes);
+    await refreshData();
   };
 
   return (
@@ -394,6 +430,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         user,
         loading,
         dbOffline,
+        authState,
+        activeDeviceSessions,
         bookings,
         wishlist,
         notifications,
@@ -417,7 +455,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         refundBooking,
         submitVerification,
         reviewVerification,
-        refreshData
+        refreshData,
+        revokeDeviceSession,
+        retryConnection,
       }}
     >
       {children}
@@ -427,7 +467,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;

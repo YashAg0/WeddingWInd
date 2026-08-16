@@ -47,8 +47,8 @@ function LoginContent() {
         {/* Brand Header */}
         <div className="text-center space-y-2 w-full">
           <Link href="/" className="inline-flex items-center gap-2 bg-maroon-50 text-[var(--color-brand-primary)] text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-full border border-maroon-100/50">
-            <Image src="/images/logos/logo.png" alt="Wedding With India Logo" width={16} height={16} className="w-4 h-4 object-cover rounded-full" />
-            Wedding With India
+            <Image src="/images/logos/logo.png" alt="WeddingWithIndia Logo" width={16} height={16} className="w-4 h-4 object-cover rounded-full" />
+            WeddingWithIndia
           </Link>
           <h1 className="font-display font-bold text-2xl text-charcoal-900 leading-tight">
             Welcome back

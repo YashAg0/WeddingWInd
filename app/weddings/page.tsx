@@ -9,8 +9,26 @@ import { SortSelect } from "./SortSelect";
 import { CANONICAL_RELIGIONS, normalizeReligion } from "@/lib/culture";
 
 export const metadata: Metadata = {
-  title: "Browse Weddings",
-  description: "Explore verified Indian wedding celebrations across Rajasthan, Goa, Punjab, and Kerala. Filter by style, date, and budget.",
+  title: "Explore Indian Wedding Celebrations",
+  description:
+    "Explore verified Indian wedding celebrations across Rajasthan, Goa, Punjab, and Kerala. Filter by style, date, and budget to attend as an honoured guest.",
+  alternates: {
+    canonical: "https://weddingwithindia.com/weddings",
+  },
+  openGraph: {
+    title: "Explore Indian Wedding Celebrations | WeddingWithIndia",
+    description:
+      "Explore verified Indian wedding celebrations across Rajasthan, Goa, Punjab, and Kerala. Filter by style, date, and budget to attend as an honoured guest.",
+    url: "https://weddingwithindia.com/weddings",
+    siteName: "WeddingWithIndia",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Explore Indian Wedding Celebrations | WeddingWithIndia",
+    description:
+      "Explore verified Indian wedding celebrations across Rajasthan, Goa, Punjab, and Kerala. Filter by style, date, and budget to attend as an honoured guest.",
+  },
 };
 
 // Make the route dynamic so it parses searchParams on every request

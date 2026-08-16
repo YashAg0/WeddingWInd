@@ -14,26 +14,34 @@ import {
 import { SectionHeader } from "@/components/ui/SectionHeader";
 
 export const metadata: Metadata = {
-  title: "For Travelers | Experience Indian Weddings | Wedding With India",
+  title: "For Travelers — Experience Authentic Indian Weddings",
   description:
-    "Learn how international travelers can discover, book and respectfully experience eligible Indian wedding celebrations through Wedding With India.",
+    "Learn how international travelers can discover, book, and respectfully experience authentic Indian wedding celebrations through WeddingWithIndia.",
   keywords: [
     "Indian wedding experience for foreigners",
     "attend Indian wedding",
     "Indian wedding tourism",
     "Indian wedding travel",
     "experience Indian culture",
-    "Wedding With India travelers",
+    "WeddingWithIndia travelers",
     "international guests Indian wedding",
   ],
   alternates: {
-    canonical: "/for-travelers",
+    canonical: "https://weddingwithindia.com/for-travelers",
   },
   openGraph: {
-    title: "For Travelers | Experience Indian Weddings",
+    title: "For Travelers — Experience Authentic Indian Weddings | WeddingWithIndia",
     description:
-      "Discover how international travelers can experience eligible Indian wedding celebrations with Wedding With India.",
+      "Discover how international travelers can experience authentic Indian wedding celebrations with WeddingWithIndia.",
+    url: "https://weddingwithindia.com/for-travelers",
+    siteName: "WeddingWithIndia",
     type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "For Travelers — Experience Authentic Indian Weddings | WeddingWithIndia",
+    description:
+      "Discover how international travelers can experience authentic Indian wedding celebrations with WeddingWithIndia.",
   },
   robots: {
     index: true,
