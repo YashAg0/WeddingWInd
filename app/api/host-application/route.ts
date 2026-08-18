@@ -2,13 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 import { UserRole, VerificationStatus } from "@prisma/client";
-import { resolveHostApplicationState } from "@/lib/actions/host-application";
+import {
+  resolveHostApplicationState,
+  saveHostApplicationDraftAction,
+  submitHostApplicationAction,
+} from "@/lib/actions/host-application";
 
 /**
  * GET /api/host-application
  * Authoritative database-backed resolution of host application state.
- * Detects whether the authenticated user owns an active / in-progress host application.
- * Returns restored form fields, admin notes, and application status.
  */
 export async function GET() {
   try {
@@ -29,8 +31,7 @@ export async function GET() {
 
 /**
  * POST /api/host-application — Submit or Update a host celebration application.
- * Duplicate-safe: Server checks if user owns an existing non-demo wedding and updates
- * it in place, preserving the original Wedding ID.
+ * Duplicate-safe: Updates in place and creates/updates both HostApplication and Wedding records.
  */
 export async function POST(req: NextRequest) {
   try {
@@ -39,25 +40,42 @@ export async function POST(req: NextRequest) {
     const {
       hostName,
       email,
-      phone: _phone,
+      phone,
+      preferredContactMethod,
+      brideName,
+      groomName,
       coupleNames,
       city,
       state,
       venue,
+      venueName,
       weddingDate,
       durationDays,
       religion,
+      tradition,
+      weddingScale,
+      expectedTotalGuests,
+      expectedInternationalGuests,
+      requestedTier,
       story,
       photoUrl,
       intlGuestCapacity,
       existingApplicationId,
+      days,
+      isDraft,
     } = body;
 
-    if (!hostName || !email || !coupleNames || !city || !weddingDate) {
+    const resolvedEmail = email || user.email;
+    const resolvedHostName = hostName || user.name || "Host";
+    const resolvedCoupleNames = coupleNames || (brideName && groomName ? `${brideName} & ${groomName}` : "Our Wedding");
+    const resolvedCity = city || "City";
+    const resolvedDate = weddingDate || new Date().toISOString().split("T")[0];
+
+    if (!resolvedHostName || !resolvedEmail || !resolvedCoupleNames || !resolvedCity || !resolvedDate) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    if (email.trim().toLowerCase() !== user.email.trim().toLowerCase()) {
+    if (resolvedEmail.trim().toLowerCase() !== user.email.trim().toLowerCase()) {
       return NextResponse.json({ error: "Use the email on your signed-in account." }, { status: 400 });
     }
 
@@ -85,9 +103,9 @@ export async function POST(req: NextRequest) {
         coupleProfile = await prisma.coupleProfile.create({
           data: {
             userId: user.id,
-            weddingDate: new Date(weddingDate),
-            weddingLocation: `${venue || city}, ${city}, ${state || ""}`.trim(),
-            expectedGuests: intlGuestCapacity || 10,
+            weddingDate: new Date(resolvedDate),
+            weddingLocation: `${venueName || venue || resolvedCity}, ${resolvedCity}, ${state || ""}`.trim(),
+            expectedGuests: expectedInternationalGuests || intlGuestCapacity || 10,
             languagesSpoken: "English",
             familyBio: story || "",
           },
@@ -114,13 +132,12 @@ export async function POST(req: NextRequest) {
         }
       }
     } else {
-      // Update couple profile fields
       await prisma.coupleProfile.update({
         where: { id: coupleProfile.id },
         data: {
-          weddingDate: new Date(weddingDate),
-          weddingLocation: `${venue || city}, ${city}, ${state || ""}`.trim(),
-          expectedGuests: intlGuestCapacity || 10,
+          weddingDate: new Date(resolvedDate),
+          weddingLocation: `${venueName || venue || resolvedCity}, ${resolvedCity}, ${state || ""}`.trim(),
+          expectedGuests: expectedInternationalGuests || intlGuestCapacity || 10,
           familyBio: story || "",
         },
       });
@@ -130,7 +147,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Failed to resolve couple profile." }, { status: 500 });
     }
 
-    // Check for existing application by ID or by host couple relationship
+    // Check for existing wedding by ID or by host couple relationship
     let existingWedding = null;
     if (existingApplicationId) {
       existingWedding = await prisma.wedding.findFirst({
@@ -143,11 +160,9 @@ export async function POST(req: NextRequest) {
     }
 
     if (!existingWedding && coupleProfile.weddings && coupleProfile.weddings.length > 0) {
-      // Pick the active non-demo wedding to update rather than creating a duplicate
       existingWedding = coupleProfile.weddings[0];
     }
 
-    // Secondary concurrency check: query DB directly in case another request created a wedding moments ago
     if (!existingWedding) {
       existingWedding = await prisma.wedding.findFirst({
         where: {
@@ -160,13 +175,12 @@ export async function POST(req: NextRequest) {
     }
 
     const { resolveCulturalProfileDefaults, validateWeddingAuthenticity } = await import("@/lib/culture");
-
-    const parsedReligion = religion || "Hindu";
-    const cultDefaults = resolveCulturalProfileDefaults(parsedReligion, state || city, undefined);
+    const parsedReligion = tradition || religion || "Hindu";
+    const cultDefaults = resolveCulturalProfileDefaults(parsedReligion, state || resolvedCity, undefined);
 
     const cultValidation = validateWeddingAuthenticity({
       religion: parsedReligion,
-      title: `${coupleNames} Wedding`,
+      title: `${resolvedCoupleNames} Wedding`,
       description: story || "",
     });
 
@@ -181,48 +195,46 @@ export async function POST(req: NextRequest) {
     let isUpdate = false;
 
     if (existingWedding) {
-      // UPDATE EXISTING WEDDING IN PLACE — PRESERVE WEDDING ID
       isUpdate = true;
       wedding = await prisma.wedding.update({
         where: { id: existingWedding.id },
         data: {
-          title: `${coupleNames} Wedding`,
-          description: story || `A beautiful wedding celebration in ${city}.`,
-          location: `${venue || city}, ${city}, ${state || ""}`.trim(),
-          category: religion || "Traditional",
+          title: `${resolvedCoupleNames} Wedding`,
+          description: story || `A beautiful wedding celebration in ${resolvedCity}.`,
+          location: `${venueName || venue || resolvedCity}, ${resolvedCity}, ${state || ""}`.trim(),
+          category: tradition || religion || "Traditional",
           religion: parsedReligion,
-          region: state || city || cultDefaults.region,
+          region: state || resolvedCity || cultDefaults.region,
           community: cultDefaults.community,
           foodContext: cultDefaults.foodContext,
           dressExpectations: cultDefaults.dressExpectations,
           guestRules: cultDefaults.guestRules,
           etiquetteNotes: cultDefaults.etiquetteNotes,
-          date: new Date(weddingDate),
-          capacity: intlGuestCapacity || 10,
+          date: new Date(resolvedDate),
+          capacity: expectedInternationalGuests || intlGuestCapacity || 10,
           mainImageUrl: photoUrl || existingWedding.mainImageUrl || "https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=800&q=80",
-          status: "DRAFT", // Reset status to DRAFT for admin re-review
+          status: "DRAFT",
         },
       });
     } else {
-      // CREATE NEW WEDDING ONLY IF NO APPLICATION EXISTS FOR THIS HOST
-      const slug = `${coupleNames.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${city.toLowerCase()}-${Date.now()}`;
+      const slug = `${resolvedCoupleNames.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${resolvedCity.toLowerCase()}-${Date.now()}`;
       wedding = await prisma.wedding.create({
         data: {
           slug,
-          title: `${coupleNames} Wedding`,
-          description: story || `A beautiful wedding celebration in ${city}.`,
-          location: `${venue || city}, ${city}, ${state || ""}`.trim(),
-          category: religion || "Traditional",
+          title: `${resolvedCoupleNames} Wedding`,
+          description: story || `A beautiful wedding celebration in ${resolvedCity}.`,
+          location: `${venueName || venue || resolvedCity}, ${resolvedCity}, ${state || ""}`.trim(),
+          category: tradition || religion || "Traditional",
           religion: parsedReligion,
-          region: state || city || cultDefaults.region,
+          region: state || resolvedCity || cultDefaults.region,
           community: cultDefaults.community,
           foodContext: cultDefaults.foodContext,
           dressExpectations: cultDefaults.dressExpectations,
           guestRules: cultDefaults.guestRules,
           etiquetteNotes: cultDefaults.etiquetteNotes,
-          date: new Date(weddingDate),
-          pricePerGuest: 16000, // Tier 2 default
-          capacity: intlGuestCapacity || 10,
+          date: new Date(resolvedDate),
+          pricePerGuest: 16000,
+          capacity: expectedInternationalGuests || intlGuestCapacity || 10,
           mainImageUrl: photoUrl || "https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=800&q=80",
           status: "DRAFT",
           hostCoupleId: coupleProfile.id,
@@ -230,10 +242,10 @@ export async function POST(req: NextRequest) {
             create: cultDefaults.defaultCeremonies.map((c) => ({
               name: c.name,
               description: c.description,
-              date: new Date(weddingDate),
+              date: new Date(resolvedDate),
               startTime: c.defaultTimeRange.split("-")[0]?.trim() || "17:00",
               endTime: c.defaultTimeRange.split("-")[1]?.trim() || "22:00",
-              location: `${venue || city}, ${city}`,
+              location: `${venueName || venue || resolvedCity}, ${resolvedCity}`,
             })),
           },
           traditions: {
@@ -246,10 +258,44 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    // Save structured HostApplication record
+    try {
+      const appInput = {
+        applicationId: existingApplicationId || wedding.id,
+        hostName: resolvedHostName,
+        email: resolvedEmail,
+        phone,
+        preferredContactMethod,
+        brideName,
+        groomName,
+        coupleNames: resolvedCoupleNames,
+        city: resolvedCity,
+        state,
+        venueName: venueName || venue,
+        weddingDate: resolvedDate,
+        durationDays: Number(durationDays) || 3,
+        tradition: parsedReligion,
+        weddingScale,
+        expectedTotalGuests: Number(expectedTotalGuests) || 200,
+        expectedInternationalGuests: Number(expectedInternationalGuests || intlGuestCapacity) || 20,
+        requestedTier: requestedTier || "SIGNATURE_ROYAL",
+        story,
+        days: days || [],
+      };
+
+      if (isDraft) {
+        await saveHostApplicationDraftAction(appInput);
+      } else {
+        await submitHostApplicationAction(appInput);
+      }
+    } catch (appErr) {
+      console.warn("[POST /host-application] HostApplication save warning:", appErr);
+    }
+
     // Upsert verification record back to PENDING review status
     const submissionNote = isUpdate
-      ? `Host updated and resubmitted application for ${coupleNames}. Duration: ${durationDays} days.`
-      : `Host application submitted for ${coupleNames}. Duration: ${durationDays} days.`;
+      ? `Host updated and resubmitted application for ${resolvedCoupleNames}. Duration: ${durationDays || 3} days.`
+      : `Host application submitted for ${resolvedCoupleNames}. Duration: ${durationDays || 3} days.`;
 
     await prisma.verification.upsert({
       where: { userId: user.id },
@@ -273,10 +319,10 @@ export async function POST(req: NextRequest) {
         entity: "Wedding",
         entityId: wedding.id,
         userId: user.id,
-        userName: hostName,
+        userName: resolvedHostName,
         details: isUpdate
-          ? `Updated host application for ${coupleNames} in ${city} (ID: ${wedding.id}).`
-          : `New host application for ${coupleNames} in ${city} (ID: ${wedding.id}).`,
+          ? `Updated host application for ${resolvedCoupleNames} in ${resolvedCity} (ID: ${wedding.id}).`
+          : `New host application for ${resolvedCoupleNames} in ${resolvedCity} (ID: ${wedding.id}).`,
       },
     });
 
@@ -284,9 +330,9 @@ export async function POST(req: NextRequest) {
       success: true,
       isUpdate,
       applicationId: wedding.id,
-      hostName,
-      coupleNames,
-      city,
+      hostName: resolvedHostName,
+      coupleNames: resolvedCoupleNames,
+      city: resolvedCity,
     });
   } catch (error: any) {
     console.error("[API /host-application POST]", error);

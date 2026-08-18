@@ -10,9 +10,7 @@ const requiredVars = [
 ];
 
 const optionalVars = [
-  { name: "STRIPE_SECRET_KEY", description: "Stripe API Secret Key", example: "sk_test_..." },
-  { name: "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY", description: "Stripe Publishable Key", example: "pk_test_..." },
-  { name: "STRIPE_WEBHOOK_SECRET", description: "Stripe Webhook Signing Secret", example: "whsec_..." },
+  { name: "PAYPAL_DOMAIN_ALLOWLIST", description: "PayPal Domain Allowlist", example: "paypal.com,paypal.me" },
   { name: "RESEND_API_KEY", description: "Resend Email Service API Key", example: "re_..." },
   { name: "UPLOADTHING_SECRET", description: "UploadThing Storage Secret", example: "sk_live_..." },
   { name: "UPLOADTHING_APP_ID", description: "UploadThing Application ID", example: "app_..." },

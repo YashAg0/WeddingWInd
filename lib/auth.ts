@@ -1,6 +1,7 @@
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { prisma, withDbRetry } from "./prisma";
 import { UserRole, UserStatus } from "@prisma/client";
+import { isE2ETestAuthEnabled, verifyE2ETestSessionToken } from "./test-auth";
 
 /**
  * Gets the current authenticated Clerk user session.
@@ -21,12 +22,72 @@ async function safeDbCall<T>(fn: () => Promise<T>, options?: any): Promise<T> {
 }
 
 /**
+ * Resolves an authenticated user from an E2E test session cookie (Local/Test ONLY).
+ */
+async function getE2ETestDbUser() {
+  if (!isE2ETestAuthEnabled()) {
+    console.log("[E2E AUTH] isE2ETestAuthEnabled is FALSE (PLAYWRIGHT_TEST:", process.env.PLAYWRIGHT_TEST, "NODE_ENV:", process.env.NODE_ENV, ")");
+    return null;
+  }
+  try {
+    const { cookies } = await import("next/headers");
+    const cookieStore = await cookies();
+    const e2eToken = cookieStore.get("__wwi_e2e_session")?.value;
+    if (!e2eToken) {
+      console.log("[E2E AUTH] No __wwi_e2e_session cookie found in cookieStore");
+      return null;
+    }
+    const session = verifyE2ETestSessionToken(e2eToken);
+    if (!session?.userId) {
+      console.log("[E2E AUTH] Token verification failed or expired");
+      return null;
+    }
+
+    const user = await safeDbCall(
+      () =>
+        prisma.user.findUnique({
+          where: { id: session.userId },
+          include: {
+            travelerProfile: true,
+            coupleProfile: {
+              include: {
+                weddings: {
+                  where: { isDemo: false },
+                  orderBy: { createdAt: "desc" },
+                  take: 1,
+                },
+              },
+            },
+            agentProfile: true,
+            coordinatorProfile: true,
+            verification: true,
+          },
+        }),
+      { label: "getE2ETestDbUser" }
+    );
+
+    if (user && user.status !== UserStatus.BANNED) {
+      console.log("[E2E AUTH] Successfully resolved user:", user.email, "role:", user.role);
+      return user;
+    }
+    console.log("[E2E AUTH] User not found or banned:", session.userId);
+    return null;
+  } catch (err: any) {
+    console.error("[E2E AUTH] Error resolving test user:", err?.message);
+    return null;
+  }
+}
+
+/**
  * Gets the detailed User model from PostgreSQL database using Clerk userId.
  * Returns null if user is not authenticated or not found in DB.
  * Returns null (not throws) on DB errors — callers should handle null gracefully.
  */
 export async function getDbUser() {
   try {
+    const testUser = await getE2ETestDbUser();
+    if (testUser) return testUser;
+
     const session = await getSession();
     if (!session?.userId) return null;
 
@@ -57,6 +118,9 @@ export async function getDbUser() {
  * - Never returns a synthetic user with a granted role.
  */
 export async function syncAndGetDbUser() {
+  const testUser = await getE2ETestDbUser();
+  if (testUser) return testUser;
+
   let session: any = null;
   try {
     session = await getSession();

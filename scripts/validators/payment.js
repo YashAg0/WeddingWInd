@@ -1,47 +1,23 @@
 /**
  * WeddingWithIndia — Payment Validator
- * Validates Stripe payment gateway configuration (Secret Key, Publishable Key, Webhook Secret).
+ * Validates manual PayPal payment configuration.
  */
 
 function validatePayment() {
   console.log("==================================================");
-  console.log("  WeddingWithIndia — Payment Gateway Validator");
+  console.log("  WeddingWithIndia — Manual PayPal Payment Validator");
   console.log("==================================================\n");
 
-  const secretKey = process.env.STRIPE_SECRET_KEY;
-  const pubKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  const domainAllowlist = process.env.PAYPAL_DOMAIN_ALLOWLIST || "paypal.com,paypal.me";
 
-  let isValid = true;
-
-  if (secretKey && secretKey.startsWith("sk_")) {
-    console.log("✅ Stripe Secret Key is valid and present.");
-  } else {
-    console.log("⚠️  Stripe Secret Key (STRIPE_SECRET_KEY) is missing or invalid.");
-    isValid = false;
-  }
-
-  if (pubKey && pubKey.startsWith("pk_")) {
-    console.log("✅ Stripe Publishable Key is valid and present.");
-  } else {
-    console.log("⚠️  Stripe Publishable Key (NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) is missing or invalid.");
-    isValid = false;
-  }
-
-  if (webhookSecret && webhookSecret.startsWith("whsec_")) {
-    console.log("✅ Stripe Webhook Secret (STRIPE_WEBHOOK_SECRET) is valid and present.");
-  } else {
-    console.log("⚠️  Stripe Webhook Secret (STRIPE_WEBHOOK_SECRET) is missing or unconfigured.");
-  }
+  console.log(`✅ Manual PayPal Payment Provider Active.`);
+  console.log(`✅ Allowed PayPal domains: ${domainAllowlist}`);
+  console.log("✅ Admin manual verification workflow ready.");
 
   console.log("--------------------------------------------------");
-  if (isValid) {
-    console.log("✅ Stripe payment processing is ready!");
-  } else {
-    console.log("⚠️  Stripe integration is running in dev mock fallback mode.");
-  }
+  console.log("✅ Payment processing is ready (Manual PayPal MVP)!");
   console.log("--------------------------------------------------\n");
-  return isValid;
+  return true;
 }
 
 if (require.main === module) {

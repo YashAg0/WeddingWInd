@@ -32,7 +32,7 @@ async function verifyAvailabilityPresentation() {
   console.log(" WeddingWithIndia — Availability Presentation Audit");
   console.log("==================================================\n");
 
-  let errors = [];
+  const errors = [];
 
   // 1. Audit Database Listings for Demo vs Real Integrity
   let weddings;

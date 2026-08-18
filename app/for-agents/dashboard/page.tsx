@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Copy, Check, Award, AlertTriangle, Globe, Share2, TrendingUp, Calendar } from "lucide-react";
-import { calculateBookingFinancials, formatCurrencyINR, formatSecondaryCurrency } from "@/lib/constants/financial-model";
+import { getAgentPayoutPerGuestINR, formatCurrencyINR, formatSecondaryCurrency } from "@/lib/constants/financial-model";
 import { BOOKING_STATUS_CONFIG } from "@/lib/constants/status";
 
 interface AgentProfile {
@@ -81,9 +81,9 @@ export default function AgentDashboardPage() {
   };
 
   const clearedBookings = agentBookings.filter((b) => b.status === "cleared");
-  const totalTravelerCommissionClearedINR = clearedBookings.reduce((sum, b) => {
-    const financials = calculateBookingFinancials(b.coreBookingValueINR, true);
-    return sum + financials.agentReferralINR;
+  const totalTravelerCommissionClearedINR = clearedBookings.reduce((sum, b: any) => {
+    const rate = b.commissionAmount || getAgentPayoutPerGuestINR(b.tier || "GRAND");
+    return sum + rate;
   }, 0);
 
   if (loading) {
@@ -266,20 +266,20 @@ export default function AgentDashboardPage() {
                   <th className="p-4">Referred Guest</th>
                   <th className="p-4">Experience Tier</th>
                   <th className="p-4">Booking Status</th>
-                  <th className="p-4">Commission (7%)</th>
+                  <th className="p-4">Commission</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-warm-100 text-xs text-charcoal-700">
-                {agentBookings.map((item) => {
+                {agentBookings.map((item: any) => {
                   const statusConfig = BOOKING_STATUS_CONFIG[item.status as keyof typeof BOOKING_STATUS_CONFIG] || BOOKING_STATUS_CONFIG["cleared"];
                   const isCleared = item.status === "cleared";
-                  const financials = calculateBookingFinancials(item.coreBookingValueINR, true);
+                  const commissionINR = item.commissionAmount || getAgentPayoutPerGuestINR(item.tier || "GRAND");
 
                   return (
                     <tr key={item.id} className="hover:bg-warm-50/40">
                       <td className="p-4 font-mono font-semibold text-charcoal-900">{item.id}</td>
                       <td className="p-4 font-bold text-charcoal-900">{item.guestName}</td>
-                      <td className="p-4 font-medium">{item.tierName} ({formatCurrencyINR(item.coreBookingValueINR)})</td>
+                      <td className="p-4 font-medium">{item.tierName}</td>
                       <td className="p-4">
                         <span className={`inline-block px-2.5 py-1 rounded-full text-[0.625rem] font-bold uppercase tracking-wider border ${statusConfig.badgeClass}`}>
                           {statusConfig.label}
@@ -289,10 +289,7 @@ export default function AgentDashboardPage() {
                         {isCleared ? (
                           <div>
                             <span className="font-bold text-emerald-700 text-sm">
-                              {formatCurrencyINR(financials.agentReferralINR)}
-                            </span>
-                            <span className="text-[0.625rem] text-charcoal-400 font-mono block">
-                              Exact 7%: ₹{financials.exactAgentReferralINR.toFixed(2)}
+                              {formatCurrencyINR(commissionINR)}
                             </span>
                             <span className="text-[0.625rem] font-bold text-emerald-800 uppercase tracking-wider block">
                               ✓ Cleared & Payable

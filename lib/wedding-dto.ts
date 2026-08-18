@@ -6,6 +6,11 @@
 
 import { Wedding } from "@/types";
 import { normalizeReligion, resolveCulturalProfileDefaults } from "./culture";
+import {
+  normalizeWeddingTier,
+  normalizeDurationDays,
+  getCustomerPriceUSD,
+} from "@/lib/services/pricing-engine";
 
 /**
  * Evaluates whether a wedding has active (unexpired) sponsorship.
@@ -71,10 +76,15 @@ export function toWeddingDTO(rawWedding: any): Wedding {
   const guestRules = rawWedding.guestRules || cultDefaults.guestRules;
   const etiquetteNotes = rawWedding.etiquetteNotes || cultDefaults.etiquetteNotes;
 
-  // 3. Price & Capacity bounds
-  const pricePerGuest = typeof rawWedding.pricePerGuest === "number" && rawWedding.pricePerGuest > 0
-    ? rawWedding.pricePerGuest
-    : 12000;
+  // 3. Centralized Tier, Duration & Price
+  const tier = normalizeWeddingTier(rawWedding.tier || (rawWedding.category === "Royal" ? "ROYAL" : "STANDARD"));
+  const durationDays = normalizeDurationDays(rawWedding.durationDays || 3);
+  const pricePerGuest = getCustomerPriceUSD(tier, durationDays);
+  const ceremoniesCount = typeof rawWedding.ceremoniesCount === "number" && rawWedding.ceremoniesCount > 0
+    ? rawWedding.ceremoniesCount
+    : Array.isArray(rawWedding.events) && rawWedding.events.length > 0
+    ? rawWedding.events.length
+    : 3;
 
   const guestsAllowed = typeof rawWedding.capacity === "number" && rawWedding.capacity > 0
     ? rawWedding.capacity
@@ -151,8 +161,11 @@ export function toWeddingDTO(rawWedding: any): Wedding {
     country: rawWedding.country || "India",
     countryCode: rawWedding.countryCode || "IN",
     category: rawWedding.category || "Traditional",
+    tier,
+    durationDays,
+    ceremoniesCount,
     pricePerGuest,
-    currency: rawWedding.currency || "INR",
+    currency: "USD",
     rating,
     reviewCount,
     guestsAllowed,
@@ -164,9 +177,24 @@ export function toWeddingDTO(rawWedding: any): Wedding {
     hostAvatar,
     featured: !!rawWedding.featured,
     sponsored: activeSponsored,
-    sponsorshipStart: rawWedding.sponsorshipStart ? new Date(rawWedding.sponsorshipStart).toISOString() : null,
-    sponsorshipEnd: rawWedding.sponsorshipEnd ? new Date(rawWedding.sponsorshipEnd).toISOString() : null,
+    sponsorshipStart: (() => {
+      if (!rawWedding.sponsorshipStart) return null;
+      const d = new Date(rawWedding.sponsorshipStart);
+      return !isNaN(d.getTime()) ? d.toISOString() : null;
+    })(),
+    sponsorshipEnd: (() => {
+      if (!rawWedding.sponsorshipEnd) return null;
+      const d = new Date(rawWedding.sponsorshipEnd);
+      return !isNaN(d.getTime()) ? d.toISOString() : null;
+    })(),
     isDemo: !!rawWedding.isDemo,
+    availabilityStatus: (() => {
+      if (rawWedding.availabilityStatus) return rawWedding.availabilityStatus;
+      if (rawWedding.isDemo || (guestsAllowed - guestsBooked) <= 0) return "FULLY_BOOKED";
+      if (rawWedding.status === "COMPLETED") return "COMPLETED";
+      if (rawWedding.suspended || rawWedding.status === "DRAFT" || rawWedding.status === "UNDER_REVIEW") return "UNAVAILABLE";
+      return "AVAILABLE";
+    })(),
     tags,
     date: dateStr,
     religion: canonicalReligion,
@@ -177,13 +205,12 @@ export function toWeddingDTO(rawWedding: any): Wedding {
     guestRules,
     etiquetteNotes,
     luxuryLevel: rawWedding.luxuryLevel || "Luxury",
-    durationDays: rawWedding.durationDays || 3,
     languages: Array.isArray(rawWedding.languages)
       ? rawWedding.languages
       : rawWedding.hostCouple?.languagesSpoken?.split(",").map((l: string) => l.trim()) || ["English", "Hindi"],
-    isVerified: true,
+    isVerified: !rawWedding.isDemo && (rawWedding.status === "VERIFIED" || rawWedding.status === "PUBLISHED" || !!rawWedding.isVerified),
     isCurated: !!(activeSponsored || rawWedding.featured || rawWedding.isCurated),
-    curatedBadge: activeSponsored ? "Sponsored" : rawWedding.featured ? "Featured" : rawWedding.isDemo ? "Showcase" : undefined,
+    curatedBadge: activeSponsored ? "Sponsored" : rawWedding.featured ? "Featured" : undefined,
     gallery,
     story: rawWedding.description || rawWedding.story || "A beautiful celebration of love and culture.",
     coupleBio: rawWedding.hostCouple?.familyBio || rawWedding.coupleBio || `The ${coupleName} family welcomes global guests with warm hospitality.`,

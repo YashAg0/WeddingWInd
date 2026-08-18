@@ -1,11 +1,10 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { prisma, withDbRetry } from "../prisma";
 import { requireAuth, syncAndGetDbUser } from "../auth";
 export { syncAndGetDbUser };
 import { UserRole, BookingStatus, PaymentStatus, VerificationStatus, WeddingStatus, ReferralStatus, CancellationReasonCode, CancellationActor, WeddingSide } from "@prisma/client";
-import { stripe } from "../stripe";
 import { rateLimit } from "../rate-limit";
 import { getBatchWeddingRatingAggregates, getPublishedReviewWhere } from "../services/trust-score";
 import {
@@ -29,6 +28,7 @@ import {
   CAPACITY_HOLDING_BOOKING_STATUSES,
   ACTIVE_RESERVATION_STATUSES,
 } from "../booking-statuses";
+import { calculateBookingPricing } from "../services/pricing-engine";
 
 /**
  * 1. Action to update User Role during onboarding or settings.
@@ -562,6 +562,10 @@ export async function createBookingAction(data: {
       throw new Error("This wedding experience is currently suspended and cannot accept new bookings.");
     }
 
+    if (wedding.status !== WeddingStatus.PUBLISHED) {
+      throw new Error("This wedding experience is not currently open for bookings.");
+    }
+
     // SEC-DEMO: Server-side invariant — demo weddings must NEVER be bookable.
     // A malicious client cannot bypass this by manipulating availability state.
     if (wedding.isDemo) {
@@ -612,10 +616,14 @@ export async function createBookingAction(data: {
       throw new Error(`Cannot exceed maximum wedding guest capacity. Available spots: ${wedding.capacity - currentBookedCount}.`);
     }
 
-    // 6. Server-authoritative pricing: derive from DB record, never trust client-supplied amounts.
-    // P0 Security: Client cannot inject a false price. pricePerGuest comes from Wedding.pricePerGuest.
-    const serverPricePerGuest = wedding.pricePerGuest;
-    const serverTotalAmount = serverPricePerGuest * data.guestsCount;
+    // 6. Server-authoritative pricing: derive centrally from authoritative Wedding tier and duration.
+    // P0 Security: Client cannot inject a false price.
+    const pricing = calculateBookingPricing({
+      tier: wedding.tier,
+      durationDays: wedding.durationDays,
+      guestCount: data.guestsCount,
+      isAgentAttributed: false,
+    });
 
     // 7. Validate and sanitize attendanceSide — never trust client enum strings directly.
     const VALID_SIDES: WeddingSide[] = [WeddingSide.BRIDE_SIDE, WeddingSide.GROOM_SIDE, WeddingSide.OPEN];
@@ -625,15 +633,27 @@ export async function createBookingAction(data: {
         : WeddingSide.BRIDE_SIDE
     );
 
-
     const createdBooking = await tx.booking.create({
       data: {
         travelerId: traveler.id,
         weddingId: data.weddingId,
         date: new Date(data.date),
         guestsCount: data.guestsCount,
-        pricePerGuest: serverPricePerGuest,
-        totalAmount: serverTotalAmount,
+        pricePerGuest: pricing.customerPricePerGuestUSD,
+        totalAmount: pricing.customerTotalAmountUSD,
+        weddingTier: pricing.tier,
+        durationDays: pricing.durationDays,
+        customerPricePerGuestUSD: pricing.customerPricePerGuestUSD,
+        hostPayoutPerGuestINR: pricing.hostPayoutPerGuestINR,
+        agentPayoutPerGuestINR: pricing.agentPayoutPerGuestINR,
+        eligibleInternationalGuestCount: pricing.eligibleInternationalGuestCount,
+        totalHostPayoutINR: pricing.totalHostPayoutINR,
+        totalAgentPayoutINR: pricing.totalAgentPayoutINR,
+        pricingVersion: pricing.pricingVersion,
+        baseCustomerAmountUSD: pricing.baseCustomerAmountUSD,
+        paymentFeeAmount: 0,
+        customerTotalAmount: pricing.customerTotalAmountUSD,
+        currency: "USD",
         status: BookingStatus.PENDING,
         attendanceSide: sanitizedSide,
       }
@@ -909,12 +929,6 @@ export const respondToBookingAction = handleGuestApplicationAction;
 export async function createCheckoutSessionAction(bookingId: string) {
   const user = await requireAuth();
 
-  // Rate limiting: max 3 checkout attempts per user per 5 minutes
-  const { success: rateLimitOk } = await rateLimit("createCheckout", user.id, { limit: 3, window: 300 });
-  if (!rateLimitOk) {
-    throw new Error("Too many payment attempts. Please wait before trying again.");
-  }
-
   const booking = await prisma.booking.findUnique({
     where: { id: bookingId },
     include: {
@@ -937,46 +951,26 @@ export async function createCheckoutSessionAction(bookingId: string) {
   }
 
   if (booking.status !== BookingStatus.AWAITING_PAYMENT) {
-    throw new Error(`Cannot pay for booking in status: ${booking.status}. It must be approved by the host first.`);
+    throw new Error(`Cannot pay for booking in status: ${booking.status}. It must be approved by the host/admin first.`);
   }
 
   if (booking.payments.length > 0) {
     throw new Error("This booking has already been paid.");
   }
 
-  // ENV-001: Use validated env to prevent localhost URLs in production Stripe redirect URLs.
-  const appUrl = env.NEXT_PUBLIC_APP_URL;
-
-  const session = await stripe.checkout.sessions.create({
-    payment_method_types: ["card"],
-    mode: "payment",
-    line_items: [
-      {
-        price_data: {
-          currency: "usd",
-          product_data: {
-            name: `Attending: ${booking.wedding.title}`,
-            description: `${booking.guestsCount} guests reservation ticket pass. Date: ${booking.date.toLocaleDateString()}`
-          },
-          unit_amount: Math.round(booking.totalAmount * 100)
-        },
-        quantity: 1
-      }
-    ],
-    client_reference_id: booking.id,
-    metadata: {
-      bookingId: booking.id,
-      travelerEmail: booking.traveler.user.email
-    },
-    success_url: `${appUrl}/dashboard/bookings?session_id={CHECKOUT_SESSION_ID}&success=true`,
-    cancel_url: `${appUrl}/dashboard/bookings?cancel=true`,
-    expires_at: Math.floor(Date.now() / 1000) + (30 * 60)
+  const latestPayment = await prisma.payment.findFirst({
+    where: { bookingId: booking.id },
+    orderBy: { createdAt: "desc" }
   });
 
-  return { success: true, url: session.url };
+  return {
+    success: true,
+    url: latestPayment?.paymentLink || null,
+    payment: latestPayment ? JSON.parse(JSON.stringify(latestPayment)) : null,
+  };
 }
 
-export async function refundBookingAction(bookingId: string) {
+export async function refundBookingAction(bookingId: string, reason?: string, refundTxnId?: string) {
   const user = await requireAuth();
   if (user.role !== UserRole.ADMIN) {
     throw new Error("Forbidden: Only administrators can process refunds.");
@@ -988,7 +982,8 @@ export async function refundBookingAction(bookingId: string) {
       payments: {
         where: { status: PaymentStatus.PAID }
       },
-      traveler: { include: { user: true } }
+      traveler: { include: { user: true } },
+      wedding: true,
     }
   });
 
@@ -998,62 +993,41 @@ export async function refundBookingAction(bookingId: string) {
   }
 
   const payment = booking.payments[0];
-  if (!payment || !payment.stripePaymentIntentId) {
+  if (!payment) {
     throw new Error("No successful payment transactions found for this booking.");
   }
 
-  const stripeRefund = await stripe.refunds.create({
-    payment_intent: payment.stripePaymentIntentId,
-    amount: Math.round(payment.amount * 100)
-  });
+  const { recordManualRefundAtomic } = await import("../services/payments");
 
-  const updatedBooking = await prisma.$transaction(async (tx) => {
-    await tx.refund.create({
-      data: {
-        paymentId: payment.id,
-        amount: payment.amount,
-        stripeRefundId: stripeRefund.id,
-        status: "SUCCESS",
-        reason: "Admin requested refund"
-      }
+  const result = await prisma.$transaction(async (tx) => {
+    return await recordManualRefundAtomic(tx, {
+      paymentId: payment.id,
+      refundAmount: payment.amount,
+      reason: reason || "Admin manual refund",
+      refundTransactionId: refundTxnId || `REF-ADMIN-${Date.now()}`,
+      refundNotes: "Admin executed refund via dashboard",
+      adminUserId: user.id,
+      adminEmail: user.email,
     });
-
-    await tx.payment.update({
-      where: { id: payment.id },
-      data: { status: PaymentStatus.REFUNDED }
-    });
-
-    const updated = await tx.booking.update({
-      where: { id: bookingId },
-      data: { status: BookingStatus.REFUNDED }
-    });
-
-    await tx.transaction.create({
-      data: {
-        paymentId: payment.id,
-        type: "REFUND",
-        amount: payment.amount,
-        status: "SUCCESS",
-        referenceId: stripeRefund.id
-      }
-    });
-
-    return updated;
   }, { maxWait: 10000, timeout: 15000 });
 
   try {
     await sendRefundConfirmationEmail(
       booking.traveler.user.email,
       booking.traveler.fullName,
-      booking.weddingId,
-      stripeRefund.id,
+      booking.wedding.title,
+      result.refundTxnId,
       payment.amount
     );
   } catch {
     // Non-blocking email dispatch failure
   }
 
-  return updatedBooking;
+  revalidatePath("/dashboard/admin/bookings");
+  revalidatePath("/dashboard/admin/payments");
+  revalidatePath("/dashboard/bookings");
+
+  return result.refund;
 }
 
 export async function submitVerificationAction(data: Record<string, any>) {
@@ -1283,16 +1257,26 @@ export async function fetchDashboardDataAction() {
       }), { label: "fetchDash:hosted" }).catch(() => null),
     ]);
 
+    const { getHostPayoutPerGuestINR, normalizeWeddingTier, normalizeDurationDays } = require("../services/pricing-engine");
+
     bookings = coupleBookings;
-    guestApplications = bookings.map((b) => ({
-      id: b.id,
-      travelerName: b.traveler?.fullName || "Guest",
-      travelerCountry: b.traveler?.country || "",
-      travelerAvatar: b.traveler?.user?.avatar || "https://i.pravatar.cc/80?img=5",
-      budget: `$${(b.totalAmount).toLocaleString()}`,
-      message: `Requested slot for ${b.wedding.title}. Price: $${b.pricePerGuest}/guest.`,
-      status: b.status === BookingStatus.PENDING ? "pending" : b.status === BookingStatus.AWAITING_PAYMENT ? "awaiting_payment" : b.status === BookingStatus.PAID ? "approved" : "rejected"
-    }));
+    guestApplications = bookings.map((b: any) => {
+      const tier = normalizeWeddingTier(b.weddingTier || b.wedding?.tier || "STANDARD");
+      const duration = normalizeDurationDays(b.durationDays || b.wedding?.durationDays || 3);
+      const hostRate = b.hostPayoutPerGuestINR || getHostPayoutPerGuestINR(tier, duration);
+      const guests = b.eligibleInternationalGuestCount || b.guestsCount || 1;
+      const hostEarningsINR = b.totalHostPayoutINR || (hostRate * guests);
+
+      return {
+        id: b.id,
+        travelerName: b.traveler?.fullName || "Guest",
+        travelerCountry: b.traveler?.country || "",
+        travelerAvatar: b.traveler?.user?.avatar || "https://i.pravatar.cc/80?img=5",
+        budget: `₹${hostEarningsINR.toLocaleString("en-IN")}`,
+        message: `Reservation request for ${b.guestsCount} guest(s) at "${b.wedding.title}".`,
+        status: b.status === BookingStatus.PENDING ? "pending" : b.status === BookingStatus.AWAITING_PAYMENT ? "awaiting_payment" : b.status === BookingStatus.PAID ? "approved" : "rejected"
+      };
+    });
 
     if (hosted) {
       hostWedding = {
@@ -1303,23 +1287,56 @@ export async function fetchDashboardDataAction() {
       };
     }
 
-    const paidBookings = bookings.filter((b) => 
+    const paidBookings = bookings.filter((b: any) => 
       b.status === BookingStatus.PAID || 
       b.status === BookingStatus.READY_FOR_EVENT ||
       b.status === BookingStatus.CHECKED_IN ||
       b.status === BookingStatus.ATTENDED ||
       b.status === BookingStatus.COMPLETED
     );
-    revenue = paidBookings.reduce((sum, b) => sum + b.totalAmount, 0);
-    pendingPayouts = revenue;
 
-    paidGuests = paidBookings.map((b) => ({
-      id: b.id,
-      travelerName: b.traveler?.fullName || "Guest",
-      guestsCount: b.guestsCount,
-      amount: b.totalAmount,
-      date: b.date.toISOString().split("T")[0]
-    }));
+    // Calculate fixed INR host earnings
+    revenue = paidBookings.reduce((sum: number, b: any) => {
+      const tier = normalizeWeddingTier(b.weddingTier || b.wedding?.tier || "STANDARD");
+      const duration = normalizeDurationDays(b.durationDays || b.wedding?.durationDays || 3);
+      const hostRate = b.hostPayoutPerGuestINR || getHostPayoutPerGuestINR(tier, duration);
+      const guests = b.eligibleInternationalGuestCount || b.guestsCount || 1;
+      const hostEarnings = b.totalHostPayoutINR || (hostRate * guests);
+      return sum + hostEarnings;
+    }, 0);
+
+    // Pending payouts: paid bookings where host payout has not been transferred yet
+    pendingPayouts = paidBookings.reduce((sum: number, b: any) => {
+      const isTransferred = b.payments?.some((p: any) => p.hostPayoutTransferred);
+      if (isTransferred) return sum;
+      const tier = normalizeWeddingTier(b.weddingTier || b.wedding?.tier || "STANDARD");
+      const duration = normalizeDurationDays(b.durationDays || b.wedding?.durationDays || 3);
+      const hostRate = b.hostPayoutPerGuestINR || getHostPayoutPerGuestINR(tier, duration);
+      const guests = b.eligibleInternationalGuestCount || b.guestsCount || 1;
+      const hostEarnings = b.totalHostPayoutINR || (hostRate * guests);
+      return sum + hostEarnings;
+    }, 0);
+
+    paidGuests = paidBookings.map((b: any) => {
+      const tier = normalizeWeddingTier(b.weddingTier || b.wedding?.tier || "STANDARD");
+      const duration = normalizeDurationDays(b.durationDays || b.wedding?.durationDays || 3);
+      const hostRate = b.hostPayoutPerGuestINR || getHostPayoutPerGuestINR(tier, duration);
+      const guests = b.eligibleInternationalGuestCount || b.guestsCount || 1;
+      const hostEarnings = b.totalHostPayoutINR || (hostRate * guests);
+
+      let dateStr = "";
+      if (b.date) {
+        dateStr = b.date instanceof Date ? b.date.toISOString().split("T")[0] : String(b.date).split("T")[0];
+      }
+
+      return {
+        id: b.id,
+        travelerName: b.traveler?.fullName || "Guest",
+        guestsCount: b.guestsCount,
+        amount: hostEarnings,
+        date: dateStr
+      };
+    });
   } else if (dbUser.role === UserRole.ADMIN) {
     const [adminPayments, adminRefunds, adminVerifs] = await Promise.all([
       withDbRetry(() => prisma.payment.findMany({
@@ -1373,13 +1390,18 @@ export async function fetchDashboardDataAction() {
         mappedStatus = "past";
       }
 
+      let dateStr = "";
+      if (b.date) {
+        dateStr = b.date instanceof Date ? b.date.toISOString().split("T")[0] : String(b.date).split("T")[0];
+      }
+
       return {
         id: b.id,
-        weddingId: b.wedding.id,
-        weddingTitle: b.wedding.title,
-        location: b.wedding.location,
-        imageUrl: b.wedding.mainImageUrl,
-        date: b.date.toISOString().split("T")[0],
+        weddingId: b.wedding?.id || "",
+        weddingTitle: b.wedding?.title || "Wedding Celebration",
+        location: b.wedding?.location || "",
+        imageUrl: b.wedding?.mainImageUrl || "",
+        date: dateStr,
         pricePerGuest: b.pricePerGuest,
         guestsCount: b.guestsCount,
         attendanceSide: b.attendanceSide,
@@ -1389,14 +1411,14 @@ export async function fetchDashboardDataAction() {
         guestCountry: (b as any).traveler ? (b as any).traveler.country : undefined,
       };
     }),
-    wishlist,
+    wishlist: Array.isArray(wishlist) ? wishlist.filter(Boolean) : [],
     notifications: notifications.map((n) => ({
       id: n.id,
       title: n.title,
       message: n.message,
-      time: n.createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      time: n.createdAt instanceof Date ? n.createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : String(n.createdAt || ""),
       read: n.read,
-      type: (n.type.toLowerCase() === "payment_received" ? "success" : "info") as "info" | "request" | "alert" | "success"
+      type: (n.type && n.type.toLowerCase() === "payment_received" ? "success" : "info") as "info" | "request" | "alert" | "success"
     })),
     guestApplications,
     hostWedding,
@@ -1550,8 +1572,12 @@ export const getHomepageWeddings = unstable_cache(
             },
             take: limit,
             orderBy: [
-              { featured: "desc" },
+              // DB-level hint: sponsored listings first, then featured.
+              // This ensures the DB LIMIT slice biases toward sponsored rows.
+              // We do a time-aware in-memory re-sort after DTO conversion
+              // so expired/future campaigns are correctly demoted.
               { sponsored: "desc" },
+              { featured: "desc" },
               { createdAt: "desc" },
             ],
             include: {
@@ -1595,6 +1621,17 @@ export const getHomepageWeddings = unstable_cache(
           guestsBooked: w._count.bookings,
         });
       });
+
+      // Time-aware in-memory re-sort: active sponsored > featured > normal.
+      // This is required because DB orderBy on `sponsored` boolean does not
+      // evaluate sponsorshipStart/End — only isSponsorshipActive() (in DTO) does.
+      // Priority tiers: 2 = active sponsored, 1 = featured, 0 = normal.
+      results.sort((a, b) => {
+        const tierA = a.sponsored ? 2 : a.featured ? 1 : 0;
+        const tierB = b.sponsored ? 2 : b.featured ? 1 : 0;
+        return tierB - tierA;
+      });
+
       return results;
     } catch (err) {
       console.warn("[getHomepageWeddings] Database unreachable. Serving static fallback.", err);
@@ -1933,6 +1970,8 @@ export async function requestSponsorshipAction(data: {
   }
 
   revalidatePath("/dashboard/listings");
+  revalidateTag("weddings", "max");
+  revalidateTag("homepage", "max");
   return { success: true };
 }
 

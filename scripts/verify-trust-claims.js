@@ -59,7 +59,7 @@ const EDITORIAL_PATTERNS = [
 let claimsDetected = 0;
 let supportedClaims = 0;
 let editorialClaims = 0;
-let manualClaims = 0;
+const manualClaims = 0;
 let unsupportedClaims = 0;
 
 const claimsTable = [];

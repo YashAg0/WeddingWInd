@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { prisma } from "../prisma";
 import { requireRole } from "../auth";
 import { UserRole, BookingStatus, PaymentStatus, VerificationStatus, WeddingStatus, ReputationEntityType, ReputationEventType } from "@prisma/client";
@@ -8,7 +8,6 @@ import { z } from "zod";
 import { sendVerificationApprovedEmail, sendVerificationRejectedEmail } from "../email";
 import crypto from "crypto";
 import { logReputationEvent } from "../services/reputation";
-import { stripe } from "../stripe";
 import { CAPACITY_HOLDING_BOOKING_STATUSES } from "../booking-statuses";
 
 // Helper function to log audit events
@@ -85,10 +84,10 @@ export async function adminGetDashboardStatsAction() {
     amount,
   }));
 
-  // Stripe Statistics Estimated calculations based on standard 2.9% + $0.30 fee structure
-  const stripeVolume = totalRevenue;
-  const stripeFees = totalRevenue * 0.029 + allPayments.length * 0.3;
-  const netRevenue = stripeVolume - stripeFees;
+  // Processing Fee & Volume calculations (configurable ~3.5% + fixed)
+  const totalVolume = totalRevenue;
+  const estimatedFees = totalRevenue * 0.035;
+  const netRevenue = totalVolume - estimatedFees;
 
   return {
     revenue: totalRevenue,
@@ -96,8 +95,13 @@ export async function adminGetDashboardStatsAction() {
     pendingBookings: pendingBookingsCount,
     verificationQueueCount: pendingVerificationsCount,
     stripeStats: {
-      volume: stripeVolume,
-      fees: stripeFees,
+      volume: totalVolume,
+      fees: estimatedFees,
+      net: netRevenue,
+    },
+    paymentStats: {
+      volume: totalVolume,
+      fees: estimatedFees,
       net: netRevenue,
     },
     growthCharts,
@@ -109,13 +113,24 @@ export async function adminGetDashboardStatsAction() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 const adminWeddingSchema = z.object({
-  title: z.string().min(5, "Title must be at least 5 characters"),
-  description: z.string().min(20, "Description must be at least 20 characters"),
+  title: z.string().min(3, "Title must be at least 3 characters"),
+  description: z.string().min(10, "Description must be at least 10 characters"),
   location: z.string().min(1, "Location is required"),
   category: z.string().min(1, "Category is required"),
   religion: z.string().default("Hindu"),
+  region: z.string().nullable().optional(),
+  community: z.string().nullable().optional(),
+  foodContext: z.string().nullable().optional(),
+  dressExpectations: z.string().nullable().optional(),
+  guestRules: z.string().nullable().optional(),
+  etiquetteNotes: z.string().nullable().optional(),
+  tier: z.enum(["STANDARD", "ENHANCED", "GRAND", "ROYAL", "SIGNATURE_ROYAL"]).default("STANDARD"),
+  durationDays: z.number().int().min(1).max(5).default(3),
+  ceremoniesCount: z.number().int().min(1).max(15).default(3),
+  experienceIntensity: z.string().default("TRADITIONAL"),
+  weddingScale: z.string().default("MEDIUM"),
   date: z.string(),
-  pricePerGuest: z.number().positive(),
+  pricePerGuest: z.number().positive().default(149),
   capacity: z.number().int().positive(),
   requiredGuests: z.number().int().nonnegative().default(0),
   theme: z.string().nullable().optional(),
@@ -123,11 +138,15 @@ const adminWeddingSchema = z.object({
   ethnicity: z.string().nullable().optional(),
   mainImageUrl: z.string().url("Invalid image URL"),
   hostCoupleId: z.string().uuid("Invalid Host Couple Profile ID"),
-  status: z.enum(["DRAFT", "PUBLISHED", "COMPLETED"]).default("DRAFT"),
+  status: z.enum(["DRAFT", "PUBLISHED", "COMPLETED", "UNDER_REVIEW", "ACTION_REQUIRED", "VERIFIED", "ARCHIVED", "REJECTED"]).default("DRAFT"),
   featured: z.boolean().default(false),
   sponsored: z.boolean().default(false),
   sponsorshipStart: z.string().nullable().optional(),
   sponsorshipEnd: z.string().nullable().optional(),
+  isDemo: z.boolean().default(false),
+  events: z.array(z.any()).optional(),
+  traditions: z.array(z.any()).optional(),
+  gallery: z.array(z.string()).optional(),
 });
 
 export async function adminGetWeddingsAction() {
@@ -155,10 +174,18 @@ export async function adminGetWeddingsAction() {
 }
 
 export async function adminCreateWeddingAction(data: any) {
+  const { getCustomerPriceUSD, normalizeWeddingTier, normalizeDurationDays } = await import("../services/pricing-engine");
   const admin = await requireRole([UserRole.ADMIN]);
+  const tier = normalizeWeddingTier(data.tier || "STANDARD");
+  const durationDays = normalizeDurationDays(parseInt(data.durationDays) || 3);
+  const derivedPricePerGuest = getCustomerPriceUSD(tier, durationDays);
+
   const parsed = adminWeddingSchema.parse({
     ...data,
-    pricePerGuest: parseFloat(data.pricePerGuest),
+    tier,
+    durationDays,
+    ceremoniesCount: parseInt(data.ceremoniesCount) || 3,
+    pricePerGuest: derivedPricePerGuest,
     capacity: parseInt(data.capacity),
     featured: data.featured === true || data.featured === "true",
     sponsored: data.sponsored === true || data.sponsored === "true",
@@ -183,6 +210,17 @@ export async function adminCreateWeddingAction(data: any) {
       location: parsed.location,
       category: parsed.category,
       religion: parsed.religion,
+      region: parsed.region || null,
+      community: parsed.community || null,
+      foodContext: parsed.foodContext || null,
+      dressExpectations: parsed.dressExpectations || null,
+      guestRules: parsed.guestRules || null,
+      etiquetteNotes: parsed.etiquetteNotes || null,
+      tier: parsed.tier,
+      durationDays: parsed.durationDays,
+      ceremoniesCount: parsed.ceremoniesCount,
+      experienceIntensity: parsed.experienceIntensity,
+      weddingScale: parsed.weddingScale,
       date: new Date(parsed.date),
       pricePerGuest: parsed.pricePerGuest,
       capacity: parsed.capacity,
@@ -192,16 +230,53 @@ export async function adminCreateWeddingAction(data: any) {
       ethnicity: parsed.ethnicity,
       mainImageUrl: parsed.mainImageUrl,
       hostCoupleId: parsed.hostCoupleId,
-      status: parsed.status,
+      status: parsed.status as WeddingStatus,
       featured: parsed.featured,
       sponsored: parsed.sponsored,
       sponsorshipStart,
       sponsorshipEnd,
       slug,
+      isDemo: parsed.isDemo || false,
     },
   });
 
-  await createAuditLog("CREATE_WEDDING", "Wedding", wedding.id, `Admin (${admin.email}) created wedding: "${wedding.title}"`);
+  // Sync child records on create if provided
+  if (Array.isArray(data.events) && data.events.length > 0) {
+    await prisma.weddingEvent.createMany({
+      data: data.events.map((evt: any) => ({
+        weddingId: wedding.id,
+        name: evt.name || evt.title || "Ceremony",
+        description: evt.description || null,
+        date: evt.date ? new Date(evt.date) : new Date(parsed.date),
+        startTime: evt.startTime || "10:00",
+        endTime: evt.endTime || "13:00",
+        location: evt.location || parsed.location,
+        dressCode: evt.dressCode || null,
+      })),
+    });
+  }
+
+  if (Array.isArray(data.traditions) && data.traditions.length > 0) {
+    await prisma.weddingTradition.createMany({
+      data: data.traditions.map((t: any) => ({
+        weddingId: wedding.id,
+        name: t.name || t.title || "Tradition",
+        description: t.description || "",
+      })),
+    });
+  }
+
+  if (Array.isArray(data.gallery) && data.gallery.length > 0) {
+    await prisma.weddingGallery.createMany({
+      data: data.gallery.map((url: string, idx: number) => ({
+        weddingId: wedding.id,
+        imageUrl: url,
+        order: idx,
+      })),
+    });
+  }
+
+  await createAuditLog("CREATE_WEDDING", "Wedding", wedding.id, `Admin (${admin.email}) created wedding: "${wedding.title}" (Tier: ${parsed.tier}, ${parsed.durationDays} Days, $${parsed.pricePerGuest}/guest)`);
   if (parsed.featured) {
     await createAuditLog("ADMIN_FEATURED_ENABLED", "Wedding", wedding.id, `Admin (${admin.email}) enabled featured on creation for "${wedding.title}"`);
   }
@@ -215,18 +290,27 @@ export async function adminCreateWeddingAction(data: any) {
 }
 
 export async function adminUpdateWeddingAction(weddingId: string, data: any) {
+  const { getCustomerPriceUSD, normalizeWeddingTier, normalizeDurationDays } = await import("../services/pricing-engine");
   const admin = await requireRole([UserRole.ADMIN]);
   const existing = await prisma.wedding.findUnique({
     where: { id: weddingId },
   });
   if (!existing) throw new Error("Wedding not found.");
 
+  const tier = normalizeWeddingTier(data.tier || existing.tier || "STANDARD");
+  const durationDays = normalizeDurationDays(parseInt(data.durationDays) || existing.durationDays || 3);
+  const derivedPricePerGuest = getCustomerPriceUSD(tier, durationDays);
+
   const parsed = adminWeddingSchema.parse({
     ...data,
-    pricePerGuest: parseFloat(data.pricePerGuest),
+    tier,
+    durationDays,
+    ceremoniesCount: parseInt(data.ceremoniesCount) || existing.ceremoniesCount || 3,
+    pricePerGuest: derivedPricePerGuest,
     capacity: parseInt(data.capacity),
     featured: data.featured === true || data.featured === "true",
     sponsored: data.sponsored === true || data.sponsored === "true",
+    isDemo: data.isDemo === true || data.isDemo === "true" || existing.isDemo,
   });
 
   const sponsorshipStart = parsed.sponsorshipStart ? new Date(parsed.sponsorshipStart) : null;
@@ -240,6 +324,17 @@ export async function adminUpdateWeddingAction(weddingId: string, data: any) {
       location: parsed.location,
       category: parsed.category,
       religion: parsed.religion,
+      region: parsed.region !== undefined ? parsed.region : existing.region,
+      community: parsed.community !== undefined ? parsed.community : existing.community,
+      foodContext: parsed.foodContext !== undefined ? parsed.foodContext : existing.foodContext,
+      dressExpectations: parsed.dressExpectations !== undefined ? parsed.dressExpectations : existing.dressExpectations,
+      guestRules: parsed.guestRules !== undefined ? parsed.guestRules : existing.guestRules,
+      etiquetteNotes: parsed.etiquetteNotes !== undefined ? parsed.etiquetteNotes : existing.etiquetteNotes,
+      tier: parsed.tier,
+      durationDays: parsed.durationDays,
+      ceremoniesCount: parsed.ceremoniesCount,
+      experienceIntensity: parsed.experienceIntensity,
+      weddingScale: parsed.weddingScale,
       date: new Date(parsed.date),
       pricePerGuest: parsed.pricePerGuest,
       capacity: parsed.capacity,
@@ -249,13 +344,59 @@ export async function adminUpdateWeddingAction(weddingId: string, data: any) {
       ethnicity: parsed.ethnicity,
       mainImageUrl: parsed.mainImageUrl,
       hostCoupleId: parsed.hostCoupleId,
-      status: parsed.status,
+      status: parsed.status as WeddingStatus,
       featured: parsed.featured,
       sponsored: parsed.sponsored,
       sponsorshipStart,
       sponsorshipEnd,
+      isDemo: parsed.isDemo,
     },
   });
+
+  // Sync child records if provided
+  if (Array.isArray(data.events)) {
+    await prisma.weddingEvent.deleteMany({ where: { weddingId } });
+    if (data.events.length > 0) {
+      await prisma.weddingEvent.createMany({
+        data: data.events.map((evt: any) => ({
+          weddingId,
+          name: evt.name || evt.title || "Ceremony",
+          description: evt.description || null,
+          date: evt.date ? new Date(evt.date) : new Date(parsed.date),
+          startTime: evt.startTime || "10:00",
+          endTime: evt.endTime || "13:00",
+          location: evt.location || parsed.location,
+          dressCode: evt.dressCode || null,
+        })),
+      });
+    }
+  }
+
+  if (Array.isArray(data.traditions)) {
+    await prisma.weddingTradition.deleteMany({ where: { weddingId } });
+    if (data.traditions.length > 0) {
+      await prisma.weddingTradition.createMany({
+        data: data.traditions.map((t: any) => ({
+          weddingId,
+          name: t.name || t.title || "Tradition",
+          description: t.description || "",
+        })),
+      });
+    }
+  }
+
+  if (Array.isArray(data.gallery)) {
+    await prisma.weddingGallery.deleteMany({ where: { weddingId } });
+    if (data.gallery.length > 0) {
+      await prisma.weddingGallery.createMany({
+        data: data.gallery.map((url: string, idx: number) => ({
+          weddingId,
+          imageUrl: url,
+          order: idx,
+        })),
+      });
+    }
+  }
 
   // Track featured audit
   if (existing.featured !== parsed.featured) {
@@ -285,11 +426,15 @@ export async function adminUpdateWeddingAction(weddingId: string, data: any) {
     );
   }
 
-  await createAuditLog("UPDATE_WEDDING", "Wedding", wedding.id, `Updated wedding details for: "${wedding.title}"`);
+  await createAuditLog("UPDATE_WEDDING", "Wedding", wedding.id, `Updated wedding details for: "${wedding.title}" (Tier: ${parsed.tier}, Duration: ${parsed.durationDays}d, Price: $${parsed.pricePerGuest})`);
   revalidatePath("/dashboard/admin/weddings");
+  revalidatePath("/dashboard/admin/weddings/sponsorship");
   revalidatePath(`/weddings/${wedding.slug}`);
   revalidatePath("/weddings");
+  revalidatePath("/weddings/map");
   revalidatePath("/");
+  revalidateTag("weddings", "max");
+  revalidateTag("homepage", "max");
   return { success: true, wedding };
 }
 
@@ -319,7 +464,10 @@ export async function adminDeleteWeddingAction(weddingId: string) {
   await createAuditLog("DELETE_WEDDING", "Wedding", weddingId, `Admin (${admin.email}) deleted/archived wedding: "${wedding.title}"`);
   revalidatePath("/dashboard/admin/weddings");
   revalidatePath("/weddings");
+  revalidatePath("/weddings/map");
   revalidatePath("/");
+  revalidateTag("weddings", "max");
+  revalidateTag("homepage", "max");
   return { success: true };
 }
 
@@ -333,7 +481,10 @@ export async function adminToggleWeddingStatusAction(weddingId: string, status: 
   await createAuditLog("TOGGLE_WEDDING_STATUS", "Wedding", weddingId, `Admin (${admin.email}) changed status of "${updated.title}" to ${status}`);
   revalidatePath("/dashboard/admin/weddings");
   revalidatePath("/weddings");
+  revalidatePath("/weddings/map");
   revalidatePath("/");
+  revalidateTag("weddings", "max");
+  revalidateTag("homepage", "max");
   return { success: true };
 }
 
@@ -356,7 +507,10 @@ export async function adminToggleWeddingFeaturedAction(weddingId: string, featur
   );
   revalidatePath("/dashboard/admin/weddings");
   revalidatePath("/weddings");
+  revalidatePath("/weddings/map");
   revalidatePath("/");
+  revalidateTag("weddings", "max");
+  revalidateTag("homepage", "max");
   return { success: true, wedding: updated };
 }
 
@@ -1347,42 +1501,37 @@ export async function adminProcessHostPayoutAction(paymentId: string) {
     throw new Error("Payout has already been processed for this transaction.");
   }
 
-  let stripeTransferId = `tr_${crypto.randomBytes(12).toString("hex")}`;
-  const hostStripeId = payment.booking.wedding.hostCouple.stripeAccountId;
+  const payoutReference = `PAYOUT-HOST-${Date.now()}`;
 
-  if (hostStripeId) {
-    try {
-      const payoutCurrency = (payment.currency || "USD").toLowerCase();
-      const zeroDecimalCurrencies = ["jpy", "krw", "vnd", "clp", "pyg"];
-      const transferAmount = zeroDecimalCurrencies.includes(payoutCurrency)
-        ? Math.round(payment.amount)
-        : Math.round(payment.amount * 100);
-
-      const transfer = await stripe.transfers.create({
-        amount: transferAmount,
-        currency: payoutCurrency,
-        destination: hostStripeId,
-        metadata: {
-          paymentId: payment.id,
-          bookingId: payment.bookingId,
-        }
-      });
-      stripeTransferId = transfer.id;
-    } catch (err: any) {
-      throw new Error(`Stripe Transfer failed: ${err.message}`);
-    }
-  }
+  const { getHostPayoutPerGuestINR, normalizeWeddingTier, normalizeDurationDays } = require("../services/pricing-engine");
+  const booking = payment.booking;
+  const tier = normalizeWeddingTier(booking.weddingTier || booking.wedding?.tier || "STANDARD");
+  const duration = normalizeDurationDays(booking.durationDays || booking.wedding?.durationDays || 3);
+  const hostRatePerGuestINR = booking.hostPayoutPerGuestINR || getHostPayoutPerGuestINR(tier, duration);
+  const eligibleGuests = booking.eligibleInternationalGuestCount || booking.guestsCount || 1;
+  const hostPayoutAmountINR = booking.totalHostPayoutINR || (hostRatePerGuestINR * eligibleGuests);
 
   const payout = await prisma.payout.create({
     data: {
       paymentId,
-      amount: payment.amount,
+      amount: hostPayoutAmountINR,
       status: "CLEARED",
-      stripeTransferId,
+      stripeTransferId: payoutReference,
     },
   });
 
-  await createAuditLog("PROCESS_PAYOUT", "Payout", payout.id, `Admin processed host payout of $${payment.amount} for payment ${paymentId}`);
+  // Mark host payout transferred flag on payment
+  await prisma.payment.update({
+    where: { id: paymentId },
+    data: { hostPayoutTransferred: true },
+  });
+
+  await createAuditLog(
+    "PROCESS_PAYOUT",
+    "Payout",
+    payout.id,
+    `Admin processed fixed host payout of ₹${hostPayoutAmountINR.toLocaleString("en-IN")} INR for payment ${paymentId} (Booking ${booking.id})`
+  );
 
   // Log PAYOUT_COMPLETED event for host
   const { logReputationEvent } = require("../services/reputation");
@@ -1495,8 +1644,11 @@ export async function adminCreateManualReputationAdjustmentAction(params: {
 // WEDDING DISCOVERY CONTROLS
 // ─────────────────────────────────────────────────────────────────────────────
 
+// Accepts both standard UUIDs (dynamically registered weddings) and short string IDs
+// (e.g. 'w1'–'w23' for seeded showcase listings). Authorization is enforced by
+// requireRole and per-record ownership checks — NOT by ID format.
 const weddingDiscoveryUpdateSchema = z.object({
-  weddingId: z.string().uuid("Invalid wedding ID"),
+  weddingId: z.string().min(1, "Wedding ID required").max(100, "Wedding ID too long"),
 });
 
 export async function adminToggleSponsoredAction(
@@ -1540,8 +1692,12 @@ export async function adminToggleSponsoredAction(
   );
 
   revalidatePath("/dashboard/admin/weddings");
+  revalidatePath("/dashboard/admin/weddings/sponsorship");
   revalidatePath("/weddings");
+  revalidatePath("/weddings/map");
   revalidatePath("/");
+  revalidateTag("weddings", "max");
+  revalidateTag("homepage", "max");
   return { success: true, wedding: updated };
 }
 
@@ -1582,8 +1738,12 @@ export async function adminUpdateSponsorshipDatesAction(
   );
 
   revalidatePath("/dashboard/admin/weddings");
+  revalidatePath("/dashboard/admin/weddings/sponsorship");
   revalidatePath("/weddings");
+  revalidatePath("/weddings/map");
   revalidatePath("/");
+  revalidateTag("weddings", "max");
+  revalidateTag("homepage", "max");
   return { success: true, wedding: updated };
 }
 
@@ -1623,6 +1783,8 @@ export async function adminSetTrendingBoostAction(weddingId: string, boostScore:
 
 export async function adminGetHostApplicationsAction() {
   await requireRole([UserRole.ADMIN]);
+
+  // Fetch legacy weddings
   const weddings = await prisma.wedding.findMany({
     include: {
       hostCouple: {
@@ -1641,12 +1803,93 @@ export async function adminGetHostApplicationsAction() {
     orderBy: { createdAt: "desc" },
   });
 
+  let hostApps: any[] = [];
+  if (prisma.hostApplication) {
+    try {
+      hostApps = await prisma.hostApplication.findMany({
+        include: {
+          days: {
+            include: { events: true },
+            orderBy: { dayNumber: "asc" },
+          },
+          documentRequests: {
+            include: { documents: true },
+            orderBy: { requestedAt: "desc" },
+          },
+          documents: true,
+          wedding: true,
+          user: {
+            include: { verification: true },
+          },
+        },
+        orderBy: { updatedAt: "desc" },
+      });
+    } catch {
+      hostApps = [];
+    }
+  }
+
+  // Attach properties to array so both array-based and object-destructuring callers work seamlessly
+  (weddings as any).hostApps = hostApps;
+  (weddings as any).weddings = weddings;
+
   return weddings;
 }
 
 export async function adminGetHostApplicationByIdAction(id: string) {
   await requireRole([UserRole.ADMIN]);
-  let wedding = await prisma.wedding.findUnique({
+
+  // 1. Query HostApplication if model available
+  let hostApp: any = null;
+  if (prisma.hostApplication) {
+    try {
+      hostApp = await prisma.hostApplication.findUnique({
+        where: { id },
+        include: {
+          days: {
+            include: { events: true },
+            orderBy: { dayNumber: "asc" },
+          },
+          documentRequests: {
+            include: { documents: true },
+            orderBy: { requestedAt: "desc" },
+          },
+          documents: true,
+          auditLogs: { orderBy: { createdAt: "desc" } },
+          wedding: {
+            include: {
+              bookings: {
+                include: {
+                  traveler: { include: { user: true } },
+                  payments: true,
+                },
+              },
+            },
+          },
+          user: {
+            include: {
+              verification: true,
+              travelerProfile: true,
+              agentProfile: true,
+            },
+          },
+        },
+      });
+    } catch {
+      hostApp = null;
+    }
+  }
+
+  if (hostApp) {
+    const combined: any = hostApp.wedding ? { ...hostApp.wedding, ...hostApp } : { ...hostApp };
+    combined.isHostApp = true;
+    combined.hostApp = hostApp;
+    combined.wedding = hostApp.wedding;
+    return combined;
+  }
+
+  // 2. Legacy fallback: Query Wedding by ID or hostCoupleId
+  let wedding: any = await prisma.wedding.findUnique({
     where: { id },
     include: {
       hostCouple: {
@@ -1673,7 +1916,6 @@ export async function adminGetHostApplicationByIdAction(id: string) {
   });
 
   if (!wedding) {
-    // Attempt lookup by hostCoupleId
     wedding = await prisma.wedding.findFirst({
       where: { hostCoupleId: id },
       include: {
@@ -1701,7 +1943,367 @@ export async function adminGetHostApplicationByIdAction(id: string) {
     });
   }
 
+  if (wedding) {
+    wedding.isHostApp = false;
+    wedding.hostApp = null;
+    wedding.wedding = wedding;
+  }
+
   return wedding;
+}
+
+export async function adminCreateDocumentRequestAction(data: {
+  applicationId: string;
+  requestType: string;
+  title: string;
+  description: string;
+  isRequired?: boolean;
+  deadline?: string;
+}) {
+  const admin = await requireRole([UserRole.ADMIN]);
+
+  let hostApp = await prisma.hostApplication.findUnique({
+    where: { id: data.applicationId },
+  });
+
+  if (!hostApp) {
+    hostApp = await prisma.hostApplication.findFirst({
+      where: { weddingId: data.applicationId },
+    });
+  }
+
+  if (!hostApp) {
+    const legacyWedding = await prisma.wedding.findUnique({
+      where: { id: data.applicationId },
+      include: { hostCouple: true },
+    });
+
+    if (!legacyWedding) {
+      throw new Error("Host application not found.");
+    }
+
+    hostApp = await prisma.hostApplication.create({
+      data: {
+        id: legacyWedding.id,
+        userId: legacyWedding.hostCouple.userId,
+        coupleProfileId: legacyWedding.hostCoupleId,
+        weddingId: legacyWedding.id,
+        status: "ACTION_REQUIRED",
+        hostName: legacyWedding.title,
+        email: "host@example.com",
+        coupleNames: legacyWedding.title,
+        city: legacyWedding.location.split(",")[0] || "City",
+        weddingDate: legacyWedding.date,
+        durationDays: legacyWedding.durationDays || 3,
+        requestedTier: legacyWedding.tier || "ROYAL",
+      },
+    });
+  }
+
+  const docReq = await prisma.hostDocumentRequest.create({
+    data: {
+      applicationId: hostApp.id,
+      userId: hostApp.userId,
+      requestType: data.requestType || "OTHER",
+      title: data.title,
+      description: data.description,
+      isRequired: data.isRequired ?? true,
+      deadline: data.deadline ? new Date(data.deadline) : null,
+      status: "PENDING",
+      requestedBy: admin.name || admin.email,
+    },
+  });
+
+  await prisma.hostApplication.update({
+    where: { id: hostApp.id },
+    data: {
+      status: "ACTION_REQUIRED",
+      adminNotesHostFacing: `Document requested: ${data.title}`,
+    },
+  });
+
+  await prisma.verification.upsert({
+    where: { userId: hostApp.userId },
+    create: {
+      userId: hostApp.userId,
+      status: VerificationStatus.NEED_MORE_DOCUMENTS,
+      notes: `Additional document requested: ${data.title}. ${data.description}`,
+      reviewedBy: admin.name || admin.email,
+    },
+    update: {
+      status: VerificationStatus.NEED_MORE_DOCUMENTS,
+      notes: `Additional document requested: ${data.title}. ${data.description}`,
+      reviewedBy: admin.name || admin.email,
+    },
+  });
+
+  await prisma.notification.create({
+    data: {
+      userId: hostApp.userId,
+      title: "Action Required: Document Requested",
+      message: `WeddingWithIndia verification team requested: "${data.title}". Please upload the requested file.`,
+      type: "ALERT",
+    },
+  });
+
+  await prisma.hostApplicationAuditLog.create({
+    data: {
+      applicationId: hostApp.id,
+      action: "DOCUMENT_REQUESTED",
+      actorId: admin.id,
+      actorRole: "ADMIN",
+      details: `Admin requested document "${data.title}" (Type: ${data.requestType}).`,
+    },
+  });
+
+  revalidatePath("/dashboard/admin/hosts");
+  revalidatePath(`/dashboard/admin/hosts/${hostApp.id}`);
+  revalidatePath("/dashboard");
+  revalidatePath("/list-wedding");
+
+  return { success: true, documentRequest: docReq };
+}
+
+export async function adminReviewDocumentAction(data: {
+  documentId: string;
+  status: "APPROVED" | "REJECTED";
+  adminFeedback?: string;
+}) {
+  const admin = await requireRole([UserRole.ADMIN]);
+
+  const doc = await prisma.hostDocument.findUnique({
+    where: { id: data.documentId },
+    include: { request: true, application: true },
+  });
+
+  if (!doc) throw new Error("Document record not found.");
+
+  const updatedDoc = await prisma.hostDocument.update({
+    where: { id: data.documentId },
+    data: {
+      status: data.status,
+      adminFeedback: data.adminFeedback || null,
+    },
+  });
+
+  if (data.status === "APPROVED") {
+    await prisma.hostDocumentRequest.update({
+      where: { id: doc.requestId },
+      data: {
+        status: "APPROVED",
+        reviewedBy: admin.name || admin.email,
+        reviewedAt: new Date(),
+        reviewNotes: data.adminFeedback || "Approved by admin",
+      },
+    });
+  } else {
+    await prisma.hostDocumentRequest.update({
+      where: { id: doc.requestId },
+      data: {
+        status: "PENDING",
+        reviewedBy: admin.name || admin.email,
+        reviewedAt: new Date(),
+        reviewNotes: data.adminFeedback || "Document rejected. Please re-upload.",
+      },
+    });
+
+    await prisma.notification.create({
+      data: {
+        userId: doc.userId,
+        title: "Document Needs Revision",
+        message: `Uploaded file '${doc.fileName}' was not accepted. Feedback: ${data.adminFeedback || "Please upload a clearer copy."}`,
+        type: "ALERT",
+      },
+    });
+  }
+
+  await prisma.hostApplicationAuditLog.create({
+    data: {
+      applicationId: doc.applicationId,
+      action: data.status === "APPROVED" ? "DOCUMENT_APPROVED" : "DOCUMENT_REJECTED",
+      actorId: admin.id,
+      actorRole: "ADMIN",
+      details: `Admin ${data.status.toLowerCase()} document '${doc.fileName}'. Feedback: "${data.adminFeedback || "N/A"}"`,
+    },
+  });
+
+  revalidatePath("/dashboard/admin/hosts");
+  revalidatePath(`/dashboard/admin/hosts/${doc.applicationId}`);
+
+  return { success: true, document: updatedDoc };
+}
+
+export async function adminVerifyHostApplicationAction(data: {
+  applicationId: string;
+  verifiedTier: string;
+  verifiedDurationDays: number;
+  status: "APPROVED_FOR_LISTING" | "VERIFIED" | "ACTION_REQUIRED" | "REJECTED" | "UNDER_REVIEW";
+  adminNotesInternal?: string;
+  adminNotesHostFacing?: string;
+  publishImmediately?: boolean;
+}) {
+  const admin = await requireRole([UserRole.ADMIN]);
+  const { getCustomerPriceUSD, normalizeWeddingTier, normalizeDurationDays } = await import("../services/pricing-engine");
+
+  const tier = normalizeWeddingTier(data.verifiedTier);
+  const duration = normalizeDurationDays(data.verifiedDurationDays);
+  const customerPriceUSD = getCustomerPriceUSD(tier, duration);
+
+  let hostApp = await prisma.hostApplication.findUnique({
+    where: { id: data.applicationId },
+    include: {
+      days: { include: { events: true }, orderBy: { dayNumber: "asc" } },
+      coupleProfile: true,
+      user: true,
+      wedding: true,
+    },
+  });
+
+  if (!hostApp) {
+    const legacyWedding = await prisma.wedding.findUnique({
+      where: { id: data.applicationId },
+      include: {
+        hostCouple: { include: { user: true } },
+        events: true,
+        traditions: true,
+      },
+    });
+
+    if (!legacyWedding) {
+      throw new Error("Host application not found.");
+    }
+
+    const legacyReviewStatus = data.status === "APPROVED_FOR_LISTING" ? "APPROVED" : data.status === "REJECTED" ? "REJECTED" : data.status === "ACTION_REQUIRED" ? "NEED_MORE_DOCUMENTS" : "UNDER_REVIEW";
+    return await adminReviewHostApplicationAction(legacyWedding.id, legacyReviewStatus as any, data.adminNotesHostFacing || data.adminNotesInternal);
+  }
+
+  const isApproved = data.status === "APPROVED_FOR_LISTING" || (data.publishImmediately && data.status === "VERIFIED");
+  const targetWeddingStatus = isApproved ? WeddingStatus.PUBLISHED : WeddingStatus.DRAFT;
+  const targetVerifStatus = isApproved
+    ? VerificationStatus.APPROVED
+    : data.status === "REJECTED"
+    ? VerificationStatus.REJECTED
+    : data.status === "ACTION_REQUIRED"
+    ? VerificationStatus.NEED_MORE_DOCUMENTS
+    : VerificationStatus.UNDER_REVIEW;
+
+  const result = await prisma.$transaction(async (tx) => {
+    let weddingRecord = hostApp.wedding;
+    const weddingTitle = `${hostApp.coupleNames} Wedding`;
+    const venueLoc = `${hostApp.venueName || hostApp.city}, ${hostApp.city}, ${hostApp.state || ""}`.trim();
+
+    if (!weddingRecord && hostApp.coupleProfileId) {
+      weddingRecord = await tx.wedding.findFirst({
+        where: { hostCoupleId: hostApp.coupleProfileId, isDemo: false, deletedAt: null },
+      });
+    }
+
+    if (weddingRecord) {
+      weddingRecord = await tx.wedding.update({
+        where: { id: weddingRecord.id },
+        data: {
+          title: weddingTitle,
+          location: venueLoc,
+          tier,
+          durationDays: duration,
+          pricePerGuest: customerPriceUSD,
+          capacity: hostApp.expectedInternationalGuests,
+          weddingScale: hostApp.weddingScale,
+          religion: hostApp.tradition,
+          category: hostApp.tradition,
+          date: hostApp.weddingDate,
+          status: targetWeddingStatus,
+        },
+      });
+    } else if (hostApp.coupleProfileId) {
+      const slug = `${hostApp.coupleNames.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${hostApp.city.toLowerCase()}-${Date.now()}`;
+      weddingRecord = await tx.wedding.create({
+        data: {
+          slug,
+          title: weddingTitle,
+          description: hostApp.story || `Authentic celebration in ${hostApp.city}.`,
+          location: venueLoc,
+          category: hostApp.tradition,
+          religion: hostApp.tradition,
+          date: hostApp.weddingDate,
+          pricePerGuest: customerPriceUSD,
+          capacity: hostApp.expectedInternationalGuests,
+          weddingScale: hostApp.weddingScale,
+          tier,
+          durationDays: duration,
+          mainImageUrl: "https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=800&q=80",
+          status: targetWeddingStatus,
+          hostCoupleId: hostApp.coupleProfileId,
+        },
+      });
+    }
+
+    const updatedApp = await tx.hostApplication.update({
+      where: { id: hostApp.id },
+      data: {
+        verifiedTier: tier,
+        verifiedDurationDays: duration,
+        status: data.status as any,
+        adminNotesInternal: data.adminNotesInternal || null,
+        adminNotesHostFacing: data.adminNotesHostFacing || null,
+        reviewedBy: admin.name || admin.email,
+        reviewedAt: new Date(),
+        verifiedAt: isApproved ? new Date() : null,
+        weddingId: weddingRecord?.id || null,
+      },
+    });
+
+    await tx.user.update({
+      where: { id: hostApp.userId },
+      data: { status: isApproved ? "ACTIVE" : "ONBOARDING" },
+    });
+
+    await tx.verification.upsert({
+      where: { userId: hostApp.userId },
+      create: {
+        userId: hostApp.userId,
+        status: targetVerifStatus,
+        notes: data.adminNotesHostFacing || data.adminNotesInternal || `Application verified as ${tier} (${duration} days).`,
+        reviewedBy: admin.name || admin.email,
+        expiryDate: isApproved ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000) : null,
+      },
+      update: {
+        status: targetVerifStatus,
+        notes: data.adminNotesHostFacing || data.adminNotesInternal || `Application verified as ${tier} (${duration} days).`,
+        reviewedBy: admin.name || admin.email,
+        expiryDate: isApproved ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000) : null,
+      },
+    });
+
+    await tx.notification.create({
+      data: {
+        userId: hostApp.userId,
+        title: isApproved ? "Celebration Verified & Approved!" : "Host Application Status Update",
+        message: data.adminNotesHostFacing || `Your celebration has been reviewed and marked as ${data.status}. Verified Tier: ${tier}.`,
+        type: isApproved ? "SUCCESS" : data.status === "REJECTED" ? "ALERT" : "INFO",
+      },
+    });
+
+    await tx.hostApplicationAuditLog.create({
+      data: {
+        applicationId: hostApp.id,
+        action: `APPLICATION_VERIFIED_${data.status}`,
+        actorId: admin.id,
+        actorRole: "ADMIN",
+        details: `Verified Tier: ${tier}, Verified Duration: ${duration} days, Price/Guest: $${customerPriceUSD} USD, Status: ${data.status}.`,
+      },
+    });
+
+    return { updatedApp, weddingRecord };
+  });
+
+  revalidatePath("/dashboard/admin/hosts");
+  revalidatePath(`/dashboard/admin/hosts/${hostApp.id}`);
+  revalidatePath("/dashboard/admin/weddings");
+  revalidatePath("/weddings");
+  revalidatePath("/dashboard");
+
+  return { success: true, application: result.updatedApp, wedding: result.weddingRecord };
 }
 
 export async function adminReviewHostApplicationAction(
@@ -1928,7 +2530,10 @@ export async function adminReviewSponsorshipRequestAction(
   revalidatePath("/dashboard/admin/weddings");
   revalidatePath("/dashboard/admin/weddings/sponsorship");
   revalidatePath("/weddings");
+  revalidatePath("/weddings/map");
   revalidatePath("/");
+  revalidateTag("weddings", "max");
+  revalidateTag("homepage", "max");
   return { success: true };
 }
 
@@ -1954,4 +2559,130 @@ export async function adminGetSponsorshipRequestsAction(status?: string) {
   });
 
   return requests;
+}
+
+/**
+ * 14. Coordinator Assignment Management
+ */
+export async function adminAssignCoordinatorAction(
+  coordinatorProfileId: string,
+  weddingId: string
+) {
+  const admin = await requireRole([UserRole.ADMIN]);
+
+  const coordinator = await prisma.coordinatorProfile.findUnique({
+    where: { id: coordinatorProfileId },
+    include: { user: true },
+  });
+  if (!coordinator) throw new Error("Coordinator profile not found.");
+
+  const wedding = await prisma.wedding.findUnique({
+    where: { id: weddingId },
+    select: { id: true, title: true, date: true, status: true },
+  });
+  if (!wedding) throw new Error("Wedding not found.");
+  if (wedding.status !== WeddingStatus.PUBLISHED) {
+    throw new Error("Coordinators can only be assigned to published weddings.");
+  }
+
+  const updated = await prisma.coordinatorProfile.update({
+    where: { id: coordinatorProfileId },
+    data: {
+      assignedWeddingId: wedding.id,
+      assignedEventTitle: wedding.title,
+      assignedDate: wedding.date.toISOString(),
+    },
+  });
+
+  // Notify coordinator user
+  if (coordinator.user?.id) {
+    await prisma.notification.create({
+      data: {
+        userId: coordinator.user.id,
+        title: "New Wedding Shift Assignment",
+        message: `You have been assigned as event coordinator for "${wedding.title}". Check your coordinator dashboard for attendee details and gate check-in controls.`,
+        type: "INFO",
+      },
+    });
+  }
+
+  await createAuditLog(
+    "ASSIGN_COORDINATOR",
+    "CoordinatorProfile",
+    coordinatorProfileId,
+    `Admin (${admin.email}) assigned coordinator ${coordinator.user?.email || coordinator.id} to wedding "${wedding.title}" (${wedding.id})`
+  );
+
+  revalidatePath("/dashboard/admin/coordinators");
+  revalidatePath("/dashboard/admin/weddings");
+  revalidatePath("/coordinators/dashboard");
+
+  return { success: true, coordinator: updated };
+}
+
+export async function adminUnassignCoordinatorAction(coordinatorProfileId: string) {
+  const admin = await requireRole([UserRole.ADMIN]);
+
+  const coordinator = await prisma.coordinatorProfile.findUnique({
+    where: { id: coordinatorProfileId },
+    include: { user: true },
+  });
+  if (!coordinator) throw new Error("Coordinator profile not found.");
+
+  const prevWeddingTitle = coordinator.assignedEventTitle || "assigned event";
+
+  const updated = await prisma.coordinatorProfile.update({
+    where: { id: coordinatorProfileId },
+    data: {
+      assignedWeddingId: null,
+      assignedEventTitle: null,
+      assignedDate: null,
+    },
+  });
+
+  if (coordinator.user?.id) {
+    await prisma.notification.create({
+      data: {
+        userId: coordinator.user.id,
+        title: "Assignment Removed",
+        message: `Your shift assignment for "${prevWeddingTitle}" has been unassigned by platform administration.`,
+        type: "INFO",
+      },
+    });
+  }
+
+  await createAuditLog(
+    "UNASSIGN_COORDINATOR",
+    "CoordinatorProfile",
+    coordinatorProfileId,
+    `Admin (${admin.email}) unassigned coordinator ${coordinator.user?.email || coordinator.id} from "${prevWeddingTitle}"`
+  );
+
+  revalidatePath("/dashboard/admin/coordinators");
+  revalidatePath("/dashboard/admin/weddings");
+  revalidatePath("/coordinators/dashboard");
+
+  return { success: true, coordinator: updated };
+}
+
+export async function adminGetCoordinatorsAction() {
+  await requireRole([UserRole.ADMIN]);
+
+  const coordinators = await prisma.coordinatorProfile.findMany({
+    where: { deletedAt: null },
+    include: {
+      user: {
+        select: { id: true, name: true, email: true, status: true },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  const publishedWeddings = await prisma.wedding.findMany({
+    where: { status: WeddingStatus.PUBLISHED, deletedAt: null, suspended: false },
+    select: { id: true, title: true, location: true, date: true },
+    orderBy: { date: "asc" },
+  });
+
+  return { coordinators, publishedWeddings };
 }

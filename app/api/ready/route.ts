@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { stripe } from "@/lib/stripe";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -8,7 +7,6 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   const startTime = Date.now();
   let dbHealthy = false;
-  let stripeHealthy = false;
   
   // Check Database
   try {
@@ -18,26 +16,13 @@ export async function GET() {
     dbHealthy = false;
   }
 
-  // Check Stripe (only if configured)
-  try {
-    if (process.env.STRIPE_SECRET_KEY) {
-      // Just fetching the balance is a good way to verify the API key
-      await stripe.balance.retrieve();
-      stripeHealthy = true;
-    } else {
-      stripeHealthy = false; // Key missing in env, should have failed at boot via lib/env.ts anyway
-    }
-  } catch {
-    stripeHealthy = false;
-  }
-
-  const isHealthy = dbHealthy && stripeHealthy;
+  const isHealthy = dbHealthy;
 
   const payload = {
     status: isHealthy ? "ready" : "unavailable",
     checks: {
       database: dbHealthy ? "up" : "down",
-      stripe: stripeHealthy ? "up" : "down",
+      paymentProvider: "manual_paypal",
     },
     timestamp: new Date().toISOString(),
     latencyMs: Date.now() - startTime,

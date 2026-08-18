@@ -46,17 +46,6 @@ jest.mock("@/lib/rate-limit", () => ({
   rateLimit: jest.fn().mockResolvedValue({ success: true, remaining: 5 }),
 }));
 
-// Mock Stripe
-jest.mock("@/lib/stripe", () => ({
-  stripe: {
-    checkout: {
-      sessions: {
-        create: jest.fn().mockResolvedValue({ url: "https://checkout.stripe.com/test" }),
-      },
-    },
-  },
-}));
-
 // Mock Prisma and DB availability
 const now = new Date();
 const mockTx = {

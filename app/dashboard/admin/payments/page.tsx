@@ -1,9 +1,10 @@
 import { requireRole } from "@/lib/auth";
 import { UserRole } from "@prisma/client";
 import { adminGetPaymentsAndQueuesAction } from "@/lib/actions/admin";
-import AdminStripeAuditManager from "@/components/dashboard/AdminStripeAuditManager";
-import { Coins, CreditCard, RefreshCcw, Landmark, ArrowUpRight, AlertTriangle, ShieldCheck, DollarSign } from "lucide-react";
-import { formatCurrencyINR, formatSecondaryCurrency } from "@/lib/constants/financial-model";
+import { prisma } from "@/lib/prisma";
+import AdminManualPaymentManager from "@/components/dashboard/AdminManualPaymentManager";
+import { CreditCard, RefreshCcw, Landmark, AlertTriangle, ShieldCheck, DollarSign } from "lucide-react";
+import { formatCurrencyINR } from "@/lib/constants/financial-model";
 
 export const dynamic = "force-dynamic";
 
@@ -13,10 +14,40 @@ export default async function AdminPaymentsPage() {
 
   // 2. Fetch financial records with error handling for distinct error states
   let data: Awaited<ReturnType<typeof adminGetPaymentsAndQueuesAction>> | null = null;
+  let allPayments: any[] = [];
+  let pendingBookings: any[] = [];
   let fetchError: string | null = null;
 
   try {
-    data = await adminGetPaymentsAndQueuesAction();
+    const [queueData, paymentsList, bookingsList] = await Promise.all([
+      adminGetPaymentsAndQueuesAction(),
+      prisma.payment.findMany({
+        include: {
+          booking: {
+            include: {
+              traveler: { include: { user: true } },
+              wedding: true,
+            },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.booking.findMany({
+        where: {
+          status: { in: ["PENDING", "APPROVED", "AWAITING_PAYMENT"] },
+        },
+        include: {
+          traveler: { include: { user: true } },
+          wedding: true,
+          payments: true,
+        },
+        orderBy: { createdAt: "desc" },
+      }),
+    ]);
+
+    data = queueData;
+    allPayments = JSON.parse(JSON.stringify(paymentsList));
+    pendingBookings = JSON.parse(JSON.stringify(bookingsList));
   } catch (err: any) {
     console.error("[AdminPaymentsPage] Error fetching payments data:", err);
     fetchError = err?.message || "Failed to retrieve financial records from database.";
@@ -30,7 +61,7 @@ export default async function AdminPaymentsPage() {
             Financial Operations Ledger
           </h1>
           <p className="text-charcoal-500 text-xs sm:text-sm">
-            Monitor transaction logs, track pending traveler refund queues, and audit couple payouts.
+            Monitor transaction logs, track manual PayPal verification queues, and audit payouts.
           </p>
         </div>
 
@@ -58,9 +89,11 @@ export default async function AdminPaymentsPage() {
   }
 
   // Calculate high-level financial metrics
-  const totalLoggedVolumeINR = data.transactions.reduce((sum: number, t: any) => sum + (t.amount || 0), 0);
-  const platformCommissionAccruedINR = Math.round(totalLoggedVolumeINR * 0.22);
-  const _hostAllocationINR = totalLoggedVolumeINR - platformCommissionAccruedINR;
+  const totalGrossVolumeUSD = data.transactions
+    .filter((t: any) => t.type === "CHARGE")
+    .reduce((sum: number, t: any) => sum + (t.amount || 0), 0);
+  const totalHostPayoutsSettledINR = data.payoutQueue
+    .reduce((sum: number, p: any) => sum + (p.amount || 0), 0);
 
   return (
     <div className="space-y-8 animate-fade-in">
@@ -75,7 +108,7 @@ export default async function AdminPaymentsPage() {
             Financial Operations Ledger
           </h1>
           <p className="text-charcoal-500 text-xs sm:text-sm mt-1">
-            Monitor transaction logs, track pending traveler refund queues, and audit couple payouts.
+            Manual PayPal payment verification, transaction logs, and refund operations.
           </p>
         </div>
         <span className="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-xl">
@@ -120,142 +153,21 @@ export default async function AdminPaymentsPage() {
             <DollarSign size={22} />
           </div>
           <div>
-            <span className="text-[0.6875rem] font-bold text-charcoal-400 uppercase tracking-widest block">Platform Share (22%)</span>
+            <span className="text-[0.6875rem] font-bold text-charcoal-400 uppercase tracking-widest block">Settled Host Payouts</span>
             <span className="font-display font-bold text-lg text-[var(--color-brand-primary)]">
-              {formatCurrencyINR(platformCommissionAccruedINR)}
+              ₹{totalHostPayoutsSettledINR.toLocaleString("en-IN")} INR
             </span>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Transaction Ledger */}
-        <div className="lg:col-span-7 bg-white border border-warm-200/60 p-6 rounded-3xl shadow-sm space-y-4">
-          <h3 className="font-display font-bold text-base text-charcoal-900 border-b border-warm-100 pb-3 flex items-center justify-between">
-            <span className="flex items-center gap-2">
-              <Coins size={18} className="text-maroon-600" />
-              System Transaction Log
-            </span>
-            <span className="text-xs text-charcoal-400 font-normal">
-              Total Volume: {formatCurrencyINR(totalLoggedVolumeINR)} ({formatSecondaryCurrency(totalLoggedVolumeINR)})
-            </span>
-          </h3>
-          {data.transactions.length === 0 ? (
-            <div className="p-8 text-center text-xs text-charcoal-400 font-semibold">
-              No financial transactions registered yet.
-            </div>
-          ) : (
-            <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1">
-              {data.transactions.map((t: any) => {
-                const travelerName = t.payment?.booking?.traveler?.fullName || "Guest Traveler";
-                const weddingTitle = t.payment?.booking?.wedding?.title || "Celebration Event";
-                const amountFormatted = typeof t.amount === "number" ? formatCurrencyINR(t.amount) : "₹0";
-
-                return (
-                  <div key={t.id} className="border border-warm-200 p-4 rounded-2xl space-y-2 text-xs hover:border-warm-300 transition-colors">
-                    <div className="flex justify-between items-center font-bold text-charcoal-850">
-                      <span className="flex items-center gap-1.5">
-                        <ArrowUpRight size={14} className="text-emerald-600" />
-                        {t.type || "PAYMENT"}
-                      </span>
-                      <span className="text-emerald-700 font-display font-bold text-sm">{amountFormatted}</span>
-                    </div>
-                    <p className="text-charcoal-400 text-[0.6875rem] font-mono">
-                      Ref ID: {t.referenceId || t.id}
-                    </p>
-                    <div className="p-2.5 bg-warm-50/70 rounded-xl text-charcoal-600 text-[0.6875rem] space-y-0.5 border border-warm-100">
-                      <div><strong>Traveler:</strong> {travelerName}</div>
-                      <div><strong>Experience:</strong> {weddingTitle}</div>
-                    </div>
-                    <div className="flex justify-between items-center text-[0.625rem] text-charcoal-400 pt-1">
-                      <span>Status: <strong className="text-emerald-700 uppercase">{t.status || "SUCCESS"}</strong></span>
-                      <span>{t.createdAt ? new Date(t.createdAt).toLocaleString() : "Recently"}</span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* Refund & Payout Queues */}
-        <div className="lg:col-span-5 space-y-8">
-          {/* Refund Queue */}
-          <div className="bg-white border border-warm-200/60 p-6 rounded-3xl shadow-sm space-y-4">
-            <h3 className="font-display font-bold text-base text-charcoal-900 border-b border-warm-100 pb-3 flex items-center gap-2">
-              <RefreshCcw size={18} className="text-maroon-600" />
-              Refund Requests Ledger
-            </h3>
-            {data.refundQueue.length === 0 ? (
-              <div className="p-8 text-center text-xs text-charcoal-400 font-semibold">
-                No refunds processed in system registry.
-              </div>
-            ) : (
-              <div className="space-y-3 max-h-[350px] overflow-y-auto pr-1">
-                {data.refundQueue.map((r: any) => {
-                  const travelerName = r.payment?.booking?.traveler?.fullName || "Guest Traveler";
-                  const weddingTitle = r.payment?.booking?.wedding?.title || "Celebration Event";
-                  const refundAmount = typeof r.amount === "number" ? formatCurrencyINR(r.amount) : "₹0";
-
-                  return (
-                    <div key={r.id} className="border border-warm-200 p-3.5 rounded-2xl text-xs space-y-2">
-                      <div className="flex justify-between font-bold text-charcoal-850">
-                        <span>{travelerName}</span>
-                        <span className="text-rose-650 font-bold">{refundAmount}</span>
-                      </div>
-                      <p className="text-charcoal-400 text-[0.6875rem]">{weddingTitle}</p>
-                      <div className="flex justify-between items-center text-[0.625rem] text-purple-650 pt-1 font-mono">
-                        <span>Reason: {r.reason || "Audited Refund"}</span>
-                        <span className="bg-purple-50 px-2 py-0.5 rounded-full font-bold uppercase">{r.status || "REFUNDED"}</span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          {/* Payout Queue */}
-          <div className="bg-white border border-warm-200/60 p-6 rounded-3xl shadow-sm space-y-4">
-            <h3 className="font-display font-bold text-base text-charcoal-900 border-b border-warm-100 pb-3 flex items-center gap-2">
-              <Landmark size={18} className="text-maroon-600" />
-              Host Payout Registry
-            </h3>
-            {data.payoutQueue.length === 0 ? (
-              <div className="p-8 text-center text-xs text-charcoal-400 font-semibold">
-                No couple payouts cleared in system yet.
-              </div>
-            ) : (
-              <div className="space-y-3 max-h-[350px] overflow-y-auto pr-1">
-                {data.payoutQueue.map((p: any) => {
-                  const hostName = p.payment?.booking?.wedding?.hostCouple?.user?.name || p.payment?.booking?.wedding?.hostCouple?.familyBio || "Host Family";
-                  const payoutAmount = typeof p.amount === "number" ? formatCurrencyINR(p.amount) : "₹0";
-
-                  return (
-                    <div key={p.id} className="border border-warm-200 p-3.5 rounded-2xl text-xs space-y-2">
-                      <div className="flex justify-between font-bold text-charcoal-850">
-                        <span>{hostName}</span>
-                        <span className="text-amber-700 font-bold">{payoutAmount}</span>
-                      </div>
-                      <div className="flex justify-between items-center text-[0.625rem] text-charcoal-400 pt-1 font-mono">
-                        <span>Ref: {p.stripeTransferId || p.id}</span>
-                        <span className="bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full font-bold uppercase">{p.status || "CLEARED"}</span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Stripe Webhook Audit Register & Refund Operations Manager */}
-      <AdminStripeAuditManager
+      {/* Manual Payment Manager */}
+      <AdminManualPaymentManager
         transactions={data.transactions}
         refundQueue={data.refundQueue}
         payoutQueue={data.payoutQueue}
-        webhookEvents={data.webhookEvents}
+        allPayments={allPayments}
+        pendingBookings={pendingBookings}
       />
     </div>
   );

@@ -28,6 +28,7 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { AdminWeddingEditor } from "@/components/admin/AdminWeddingEditor";
 
 export const dynamic = "force-dynamic";
 
@@ -140,8 +141,13 @@ export default async function AdminWeddingsPage({
     const location = formData.get("location") as string;
     const category = formData.get("category") as string;
     const religion = (formData.get("religion") as string) || "Hindu";
+    const tier = (formData.get("tier") as string) || "STANDARD";
+    const durationDays = parseInt(formData.get("durationDays") as string) || 3;
+    const ceremoniesCount = parseInt(formData.get("ceremoniesCount") as string) || 3;
+    const experienceIntensity = (formData.get("experienceIntensity") as string) || "TRADITIONAL";
+    const weddingScale = (formData.get("weddingScale") as string) || "MEDIUM";
     const date = formData.get("date") as string;
-    const pricePerGuest = parseFloat(formData.get("pricePerGuest") as string);
+    const pricePerGuest = parseFloat(formData.get("pricePerGuest") as string) || 0;
     const capacity = parseInt(formData.get("capacity") as string);
     const mainImageUrl = formData.get("mainImageUrl") as string;
     const hostCoupleId = formData.get("hostCoupleId") as string;
@@ -157,6 +163,11 @@ export default async function AdminWeddingsPage({
       location,
       category,
       religion,
+      tier,
+      durationDays,
+      ceremoniesCount,
+      experienceIntensity,
+      weddingScale,
       date,
       pricePerGuest,
       capacity,
@@ -300,250 +311,13 @@ export default async function AdminWeddingsPage({
         </div>
       )}
 
-      {/* Form (Create / Edit Mode) */}
+      {/* Interactive Collapsible Admin Editor */}
       {action && (
-        <div className="bg-white border border-warm-200/50 p-6 sm:p-8 rounded-[2rem] shadow-sm space-y-6">
-          <div className="flex justify-between items-center border-b border-warm-100 pb-4">
-            <h3 className="font-display font-bold text-lg text-charcoal-900">
-              {action === "edit" ? `Edit "${editWedding?.title}"` : "Create Wedding Experience"}
-            </h3>
-            <Link
-              href="/dashboard/admin/weddings"
-              className="text-xs font-bold text-charcoal-400 hover:text-charcoal-600 transition-colors"
-            >
-              Cancel
-            </Link>
-          </div>
-
-          <form action={handleSubmit} className="space-y-6">
-            {editWedding && <input type="hidden" name="id" value={editWedding.id} />}
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-charcoal-700 uppercase tracking-wider">Title</label>
-                <input
-                  type="text"
-                  name="title"
-                  required
-                  defaultValue={editWedding?.title || ""}
-                  placeholder="e.g. Grand Maharaja Heritage Royal Wedding"
-                  className="input-luxury w-full"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-charcoal-700 uppercase tracking-wider">Main Image URL</label>
-                <input
-                  type="text"
-                  name="mainImageUrl"
-                  required
-                  defaultValue={editWedding?.mainImageUrl || ""}
-                  placeholder="https://images.unsplash.com/photo-..."
-                  className="input-luxury w-full"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-charcoal-700 uppercase tracking-wider">Location</label>
-                <input
-                  type="text"
-                  name="location"
-                  required
-                  defaultValue={editWedding?.location || ""}
-                  placeholder="e.g. Udaipur, Rajasthan"
-                  className="input-luxury w-full"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-charcoal-700 uppercase tracking-wider">Category</label>
-                <select
-                  name="category"
-                  defaultValue={editWedding?.category || "Royal"}
-                  className="input-luxury w-full bg-white select-reset"
-                >
-                  <option value="Royal">Royal</option>
-                  <option value="Beach">Beach</option>
-                  <option value="Punjabi">Punjabi</option>
-                  <option value="Traditional">Traditional</option>
-                  <option value="South Indian">South Indian</option>
-                  <option value="Destination">Destination</option>
-                  <option value="Nature">Nature</option>
-                </select>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-charcoal-700 uppercase tracking-wider">Religion / Tradition</label>
-                <input
-                  type="text"
-                  name="religion"
-                  required
-                  defaultValue={editWedding?.religion || "Hindu"}
-                  placeholder="e.g. Hindu (Mewari Rajput)"
-                  className="input-luxury w-full"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-charcoal-700 uppercase tracking-wider">Wedding Date</label>
-                <input
-                  type="date"
-                  name="date"
-                  required
-                  defaultValue={editWedding?.date ? new Date(editWedding.date).toISOString().split("T")[0] : ""}
-                  className="input-luxury w-full"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-charcoal-700 uppercase tracking-wider">Host Couple</label>
-                <select
-                  name="hostCoupleId"
-                  defaultValue={editWedding?.hostCoupleId || ""}
-                  required
-                  className="input-luxury w-full bg-white select-reset"
-                >
-                  <option value="" disabled>Select Host Couple</option>
-                  {couples.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.user.name || c.user.email} (Expected: {c.expectedGuests})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-charcoal-700 uppercase tracking-wider">Price per Guest ($)</label>
-                <input
-                  type="number"
-                  name="pricePerGuest"
-                  required
-                  min="1"
-                  defaultValue={editWedding?.pricePerGuest || 1000}
-                  className="input-luxury w-full"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-charcoal-700 uppercase tracking-wider">Max Guest Capacity</label>
-                <input
-                  type="number"
-                  name="capacity"
-                  required
-                  min="1"
-                  defaultValue={editWedding?.capacity || 100}
-                  className="input-luxury w-full"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-charcoal-700 uppercase tracking-wider">Status</label>
-                <select
-                  name="status"
-                  defaultValue={editWedding?.status || "DRAFT"}
-                  className="input-luxury w-full bg-white select-reset"
-                >
-                  <option value="DRAFT">DRAFT</option>
-                  <option value="PUBLISHED">PUBLISHED</option>
-                  <option value="COMPLETED">COMPLETED</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Discovery & Sponsorship Controls */}
-            <div className="p-5 bg-warm-50/70 border border-warm-200/80 rounded-2xl space-y-4">
-              <h4 className="font-display font-bold text-sm text-charcoal-900 flex items-center gap-2">
-                <Flame size={16} className="text-amber-500" />
-                <span>Discovery, Featured &amp; Sponsorship Controls</span>
-              </h4>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-charcoal-700 uppercase tracking-wider">Featured Status</label>
-                  <select
-                    name="featured"
-                    defaultValue={editWedding?.featured ? "true" : "false"}
-                    className="input-luxury w-full bg-white select-reset"
-                  >
-                    <option value="false">Standard Listing (Featured OFF)</option>
-                    <option value="true">Featured Listing (Featured ON)</option>
-                  </select>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-charcoal-700 uppercase tracking-wider">Sponsored Campaign</label>
-                  <select
-                    name="sponsored"
-                    defaultValue={editWedding?.sponsored ? "true" : "false"}
-                    className="input-luxury w-full bg-white select-reset"
-                  >
-                    <option value="false">Organic Discovery (Sponsored OFF)</option>
-                    <option value="true">Sponsored Priority Boost (Sponsored ON)</option>
-                  </select>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-charcoal-700 uppercase tracking-wider">Sponsorship Start</label>
-                  <input
-                    type="date"
-                    name="sponsorshipStart"
-                    defaultValue={
-                      editWedding?.sponsorshipStart
-                        ? new Date(editWedding.sponsorshipStart).toISOString().split("T")[0]
-                        : ""
-                    }
-                    className="input-luxury w-full"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-charcoal-700 uppercase tracking-wider">Sponsorship End</label>
-                  <input
-                    type="date"
-                    name="sponsorshipEnd"
-                    defaultValue={
-                      editWedding?.sponsorshipEnd
-                        ? new Date(editWedding.sponsorshipEnd).toISOString().split("T")[0]
-                        : ""
-                    }
-                    className="input-luxury w-full"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-charcoal-700 uppercase tracking-wider">Description &amp; Story</label>
-              <textarea
-                name="description"
-                rows={5}
-                required
-                defaultValue={editWedding?.description || ""}
-                placeholder="Describe the cultural richness, key traditions, and hospitality provided..."
-                className="input-luxury w-full p-4 h-auto"
-              />
-            </div>
-
-            <div className="flex gap-3 justify-end pt-4 border-t border-warm-100">
-              <Link
-                href="/dashboard/admin/weddings"
-                className="px-5 py-2.5 rounded-xl border border-warm-200 text-charcoal-600 text-xs font-bold hover:bg-warm-50 transition-colors"
-              >
-                Cancel
-              </Link>
-              <button
-                type="submit"
-                className="px-5 py-2.5 rounded-xl bg-[var(--color-brand-primary)] text-white text-xs font-bold uppercase tracking-wider hover:opacity-90 transition-opacity cursor-pointer"
-              >
-                Save Celebration
-              </button>
-            </div>
-          </form>
-        </div>
+        <AdminWeddingEditor
+          wedding={editWedding}
+          couples={couples}
+          isEdit={action === "edit"}
+        />
       )}
 
       {/* Directory Grid */}
@@ -658,9 +432,14 @@ export default async function AdminWeddingsPage({
                     </div>
 
                     <div className="pt-3 border-t border-warm-150 flex items-center justify-between">
-                      <span className="font-display font-bold text-xs text-charcoal-900">
-                        ${w.pricePerGuest.toLocaleString()}/guest
-                      </span>
+                      <div>
+                        <span className="font-display font-bold text-xs text-charcoal-900 block">
+                          ${w.pricePerGuest ? w.pricePerGuest.toLocaleString() : 149} USD / guest
+                        </span>
+                        <span className="text-[0.625rem] text-charcoal-500 font-semibold">
+                          {w.tier || "STANDARD"} • {w.durationDays || 3} {w.durationDays === 1 ? "Day" : "Days"}
+                        </span>
+                      </div>
 
                       <div className="flex gap-1">
                         {/* Toggle publish status */}

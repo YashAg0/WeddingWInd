@@ -26,8 +26,8 @@ const _campaignSchema = z.object({
 });
 
 const payoutRequestSchema = z.object({
-  amount: z.number().positive().min(50), // Min payout threshold is $50
-  method: z.enum(["BANK_TRANSFER", "STRIPE_CONNECT", "MANUAL"]),
+  amount: z.number().positive().min(50), // Min payout threshold
+  method: z.enum(["BANK_TRANSFER", "UPI", "PAYPAL", "MANUAL", "STRIPE_CONNECT"]),
 });
 
 const payoutReviewSchema = z.object({
@@ -536,7 +536,7 @@ export async function regenerateReferralCodeAction(agentId: string) {
 }
 
 /**
- * Processes commission generation inside a database transaction during Stripe payment confirmation.
+ * Processes fixed tier agent commission generation inside a database transaction during payment confirmation.
  */
 export async function generateBookingCommissionAction(
   tx: any,
@@ -546,6 +546,8 @@ export async function generateBookingCommissionAction(
   grossAmount: number
 ) {
   try {
+    const { getAgentPayoutPerGuestINR, normalizeWeddingTier } = require("../services/pricing-engine");
+
     // Check booking status first
     const booking = await tx.booking.findUnique({
       where: { id: bookingId }
@@ -571,12 +573,10 @@ export async function generateBookingCommissionAction(
     if (referral.agent.userId === travelerUserId) {
       await tx.referralFraudFlag.create({
         data: {
-          agentId: referral.agentId,
           referralId: referral.id,
           reason: "SELF_REFERRAL_COMMISSION_ATTEMPT",
           severity: "HIGH",
           status: "OPEN",
-          details: "Agent attempted to claim referral commission on their own booking reservation.",
         },
       });
       return { success: false, reason: "Self-referral commissions are prohibited." };
@@ -590,34 +590,11 @@ export async function generateBookingCommissionAction(
     });
     if (existing) return { success: true, reason: "Commission already processed." };
 
-    // 3. Resolve active commission rule (or default rule if none configured)
-    let rule = await tx.commissionRule.findFirst({
-      where: {
-        referralType: ReferralType.TRAVELER,
-        active: true,
-        validFrom: { lte: new Date() },
-        OR: [
-          { validUntil: null },
-          { validUntil: { gte: new Date() } }
-        ]
-      },
-    });
-
-    if (!rule) {
-      // Default placeholder rules if none seeded
-      rule = {
-        id: null,
-        name: "Default Traveler Rule",
-        referralType: ReferralType.TRAVELER,
-        calculationType: "PERCENTAGE",
-        percentage: 10.0,
-        fixedAmount: 0.0,
-        minimumTransactionAmount: 0.0,
-        maximumCommission: 0.0,
-      };
-    }
-
-    const commissionAmount = await calculateCommission(grossAmount, rule);
+    // 3. Fixed Tier-Based Agent Payout
+    const tier = normalizeWeddingTier(booking.weddingTier || "STANDARD");
+    const fixedRatePerGuestINR = booking.agentPayoutPerGuestINR || getAgentPayoutPerGuestINR(tier);
+    const guestCount = booking.guestsCount || 1;
+    const commissionAmount = fixedRatePerGuestINR * guestCount;
 
     // 4. Create ledger item
     const commission = await tx.commission.create({
@@ -626,13 +603,19 @@ export async function generateBookingCommissionAction(
         referralId: referral.id,
         bookingId,
         paymentId,
-        commissionRuleId: rule.id,
         grossAmount,
         commissionAmount,
+        currency: "INR",
         status: CommissionStatus.PENDING,
         source: "BOOKING_PAYMENT",
         idempotencyKey,
-        calculationSnapshot: JSON.stringify(rule),
+        calculationSnapshot: JSON.stringify({
+          tier,
+          fixedRatePerGuestINR,
+          guestCount,
+          totalCommissionINR: commissionAmount,
+          pricingVersion: booking.pricingVersion || "v2026.1",
+        }),
         availableAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // available in 14 days
       },
     });
@@ -662,7 +645,7 @@ export async function generateBookingCommissionAction(
       data: {
         userId: agent.userId,
         title: "Commission Earned!",
-        message: `You earned a commission of $${commissionAmount} from a referred traveler booking!`,
+        message: `You earned a fixed referral payout of ₹${commissionAmount.toLocaleString("en-IN")} INR from a referred traveler booking!`,
         type: "SUCCESS",
       },
     });

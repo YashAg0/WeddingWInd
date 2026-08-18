@@ -211,6 +211,17 @@ export default async function AdminBookingsPage({
                             </button>
                           </form>
 
+                          {/* Quick Payment Management Link for Awaiting Payment */}
+                          {b.status === BookingStatus.AWAITING_PAYMENT && (
+                            <Link
+                              href="/dashboard/admin/payments"
+                              title="Verify PayPal Payment"
+                              className="p-1 px-2 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-600 hover:text-white cursor-pointer h-8 flex items-center justify-center font-bold text-[0.625rem] uppercase tracking-wider"
+                            >
+                              Verify Pay
+                            </Link>
+                          )}
+
                           {/* Quick Cancel */}
                           {isCancellable && (
                             <form action={handleCancel}>

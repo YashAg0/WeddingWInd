@@ -7,11 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import type { Wedding } from "@/types";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
-import {
-  formatCurrencyINR,
-  formatSecondaryCurrency
-} from "@/lib/constants/financial-model";
-import { useCurrency } from "@/context/CurrencyContext";
+import { WEDDING_TIER_CONFIG, normalizeWeddingTier, normalizeDurationDays, getCustomerPriceUSD } from "@/lib/services/pricing-engine";
 
 interface StickyBookingCardProps {
   wedding: Wedding;
@@ -19,62 +15,40 @@ interface StickyBookingCardProps {
 
 export function StickyBookingCard({ wedding }: StickyBookingCardProps) {
   const { user, addBooking } = useAuth();
-  const { formatPrice } = useCurrency();
   const router = useRouter();
 
-  const basePriceINR = wedding.pricePerGuest || 12000;
+  const tier = normalizeWeddingTier(wedding.tier || (wedding.category === "Royal" ? "ROYAL" : "STANDARD"));
+  const durationDays = normalizeDurationDays(wedding.durationDays || 3);
+  const tierConfig = WEDDING_TIER_CONFIG[tier];
+  const pricePerGuestUSD = getCustomerPriceUSD(tier, durationDays);
+
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedTierKey, setSelectedTierKey] = useState<string>("BUDGET");
   const [guestsCount, setGuestsCount] = useState(1);
   const [isBooked, setIsBooked] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const availableSlots = Math.max(0, wedding.guestsAllowed - wedding.guestsBooked);
   const isShowcase = wedding.isDemo === true;
-  const isSoldOut = isShowcase || wedding.guestsAllowed === 0 || availableSlots <= 0;
-
-  const dynamicTiers: Record<string, { id: string; name: string; priceINR: number; description: string; popular?: boolean }> = {
-    BUDGET: {
-      id: "budget",
-      name: "Standard Access",
-      priceINR: basePriceINR,
-      description: "Full access to wedding ceremonies, celebratory feasts, and digital cultural guide.",
-    },
-    PREMIUM: {
-      id: "premium",
-      name: "Premium Experience",
-      priceINR: Math.round(basePriceINR * 1.35),
-      description: "Multi-event access, professional Henna session, and bilingual coordinator support.",
-      popular: true,
-    },
-    VIP: {
-      id: "vip",
-      name: "VIP Family Guest",
-      priceINR: Math.round(basePriceINR * 2.0),
-      description: "Complete multi-day wedding access, family lounge entry, and designer attire rental.",
-    },
-  };
-
-  const activeTier = dynamicTiers[selectedTierKey] || dynamicTiers.BUDGET;
-  const subtotalINR = activeTier.priceINR * guestsCount;
+  const isSoldOut = isShowcase || wedding.availabilityStatus === "FULLY_BOOKED" || wedding.availabilityStatus === "UNAVAILABLE" || wedding.availabilityStatus === "COMPLETED" || wedding.guestsAllowed === 0 || availableSlots <= 0;
+  const subtotalUSD = pricePerGuestUSD * guestsCount;
 
   return (
     <>
       {/* Bottom Floating Bar */}
       <section data-testid="booking-form" className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-xl border-t border-warm-200/60 p-4 shadow-[0_-10px_32px_-12px_rgba(0,0,0,0.1)] flex items-center justify-between md:hidden">
         <div>
-          <span className="text-[0.625rem] text-charcoal-400 font-semibold uppercase tracking-wider block">From</span>
+          <span className="text-[0.625rem] text-charcoal-400 font-semibold uppercase tracking-wider block">
+            {tierConfig.label} Experience
+          </span>
           <div className="flex items-baseline gap-1">
             <span className="font-display font-black text-lg text-[var(--color-brand-primary)]">
-              {formatPrice(basePriceINR).primary}
+              ${pricePerGuestUSD}
             </span>
             <span className="text-[0.625rem] text-charcoal-400 font-semibold">/guest</span>
           </div>
-          {formatPrice(basePriceINR).secondary && (
-            <span className="text-[0.625rem] text-charcoal-400 font-medium block">
-              {formatPrice(basePriceINR).secondary}
-            </span>
-          )}
+          <span className="text-[0.625rem] text-charcoal-500 font-medium block">
+            {durationDays}-Day Pass
+          </span>
         </div>
 
         {isShowcase ? (
@@ -101,230 +75,124 @@ export function StickyBookingCard({ wedding }: StickyBookingCardProps) {
         )}
       </section>
 
-      {/* Mobile Booking Bottom Drawer */}
+      {/* Modal Sheet for Mobile Booking */}
       <AnimatePresence>
         {isOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-charcoal-950/40 backdrop-blur-sm md:hidden flex items-end"
-            role="dialog"
-            aria-modal="true"
-          >
+          <div className="fixed inset-0 z-50 flex items-end justify-center md:hidden">
             {/* Backdrop */}
-            <div className="absolute inset-0" onClick={() => setIsOpen(false)} aria-hidden="true" />
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsOpen(false)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-xs"
+            />
 
-            {/* Content Drawer */}
+            {/* Modal Sheet Content */}
             <motion.div
               initial={{ y: "100%" }}
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
-              transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-              className="relative w-full max-h-[90vh] overflow-y-auto bg-white rounded-t-[2rem] p-6 shadow-2xl z-10 flex flex-col gap-5 border-t border-warm-200/50"
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="relative w-full max-h-[90vh] bg-white rounded-t-3xl p-6 shadow-2xl overflow-y-auto flex flex-col gap-5 border-t border-warm-200 z-10"
             >
-              {/* Drag Handle indicator */}
-              <div className="w-12 h-1 bg-warm-200 rounded-full mx-auto" aria-hidden="true" />
-
               {/* Header */}
-              <div className="flex justify-between items-start">
+              <div className="flex justify-between items-center pb-3 border-b border-warm-100">
                 <div>
-                  <h4 className="font-display font-bold text-lg text-charcoal-900">
-                    Select Experience Tier
-                  </h4>
-                  <p className="text-xs text-charcoal-500 mt-0.5">
-                    Choose your access level for this wedding
-                  </p>
+                  <span className="text-[0.6875rem] font-bold text-charcoal-400 uppercase tracking-wider block">
+                    {tierConfig.label} • {durationDays} Days
+                  </span>
+                  <span className="font-display font-bold text-lg text-charcoal-900">
+                    Reserve Celebration Pass
+                  </span>
                 </div>
                 <button
                   onClick={() => setIsOpen(false)}
-                  className="p-1.5 rounded-full bg-warm-100 hover:bg-warm-200 transition-colors text-charcoal-500"
-                  aria-label="Close drawer"
+                  className="p-2 rounded-full bg-warm-100 text-charcoal-600 hover:bg-warm-200 transition-colors"
                 >
                   <X size={18} />
                 </button>
               </div>
 
-              {/* Slots Info */}
-              <div className="flex items-center gap-2 text-xs font-semibold text-emerald-600 bg-emerald-50 border border-emerald-500/10 p-3 rounded-2xl">
-                <ShieldCheck size={14} className="flex-shrink-0" />
-                <span>{availableSlots} spots left for this verified wedding.</span>
+              {/* Guest Count Selector */}
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="mobile-guests" className="text-xs font-bold text-charcoal-700">
+                  Number of International Guests
+                </label>
+                <select
+                  id="mobile-guests"
+                  value={guestsCount}
+                  onChange={(e) => setGuestsCount(Number(e.target.value))}
+                  className="input-luxury bg-white font-semibold cursor-pointer"
+                >
+                  {Array.from({ length: Math.min(10, availableSlots) }).map((_, i) => (
+                    <option key={i + 1} value={i + 1}>
+                      {i + 1} {i + 1 === 1 ? "Guest" : "Guests"} (${pricePerGuestUSD * (i + 1)})
+                    </option>
+                  ))}
+                </select>
               </div>
 
-              {/* Tiers List */}
-              <div className="space-y-2">
-                {Object.entries(dynamicTiers).map(([key, tier]) => {
-                  const isSelected = selectedTierKey === key;
-                  return (
-                    <button
-                      key={tier.id}
-                      type="button"
-                      onClick={() => setSelectedTierKey(key)}
-                      className={`w-full text-left p-3 rounded-xl border text-xs transition-all relative ${
-                        isSelected
-                          ? "border-[var(--color-brand-primary)] bg-maroon-50/20 ring-1 ring-[var(--color-brand-primary)]"
-                          : "border-warm-200 bg-white"
-                      }`}
-                    >
-                      <div className="flex justify-between items-baseline font-bold text-charcoal-900">
-                        <span>{tier.name}</span>
-                        <span className="text-[var(--color-brand-primary)] font-display text-sm">
-                          {formatCurrencyINR(tier.priceINR)}
-                        </span>
-                      </div>
-                      <div className="text-[0.625rem] text-charcoal-500 font-medium mt-0.5">
-                        {formatSecondaryCurrency(tier.priceINR)}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Form fields */}
-              <div className="flex flex-col gap-3">
-                <div className="flex flex-col gap-1">
-                  <span className="text-[0.625rem] font-bold text-charcoal-500 uppercase tracking-widest">
-                    Date
-                  </span>
-                  <div className="input-luxury bg-warm-50 text-charcoal-500 flex items-center gap-2 border-warm-200">
-                    <Calendar size={14} />
-                    <span className="text-sm font-semibold">
-                      {new Date(wedding.date).toLocaleDateString("en-US", {
-                        weekday: "long",
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                      })}
-                    </span>
-                  </div>
+              {/* Pricing Breakdown */}
+              <div className="p-4 bg-warm-50 border border-warm-200 rounded-2xl space-y-2">
+                <div className="flex justify-between text-xs text-charcoal-600">
+                  <span>${pricePerGuestUSD} × {guestsCount}</span>
+                  <span className="font-semibold text-charcoal-900">${subtotalUSD} USD</span>
                 </div>
-
-                <div className="flex flex-col gap-1">
-                  <label htmlFor="mobile-booking-guests" className="text-[0.625rem] font-bold text-charcoal-500 uppercase tracking-widest">
-                    Number of Guests
-                  </label>
-                  <select
-                    id="mobile-booking-guests"
-                    value={guestsCount}
-                    onChange={(e) => setGuestsCount(Number(e.target.value))}
-                    className="input-luxury bg-white font-semibold cursor-pointer text-sm"
-                  >
-                    {Array.from({ length: Math.min(10, availableSlots) }).map((_, i) => (
-                      <option key={i + 1} value={i + 1}>
-                        {i + 1} {i + 1 === 1 ? "Guest" : "Guests"}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {/* Totals */}
-              <div className="flex justify-between items-baseline pt-2 border-t border-warm-100">
-                <span className="text-sm font-semibold text-charcoal-600">Total Price</span>
-                <div className="text-right">
-                  <span className="font-display font-black text-xl text-charcoal-900">
-                    {formatCurrencyINR(subtotalINR)}
-                  </span>
-                  <span className="text-[0.625rem] text-charcoal-400 font-medium block">
-                    {formatSecondaryCurrency(subtotalINR)}
+                <div className="flex justify-between items-baseline pt-2 border-t border-warm-200">
+                  <span className="font-bold text-charcoal-900 text-sm">Total Amount</span>
+                  <span className="font-display font-black text-xl text-[var(--color-brand-primary)]">
+                    ${subtotalUSD} USD
                   </span>
                 </div>
               </div>
 
-              {/* Action Button */}
               {errorMessage && (
-                <div className="p-3 bg-red-50 border border-red-100 text-red-650 rounded-xl text-xs font-semibold leading-relaxed">
+                <div className="p-3 bg-red-50 border border-red-100 text-red-650 rounded-xl text-xs font-semibold">
                   {errorMessage}
                 </div>
               )}
-              <button
-                onClick={async () => {
-                  if (!user) {
-                    const currentPath = window.location.pathname + window.location.search;
-                    router.push(`/login?redirect_url=${encodeURIComponent(currentPath)}`);
-                    return;
-                  }
-                  if (user.role !== "traveler") {
-                    toast.error("Only traveler accounts can request booking spots for wedding experiences.");
-                    return;
-                  }
-                  setErrorMessage(null);
-                  try {
-                    await addBooking({
-                      weddingId: wedding.id,
-                      weddingTitle: `${wedding.title} - ${activeTier.name}`,
-                      location: wedding.location,
-                      imageUrl: wedding.imageUrl,
-                      date: wedding.date,
-                      pricePerGuest: activeTier.priceINR,
-                      guestsCount,
-                      status: "pending"
-                    });
-                    setIsBooked(true);
-                    setIsOpen(false);
-                  } catch (err: any) {
-                    setErrorMessage(err.message || "Failed to submit booking request. Please try again.");
-                  }
-                }}
-                className="btn btn-primary w-full py-3.5 justify-center font-bold rounded-2xl"
-              >
-                Confirm Reservation
-              </button>
 
-              {/* Trust signals — cancellation policy */}
-              <div className="text-[0.625rem] text-charcoal-400 space-y-1 pt-1">
-                <p className="font-semibold text-charcoal-600 flex items-center gap-1">
-                  <ShieldCheck size={11} className="text-[var(--color-brand-primary)] flex-shrink-0" />
-                  Cancellation Policy
-                </p>
-                <p>30+ days: <strong className="text-charcoal-600">Full refund</strong> · 14–29 days: 50% refund · Under 14: Non-refundable</p>
-                <p>
-                  Questions?{" "}
-                  <a href="mailto:support@weddingwithindia.com" className="text-[var(--color-brand-primary)] underline font-semibold">
-                    support@weddingwithindia.com
-                  </a>
-                </p>
-              </div>
+              {/* Action Button */}
+              {isBooked ? (
+                <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl text-center font-bold text-sm flex items-center justify-center gap-2">
+                  <Check size={18} /> Booking Request Submitted!
+                </div>
+              ) : (
+                <button
+                  onClick={async () => {
+                    if (!user) {
+                      sessionStorage.setItem(
+                        `pending_booking_${wedding.id}`,
+                        JSON.stringify({ guestsCount })
+                      );
+                      router.push(`/login?redirect_url=${encodeURIComponent(window.location.pathname)}`);
+                      return;
+                    }
+                    try {
+                      await addBooking({
+                        weddingId: wedding.id,
+                        weddingTitle: wedding.title,
+                        location: wedding.location,
+                        imageUrl: wedding.imageUrl,
+                        date: wedding.date,
+                        pricePerGuest: pricePerGuestUSD,
+                        guestsCount,
+                        status: "pending"
+                      });
+                      setIsBooked(true);
+                      setTimeout(() => setIsOpen(false), 2000);
+                    } catch (err: any) {
+                      setErrorMessage(err.message || "Failed to submit reservation.");
+                    }
+                  }}
+                  className="btn btn-primary w-full py-4 text-base font-bold shadow-lg justify-center"
+                >
+                  Submit Reservation — ${subtotalUSD}
+                </button>
+              )}
             </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Success Booking Modal (shared) */}
-      <AnimatePresence>
-        {isBooked && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-charcoal-950/40 backdrop-blur-sm"
-          >
-            <motion.div
-              initial={{ scale: 0.9, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.9, y: 20 }}
-              className="bg-white max-w-sm w-full p-6 rounded-3xl border border-warm-200 shadow-2xl text-center space-y-4"
-            >
-              <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 mx-auto flex items-center justify-center">
-                <Check size={24} />
-              </div>
-              <h4 className="font-display font-bold text-lg text-charcoal-900">
-                Invitation Request Sent
-              </h4>
-              <p className="text-charcoal-600 text-sm">
-                Your invitation request for {guestsCount} guest(s) has been received. The host family will review your details with care.
-              </p>
-              <div className="text-xs bg-warm-50 border border-warm-100 p-3 rounded-xl text-charcoal-600 font-medium">
-                Total Payment: {formatCurrencyINR(subtotalINR)} ({formatSecondaryCurrency(subtotalINR)})
-              </div>
-              <button
-                onClick={() => setIsBooked(false)}
-                className="btn btn-primary w-full py-3 justify-center text-sm font-bold"
-              >
-                Done
-              </button>
-            </motion.div>
-          </motion.div>
+          </div>
         )}
       </AnimatePresence>
     </>

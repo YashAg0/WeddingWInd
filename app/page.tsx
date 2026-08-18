@@ -18,7 +18,7 @@ import {
   howItWorksSteps,
 } from "@/lib/data";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Indian Weddings for International Guests | WeddingWithIndia",

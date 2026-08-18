@@ -1,4 +1,4 @@
-import { requireRole } from "@/lib/auth";
+import { requireRole, getDbUser } from "@/lib/auth";
 import { UserRole } from "@prisma/client";
 import { createWedding, editWedding, deleteWedding, getMyWeddings, requestSponsorshipAction, cancelSponsorshipRequestAction } from "@/lib/actions";
 import {
@@ -27,8 +27,14 @@ export default async function CoupleListingsPage({
 }: {
   searchParams: Promise<{ action?: string; id?: string }>;
 }) {
-  // Only host couples may manage their own Our Indian Weddings.
-  await requireRole([UserRole.COUPLE]);
+  // Only host couples may manage their own listings
+  const user = await getDbUser();
+  if (!user) {
+    redirect("/login");
+  }
+  if (user.role !== UserRole.COUPLE) {
+    redirect("/dashboard");
+  }
 
   const weddings = await getMyWeddings();
 

@@ -589,4 +589,411 @@ describe("Guest Side Preference & Sponsorship Marketplace", () => {
   });
 });
 
+// =============================================================================
+// 7. w1-Style ID Validation — Admin Sponsorship Mutations (P0 Fix Regression)
+// =============================================================================
+describe("7. Admin Sponsorship — w1-Style and UUID ID Validation", () => {
+  beforeEach(() => {
+    mockCurrentUser = {
+      id: "admin_user_1",
+      email: "admin@weddingwithindia.com",
+      role: "ADMIN",
+      name: "Admin Officer",
+    };
+  });
+
+  it("allows admin to toggle sponsored state on a w1-style showcase listing", async () => {
+    const now = new Date();
+    const campaignEnd = new Date(Date.now() + 86400000 * 90);
+
+    mockPrisma.wedding.findUnique.mockResolvedValue({
+      id: "w1",
+      title: "The Grand Maharaja Wedding",
+      sponsored: false,
+      sponsorshipStart: null,
+      sponsorshipEnd: null,
+    });
+    mockPrisma.wedding.update.mockResolvedValue({
+      id: "w1",
+      sponsored: true,
+      sponsorshipStart: now,
+      sponsorshipEnd: campaignEnd,
+    });
+
+    const res = await adminToggleSponsoredAction("w1", true, now.toISOString(), campaignEnd.toISOString());
+    expect(res.success).toBe(true);
+    expect(mockPrisma.wedding.update).toHaveBeenCalledWith({
+      where: { id: "w1" },
+      data: {
+        sponsored: true,
+        sponsorshipStart: now,
+        sponsorshipEnd: campaignEnd,
+      },
+    });
+    expect(mockPrisma.auditLog.create).toHaveBeenCalled();
+  });
+
+  it("allows admin to toggle sponsored state on a w23-style showcase listing", async () => {
+    const now = new Date();
+    const campaignEnd = new Date(Date.now() + 86400000 * 60);
+
+    mockPrisma.wedding.findUnique.mockResolvedValue({
+      id: "w23",
+      title: "Goa Beach Sunset Wedding",
+      sponsored: false,
+      sponsorshipStart: null,
+      sponsorshipEnd: null,
+    });
+    mockPrisma.wedding.update.mockResolvedValue({
+      id: "w23",
+      sponsored: true,
+      sponsorshipStart: now,
+      sponsorshipEnd: campaignEnd,
+    });
+
+    const res = await adminToggleSponsoredAction("w23", true, now.toISOString(), campaignEnd.toISOString());
+    expect(res.success).toBe(true);
+    expect(mockPrisma.wedding.update).toHaveBeenCalledWith({
+      where: { id: "w23" },
+      data: expect.objectContaining({ sponsored: true }),
+    });
+  });
+
+  it("allows admin to toggle sponsored state on a standard UUID listing", async () => {
+    const uuidId = "33333333-3333-4333-8333-333333333333";
+    const now = new Date();
+    const campaignEnd = new Date(Date.now() + 86400000 * 30);
+
+    mockPrisma.wedding.findUnique.mockResolvedValue({
+      id: uuidId,
+      title: "Kerala Backwaters Wedding",
+      sponsored: false,
+      sponsorshipStart: null,
+      sponsorshipEnd: null,
+    });
+    mockPrisma.wedding.update.mockResolvedValue({
+      id: uuidId,
+      sponsored: true,
+      sponsorshipStart: now,
+      sponsorshipEnd: campaignEnd,
+    });
+
+    const res = await adminToggleSponsoredAction(uuidId, true, now.toISOString(), campaignEnd.toISOString());
+    expect(res.success).toBe(true);
+    expect(mockPrisma.wedding.update).toHaveBeenCalledWith({
+      where: { id: uuidId },
+      data: expect.objectContaining({ sponsored: true }),
+    });
+  });
+
+  it("rejects empty string wedding ID", async () => {
+    await expect(adminToggleSponsoredAction("", true)).rejects.toThrow();
+  });
+
+  it("rejects non-admin user attempting to toggle sponsorship (RBAC)", async () => {
+    mockCurrentUser = { id: "traveler_1", role: "TRAVELER" };
+    const auth = require("@/lib/auth");
+    (auth.requireRole as jest.Mock).mockRejectedValueOnce(new Error("Unauthorized: Role ADMIN required."));
+
+    await expect(adminToggleSponsoredAction("w1", true)).rejects.toThrow("Unauthorized");
+  });
+
+  it("rejects sponsorship with end date before start date (w1 ID)", async () => {
+    const start = new Date(Date.now() + 86400000 * 10);
+    const badEnd = new Date(Date.now() + 86400000 * 2);
+
+    mockPrisma.wedding.findUnique.mockResolvedValue({
+      id: "w1",
+      title: "The Grand Maharaja Wedding",
+      sponsored: false,
+      sponsorshipStart: null,
+      sponsorshipEnd: null,
+    });
+
+    await expect(
+      adminToggleSponsoredAction("w1", true, start.toISOString(), badEnd.toISOString())
+    ).rejects.toThrow("Sponsorship end date must be after the start date");
+  });
+});
+
+// =============================================================================
+// 8. Homepage Sponsored Priority — Active Sponsored > Featured > Normal (P0 Fix)
+// =============================================================================
+describe("8. Homepage Sponsored Priority Ranking", () => {
+  it("ranks active sponsored listing above 10 featured listings", () => {
+    const featured = Array.from({ length: 10 }, (_, i) => ({
+      id: `f${i}`,
+      sponsored: false,
+      featured: true,
+      rating: 4.9 - i * 0.01,
+    }));
+    const sponsoredListing = { id: "s1", sponsored: true, featured: false, rating: 3.0 };
+
+    const allListings = [sponsoredListing, ...featured];
+    const sorted = [...allListings].sort((a, b) => {
+      const tierA = a.sponsored ? 2 : a.featured ? 1 : 0;
+      const tierB = b.sponsored ? 2 : b.featured ? 1 : 0;
+      return tierB - tierA;
+    });
+
+    expect(sorted[0].id).toBe("s1");
+    expect(sorted.slice(1).every((w) => w.featured)).toBe(true);
+  });
+
+  it("does NOT rank expired sponsorship (sponsored=false in DTO) above featured", () => {
+    const expiredSponsored = { id: "expired", sponsored: false, featured: false, rating: 5.0 };
+    const featuredListing = { id: "feat", sponsored: false, featured: true, rating: 4.0 };
+
+    const sorted = [expiredSponsored, featuredListing].sort((a, b) => {
+      const tierA = a.sponsored ? 2 : a.featured ? 1 : 0;
+      const tierB = b.sponsored ? 2 : b.featured ? 1 : 0;
+      return tierB - tierA;
+    });
+    expect(sorted[0].id).toBe("feat");
+  });
+
+  it("does NOT rank future sponsorship (sponsored=false in DTO) above featured", () => {
+    const futureSponsored = { id: "future", sponsored: false, featured: false, rating: 5.0 };
+    const featuredListing = { id: "feat", sponsored: false, featured: true, rating: 3.0 };
+
+    const sorted = [futureSponsored, featuredListing].sort((a, b) => {
+      const tierA = a.sponsored ? 2 : a.featured ? 1 : 0;
+      const tierB = b.sponsored ? 2 : b.featured ? 1 : 0;
+      return tierB - tierA;
+    });
+    expect(sorted[0].id).toBe("feat");
+  });
+});
+
+// =============================================================================
+// 9. Marketplace Sort — Sponsored Tier Survives All Sort Modes (P1 Fix)
+// =============================================================================
+describe("9. Marketplace Sort — Sponsored Priority Under All Sort Modes", () => {
+  const getTier = (w: { sponsored: boolean; featured: boolean }) =>
+    w.sponsored ? 2 : w.featured ? 1 : 0;
+
+  const makeListing = (id: string, sponsored: boolean, featured: boolean,
+    pricePerGuest: number, rating: number, date: string) =>
+    ({ id, sponsored, featured, pricePerGuest, rating, date });
+
+  const applySort = (listings: ReturnType<typeof makeListing>[], mode: string) =>
+    [...listings].sort((a, b) => {
+      const tierDiff = getTier(b) - getTier(a);
+      if (tierDiff !== 0) return tierDiff;
+      if (mode === "price_asc") return a.pricePerGuest - b.pricePerGuest;
+      if (mode === "price_desc") return b.pricePerGuest - a.pricePerGuest;
+      if (mode === "rating") return b.rating - a.rating;
+      if (mode === "date_asc") return new Date(a.date).getTime() - new Date(b.date).getTime();
+      return b.rating - a.rating;
+    });
+
+  const sponsoredExpensive = makeListing("sponsored", true, false, 50000, 3.0, "2027-06-01");
+  const normalCheap = makeListing("normal-cheap", false, false, 500, 5.0, "2027-01-01");
+  const featuredMid = makeListing("featured-mid", false, true, 8000, 4.5, "2027-03-01");
+
+  it("sponsored ranks first under price_asc — cheapest normal does NOT win", () => {
+    expect(applySort([normalCheap, sponsoredExpensive, featuredMid], "price_asc")[0].id).toBe("sponsored");
+  });
+
+  it("sponsored ranks first under price_desc", () => {
+    expect(applySort([normalCheap, sponsoredExpensive, featuredMid], "price_desc")[0].id).toBe("sponsored");
+  });
+
+  it("sponsored ranks first under rating sort — high-rated normal does NOT win", () => {
+    expect(applySort([normalCheap, sponsoredExpensive, featuredMid], "rating")[0].id).toBe("sponsored");
+  });
+
+  it("sponsored ranks first under date_asc sort", () => {
+    const sLate = makeListing("s-late", true, false, 20000, 3.0, "2028-01-01");
+    const nEarly = makeListing("n-early", false, false, 500, 5.0, "2027-01-01");
+    expect(applySort([nEarly, sLate], "date_asc")[0].id).toBe("s-late");
+  });
+
+  it("within sponsored tier, price_asc sorts by price ascending", () => {
+    const s1 = makeListing("s1", true, false, 20000, 4.0, "2027-06-01");
+    const s2 = makeListing("s2", true, false, 10000, 4.0, "2027-06-01");
+    const result = applySort([s1, s2], "price_asc");
+    expect(result[0].id).toBe("s2");
+    expect(result[1].id).toBe("s1");
+  });
+
+  it("full tier order: sponsored > featured > normal, regardless of sort mode", () => {
+    const result = applySort([normalCheap, sponsoredExpensive, featuredMid], "price_asc");
+    expect(result[0].id).toBe("sponsored");
+    expect(result[1].id).toBe("featured-mid");
+    expect(result[2].id).toBe("normal-cheap");
+  });
+});
+
+// =============================================================================
+// 10. isSponsorshipActive — Comprehensive Time-Aware Logic Verification
+// =============================================================================
+describe("10. isSponsorshipActive — Time-Aware Boundary Cases", () => {
+  it("returns true: sponsored=true, no start, no end (open campaign)", () => {
+    expect(isSponsorshipActive({ sponsored: true, sponsorshipStart: null, sponsorshipEnd: null })).toBe(true);
+  });
+
+  it("returns true: sponsored=true, start=past, no end", () => {
+    expect(isSponsorshipActive({
+      sponsored: true,
+      sponsorshipStart: new Date(Date.now() - 86400000),
+      sponsorshipEnd: null,
+    })).toBe(true);
+  });
+
+  it("returns true: sponsored=true, start=past, end=future", () => {
+    expect(isSponsorshipActive({
+      sponsored: true,
+      sponsorshipStart: new Date(Date.now() - 86400000),
+      sponsorshipEnd: new Date(Date.now() + 86400000),
+    })).toBe(true);
+  });
+
+  it("returns false: campaign starts in the future", () => {
+    expect(isSponsorshipActive({
+      sponsored: true,
+      sponsorshipStart: new Date(Date.now() + 86400000 * 5),
+      sponsorshipEnd: new Date(Date.now() + 86400000 * 10),
+    })).toBe(false);
+  });
+
+  it("returns false: campaign has expired", () => {
+    expect(isSponsorshipActive({
+      sponsored: true,
+      sponsorshipStart: new Date(Date.now() - 86400000 * 10),
+      sponsorshipEnd: new Date(Date.now() - 86400000),
+    })).toBe(false);
+  });
+
+  it("returns false: sponsored=false regardless of dates", () => {
+    expect(isSponsorshipActive({
+      sponsored: false,
+      sponsorshipStart: new Date(Date.now() - 86400000),
+      sponsorshipEnd: new Date(Date.now() + 86400000),
+    })).toBe(false);
+  });
+
+  it("returns false for null input", () => {
+    expect(isSponsorshipActive(null)).toBe(false);
+  });
+
+  it("returns false for undefined input", () => {
+    expect(isSponsorshipActive(undefined)).toBe(false);
+  });
+});
+
+// =============================================================================
+// 11. Sponsorship Cancellation Flow
+// =============================================================================
+describe("11. Sponsorship Cancellation Flow", () => {
+  beforeEach(() => {
+    mockCurrentUser = { id: "host_user_1", email: "host@example.com", role: "COUPLE" };
+  });
+
+  it("host can cancel their own pending sponsorship request", async () => {
+    mockPrisma.coupleProfile.findUnique.mockResolvedValue({ id: "couple_1", userId: "host_user_1" });
+    mockPrisma.sponsorshipRequest.findUnique.mockResolvedValue({
+      id: "sr_cancel_1",
+      status: "PENDING",
+      wedding: { hostCoupleId: "couple_1", title: "Beach Wedding" },
+    });
+    mockPrisma.sponsorshipRequest.update.mockResolvedValue({ id: "sr_cancel_1", status: "CANCELLED" });
+
+    const res = await cancelSponsorshipRequestAction("sr_cancel_1");
+    expect(res.success).toBe(true);
+    expect(mockPrisma.sponsorshipRequest.update).toHaveBeenCalledWith({
+      where: { id: "sr_cancel_1" },
+      data: expect.objectContaining({ status: "CANCELLED" }),
+    });
+  });
+
+  it("host cannot cancel another host's sponsorship request (IDOR)", async () => {
+    mockPrisma.coupleProfile.findUnique.mockResolvedValue({ id: "couple_1", userId: "host_user_1" });
+    mockPrisma.sponsorshipRequest.findUnique.mockResolvedValue({
+      id: "sr_other",
+      status: "PENDING",
+      wedding: { hostCoupleId: "couple_DIFFERENT", title: "Other Wedding" },
+    });
+
+    await expect(cancelSponsorshipRequestAction("sr_other")).rejects.toThrow("Forbidden");
+  });
+
+  it("cannot cancel an already-approved sponsorship request", async () => {
+    mockPrisma.coupleProfile.findUnique.mockResolvedValue({ id: "couple_1", userId: "host_user_1" });
+    mockPrisma.sponsorshipRequest.findUnique.mockResolvedValue({
+      id: "sr_approved",
+      status: "APPROVED",
+      wedding: { hostCoupleId: "couple_1", title: "Beach Wedding" },
+    });
+
+    await expect(cancelSponsorshipRequestAction("sr_approved")).rejects.toThrow(
+      "Only pending sponsorship requests can be cancelled"
+    );
+  });
+});
+
+// =============================================================================
+// 12. Full Sponsorship Flow: Host Request → Admin Approval → Active Listing
+// =============================================================================
+describe("12. Full Sponsorship Flow: Host → Admin Approval → DB Active", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockCurrentUser = { id: "admin_user_1", email: "admin@weddingwithindia.com", role: "ADMIN" };
+    mockPrisma.user.findMany.mockResolvedValue([]);
+  });
+
+  it("admin approval sets sponsored=true on the linked wedding", async () => {
+    const now = new Date();
+    const campaignEnd = new Date(Date.now() + 86400000 * 30);
+
+    mockPrisma.sponsorshipRequest.findUnique.mockResolvedValue({
+      id: "sr_flow_1",
+      weddingId: "w5",
+      status: "PENDING",
+      wedding: {
+        id: "w5",
+        title: "Heritage Palace Wedding",
+        hostCouple: { userId: "couple_host_1", user: { id: "couple_host_1" } },
+      },
+    });
+    mockPrisma.sponsorshipRequest.update.mockResolvedValue({ id: "sr_flow_1", status: "APPROVED" });
+    mockPrisma.wedding.update.mockResolvedValue({ id: "w5", sponsored: true });
+    mockPrisma.notification.create.mockResolvedValue({ id: "notif_1" });
+
+    const res = await adminReviewSponsorshipRequestAction(
+      "sr_flow_1", "APPROVED", "Approved", now.toISOString(), campaignEnd.toISOString()
+    );
+
+    expect(res.success).toBe(true);
+    expect(mockPrisma.wedding.update).toHaveBeenCalledWith({
+      where: { id: "w5" },
+      data: expect.objectContaining({ sponsored: true }),
+    });
+    expect(mockPrisma.notification.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ userId: "couple_host_1", type: "SUCCESS" }) })
+    );
+    expect(mockPrisma.auditLog.create).toHaveBeenCalled();
+  });
+
+  it("admin rejection does NOT set sponsored=true on the wedding", async () => {
+    mockCurrentUser = { id: "admin_user_1", email: "admin@weddingwithindia.com", role: "ADMIN" };
+
+    mockPrisma.sponsorshipRequest.findUnique.mockResolvedValue({
+      id: "sr_flow_2",
+      weddingId: "w7",
+      status: "PENDING",
+      wedding: {
+        id: "w7",
+        title: "Beach Wedding",
+        hostCouple: { userId: "couple_2", user: { id: "couple_2" } },
+      },
+    });
+    mockPrisma.sponsorshipRequest.update.mockResolvedValue({ id: "sr_flow_2", status: "REJECTED" });
+    mockPrisma.notification.create.mockResolvedValue({ id: "notif_2" });
+
+    const res = await adminReviewSponsorshipRequestAction("sr_flow_2", "REJECTED", "Insufficient quality");
+    expect(res.success).toBe(true);
+    expect(mockPrisma.wedding.update).not.toHaveBeenCalled();
+  });
+});
 

@@ -62,9 +62,9 @@ export default async function ExecutiveFinanceDashboardPage() {
             <Landmark size={18} />
           </div>
           <div className="font-display font-bold text-2xl text-amber-700">
-            ${finance.agentCommissionsPaid.toLocaleString()} USD
+            ₹{finance.agentCommissionsPaid.toLocaleString("en-IN")} INR
           </div>
-          <p className="text-[0.6875rem] text-charcoal-400">Commissions awarded to travel agents.</p>
+          <p className="text-[0.6875rem] text-charcoal-400">Fixed payouts awarded to travel agents (INR).</p>
         </div>
       </div>
 
@@ -105,9 +105,9 @@ export default async function ExecutiveFinanceDashboardPage() {
                 <div key={c.id} className="p-3.5 bg-warm-50/50 border border-warm-200 rounded-2xl text-xs space-y-1">
                   <div className="flex justify-between font-bold text-charcoal-900">
                     <span>{c.agent.user.name || c.agent.user.email}</span>
-                    <span className="text-amber-600">${c.commissionAmount} USD</span>
+                    <span className="text-amber-600">₹{c.commissionAmount?.toLocaleString() || 0} INR</span>
                   </div>
-                  <div className="text-[0.6875rem] text-charcoal-500">Gross: ${c.grossAmount} • Status: {c.status}</div>
+                  <div className="text-[0.6875rem] text-charcoal-500">Gross Booking: ${c.grossAmount} USD • Status: {c.status}</div>
                 </div>
               ))}
             </div>

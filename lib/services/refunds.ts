@@ -6,7 +6,6 @@
  */
 
 import { prisma } from "../prisma";
-import { stripe } from "../stripe";
 import { BookingStatus, PaymentStatus, CancellationStatus, CancellationReasonCode, CancellationActor, ReputationEntityType, ReputationEventType } from "@prisma/client";
 import { calculateCancellationPolicy } from "./cancellation-policy";
 import { sendRefundConfirmationEmail } from "../email";
@@ -148,6 +147,9 @@ export async function createCancellationRequest({
 /**
  * Persists refund intent and initiates Stripe refund asynchronously.
  */
+/**
+ * Persists refund intent and completes approved refund.
+ */
 export async function processApprovedRefund(cancellationRequestId: string, adminUserId: string) {
   const request = await prisma.cancellationRequest.findUnique({
     where: { id: cancellationRequestId },
@@ -181,13 +183,7 @@ export async function processApprovedRefund(cancellationRequestId: string, admin
     return { success: true, message: "Booking cancelled. No payments refunded." };
   }
 
-  // Pre-validate Stripe PaymentIntent
-  if (!payment.stripePaymentIntentId) {
-    throw new Error("No successful Stripe PaymentIntent associated with this booking.");
-  }
-
-  // Persist PENDING Refund intent in database BEFORE calling Stripe to guarantee ledger integrity
-  const idempotencyKey = `REFUND:${cancellationRequestId}:${payment.id}`;
+  const refundTxnId = `REF-CANCEL-${Date.now()}`;
 
   const refundRecord = await prisma.$transaction(async (tx) => {
     // Check if already processed
@@ -196,10 +192,44 @@ export async function processApprovedRefund(cancellationRequestId: string, admin
     });
     if (existing) return existing;
 
-    // Transition cancellation request state to PROCESSING
+    // Transition cancellation request state to COMPLETED
     await tx.cancellationRequest.update({
       where: { id: cancellationRequestId },
-      data: { status: CancellationStatus.PROCESSING },
+      data: {
+        status: CancellationStatus.COMPLETED,
+        reviewedById: adminUserId,
+        completedAt: new Date(),
+      },
+    });
+
+    // Update payment
+    await tx.payment.update({
+      where: { id: payment.id },
+      data: {
+        status: PaymentStatus.REFUNDED,
+        refundStatus: "REFUNDED",
+        refundedAt: new Date(),
+        refundTransactionId: refundTxnId,
+      },
+    });
+
+    // Update booking
+    await tx.booking.update({
+      where: { id: request.bookingId },
+      data: {
+        status: BookingStatus.REFUNDED,
+      },
+    });
+
+    // Record Transaction
+    await tx.transaction.create({
+      data: {
+        paymentId: payment.id,
+        type: "REFUND",
+        amount: request.approvedRefundAmount,
+        status: "SUCCESS",
+        referenceId: refundTxnId,
+      },
     });
 
     return await tx.refund.create({
@@ -208,47 +238,25 @@ export async function processApprovedRefund(cancellationRequestId: string, admin
         cancellationRequestId,
         amount: request.approvedRefundAmount,
         reason: request.reasonText || `Refund for cancellation request: ${cancellationRequestId}`,
-        status: "PENDING",
+        refundTransactionId: refundTxnId,
+        status: "SUCCESS",
       },
     });
   });
 
   try {
-    // Call Stripe with the stable idempotency key
-    const stripeRefund = await stripe.refunds.create(
-      {
-        payment_intent: payment.stripePaymentIntentId,
-        amount: Math.round(request.approvedRefundAmount * 100),
-      },
-      { idempotencyKey }
+    await sendRefundConfirmationEmail(
+      request.booking.traveler.user.email,
+      request.booking.traveler.fullName,
+      request.booking.wedding.title,
+      refundTxnId,
+      request.approvedRefundAmount
     );
-
-    // Save Stripe ID, status transition is done when webhook triggers
-    await prisma.refund.update({
-      where: { id: refundRecord.id },
-      data: {
-        stripeRefundId: stripeRefund.id,
-      },
-    });
-
-    return { success: true, stripeRefundId: stripeRefund.id };
-  } catch (stripeErr: any) {
-    console.error("[refunds] Stripe API failure:", stripeErr);
-
-    // Mark request as FAILED to allow admin retry
-    await prisma.$transaction(async (tx) => {
-      await tx.refund.update({
-        where: { id: refundRecord.id },
-        data: { status: "FAILED" },
-      });
-      await tx.cancellationRequest.update({
-        where: { id: cancellationRequestId },
-        data: { status: CancellationStatus.FAILED },
-      });
-    });
-
-    throw new Error(`Stripe refund failed: ${stripeErr.message || stripeErr}`);
+  } catch (emailErr) {
+    console.error("[refunds] Failed to send email:", emailErr);
   }
+
+  return { success: true, refundId: refundRecord.id, refundTxnId };
 }
 
 /**

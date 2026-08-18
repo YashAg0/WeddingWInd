@@ -1,3 +1,5 @@
+import type { WeddingTier } from "@/lib/services/pricing-engine";
+
 export type Role = "SUPER_ADMIN" | "ADMIN" | "COUPLE" | "TRAVELER" | "AGENT" | "COORDINATOR";
 
 export interface User {
@@ -52,6 +54,8 @@ export interface WeddingTradition {
   description: string;
 }
 
+export type WeddingAvailabilityStatus = "AVAILABLE" | "FULLY_BOOKED" | "UNAVAILABLE" | "COMPLETED";
+
 export interface DemoWedding {
   id: string;
   slug: string;
@@ -62,7 +66,9 @@ export interface DemoWedding {
   country: string;
   countryCode: string;
   category: WeddingCategory;
+  tier?: WeddingTier;
   pricePerGuest: number;
+  ceremoniesCount?: number;
   currency: string;
   rating: number;
   reviewCount: number;
@@ -78,6 +84,7 @@ export interface DemoWedding {
   sponsorshipStart?: string | null;
   sponsorshipEnd?: string | null;
   isDemo: boolean;
+  availabilityStatus?: WeddingAvailabilityStatus;
   tags: string[];
   date: string;
   religion: string;

@@ -3,17 +3,12 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { Users, Heart, Share2, ShieldCheck, Check, Info, Sparkles } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { Users, Heart, Share2, ShieldCheck, Check, Info, Sparkles, Calendar } from "lucide-react";
 import type { Wedding } from "@/types";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
-import {
-  formatCurrencyINR,
-  formatSecondaryCurrency
-} from "@/lib/constants/financial-model";
-import { useCurrency } from "@/context/CurrencyContext";
+import { WEDDING_TIER_CONFIG, normalizeWeddingTier, normalizeDurationDays, getCustomerPriceUSD } from "@/lib/services/pricing-engine";
 import { WeddingSideSelector, type WeddingSideValue } from "@/components/wedding/WeddingSideSelector";
 
 interface BookingSidebarProps {
@@ -22,11 +17,13 @@ interface BookingSidebarProps {
 
 export function BookingSidebar({ wedding }: BookingSidebarProps) {
   const { user, addBooking } = useAuth();
-  const { formatPrice } = useCurrency();
   const router = useRouter();
 
-  const basePriceINR = wedding.pricePerGuest || 12000;
-  const [selectedTierKey, setSelectedTierKey] = useState<string>("BUDGET");
+  const tier = normalizeWeddingTier(wedding.tier || (wedding.category === "Royal" ? "ROYAL" : "STANDARD"));
+  const durationDays = normalizeDurationDays(wedding.durationDays || 3);
+  const tierConfig = WEDDING_TIER_CONFIG[tier];
+  const pricePerGuestUSD = getCustomerPriceUSD(tier, durationDays);
+
   const [guestsCount, setGuestsCount] = useState(1);
   const [attendanceSide, setAttendanceSide] = useState<WeddingSideValue>("BRIDE_SIDE");
   const [isSaved, setIsSaved] = useState(false);
@@ -36,11 +33,11 @@ export function BookingSidebar({ wedding }: BookingSidebarProps) {
 
   const availableSlots = Math.max(0, wedding.guestsAllowed - wedding.guestsBooked);
   const isShowcase = wedding.isDemo === true;
-  const isSoldOut = isShowcase || wedding.guestsAllowed === 0 || availableSlots <= 0;
+  const isSoldOut = isShowcase || wedding.availabilityStatus === "FULLY_BOOKED" || wedding.availabilityStatus === "UNAVAILABLE" || wedding.availabilityStatus === "COMPLETED" || wedding.guestsAllowed === 0 || availableSlots <= 0;
+  const subtotalUSD = pricePerGuestUSD * guestsCount;
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      // 1. Check URL parameters
       const params = new URLSearchParams(window.location.search);
       const sideParam = params.get("side")?.toUpperCase();
       if (sideParam === "BRIDE" || sideParam === "BRIDE_SIDE") {
@@ -51,12 +48,10 @@ export function BookingSidebar({ wedding }: BookingSidebarProps) {
         setAttendanceSide("OPEN");
       }
 
-      // 2. Restore intent from sessionStorage if returning from authentication
       try {
         const stored = sessionStorage.getItem(`pending_booking_${wedding.id}`);
         if (stored) {
           const parsed = JSON.parse(stored);
-          if (parsed.tier) setSelectedTierKey(parsed.tier);
           if (parsed.guestsCount) setGuestsCount(Number(parsed.guestsCount));
           if (parsed.attendanceSide) setAttendanceSide(parsed.attendanceSide);
           sessionStorage.removeItem(`pending_booking_${wedding.id}`);
@@ -64,31 +59,6 @@ export function BookingSidebar({ wedding }: BookingSidebarProps) {
       } catch {}
     }
   }, [wedding.id]);
-
-  const dynamicTiers: Record<string, { id: string; name: string; priceINR: number; description: string; popular?: boolean }> = {
-    BUDGET: {
-      id: "budget",
-      name: "Standard Access",
-      priceINR: basePriceINR,
-      description: "Full access to wedding ceremonies, celebratory feasts, and digital cultural guide.",
-    },
-    PREMIUM: {
-      id: "premium",
-      name: "Premium Experience",
-      priceINR: Math.round(basePriceINR * 1.35),
-      description: "Multi-event access, professional Henna session, and bilingual coordinator support.",
-      popular: true,
-    },
-    VIP: {
-      id: "vip",
-      name: "VIP Family Guest",
-      priceINR: Math.round(basePriceINR * 2.0),
-      description: "Complete multi-day wedding access, family lounge entry, and designer attire rental.",
-    },
-  };
-
-  const activeTier = dynamicTiers[selectedTierKey] || dynamicTiers.BUDGET;
-  const subtotalINR = activeTier.priceINR * guestsCount;
 
   const handleShare = () => {
     navigator.clipboard.writeText(window.location.href);
@@ -98,7 +68,7 @@ export function BookingSidebar({ wedding }: BookingSidebarProps) {
 
   const handleBook = async () => {
     if (isShowcase || isSoldOut) {
-      toast.error("Showcase experiences are currently not available for booking.");
+      toast.error("This experience is currently fully booked and not accepting new reservations.");
       return;
     }
     if (!user) {
@@ -106,7 +76,6 @@ export function BookingSidebar({ wedding }: BookingSidebarProps) {
         sessionStorage.setItem(
           `pending_booking_${wedding.id}`,
           JSON.stringify({
-            tier: selectedTierKey,
             guestsCount,
             attendanceSide,
           })
@@ -124,11 +93,11 @@ export function BookingSidebar({ wedding }: BookingSidebarProps) {
     try {
       await addBooking({
         weddingId: wedding.id,
-        weddingTitle: `${wedding.title} - ${activeTier.name}`,
+        weddingTitle: wedding.title,
         location: wedding.location,
         imageUrl: wedding.imageUrl,
         date: wedding.date,
-        pricePerGuest: activeTier.priceINR,
+        pricePerGuest: pricePerGuestUSD,
         guestsCount,
         attendanceSide,
         status: "pending"
@@ -144,13 +113,42 @@ export function BookingSidebar({ wedding }: BookingSidebarProps) {
       {/* Header & Verification */}
       <div className="flex justify-between items-center pb-4 border-b border-warm-200">
         <div>
-          <span className="text-xs font-bold text-charcoal-400 uppercase tracking-wider block">Experience Tier</span>
-          <span className="font-display font-bold text-lg text-charcoal-900">{activeTier.name}</span>
+          <div className="flex items-center gap-1.5">
+            <span className="inline-block w-2 h-2 rounded-full bg-amber-500" />
+            <span className="text-xs font-bold text-charcoal-400 uppercase tracking-wider">
+              {tierConfig.label} Experience
+            </span>
+          </div>
+          <span className="font-display font-bold text-lg text-charcoal-900">
+            {durationDays}-Day Celebration
+          </span>
         </div>
-        <span className="inline-flex items-center gap-1 bg-emerald-50 border border-emerald-200 text-emerald-700 text-[0.6875rem] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full">
-          <ShieldCheck size={12} />
-          Vetted Host
-        </span>
+        {wedding.isVerified && !wedding.isDemo ? (
+          <span className="inline-flex items-center gap-1 bg-emerald-50 border border-emerald-200 text-emerald-700 text-[0.6875rem] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full">
+            <ShieldCheck size={12} />
+            Verified Host
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1 bg-warm-100 border border-warm-200 text-charcoal-600 text-[0.6875rem] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full">
+            {tierConfig.label}
+          </span>
+        )}
+      </div>
+
+      {/* Pricing Header Card */}
+      <div className="p-4 bg-warm-50/70 border border-warm-200/60 rounded-2xl">
+        <div className="flex justify-between items-baseline">
+          <span className="text-xs font-bold text-charcoal-500 uppercase tracking-wider">Pass Price</span>
+          <div className="flex items-baseline gap-1">
+            <span className="font-display font-black text-2xl text-[var(--color-brand-primary)]">
+              ${pricePerGuestUSD}
+            </span>
+            <span className="text-xs font-semibold text-charcoal-500">/guest</span>
+          </div>
+        </div>
+        <p className="text-[0.75rem] text-charcoal-600 mt-2 leading-relaxed">
+          {tierConfig.description}
+        </p>
       </div>
 
       {/* Slots Info */}
@@ -166,51 +164,6 @@ export function BookingSidebar({ wedding }: BookingSidebarProps) {
         </span>
       </div>
 
-      {/* Selectable Pricing Tiers */}
-      <div className="flex flex-col gap-2.5">
-        <label className="text-[0.6875rem] font-bold text-charcoal-500 uppercase tracking-widest">
-          Select Experience Tier
-        </label>
-        <div className="space-y-2">
-          {Object.entries(dynamicTiers).map(([key, tier]) => {
-            const isSelected = selectedTierKey === key;
-            return (
-              <button
-                key={tier.id}
-                type="button"
-                onClick={() => setSelectedTierKey(key)}
-                className={cn(
-                  "w-full text-left p-3.5 rounded-2xl border transition-all relative flex flex-col gap-1",
-                  isSelected
-                    ? "border-[var(--color-brand-primary)] bg-maroon-50/20 ring-2 ring-[var(--color-brand-primary)]/20"
-                    : "border-warm-200 hover:border-warm-300 bg-white"
-                )}
-              >
-                {tier.popular && (
-                  <span className="absolute -top-2.5 right-3 bg-[var(--color-brand-secondary)] text-charcoal-950 text-[0.625rem] font-black uppercase tracking-wider px-2 py-0.5 rounded-md shadow-xs flex items-center gap-1">
-                    <Sparkles size={10} /> Most Popular
-                  </span>
-                )}
-                <div className="flex justify-between items-baseline">
-                  <span className="font-sans font-bold text-sm text-charcoal-900">{tier.name}</span>
-                  <div className="text-right">
-                    <span className="font-display font-bold text-base text-[var(--color-brand-primary)]">
-                      {formatPrice(tier.priceINR).primary}
-                    </span>
-                    {formatPrice(tier.priceINR).secondary && (
-                      <span className="text-[0.625rem] text-charcoal-400 font-medium block">
-                        {formatPrice(tier.priceINR).secondary}
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <p className="text-[0.75rem] text-charcoal-500 leading-snug line-clamp-1">{tier.description}</p>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
       {/* Wedding Side Selector */}
       <WeddingSideSelector
         value={attendanceSide}
@@ -221,7 +174,7 @@ export function BookingSidebar({ wedding }: BookingSidebarProps) {
       {/* Guests Count Select */}
       <div className="flex flex-col gap-1.5">
         <label htmlFor="booking-guests" className="text-[0.6875rem] font-bold text-charcoal-500 uppercase tracking-widest">
-          Number of Guests
+          Number of International Guests
         </label>
         <select
           id="booking-guests"
@@ -237,7 +190,7 @@ export function BookingSidebar({ wedding }: BookingSidebarProps) {
           ) : (
             Array.from({ length: Math.min(10, availableSlots) }).map((_, i) => (
               <option key={i + 1} value={i + 1}>
-                {i + 1} {i + 1 === 1 ? "Guest" : "Guests"}
+                {i + 1} {i + 1 === 1 ? "Guest" : "Guests"} (${pricePerGuestUSD * (i + 1)})
               </option>
             ))
           )}
@@ -247,21 +200,15 @@ export function BookingSidebar({ wedding }: BookingSidebarProps) {
       {/* Price Summary Calculation */}
       <div className="space-y-3 pt-3 border-t border-warm-200">
         <div className="flex justify-between text-sm text-charcoal-600">
-          <span>{activeTier.name} ({formatPrice(activeTier.priceINR).primary} × {guestsCount})</span>
-          <span className="font-semibold text-charcoal-900">{formatPrice(subtotalINR).primary}</span>
+          <span>${pricePerGuestUSD} × {guestsCount} {guestsCount === 1 ? "Guest" : "Guests"}</span>
+          <span className="font-semibold text-charcoal-900">${subtotalUSD} USD</span>
         </div>
-        {formatPrice(subtotalINR).secondary && (
-          <div className="flex justify-between text-xs text-charcoal-500">
-            <span>Reference (INR)</span>
-            <span className="font-medium">{formatPrice(subtotalINR).secondary}</span>
-          </div>
-        )}
         <hr className="border-warm-100" />
         <div className="flex justify-between items-baseline">
           <span className="font-semibold text-charcoal-800">Total Booking Price</span>
           <div className="text-right">
-            <span className="font-display font-bold text-xl text-charcoal-950">{formatPrice(subtotalINR).primary}</span>
-            <span className="text-[0.6875rem] text-charcoal-500 block font-medium">All taxes & fees included</span>
+            <span className="font-display font-bold text-2xl text-charcoal-950">${subtotalUSD} USD</span>
+            <span className="text-[0.6875rem] text-charcoal-500 block font-medium">All ceremonial access & feasts included</span>
           </div>
         </div>
       </div>
@@ -296,7 +243,7 @@ export function BookingSidebar({ wedding }: BookingSidebarProps) {
             onClick={handleBook}
             className="btn btn-primary w-full py-4 text-base shadow-lg justify-center font-bold"
           >
-            Reserve Invitation — {formatPrice(subtotalINR).primary}
+            Reserve Invitation — ${subtotalUSD}
           </button>
         )}
 
@@ -321,87 +268,6 @@ export function BookingSidebar({ wedding }: BookingSidebarProps) {
           </button>
         </div>
       </div>
-
-      {/* Vetting Guarantee Text */}
-      <div className="flex items-start gap-2 bg-warm-100/50 p-3 rounded-2xl border border-warm-200/30">
-        <Info size={14} className="text-charcoal-400 mt-0.5 flex-shrink-0" />
-        <p className="text-[0.6875rem] text-charcoal-500 leading-normal">
-          Every host family is in-person verified by our team. Your reservation payment is held securely in trust until check-in.
-        </p>
-      </div>
-
-      {/* Cancellation Policy */}
-      <div className="text-[0.6875rem] text-charcoal-500 space-y-1.5 border-t border-warm-100 pt-4">
-        <p className="font-bold text-charcoal-700 flex items-center gap-1.5">
-          <ShieldCheck size={13} className="text-[var(--color-brand-primary)]" />
-          Cancellation Policy
-        </p>
-        <ul className="space-y-1 pl-1">
-          <li className="flex items-start gap-1.5">
-            <Check size={11} className="text-emerald-600 mt-0.5 flex-shrink-0" />
-            <span><strong className="text-charcoal-700">30+ days before event:</strong> Full refund of reservation fee.</span>
-          </li>
-          <li className="flex items-start gap-1.5">
-            <Check size={11} className="text-amber-600 mt-0.5 flex-shrink-0" />
-            <span><strong className="text-charcoal-700">14–29 days before event:</strong> 50% refund of reservation fee.</span>
-          </li>
-          <li className="flex items-start gap-1.5">
-            <Check size={11} className="text-rose-600 mt-0.5 flex-shrink-0" />
-            <span><strong className="text-charcoal-700">Under 14 days:</strong> Non-refundable as host arrangements are finalized.</span>
-          </li>
-        </ul>
-      </div>
-
-      {/* Support Contact */}
-      <div className="text-[0.6875rem] text-charcoal-500 border-t border-warm-100 pt-3">
-        <p className="font-bold text-charcoal-700 mb-1">Questions before reserving?</p>
-        <a
-          href="mailto:support@weddingwithindia.com"
-          className="text-[var(--color-brand-primary)] font-semibold hover:underline"
-        >
-          support@weddingwithindia.com
-        </a>
-        <span className="mx-1.5 text-charcoal-300">·</span>
-        <span>Concierge responds within 24 hours.</span>
-      </div>
-
-      {/* Success Booking Modal */}
-      <AnimatePresence>
-        {isBooked && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-charcoal-950/40 backdrop-blur-sm"
-          >
-            <motion.div
-              initial={{ scale: 0.9, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.9, y: 20 }}
-              className="bg-white max-w-sm w-full p-6 rounded-3xl border border-warm-200 shadow-2xl text-center space-y-4"
-            >
-              <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 mx-auto flex items-center justify-center">
-                <Check size={24} />
-              </div>
-              <h4 className="font-display font-bold text-lg text-charcoal-900">
-                Invitation Request Sent
-              </h4>
-              <p className="text-charcoal-600 text-sm leading-relaxed">
-                Your invitation request for {guestsCount} guest(s) on the <strong>{activeTier.name}</strong> experience has been received. The host family will review your details with care.
-              </p>
-              <div className="text-xs bg-warm-50 border border-warm-100 p-3 rounded-xl text-charcoal-600 font-medium">
-                Total Payment: {formatCurrencyINR(subtotalINR)} ({formatSecondaryCurrency(subtotalINR)})
-              </div>
-              <button
-                onClick={() => setIsBooked(false)}
-                className="btn btn-primary w-full py-3 justify-center text-sm font-bold"
-              >
-                Done
-              </button>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </aside>
   );
 }

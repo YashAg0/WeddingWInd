@@ -19,7 +19,6 @@ import { submitReviewAction } from "@/lib/actions/reviews";
 import { deleteSavedSearch } from "@/lib/actions/discovery";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, requireRole } from "@/lib/auth";
-import { stripe } from "@/lib/stripe";
 import {
   UserRole,
   BookingStatus,
@@ -31,22 +30,6 @@ import {
 jest.mock("@/lib/auth", () => ({
   requireAuth: jest.fn(),
   requireRole: jest.fn(),
-}));
-
-jest.mock("@/lib/stripe", () => ({
-  stripe: {
-    transfers: {
-      create: jest.fn().mockResolvedValue({ id: "tr_test_123" }),
-    },
-    checkout: {
-      sessions: {
-        create: jest.fn().mockResolvedValue({ id: "cs_test_123", url: "https://stripe.com/checkout" }),
-      },
-    },
-    events: {
-      retrieve: jest.fn(),
-    },
-  },
 }));
 
 jest.mock("@/lib/email", () => ({
@@ -134,6 +117,7 @@ jest.mock("@/lib/prisma", () => {
       findUnique: jest.fn(),
       findFirst: jest.fn(),
       create: jest.fn(),
+      update: jest.fn().mockResolvedValue({}),
     },
     payout: {
       findFirst: jest.fn(),
@@ -215,6 +199,7 @@ describe("Remediation Integration Suite — P0 & P1 Fixes", () => {
 
       (prisma.wedding.findUnique as jest.Mock).mockResolvedValue({
         id: "wedding-1",
+        status: "PUBLISHED",
         suspended: false,
         isDemo: false,
         hostCouple: { userId: "host-couple-user-id" },
@@ -316,7 +301,7 @@ describe("Remediation Integration Suite — P0 & P1 Fixes", () => {
   });
 
   describe("5. Multi-Currency Host Payouts", () => {
-    it("should pass dynamic currency (INR) and 100x multiplier to Stripe transfer", async () => {
+    it("should process host payout and record cleared payout in database", async () => {
       (requireRole as jest.Mock).mockResolvedValue({
         id: "admin-1",
         email: "admin@test.com",
@@ -331,11 +316,11 @@ describe("Remediation Integration Suite — P0 & P1 Fixes", () => {
         booking: {
           id: "b-1",
           weddingId: "w-1",
+          totalHostPayoutINR: 5000,
           traveler: { userId: "traveler-1" },
           wedding: {
             hostCouple: {
               userId: "host-1",
-              stripeAccountId: "acct_stripe_host_123",
             },
           },
         },
@@ -346,18 +331,25 @@ describe("Remediation Integration Suite — P0 & P1 Fixes", () => {
       (prisma.payout.create as jest.Mock).mockResolvedValue({
         id: "payout-1",
         amount: 5000,
+        status: "CLEARED",
       });
 
-      await adminProcessHostPayoutAction("pay-inr-1");
+      const res = await adminProcessHostPayoutAction("pay-inr-1");
 
-      expect(stripe.transfers.create).toHaveBeenCalledWith({
-        amount: 500000, // 5000 * 100
-        currency: "inr",
-        destination: "acct_stripe_host_123",
-        metadata: {
+      expect(prisma.payout.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
           paymentId: "pay-inr-1",
-          bookingId: "b-1",
-        },
+          amount: 5000,
+          status: "CLEARED",
+        }),
+      });
+      expect(res).toEqual({
+        success: true,
+        payout: expect.objectContaining({
+          id: "payout-1",
+          amount: 5000,
+          status: "CLEARED",
+        }),
       });
     });
   });

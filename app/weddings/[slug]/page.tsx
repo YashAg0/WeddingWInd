@@ -172,7 +172,7 @@ export default async function WeddingDetailPage({ params }: PageProps) {
               <span className="inline-flex items-center gap-1.5 bg-maroon-50 text-[var(--color-brand-primary)] text-[0.6875rem] font-bold uppercase tracking-wider px-3 py-1 rounded-full border border-maroon-100/50">
                 <Sparkles size={11} className="text-[var(--color-brand-secondary)]" /> {wedding.category}
               </span>
-              {wedding.isVerified && (
+              {wedding.isVerified && !wedding.isDemo && (
                 <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-600 text-[0.625rem] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border border-emerald-100">
                   <ShieldCheck size={11} />
                   Verified host
@@ -420,6 +420,25 @@ export default async function WeddingDetailPage({ params }: PageProps) {
                     </li>
                   ))}
                 </ul>
+              </div>
+            </section>
+
+            {/* ─── Legal & Cultural Safety Notice ─── */}
+            <section className="bg-warm-100/60 border border-warm-200/80 p-6 sm:p-7 rounded-3xl shadow-xs space-y-3" aria-label="Legal and safety notice">
+              <div className="flex items-center gap-2 text-charcoal-900 font-display font-bold text-base">
+                <ShieldCheck size={18} className="text-[var(--color-brand-primary)]" />
+                Cultural Marketplace &amp; Safety Notice
+              </div>
+              <p className="text-xs text-charcoal-600 leading-relaxed">
+                WeddingWithIndia is a cultural marketplace facilitating authentic family celebration attendance for international guests. The platform does not act as a civil marriage registrar, visa authority, or religious authority. Religious ceremonies and marriage registrations remain under the sovereign jurisdiction of the couple, their chosen officiants, and relevant local legal authorities. International travelers attend as honored observers and guests.
+              </p>
+              <div className="pt-2 flex flex-wrap items-center gap-2 text-[0.6875rem] font-semibold text-charcoal-600">
+                <span className="bg-white px-2.5 py-1 rounded-full border border-warm-200">
+                  📷 Photography: Allowed in designated celebration areas
+                </span>
+                <span className="bg-white px-2.5 py-1 rounded-full border border-warm-200">
+                  🤝 Dedicated Host Liaison Assigned
+                </span>
               </div>
             </section>
 

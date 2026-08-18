@@ -54,7 +54,7 @@ async function auditBookingStates() {
   console.log(`Auditing state separation for ${weddings.length} database weddings...\n`);
 
   let errors = 0;
-  let warnings = 0;
+  const warnings = 0;
 
   for (const w of weddings) {
     const state = w.suspended ? "SUSPENDED" : w.status === "PUBLISHED" ? (w.isDemo ? "SHOWCASE" : "ACTIVE") : w.status;

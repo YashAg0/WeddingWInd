@@ -11,9 +11,8 @@ const envSchema = z.object({
   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string().min(1, "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY is required"),
   CLERK_SECRET_KEY: z.string().min(1, "CLERK_SECRET_KEY is required"),
 
-  // Stripe Payments
-  STRIPE_SECRET_KEY: z.string().min(1, "STRIPE_SECRET_KEY is required"),
-  STRIPE_WEBHOOK_SECRET: z.string().min(1, "STRIPE_WEBHOOK_SECRET is required"),
+  // PayPal Payment Configuration (optional override)
+  PAYPAL_DOMAIN_ALLOWLIST: z.string().default("paypal.com,paypal.me"),
 
   // Resend Email
   RESEND_API_KEY: z.string().min(1, "RESEND_API_KEY is required"),
@@ -55,8 +54,7 @@ function getRawProcessEnv() {
     DATABASE_URL: process.env.DATABASE_URL,
     NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
     CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY,
-    STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
-    STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
+    PAYPAL_DOMAIN_ALLOWLIST: process.env.PAYPAL_DOMAIN_ALLOWLIST || "paypal.com,paypal.me",
     RESEND_API_KEY: process.env.RESEND_API_KEY,
     UPLOADTHING_SECRET: process.env.UPLOADTHING_SECRET,
     UPLOADTHING_APP_ID: process.env.UPLOADTHING_APP_ID,

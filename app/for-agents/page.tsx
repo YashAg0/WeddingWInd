@@ -4,16 +4,11 @@ import Link from "next/link";
 import { Users, ShieldCheck, ArrowRight, Award, CheckCircle, AlertTriangle, Briefcase, Globe } from "lucide-react";
 import { AgentJourneyDiagram } from "@/components/diagrams/AgentJourneyDiagram";
 import { SectionHeader } from "@/components/ui/SectionHeader";
-import { COMMISSION_MODEL, formatCurrencyINR, formatSecondaryCurrency } from "@/lib/constants/financial-model";
-import { BUSINESS_METRICS } from "@/lib/constants/business-metrics";
+import { AGENT_PAYOUT_MATRIX_INR, formatCurrencyINR } from "@/lib/constants/financial-model";
 
 export default function ForAgentsPage() {
-  const travelerRate = COMMISSION_MODEL.AGENT_REFERRAL_PAYOUT_DEFAULT; // Tiered (avg ₹1000)
-  const hostRate = COMMISSION_MODEL.HOST_REFERRAL_COMMISSION_PERCENT; // 4%
-  const avgBookingINR = BUSINESS_METRICS.WEIGHTED_AVG_BOOKING_INR; // ₹13,799
-
-  const travelerCommissionINR = Math.round((avgBookingINR * travelerRate) / 100); // ₹966
-  const hostCommissionINR = Math.round((avgBookingINR * hostRate) / 100); // ₹552
+  const minAgentPayoutINR = AGENT_PAYOUT_MATRIX_INR.STANDARD; // ₹511
+  const maxAgentPayoutINR = AGENT_PAYOUT_MATRIX_INR.SIGNATURE_ROYAL; // ₹2,511
 
   return (
     <div className="min-h-screen bg-warm-50 pt-28 pb-20">
@@ -68,10 +63,10 @@ export default function ForAgentsPage() {
                 Guest-Side Referral
               </span>
               <h3 className="font-display font-bold text-2xl text-charcoal-900">
-                {travelerRate}% Commission per Booking
+                ₹511 to ₹2,511 / Guest
               </h3>
               <p className="text-charcoal-600 text-xs sm:text-sm leading-relaxed">
-                Refer global guests who reserve any celebration tier. On average ({formatCurrencyINR(avgBookingINR)} booking), you earn <strong>{formatCurrencyINR(travelerCommissionINR)} ({formatSecondaryCurrency(travelerCommissionINR)})</strong> per completed stay.
+                Refer international guests who reserve any celebration tier. Earn fixed INR payouts per eligible attending guest: Standard (₹511), Enhanced (₹1,011), Grand (₹1,511), Royal (₹2,011), Signature Royal (₹2,511).
               </p>
               <ul className="space-y-2 text-xs text-charcoal-600">
                 <li className="flex items-center gap-2">
@@ -80,14 +75,14 @@ export default function ForAgentsPage() {
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle size={14} className="text-emerald-600 flex-shrink-0" />
-                  <span>Paid post-event after booking is completed & cleared</span>
+                  <span>Paid post-event after booking is completed & verified</span>
                 </li>
               </ul>
             </div>
 
             <div className="bg-warm-50 border border-warm-200 p-4 rounded-xl text-center">
-              <span className="text-[0.6875rem] font-bold text-charcoal-500 uppercase tracking-wider block">Average Guest Referral Payout</span>
-              <span className="font-display font-bold text-xl text-[var(--color-brand-primary)]">{formatCurrencyINR(travelerCommissionINR)}</span>
+              <span className="text-[0.6875rem] font-bold text-charcoal-500 uppercase tracking-wider block">Guest Referral Payout Range</span>
+              <span className="font-display font-bold text-xl text-[var(--color-brand-primary)]">₹511 — ₹2,511 / guest</span>
             </div>
           </div>
 
@@ -101,10 +96,10 @@ export default function ForAgentsPage() {
                 Host-Side Referral
               </span>
               <h3 className="font-display font-bold text-2xl text-charcoal-900">
-                {hostRate}% Qualifying Booking Value
+                4% Host Referral Incentive
               </h3>
               <p className="text-charcoal-600 text-xs sm:text-sm leading-relaxed">
-                Refer Indian families who share their celebration as host couples. Earn {hostRate}% of qualifying core booking value (avg <strong>{formatCurrencyINR(hostCommissionINR)}</strong>) when guests complete their attendance.
+                Refer Indian families who share their celebration as host couples. Earn 4% referral incentive when international guests complete their attendance.
               </p>
               <ul className="space-y-2 text-xs text-charcoal-600">
                 <li className="flex items-center gap-2">
@@ -119,8 +114,8 @@ export default function ForAgentsPage() {
             </div>
 
             <div className="bg-warm-50 border border-warm-200 p-4 rounded-xl text-center">
-              <span className="text-[0.6875rem] font-bold text-charcoal-500 uppercase tracking-wider block">Average Host Referral Payout</span>
-              <span className="font-display font-bold text-xl text-[var(--color-brand-primary)]">{formatCurrencyINR(hostCommissionINR)}</span>
+              <span className="text-[0.6875rem] font-bold text-charcoal-500 uppercase tracking-wider block">Host Referral Commission</span>
+              <span className="font-display font-bold text-xl text-[var(--color-brand-primary)]">4% of Booking Value</span>
             </div>
           </div>
         </div>

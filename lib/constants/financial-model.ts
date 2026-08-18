@@ -1,17 +1,48 @@
 /**
- * WeddingWithIndia - Locked Financial Model & Business Constants
- * Primary Currency: INR (USD & EUR for secondary display)
- * FX Conversion Rates: USD 1 = ₹95.50, EUR 1 = ₹108.00
+ * WeddingWithIndia — Financial Model & Business Constants
+ * Integrates with and re-exports from the authoritative Central Pricing Engine (lib/services/pricing-engine.ts).
  */
 
+import {
+  WeddingTier,
+  WeddingDurationDays,
+  WEDDING_TIER_CONFIG,
+  CUSTOMER_PRICE_MATRIX_USD,
+  HOST_PAYOUT_MATRIX_INR,
+  AGENT_PAYOUT_MATRIX_INR,
+  FINANCIAL_PLANNING_CONSTANTS,
+  getCustomerPriceUSD,
+  getHostPayoutPerGuestINR,
+  getAgentPayoutPerGuestINR,
+  calculateBookingPricing,
+  calculateHostPotentialEarnings,
+  calculateAgentPotentialEarnings,
+} from "@/lib/services/pricing-engine";
+
+export {
+  WEDDING_TIER_CONFIG,
+  CUSTOMER_PRICE_MATRIX_USD,
+  HOST_PAYOUT_MATRIX_INR,
+  AGENT_PAYOUT_MATRIX_INR,
+  FINANCIAL_PLANNING_CONSTANTS,
+  getCustomerPriceUSD,
+  getHostPayoutPerGuestINR,
+  getAgentPayoutPerGuestINR,
+  calculateBookingPricing,
+  calculateHostPotentialEarnings,
+  calculateAgentPotentialEarnings,
+};
+export type { WeddingTier, WeddingDurationDays };
+
 export const FX_RATES = {
-  USD: 95.50,
+  USD: FINANCIAL_PLANNING_CONSTANTS.PLANNING_FX_USD_INR,
   EUR: 108.00,
 } as const;
 
 export interface PricingTier {
   id: string;
   name: string;
+  tier: WeddingTier;
   priceINR: number;
   priceUSD: number;
   priceEUR: number;
@@ -21,78 +52,92 @@ export interface PricingTier {
   popular?: boolean;
 }
 
-export const PRICING_TIERS: Record<string, PricingTier> = {
-  BUDGET: {
-    id: "budget",
-    name: "Budget",
-    priceINR: 9000,
-    priceUSD: 94.24,
-    priceEUR: 83.33,
+/**
+ * Modern 5-Tier Specification mapped to 3-day baseline for display references
+ */
+export const PRICING_TIERS: Record<WeddingTier, PricingTier> = {
+  STANDARD: {
+    id: "standard",
+    name: "Standard",
+    tier: "STANDARD",
+    priceINR: HOST_PAYOUT_MATRIX_INR.STANDARD[3], // ₹9,101 (3-day host baseline)
+    priceUSD: CUSTOMER_PRICE_MATRIX_USD.STANDARD[3], // $249
+    priceEUR: Number((CUSTOMER_PRICE_MATRIX_USD.STANDARD[3] * 0.92).toFixed(2)),
     bookingMixPercent: 20,
-    description: "Entry experience into an authentic Indian wedding celebration.",
+    description: "Authentic entry experience into genuine Indian wedding rituals and feasts.",
     features: [
-      "Access to main wedding ceremony & reception",
-      "Traditional welcome greeting & turban/dupatta styling",
-      "Full access to wedding feast & non-alcoholic beverages",
-      "Digital cultural guide & etiquette handbook",
-      "Dedicated venue host assistance"
+      "Full access to main wedding ceremony & celebratory feast",
+      "Traditional welcome greeting & ceremonial dupatta/turban styling",
+      "Digital cultural etiquette handbook & preparation guide",
+      "Dedicated venue guest liaison support"
     ]
   },
-  PREMIUM: {
-    id: "premium",
-    name: "Premium",
-    priceINR: 16000,
-    priceUSD: 167.54,
-    priceEUR: 148.15,
-    bookingMixPercent: 45,
-    description: "Multi-event access with hands-on pre-wedding festivities.",
+  ENHANCED: {
+    id: "enhanced",
+    name: "Enhanced",
+    tier: "ENHANCED",
+    priceINR: HOST_PAYOUT_MATRIX_INR.ENHANCED[3], // ₹13,101
+    priceUSD: CUSTOMER_PRICE_MATRIX_USD.ENHANCED[3], // $299
+    priceEUR: Number((CUSTOMER_PRICE_MATRIX_USD.ENHANCED[3] * 0.92).toFixed(2)),
+    bookingMixPercent: 35,
     popular: true,
+    description: "Multi-event access with hands-on Haldi & Mehndi pre-wedding festivities.",
     features: [
-      "2-day access: Mehndi/Haldi ceremony + Main Wedding",
-      "Professional Henna/Mehndi artist session included",
+      "Access to Mehndi / Haldi festivities + Main Wedding",
+      "Professional Henna artist styling session included",
       "Traditional attire rental coordination",
-      "All ceremonial meals & refreshments included",
+      "All ceremonial feasts & refreshments included",
       "Personal bilingual local coordinator support"
     ]
   },
-  VIP: {
-    id: "vip",
-    name: "VIP",
-    priceINR: 30000,
-    priceUSD: 314.14,
-    priceEUR: 277.78,
-    bookingMixPercent: 35,
-    description: "All-inclusive royal experience hosted directly by the family.",
+  GRAND: {
+    id: "grand",
+    name: "Grand",
+    tier: "GRAND",
+    priceINR: HOST_PAYOUT_MATRIX_INR.GRAND[3], // ₹20,101
+    priceUSD: CUSTOMER_PRICE_MATRIX_USD.GRAND[3], // $449
+    priceEUR: Number((CUSTOMER_PRICE_MATRIX_USD.GRAND[3] * 0.92).toFixed(2)),
+    bookingMixPercent: 25,
+    description: "Complete ceremonial immersion with festive attire styling and curated feasts.",
     features: [
-      "Complete multi-day wedding access with family lounge entry",
-      "Bespoke designer attire rental & professional styling",
-      "Dedicated personal liaison & translator support",
-      "Private luxury transportation throughout the wedding city",
-      "Exclusive post-wedding family dinner invitation"
+      "Complete multi-day wedding and pre-wedding ceremonial access",
+      "Festive attire styling and photography assistance",
+      "Curated multi-course culinary banquets",
+      "Dedicated guest liaison throughout the celebrations"
     ]
-  }
-};
-
-export const WEIGHTED_AVERAGE_BOOKING = {
-  priceINR: 15500,
-  priceUSD: 162.30,
-  priceEUR: 143.52
-};
-
-export const COMMISSION_MODEL = {
-  PLATFORM_COMMISSION_PERCENT: 22,
-  HOST_ALLOCATION_PERCENT: 78,
-  AGENT_REFERRAL_PAYOUT_BUDGET: 500,
-  AGENT_REFERRAL_PAYOUT_PREMIUM: 900,
-  AGENT_REFERRAL_PAYOUT_VIP: 1800,
-  AGENT_REFERRAL_PAYOUT_DEFAULT: 1000,
-  HOST_REFERRAL_COMMISSION_PERCENT: 4,
-  ADDON_ATTACHMENT_RATE_PERCENT: 40,
-  ADDON_AVERAGE_VALUE_INR: 2000,
-  ADDON_PLATFORM_COMMISSION_PERCENT: 20,
-  AFFILIATE_INCOME_PER_BOOKING_INR: 110,
-  VENDOR_ANNUAL_FEE_INR: 12000,
-  AGENT_BOOKING_MIX_PERCENT: 35,
+  },
+  ROYAL: {
+    id: "royal",
+    name: "Royal",
+    tier: "ROYAL",
+    priceINR: HOST_PAYOUT_MATRIX_INR.ROYAL[3], // ₹32,101
+    priceUSD: CUSTOMER_PRICE_MATRIX_USD.ROYAL[3], // $649
+    priceEUR: Number((CUSTOMER_PRICE_MATRIX_USD.ROYAL[3] * 0.92).toFixed(2)),
+    bookingMixPercent: 15,
+    description: "Palatial heritage celebration with family lounge access and royal procession.",
+    features: [
+      "Palace / heritage venue access with family lounge entry",
+      "Traditional royal Baraat procession participation",
+      "Bespoke festive designer attire rental",
+      "Private luxury local transportation in wedding city"
+    ]
+  },
+  SIGNATURE_ROYAL: {
+    id: "signature_royal",
+    name: "Signature Royal",
+    tier: "SIGNATURE_ROYAL",
+    priceINR: HOST_PAYOUT_MATRIX_INR.SIGNATURE_ROYAL[4], // ₹51,101 (4-day default baseline)
+    priceUSD: CUSTOMER_PRICE_MATRIX_USD.SIGNATURE_ROYAL[4], // $999
+    priceEUR: Number((CUSTOMER_PRICE_MATRIX_USD.SIGNATURE_ROYAL[4] * 0.92).toFixed(2)),
+    bookingMixPercent: 5,
+    description: "Bespoke royal family hospitality with master concierge and exclusive invitations.",
+    features: [
+      "All-inclusive multi-day celebration hosted directly by the family",
+      "Master concierge & personal VIP cultural liaison",
+      "Exclusive post-wedding intimate family celebration invitation",
+      "Luxury airport and venue transfers throughout"
+    ]
+  },
 };
 
 export const COORDINATOR_MODEL = {
@@ -101,70 +146,59 @@ export const COORDINATOR_MODEL = {
   DEPLOYMENT_NOTE: "Activated in cities with active wedding booking density",
 };
 
-export const INVESTOR_PROJECTIONS = {
-  YEAR_1_BOOKINGS: 50,
-  BREAK_EVEN_ANNUAL: 162,
-  BREAK_EVEN_MONTHLY: 14,
-  FIVE_YEAR_BOOKINGS_TRAJECTORY: [50, 300, 700, 3000, 5200],
-  FIVE_YEAR_TOTAL_REVENUE_INR_LABEL: "₹5.2 Crore",
-  FIVE_YEAR_PAT_INR_LABEL: "₹26.62M"
-};
-
 /**
- * Format currency utility adhering strictly to FX conversion rates
+ * Formats currency adhering strictly to authoritative currency conventions
  */
 export function formatCurrencyINR(amountINR: number): string {
-  return `₹${amountINR.toLocaleString("en-IN")}`;
+  return `₹${Math.round(amountINR).toLocaleString("en-IN")}`;
+}
+
+export function formatCurrencyUSD(amountUSD: number): string {
+  return `$${Math.round(amountUSD).toLocaleString("en-US")}`;
 }
 
 export function formatSecondaryCurrency(amountINR: number): string {
-  const usd = (amountINR / FX_RATES.USD).toFixed(2);
-  const eur = (amountINR / FX_RATES.EUR).toFixed(2);
-  return `$${usd} / €${eur}`;
+  const usd = amountINR / FX_RATES.USD;
+  return `~$${Math.round(usd).toLocaleString("en-US")} USD`;
 }
 
-export interface FinancialBreakdown {
-  coreValueINR: number;
-  platformShare22INR: number;
-  hostShare78INR: number;
-  agentReferralINR: number;
-  hostReferral4INR: number;
-  exactAgentReferralINR: number;
-  exactPlatformShare22INR: number;
-  exactHostShare78INR: number;
-}
+/**
+ * Backward compatibility constants & calculators mapped to authoritative engine
+ */
+export const COMMISSION_MODEL = {
+  PLATFORM_COMMISSION_PERCENT: 22,
+  HOST_ALLOCATION_PERCENT: 78,
+  AGENT_REFERRAL_PAYOUT_DEFAULT: 1000,
+  HOST_REFERRAL_COMMISSION_PERCENT: 4,
+} as const;
 
-export function calculateBookingFinancials(
-  coreValueINR: number,
-  isAgentAttributed: boolean = false,
-  isHostReferralAttributed: boolean = false
-): FinancialBreakdown {
-  const platformShare22INR = Math.round((coreValueINR * COMMISSION_MODEL.PLATFORM_COMMISSION_PERCENT) / 100);
-  const hostShare78INR = coreValueINR - platformShare22INR;
-  
-  let agentReferralINR = 0;
-  if (isAgentAttributed) {
-    if (coreValueINR <= 9000) {
-      agentReferralINR = COMMISSION_MODEL.AGENT_REFERRAL_PAYOUT_BUDGET;
-    } else if (coreValueINR <= 16000) {
-      agentReferralINR = COMMISSION_MODEL.AGENT_REFERRAL_PAYOUT_PREMIUM;
-    } else if (coreValueINR >= 30000) {
-      agentReferralINR = COMMISSION_MODEL.AGENT_REFERRAL_PAYOUT_VIP;
-    } else {
-      agentReferralINR = COMMISSION_MODEL.AGENT_REFERRAL_PAYOUT_DEFAULT;
-    }
-  }
+export const WEIGHTED_AVERAGE_BOOKING = {
+  priceINR: 15500,
+  priceUSD: 165,
+} as const;
 
-  const hostReferral4INR = isHostReferralAttributed ? Math.round((coreValueINR * COMMISSION_MODEL.HOST_REFERRAL_COMMISSION_PERCENT) / 100) : 0;
+export const INVESTOR_PROJECTIONS = {
+  YEAR_1: { weddings: 50, guests: 200, gmvINR: 3100000 },
+  YEAR_2: { weddings: 250, guests: 1250, gmvINR: 19375000 },
+  YEAR_3: { weddings: 1000, guests: 6000, gmvINR: 93000000 },
+} as const;
+
+export function calculateBookingFinancials(params: {
+  pricePerGuestINR?: number;
+  guestsCount?: number;
+  tier?: WeddingTier;
+  durationDays?: WeddingDurationDays;
+}) {
+  const t = params.tier || "STANDARD";
+  const d = params.durationDays || 3;
+  const g = params.guestsCount || 1;
+  const pricing = calculateBookingPricing({ tier: t, durationDays: d, guestCount: g });
 
   return {
-    coreValueINR,
-    platformShare22INR,
-    hostShare78INR,
-    agentReferralINR,
-    hostReferral4INR,
-    exactAgentReferralINR: agentReferralINR,
-    exactPlatformShare22INR: Number((coreValueINR * 0.22).toFixed(2)),
-    exactHostShare78INR: Number((coreValueINR * 0.78).toFixed(2)),
+    customerTotalUSD: pricing.customerTotalAmountUSD,
+    hostTotalINR: pricing.totalHostPayoutINR,
+    agentTotalINR: pricing.totalAgentPayoutINR,
+    tier: pricing.tier,
+    durationDays: pricing.durationDays,
   };
 }

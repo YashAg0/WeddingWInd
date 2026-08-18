@@ -1,6 +1,8 @@
 import { requireRole } from "@/lib/auth";
 import { UserRole } from "@prisma/client";
 import { getOperationsDashboardAction } from "@/lib/actions/admin-dashboards";
+import { adminGetCoordinatorsAction } from "@/lib/actions/admin";
+import { AdminCoordinatorManager } from "@/components/dashboard/AdminCoordinatorManager";
 import { Compass, ShieldCheck, QrCode, Calendar } from "lucide-react";
 import { formatTime } from "@/lib/utils";
 
@@ -8,10 +10,13 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminCoordinatorsPage() {
   await requireRole([UserRole.ADMIN]);
-  const ops = await getOperationsDashboardAction();
+  const [ops, coordinatorData] = await Promise.all([
+    getOperationsDashboardAction(),
+    adminGetCoordinatorsAction(),
+  ]);
 
   return (
-    <div className="space-y-8 animate-fade-in">
+    <div className="space-y-8 animate-fade-in pb-12">
       <div className="space-y-1">
         <div className="inline-flex items-center gap-2 bg-maroon-50 text-[var(--color-brand-primary)] text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full border border-maroon-100/50 mb-2">
           <Compass size={13} />
@@ -60,6 +65,12 @@ export default async function AdminCoordinatorsPage() {
           <p className="text-[0.6875rem] text-charcoal-400">Pass scans completed by active shift coordinators.</p>
         </div>
       </div>
+
+      {/* Interactive Coordinator Roster & Shift Deployments */}
+      <AdminCoordinatorManager
+        initialCoordinators={coordinatorData.coordinators as any}
+        publishedWeddings={coordinatorData.publishedWeddings as any}
+      />
 
       {/* Recent Check-In Scans */}
       <div className="bg-white border border-warm-200/60 p-6 sm:p-8 rounded-3xl shadow-sm space-y-4">

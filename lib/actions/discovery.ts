@@ -40,7 +40,10 @@ export async function searchWeddingsAction(
   const where: any = {
     status: "PUBLISHED",
     suspended: false,
-    isDemo: false,
+    // isDemo is intentionally NOT excluded here.
+    // Showcase marketplace listings (isDemo: true) are legitimate public inventory.
+    // Public eligibility is determined by status=PUBLISHED, suspended=false, deletedAt=null.
+    // Draft, private, suspended, and soft-deleted listings are excluded by the conditions above.
     deletedAt: null,
   };
 

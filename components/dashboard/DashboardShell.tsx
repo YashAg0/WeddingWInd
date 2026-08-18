@@ -28,44 +28,15 @@ function DashboardShellContent({ children }: { children: React.ReactNode }) {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [retrying, setRetrying] = useState(false);
 
-  // Router guards wrapped in useEffect
+  // Client-side onboarding redirect if logged in user is pending onboarding
   React.useEffect(() => {
-    if (!loading) {
+    if (!loading && user && !user.onboarded && !dbOffline && authState === "READY") {
       const fullUrl = searchParams.toString() ? `${pathname}?${searchParams.toString()}` : pathname;
-
-      // Only redirect to login when genuinely unauthenticated and NOT in a temporary failure or device limit state
-      if (
-        !user &&
-        !dbOffline &&
-        authState !== "TEMPORARY_CONNECTION_FAILURE" &&
-        authState !== "DEVICE_LIMIT_REACHED" &&
-        authState !== "SESSION_REVOKED"
-      ) {
-        router.replace(`/login?redirect_url=${encodeURIComponent(fullUrl)}`);
-      } else if (
-        user &&
-        !user.onboarded &&
-        !dbOffline &&
-        authState === "READY"
-      ) {
-        router.replace(`/onboarding?redirect_url=${encodeURIComponent(fullUrl)}`);
-      }
+      router.replace(`/onboarding?redirect_url=${encodeURIComponent(fullUrl)}`);
     }
   }, [user, loading, dbOffline, authState, router, pathname, searchParams]);
 
-  // Loading state: auth/DB sync in progress
-  if (loading) {
-    return (
-      <div className="min-h-[85vh] flex flex-col items-center justify-center bg-warm-50 gap-3">
-        <div className="w-8 h-8 rounded-full border-4 border-maroon-100 border-t-maroon-800 animate-spin" />
-        <span className="text-xs font-bold text-charcoal-400 uppercase tracking-widest">
-          {authState === "AUTHENTICATING" ? "Verifying Session & Devices..." : "Loading Dashboard..."}
-        </span>
-      </div>
-    );
-  }
-
-  // 1. DEVICE LIMIT REACHED: Maximum 2 devices active
+  // Device limit modal and revoked session modals
   if (authState === "DEVICE_LIMIT_REACHED") {
     return (
       <div className="min-h-screen bg-warm-50 flex items-center justify-center p-4">
@@ -153,15 +124,7 @@ function DashboardShellContent({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // Loading after DB failure — redirect is pending
-  if (!user && !dbOffline) {
-    return (
-      <div className="min-h-[85vh] flex flex-col items-center justify-center bg-warm-50 gap-3">
-        <div className="w-8 h-8 rounded-full border-4 border-maroon-100 border-t-maroon-800 animate-spin" />
-        <span className="text-xs font-bold text-charcoal-400 uppercase tracking-widest">Redirecting...</span>
-      </div>
-    );
-  }
+
 
   return (
     <div className="flex h-screen bg-warm-50 overflow-hidden font-sans">

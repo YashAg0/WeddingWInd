@@ -56,55 +56,120 @@ jest.mock("@/lib/prisma", () => ({
   prisma: {
     transaction: {
       findMany: jest.fn(async () => mockTransactions),
+      create: jest.fn(async ({ data }) => ({ id: "tx_new", ...data })),
     },
     refund: {
       findMany: jest.fn(async () => mockRefunds),
       create: jest.fn(async ({ data }) => ({ id: "ref_new", ...data })),
+      findFirst: jest.fn(async () => null),
     },
     payout: {
       findMany: jest.fn(async () => mockPayouts),
     },
     stripeWebhookEvent: {
       findMany: jest.fn(async () => mockWebhookEvents),
-      findUnique: jest.fn(async ({ where }) => ({
-        id: where.id,
-        stripeEventId: "mock_evt_123",
-        type: "payment_intent.succeeded",
-        status: "FAILED",
+    },
+    systemConfig: {
+      findUnique: jest.fn(async () => ({
+        paypalProcessingFeePercent: 3.5,
+        paypalProcessingFeeFixedAmount: 0.0,
+        paypalDomainAllowlist: "paypal.com,paypal.me",
+        currencyCode: "USD",
       })),
-      update: jest.fn(async ({ where, data }) => ({ id: where.id, ...data, status: "PROCESSED" })),
     },
     payment: {
       findUnique: jest.fn(async ({ where }) => ({
         id: where.id,
         amount: 1000,
         currency: "USD",
-        stripePaymentIntentId: "mock_pi_123",
         status: "PAID",
+        bookingId: "b1",
+        booking: {
+          id: "b1",
+          traveler: { user: { id: "u1", email: "traveler@test.com" } },
+          wedding: { title: "Royal Palace Wedding", hostCouple: { user: { id: "h1" } }, date: new Date() },
+          guestPasses: [],
+          preparations: null,
+        },
+        refunds: [],
       })),
+      findFirst: jest.fn(async () => null),
       update: jest.fn(async ({ where, data }) => ({ id: where.id, ...data })),
     },
     booking: {
+      findUnique: jest.fn(async ({ where }) => ({
+        id: where.id,
+        status: "AWAITING_PAYMENT",
+        totalAmount: 1000,
+        guestsCount: 2,
+        date: new Date(),
+        traveler: { user: { id: "u1", email: "traveler@test.com" } },
+        wedding: { title: "Royal Palace Wedding", hostCouple: { user: { id: "h1" } }, date: new Date() },
+        payments: [],
+      })),
       update: jest.fn(async ({ where, data }) => ({ id: where.id, ...data })),
+    },
+    guestPass: {
+      findFirst: jest.fn(async () => null),
+      create: jest.fn(async ({ data }) => ({ id: "pass_1", ...data })),
+    },
+    travelerPreparation: {
+      create: jest.fn(async ({ data }) => ({ id: "prep_1", ...data })),
+    },
+    notification: {
+      create: jest.fn(async ({ data }) => ({ id: "notif_1", ...data })),
     },
     auditLog: {
       create: jest.fn(async () => ({ id: "audit_1" })),
     },
-    $transaction: jest.fn(async (cb: any) => cb({
-      refund: { create: jest.fn(async ({ data }: any) => ({ id: "ref_new", ...data })) },
-      payment: { update: jest.fn() },
-      booking: { update: jest.fn() },
-    })),
+    $transaction: jest.fn(async (cb: any) => {
+      if (typeof cb === "function") {
+        return cb({
+          payment: {
+            findUnique: jest.fn(async ({ where }) => ({
+              id: where.id,
+              amount: 1000,
+              currency: "USD",
+              status: "PAID",
+              bookingId: "b1",
+              booking: {
+                id: "b1",
+                traveler: { user: { id: "u1", email: "traveler@test.com" }, fullName: "Test Traveler" },
+                wedding: { title: "Royal Palace Wedding", hostCouple: { user: { id: "h1" } }, date: new Date() },
+                guestPasses: [],
+                preparations: null,
+              },
+              refunds: [],
+            })),
+            update: jest.fn(async ({ where, data }) => ({ id: where.id, ...data })),
+          },
+          booking: {
+            update: jest.fn(async ({ where, data }) => ({ id: where.id, ...data })),
+          },
+          refund: {
+            create: jest.fn(async ({ data }: any) => ({ id: "ref_new", ...data })),
+          },
+          transaction: {
+            create: jest.fn(async ({ data }: any) => ({ id: "tx_new", ...data })),
+          },
+          notification: {
+            create: jest.fn(async ({ data }: any) => ({ id: "notif_1", ...data })),
+          },
+        });
+      }
+      return cb;
+    }),
   },
 }));
 
 // Mock revalidatePath
 jest.mock("next/cache", () => ({
   revalidatePath: jest.fn(),
+  revalidateTag: jest.fn(),
 }));
 
 import { adminGetPaymentsAndQueuesAction } from "@/lib/actions/admin";
-import { processPartialRefundAction, retryStripeWebhookEventAction } from "@/lib/actions/stripe";
+import { adminRecordManualRefundAction } from "@/lib/actions/payment-manual";
 import { requireRole } from "@/lib/auth";
 
 describe("Admin Payments Operations & Financial Safety Test Suite", () => {
@@ -123,7 +188,6 @@ describe("Admin Payments Operations & Financial Safety Test Suite", () => {
     expect(result).toHaveProperty("transactions");
     expect(result).toHaveProperty("refundQueue");
     expect(result).toHaveProperty("payoutQueue");
-    expect(result).toHaveProperty("webhookEvents");
     expect(Array.isArray(result.transactions)).toBe(true);
     expect(result.transactions.length).toBe(1);
   });
@@ -134,27 +198,22 @@ describe("Admin Payments Operations & Financial Safety Test Suite", () => {
     await expect(adminGetPaymentsAndQueuesAction()).rejects.toThrow("FORBIDDEN");
   });
 
-  test("3. Partial refund action validates maximum payment amount and requires ADMIN", async () => {
+  test("3. Manual refund action records refund and requires ADMIN", async () => {
     (requireRole as jest.Mock).mockResolvedValue({
       id: "admin-user-id",
       role: UserRole.ADMIN,
       email: "admin@weddingwithindia.com",
     });
 
-    // Attempt partial refund of $500 when cumulative refunds exceed payment limit
-    await expect(processPartialRefundAction("pay_123", 500, "Exceeds total")).rejects.toThrow(
-      "EXCEEDS_PAYMENT_AMOUNT"
-    );
-  });
-
-  test("4. Retry webhook event action updates status and requires ADMIN", async () => {
-    (requireRole as jest.Mock).mockResolvedValue({
-      id: "admin-user-id",
-      role: UserRole.ADMIN,
-      email: "admin@weddingwithindia.com",
+    const res = await adminRecordManualRefundAction({
+      paymentId: "pay_123",
+      refundAmount: 500,
+      reason: "Customer Requested Refund",
+      refundTransactionId: "REF-PP-12345",
+      refundNotes: "Processed via PayPal console",
     });
 
-    const res = await retryStripeWebhookEventAction("evt_123");
-    expect(res).toEqual({ success: true });
+    expect(res.success).toBe(true);
+    expect(res.refund.amount).toBe(500);
   });
 });

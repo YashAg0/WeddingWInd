@@ -2,7 +2,7 @@ const fs = require("fs");
 const path = require("path");
 
 const seedFilePath = path.join(__dirname, "seed-complete.js");
-let content = fs.readFileSync(seedFilePath, "utf8");
+const content = fs.readFileSync(seedFilePath, "utf8");
 
 const dataStartIndex = content.indexOf("    const demoWeddingsData = [");
 const dataEndIndex = content.indexOf("    ];\n\n        // ------------------------------------------------------------------------");

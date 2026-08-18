@@ -63,9 +63,9 @@ export default async function EarningsPage() {
             Total Paid Earnings
           </span>
           <div className="text-xl font-display font-black text-emerald-850">
-            ${stats.totalEarnings.toFixed(2)}
+            ₹{stats.totalEarnings.toLocaleString("en-IN")}
           </div>
-          <p className="text-[10px] text-charcoal-500">Transferred to your bank</p>
+          <p className="text-[10px] text-charcoal-500">Transferred to your account (INR)</p>
         </div>
 
         <div className="bg-white border border-warm-200/60 p-5 rounded-2xl shadow-sm space-y-1">
@@ -73,7 +73,7 @@ export default async function EarningsPage() {
             Clearance Pending
           </span>
           <div className="text-xl font-display font-black text-amber-600">
-            ${stats.pendingCommission.toFixed(2)}
+            ₹{stats.pendingCommission.toLocaleString("en-IN")}
           </div>
           <p className="text-[10px] text-charcoal-500">Subject to 14-day lock cycle</p>
         </div>
@@ -83,9 +83,9 @@ export default async function EarningsPage() {
             Payable Balance
           </span>
           <div className="text-xl font-display font-black text-charcoal-900">
-            ${stats.payableBalance.toFixed(2)}
+            ₹{stats.payableBalance.toLocaleString("en-IN")}
           </div>
-          <p className="text-[10px] text-charcoal-500">Ready for instant payout</p>
+          <p className="text-[10px] text-charcoal-500">Ready for payout withdrawal</p>
         </div>
 
         <div className="bg-white border border-warm-200/60 p-5 rounded-2xl shadow-sm space-y-1">
@@ -93,7 +93,7 @@ export default async function EarningsPage() {
             Reversals & Adjustments
           </span>
           <div className="text-xl font-display font-black text-red-700">
-            -${Math.abs(stats.reversedCommission).toFixed(2)}
+            {stats.reversedCommission < 0 ? "-" : ""}₹{Math.abs(stats.reversedCommission).toLocaleString("en-IN")}
           </div>
           <p className="text-[10px] text-charcoal-500">Refund adjustments processed</p>
         </div>
@@ -121,8 +121,8 @@ export default async function EarningsPage() {
                     <tr className="bg-warm-50/50 text-charcoal-500 font-bold border-b border-warm-100">
                       <th className="p-4">Event Date</th>
                       <th className="p-4">Source</th>
-                      <th className="p-4">Gross Sale</th>
-                      <th className="p-4">Commission</th>
+                      <th className="p-4">Gross Booking</th>
+                      <th className="p-4">Commission (INR)</th>
                       <th className="p-4">Status</th>
                     </tr>
                   </thead>
@@ -138,13 +138,13 @@ export default async function EarningsPage() {
                         <tr key={c.id} className="hover:bg-warm-50/20 transition-colors">
                           <td className="p-4 text-charcoal-500">{date}</td>
                           <td className="p-4 font-bold">{sourceText}</td>
-                          <td className="p-4 text-charcoal-600">${c.grossAmount.toFixed(2)}</td>
+                          <td className="p-4 text-charcoal-600">${c.grossAmount.toFixed(2)} USD</td>
                           <td
                             className={`p-4 font-bold ${
                               c.commissionAmount < 0 ? "text-red-700" : "text-emerald-850"
                             }`}
                           >
-                            {c.commissionAmount < 0 ? "-" : ""}${Math.abs(c.commissionAmount).toFixed(2)}
+                            {c.commissionAmount < 0 ? "-" : ""}₹{Math.abs(c.commissionAmount).toLocaleString("en-IN")}
                           </td>
                           <td className="p-4">
                             <span

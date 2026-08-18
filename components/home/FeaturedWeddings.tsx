@@ -109,7 +109,7 @@ export function FeaturedWeddings({ weddings }: FeaturedWeddingsProps) {
           >
             {displayWeddings.map((wedding) => (
               <div key={wedding.id} role="listitem" className="h-full">
-                <WeddingCard wedding={wedding} />
+                <WeddingCard wedding={wedding} hidePrice />
               </div>
             ))}
           </div>

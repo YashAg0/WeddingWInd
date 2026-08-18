@@ -33,6 +33,7 @@ jest.mock("@/lib/attribution", () => ({
 describe("Empirical Challenge: Founder DB Row Canonical Truth Protection", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.spyOn(prisma.user, "findUnique").mockResolvedValue(null);
   });
 
   it("EMPIRICAL CHECK 1: Founder login preserves ADMIN role and ACTIVE status without creating duplicates", async () => {

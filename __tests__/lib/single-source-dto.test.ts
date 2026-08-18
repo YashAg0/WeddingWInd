@@ -58,7 +58,8 @@ describe("Single Source of Truth Wedding DTO Normalizer", () => {
     expect(dto.religion).toBe("Hindu");
     expect(dto.region).toBe("Rajasthan");
     expect(dto.community).toBe("Rajput");
-    expect(dto.pricePerGuest).toBe(17999);
+    expect(dto.pricePerGuest).toBe(649);
+    expect(dto.currency).toBe("USD");
     expect(dto.guestsAllowed).toBe(20);
     expect(dto.guestsBooked).toBe(5);
     expect(dto.hostName).toBe("Devika & Kaber Singhania");

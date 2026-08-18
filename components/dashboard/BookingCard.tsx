@@ -16,6 +16,7 @@ import {
   Star,
   Sparkles,
   Check,
+  ExternalLink,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { submitReviewAction } from "@/lib/actions/reviews";
@@ -244,6 +245,74 @@ export default function BookingCard({ booking, onCancel }: BookingCardProps) {
             )}
           </div>
 
+          {/* Awaiting Payment Box for Traveler */}
+          {booking.status === "awaiting_payment" && (
+            <div className="p-3.5 rounded-xl bg-amber-50/70 border border-amber-200 text-xs space-y-2.5">
+              <div className="flex justify-between items-start">
+                <div>
+                  <div className="font-bold text-amber-950 flex items-center gap-1.5">
+                    <CreditCard size={14} className="text-amber-700" />
+                    Payment Request Ready
+                  </div>
+                  <p className="text-[0.6875rem] text-amber-800 mt-0.5">
+                    Your host application is approved! Complete your payment via PayPal to confirm your reservation.
+                  </p>
+                </div>
+                <div className="text-right flex-shrink-0">
+                  <span className="font-display font-black text-sm text-maroon-800">
+                    ${activePayment?.totalAmount ?? activePayment?.amount ?? (booking.pricePerGuest * booking.guestsCount)} {activePayment?.currency || "USD"}
+                  </span>
+                </div>
+              </div>
+
+              {activePayment && (
+                <div className="p-2 bg-white/80 rounded-lg border border-amber-100 grid grid-cols-2 gap-2 text-[0.6875rem] text-charcoal-700">
+                  <div>
+                    <span className="text-charcoal-400 block">Base Price:</span>
+                    <strong>${activePayment.baseAmount ?? (booking.pricePerGuest * booking.guestsCount)} {activePayment.currency || "USD"}</strong>
+                  </div>
+                  <div>
+                    <span className="text-charcoal-400 block">Processing Surcharge:</span>
+                    <strong>${activePayment.processingFeeAmount ?? 0} {activePayment.currency || "USD"}</strong>
+                  </div>
+                </div>
+              )}
+
+              {activePayment?.paymentNotes && (
+                <div className="text-[0.6875rem] text-amber-900 bg-amber-100/60 p-2 rounded-lg">
+                  <em>Note from Host/Admin: {activePayment.paymentNotes}</em>
+                </div>
+              )}
+
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 pt-1">
+                <p className="text-[0.625rem] text-amber-800 leading-tight">
+                  After paying on PayPal, our concierge verifies the transaction and issues your Digital Pass within 2-4 hours.
+                </p>
+
+                {activePayment?.paymentLink ? (
+                  <a
+                    href={activePayment.paymentLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-maroon-700 text-white hover:bg-maroon-800 text-[0.6875rem] font-bold uppercase tracking-wider flex-shrink-0 shadow-sm"
+                  >
+                    Pay with PayPal
+                    <ExternalLink size={12} />
+                  </a>
+                ) : (
+                  <button
+                    onClick={handlePay}
+                    disabled={paying}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-maroon-700 text-white hover:bg-maroon-800 text-[0.6875rem] font-bold uppercase tracking-wider flex-shrink-0 shadow-sm disabled:opacity-50"
+                  >
+                    <CreditCard size={12} />
+                    {paying ? "Loading..." : "Pay with PayPal"}
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Action Row */}
           <div className="flex justify-end gap-2 pt-2 border-t border-warm-100/50">
             {hasPaidPayment && (
@@ -263,17 +332,6 @@ export default function BookingCard({ booking, onCancel }: BookingCardProps) {
               <Printer size={12} />
               Ticket
             </button>
-
-            {booking.status === "awaiting_payment" && (
-              <button
-                onClick={handlePay}
-                disabled={paying}
-                className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-[#6b1026] text-white hover:bg-[#520c1d] text-[0.6875rem] font-bold uppercase tracking-wider cursor-pointer disabled:opacity-50 animate-pulse"
-              >
-                <CreditCard size={12} />
-                {paying ? "Redirecting..." : "Pay Now"}
-              </button>
-            )}
 
             {booking.status === "upcoming" && onCancel && (
               <button
@@ -319,17 +377,19 @@ export default function BookingCard({ booking, onCancel }: BookingCardProps) {
               <span className="font-bold text-emerald-600 uppercase">{activePayment.status}</span>
             </div>
             <div>
-              <span className="text-charcoal-400 font-semibold block uppercase text-[0.625rem]">Stripe Charge Reference</span>
-              <span className="font-mono text-[0.6875rem] block truncate text-charcoal-600">{activePayment.stripeChargeId || "pi_mock_ref_code"}</span>
+              <span className="text-charcoal-400 font-semibold block uppercase text-[0.625rem]">Payment Reference</span>
+              <span className="font-mono text-[0.6875rem] block truncate text-charcoal-600">
+                {activePayment.transactionId || activePayment.stripeChargeId || "TXN-" + activePayment.id.slice(0, 8)}
+              </span>
             </div>
             <div>
               <span className="text-charcoal-400 font-semibold block uppercase text-[0.625rem]">Paid At</span>
-              <span>{new Date(activePayment.createdAt).toLocaleString()}</span>
+              <span>{new Date(activePayment.paidAt || activePayment.createdAt).toLocaleString()}</span>
             </div>
           </div>
           <div className="border-t border-warm-200 pt-2 flex justify-between font-bold text-charcoal-800 text-sm">
-            <span>Total Paid (USD)</span>
-            <span>${activePayment.amount.toLocaleString()}.00</span>
+            <span>Total Paid ({activePayment.currency || "USD"})</span>
+            <span>${(activePayment.totalAmount ?? activePayment.amount).toLocaleString()}.00</span>
           </div>
         </div>
       )}

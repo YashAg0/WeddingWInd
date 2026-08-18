@@ -143,23 +143,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Function to refresh state data from Postgres and validate multi-device session.
   const refreshData = useCallback(async () => {
-    if (!isSignedIn) {
-      setUser(null);
-      setDbOffline(false);
-      setAuthState("INITIALIZING");
-      setLoading(false);
-      return;
-    }
-
     setLoading(true);
     setAuthState("AUTHENTICATING");
 
     try {
       const dbUser = await syncAndGetDbUser();
       if (!dbUser) {
-        // Clerk is signed in but DB sync returned null
-        setDbOffline(true);
-        setAuthState("TEMPORARY_CONNECTION_FAILURE");
+        if (isSignedIn) {
+          // Clerk is signed in but DB sync returned null
+          setDbOffline(true);
+          setAuthState("TEMPORARY_CONNECTION_FAILURE");
+        } else {
+          // Unauthenticated session
+          setUser(null);
+          setDbOffline(false);
+          setAuthState("INITIALIZING");
+        }
         setLoading(false);
         return;
       }
@@ -260,25 +259,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [isSignedIn]);
 
-  // Listen to Clerk state and auto-reconnect on tab focus / network recovery
+  // Listen to Clerk/session state and auto-reconnect on tab focus / network recovery
   useEffect(() => {
     if (isLoaded) {
-      if (isSignedIn) {
-        refreshData();
-      } else {
-        setUser(null);
-        setDbOffline(false);
-        setAuthState("INITIALIZING");
-        setBookings([]);
-        setWishlist([]);
-        setNotifications([]);
-        setGuestApplications([]);
-        setHostWedding(null);
-        setCoupleStats(null);
-        setAdminStats(null);
-        setVerification(null);
-        setLoading(false);
-      }
+      refreshData();
     }
   }, [isLoaded, isSignedIn, clerkUser, refreshData]);
 

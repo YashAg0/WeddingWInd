@@ -24,31 +24,31 @@ export function PlatformOverviewDiagram() {
             </div>
             <div>
               <h4 className="font-display font-bold text-sm text-charcoal-900">1. Guest Booking Payment</h4>
-              <p className="text-xs text-charcoal-500">Gross Core Booking Value (Average ₹13,799 / $144.49)</p>
+              <p className="text-xs text-charcoal-500">Clean USD All-Inclusive Pass ($149 – $1,199 / guest)</p>
             </div>
           </div>
-          <span className="font-display font-bold text-lg text-charcoal-900">100% Core Value</span>
+          <span className="font-display font-bold text-lg text-charcoal-900">100% Core Value (USD)</span>
         </div>
 
-        {/* Step 2: Primary 28 / 72 Split */}
+        {/* Step 2: Fixed Host Payout & Platform Ops */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="bg-maroon-900 text-white p-5 rounded-2xl space-y-2">
+          <div className="bg-emerald-950 text-white p-5 rounded-2xl space-y-2">
             <div className="flex justify-between items-center">
-              <span className="text-xs font-bold uppercase tracking-wider text-white/70">Platform Commission</span>
-              <span className="font-display font-bold text-2xl text-gradient-gold">22%</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-white/70">Guaranteed Host Payout</span>
+              <span className="font-display font-bold text-xl text-emerald-300">₹5,101 — ₹61,101</span>
             </div>
             <p className="text-xs text-white/70 leading-relaxed">
-              Company recognised revenue (Avg ₹3,863.72). Carves out optional agent referrals.
+              Guaranteed fixed INR payout per attending guest locked by experience tier and duration, disbursed post-ceremony.
             </p>
           </div>
 
-          <div className="bg-emerald-950 text-white p-5 rounded-2xl space-y-2">
+          <div className="bg-maroon-900 text-white p-5 rounded-2xl space-y-2">
             <div className="flex justify-between items-center">
-              <span className="text-xs font-bold uppercase tracking-wider text-white/70">Host Family Allocation</span>
-              <span className="font-display font-bold text-2xl text-emerald-300">78%</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-white/70">Platform Contribution & Ops</span>
+              <span className="font-display font-bold text-xl text-gradient-gold">WWI Operations</span>
             </div>
             <p className="text-xs text-white/70 leading-relaxed">
-              Direct host payout (Avg ₹9,935.28) held in trust and released post-ceremony.
+              Covers payment processing, currency exchange, operating reserves, and 24/7 guest concierge.
             </p>
           </div>
         </div>
@@ -58,20 +58,20 @@ export function PlatformOverviewDiagram() {
           <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl space-y-1">
             <div className="flex items-center gap-2 font-bold text-amber-950">
               <Award size={16} className="text-amber-700" />
-              <span>Agent Referral Carve-Out (Tiered / 4%)</span>
+              <span>Fixed Agent Referral Payouts (₹511 – ₹2,511)</span>
             </div>
             <p className="text-amber-900 leading-normal">
-              tiered traveler or 4% host referral is paid strictly from the platform&apos;s 22% recognised share after booking clears.
+              Fixed INR commission per attending guest awarded to accredited agents following successful event clearance.
             </p>
           </div>
 
           <div className="bg-purple-50 border border-purple-200 p-4 rounded-xl space-y-1">
             <div className="flex items-center gap-2 font-bold text-purple-950">
               <Compass size={16} className="text-purple-700" />
-              <span>Coordinator Per-Day OpEx</span>
+              <span>Dedicated On-Ground Coordinators</span>
             </div>
             <p className="text-purple-900 leading-normal">
-              On-ground coordinator daily rates are contractor operating expenses, not a percentage revenue split.
+              Bilingual wedding liaisons assist host families and guide international guests through rituals seamlessly.
             </p>
           </div>
         </div>

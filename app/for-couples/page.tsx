@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import Link from "next/link";
+import { cn } from "@/lib/utils";
 
 const hostFAQs = [
   {
@@ -85,45 +86,9 @@ const hostResponsibilities = [
   "Promptly report material changes or cancellations affecting confirmed bookings.",
 ];
 
+import { HostEarningsCalculator } from "@/components/wedding/HostEarningsCalculator";
+
 export default function ForCouplesPage() {
-  const [guestCount, setGuestCount] = useState(10);
-  const [pricePerGuest, setPricePerGuest] = useState(16000);
-
-  /*
-   * IMPORTANT:
-   * This is an illustrative calculator only.
-   *
-   * Do not describe this percentage as a guaranteed contractual
-   * host payout unless the actual host commercial agreement uses it.
-   *
-   * Keep this value synchronized with your actual commercial model
-   * if you decide to publicly advertise a standard host share.
-   */
-  const illustrativeHostShare = 0.72;
-
-  const grossBookingValue = guestCount * pricePerGuest;
-  const illustrativeHostAmount = Math.round(
-    grossBookingValue * illustrativeHostShare
-  );
-
-  const tiers = [
-    {
-      label: "Standard",
-      price: 10000,
-      description: "Illustrative ₹10,000 / guest",
-    },
-    {
-      label: "Premium",
-      price: 16000,
-      description: "Illustrative ₹16,000 / guest",
-    },
-    {
-      label: "Royal",
-      price: 32000,
-      description: "Illustrative ₹32,000 / guest",
-    },
-  ];
-
   return (
     <main className="min-h-screen bg-warm-50 pt-28 pb-20">
       {/* Hero */}
@@ -280,145 +245,8 @@ export default function ForCouplesPage() {
       </section>
 
       {/* Earnings calculator */}
-      <section
-        id="earnings"
-        className="container-luxury max-w-4xl bg-white border border-warm-200/50 rounded-[2.5rem] p-7 sm:p-12 shadow-sm mb-20 space-y-8"
-        aria-labelledby="earnings-heading"
-      >
-        <div className="text-center space-y-2 max-w-xl mx-auto">
-          <span className="text-xs font-bold text-[var(--color-brand-primary)] uppercase tracking-widest">
-            Illustrative earnings calculator
-          </span>
-
-          <h2
-            id="earnings-heading"
-            className="font-display font-bold text-2xl sm:text-3xl text-charcoal-900"
-          >
-            What could your bookings look like?
-          </h2>
-
-          <p className="text-xs sm:text-sm text-charcoal-500 leading-relaxed">
-            Adjust the guest count and example experience price to see an
-            illustrative scenario.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center pt-4">
-          <div className="space-y-7">
-            {/* Guest capacity */}
-            <div className="space-y-3">
-              <div className="flex justify-between gap-4 text-xs font-bold text-charcoal-700">
-                <span>Illustrative guest places</span>
-
-                <span className="text-[var(--color-brand-primary)]">
-                  {guestCount} guests
-                </span>
-              </div>
-
-              <input
-                type="range"
-                min={1}
-                max={30}
-                value={guestCount}
-                onChange={(e) => setGuestCount(Number(e.target.value))}
-                aria-label="Number of illustrative guest places"
-                className="w-full accent-[var(--color-brand-primary)] cursor-pointer"
-              />
-
-              <div className="flex justify-between text-[0.6875rem] text-charcoal-400">
-                <span>1</span>
-                <span>30</span>
-              </div>
-            </div>
-
-            {/* Experience tier */}
-            <div className="space-y-3">
-              <span className="text-xs font-bold text-charcoal-700 block">
-                Example experience price
-              </span>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                {tiers.map((tier) => {
-                  const selected = pricePerGuest === tier.price;
-
-                  return (
-                    <button
-                      key={tier.label}
-                      type="button"
-                      onClick={() => setPricePerGuest(tier.price)}
-                      aria-pressed={selected}
-                      className={`py-3 px-2 rounded-xl text-xs font-bold transition-all border ${
-                        selected
-                          ? "bg-[var(--color-brand-primary)] text-white border-[var(--color-brand-primary)]"
-                          : "bg-warm-50 text-charcoal-700 border-warm-200 hover:border-warm-300"
-                      }`}
-                    >
-                      <span className="block">{tier.label}</span>
-                      <span
-                        className={`block mt-1 text-[0.625rem] font-medium ${
-                          selected
-                            ? "text-white/80"
-                            : "text-charcoal-400"
-                        }`}
-                      >
-                        ₹{tier.price.toLocaleString()}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Gross booking value */}
-            <div className="rounded-2xl bg-warm-50 border border-warm-200 p-4">
-              <div className="flex items-center justify-between gap-4">
-                <span className="text-xs text-charcoal-500">
-                  Illustrative gross booking value
-                </span>
-
-                <span className="font-bold text-charcoal-900">
-                  ₹{grossBookingValue.toLocaleString()}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Result */}
-          <div className="bg-warm-100/70 border border-warm-200 p-7 sm:p-8 rounded-3xl text-center space-y-4">
-            <span className="text-xs font-bold text-charcoal-500 uppercase tracking-wider block">
-              Illustrative host amount
-            </span>
-
-            <div className="font-display font-bold text-4xl sm:text-5xl text-[var(--color-brand-primary)]">
-              ₹{illustrativeHostAmount.toLocaleString()}
-            </div>
-
-            <p className="text-xs text-charcoal-500 max-w-sm mx-auto leading-relaxed">
-              This example uses a {Math.round(illustrativeHostShare * 100)}%
-              host-share assumption. It is not a guaranteed payout and does not
-              account for taxes, refunds, payment costs, adjustments or
-              booking-specific terms.
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-start gap-3 rounded-2xl border border-warm-200 bg-white p-5">
-          <Info
-            size={19}
-            className="mt-0.5 shrink-0 text-[var(--color-brand-primary)]"
-            aria-hidden="true"
-          />
-
-          <p className="text-xs sm:text-sm text-charcoal-600 leading-relaxed">
-            <strong className="text-charcoal-900">
-              Important:
-            </strong>{" "}
-            The calculator is for planning purposes only. Your actual
-            commercial terms are determined by the host agreement and applicable
-            booking terms accepted by you. Do not rely on this calculator as a
-            promise of income.
-          </p>
-        </div>
+      <section id="earnings" className="container-luxury max-w-5xl mb-20" aria-label="Host Earnings Calculator">
+        <HostEarningsCalculator />
       </section>
 
       {/* Responsibilities */}

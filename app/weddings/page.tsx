@@ -150,32 +150,31 @@ export default async function WeddingsPage({ searchParams }: PageProps) {
 
     // 9. Duration
     if (durationFilter !== null) {
-      if (durationFilter === 3) {
-        if (wedding.durationDays < 3) return false;
-      } else {
-        if (wedding.durationDays !== durationFilter) return false;
-      }
+      if (wedding.durationDays !== durationFilter) return false;
     }
 
     return true;
   });
 
   // Sort listings
+  // INVARIANT: Active sponsored listings always rank above featured & normal,
+  // regardless of the user's sort selection. Within each sponsorship tier,
+  // listings are ordered by the user's chosen criterion.
+  const getTier = (w: { sponsored: boolean; featured: boolean }) =>
+    w.sponsored ? 2 : w.featured ? 1 : 0;
+
   const sortedWeddings = [...filteredWeddings].sort((a, b) => {
-    if (sort === "price_asc") {
-      return a.pricePerGuest - b.pricePerGuest;
-    }
-    if (sort === "price_desc") {
-      return b.pricePerGuest - a.pricePerGuest;
-    }
-    if (sort === "rating") {
-      return b.rating - a.rating;
-    }
-    // Default: sponsored first → featured → rating (server-authoritative ordering preserved)
-    const sponsoredDiff = (b.sponsored ? 2 : 0) - (a.sponsored ? 2 : 0);
-    if (sponsoredDiff !== 0) return sponsoredDiff;
-    const featuredDiff = (b.featured ? 1 : 0) - (a.featured ? 1 : 0);
-    if (featuredDiff !== 0) return featuredDiff;
+    // 1. Sponsorship tier is always the primary sort key.
+    const tierDiff = getTier(b) - getTier(a);
+    if (tierDiff !== 0) return tierDiff;
+
+    // 2. Within the same tier, apply the user's requested sort.
+    if (sort === "price_asc") return a.pricePerGuest - b.pricePerGuest;
+    if (sort === "price_desc") return b.pricePerGuest - a.pricePerGuest;
+    if (sort === "rating") return b.rating - a.rating;
+    if (sort === "date_asc") return new Date(a.date).getTime() - new Date(b.date).getTime();
+
+    // Default ("featured"): secondary sort by rating
     return b.rating - a.rating;
   });
 

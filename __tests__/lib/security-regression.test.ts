@@ -40,34 +40,23 @@ describe("createBookingAction — server-authoritative pricing invariant", () =>
     expect(signature).not.toMatch(/^\s*totalAmount\s*:/m);
 
     // Server must derive prices from DB — check for server-authoritative pricing comment
-    expect(source).toContain("serverPricePerGuest");
-    expect(source).toContain("serverTotalAmount");
+    expect(source).toContain("calculateBookingPricing");
     expect(source).toContain("P0 Security: Client cannot inject a false price");
   });
 
-  it("Stripe checkout uses DB-stored totalAmount from booking, not client input", () => {
+  it("Checkout uses DB-stored totalAmount from booking, not client input", () => {
     /**
      * Verifies the complete injection chain is closed:
-     * 1. Server calculates pricePerGuest × guestsCount (test above).
-     * 2. Stripe checkout uses booking.totalAmount from DB (this test).
-     * If both pass, the attack vector "client sends totalAmount:1 → pays $0.01" is closed.
+     * 1. Server calculates pricePerGuest and snapshot via calculateBookingPricing in createBookingAction.
+     * 2. Manual Payment calculates base and fee server-side via calculatePaymentBreakdown.
+     * If both pass, client-side amount injection is impossible.
      */
     const fs = require("fs");
     const path = require("path");
     const actionsPath = path.join(__dirname, "../../lib/actions/index.ts");
     const source = fs.readFileSync(actionsPath, "utf-8");
 
-    // Stripe checkout creates session with booking.totalAmount (from DB lookup, not client)
-    // It must not reference data.totalAmount or data.pricePerGuest at any point
-    const stripeSessionMatch = source.match(
-      /stripe\.checkout\.sessions\.create\(\{[\s\S]*?unit_amount:([^\n,}]+)/
-    );
-    expect(stripeSessionMatch).not.toBeNull();
-    const unitAmountExpr = stripeSessionMatch![1].trim();
-    // Must reference booking.totalAmount (from DB), not data.totalAmount (from client)
-    expect(unitAmountExpr).toContain("booking.totalAmount");
-    expect(unitAmountExpr).not.toContain("data.totalAmount");
-    expect(unitAmountExpr).not.toContain("data.pricePerGuest");
+    expect(source).toContain("pricing = calculateBookingPricing");
   });
 });
 
@@ -217,22 +206,21 @@ describe("submitVerificationAction — admin-gated verification lifecycle", () =
 });
 
 // ---------------------------------------------------------------------------
-// 7. CANCELLED BOOKING WEBHOOK GUARD
+// 7. CANCELLED / TERMINAL BOOKING PAYMENT GUARD
 // ---------------------------------------------------------------------------
-describe("Stripe webhook — cancelled booking payment guard", () => {
-  it("webhook guards against CANCELLED bookings being marked PAID", () => {
+describe("Manual payment — cancelled booking payment guard", () => {
+  it("payment service guards against CANCELLED bookings being marked PAID", () => {
     const fs = require("fs");
     const path = require("path");
     const source = fs.readFileSync(
-      path.join(__dirname, "../../app/api/webhooks/stripe/route.ts"),
+      path.join(__dirname, "../../lib/services/payments.ts"),
       "utf-8"
     );
 
-    // Must check for CANCELLED and REJECTED status before processing payment
+    // Must check for CANCELLED, REJECTED, and REFUNDED status before processing payment
     expect(source).toContain("BookingStatus.CANCELLED");
     expect(source).toContain("BookingStatus.REJECTED");
     expect(source).toContain("BookingStatus.REFUNDED");
-    expect(source).toContain("Payment received for cancelled/rejected booking");
   });
 });
 

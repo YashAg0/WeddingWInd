@@ -139,16 +139,16 @@ export default async function AdminWeddingDetailPage({
             <span className="font-semibold text-charcoal-800">{wedding.location}</span>
           </div>
           <div>
-            <span className="text-charcoal-400 font-bold block uppercase text-[0.625rem]">Category</span>
-            <span className="font-semibold text-charcoal-800">{wedding.category}</span>
+            <span className="text-charcoal-400 font-bold block uppercase text-[0.625rem]">Category &amp; Tier</span>
+            <span className="font-semibold text-charcoal-800">{wedding.category} ({wedding.tier || "STANDARD"})</span>
           </div>
           <div>
-            <span className="text-charcoal-400 font-bold block uppercase text-[0.625rem]">Date</span>
-            <span className="font-semibold text-charcoal-800">{formatDate(wedding.date)}</span>
+            <span className="text-charcoal-400 font-bold block uppercase text-[0.625rem]">Duration &amp; Date</span>
+            <span className="font-semibold text-charcoal-800">{wedding.durationDays || 3} Days • {formatDate(wedding.date)}</span>
           </div>
           <div>
-            <span className="text-charcoal-400 font-bold block uppercase text-[0.625rem]">Price / Guest</span>
-            <span className="font-semibold text-charcoal-800">₹{wedding.pricePerGuest?.toLocaleString()}</span>
+            <span className="text-charcoal-400 font-bold block uppercase text-[0.625rem]">Customer Price / Guest</span>
+            <span className="font-semibold text-charcoal-800">${wedding.pricePerGuest?.toLocaleString()} USD</span>
           </div>
         </div>
       </div>

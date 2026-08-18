@@ -1,6 +1,8 @@
 "use server";
 
 import { requireAuth } from "@/lib/auth";
+import { isE2ETestAuthEnabled } from "@/lib/test-auth";
+import { prisma } from "@/lib/prisma";
 import {
   validateOrCreateDeviceSession,
   getActiveUserDeviceSessions,
@@ -20,6 +22,13 @@ export async function validateDeviceSessionAction(
   clientMetadata?: { deviceName?: string }
 ): Promise<DeviceValidationResult> {
   const user = await requireAuth();
+
+  // In E2E tests, clean up prior sessions for this user so test automation doesn't hit device limit
+  if (isE2ETestAuthEnabled()) {
+    await prisma.userDeviceSession.deleteMany({
+      where: { userId: user.id, deviceId: { not: deviceId } }
+    }).catch(() => {});
+  }
 
   const reqHeaders = await headers();
   const forwardedFor = reqHeaders.get("x-forwarded-for");

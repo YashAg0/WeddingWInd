@@ -187,7 +187,7 @@ export async function sendRefundConfirmationEmail(
           <tr style="border-top: 1px solid #e7e5e4;"><td style="padding: 10px 0; font-weight: 700; font-size: 16px;">Amount Refunded:</td><td style="text-align: right; font-weight: 700; font-size: 16px; color: #dc2626;">$${amount.toLocaleString()} USD</td></tr>
         </table>
       </div>
-      <p style="line-height: 1.6; color: #44403c;">The funds will be credited to your original payment card within 5 to 10 business days depending on your financial institution.</p>
+      <p style="line-height: 1.6; color: #44403c;">The funds have been returned to your original payment method / PayPal account.</p>
     </div>
   `;
   return sendEmail({ to, subject: `Refund Confirmed: ${weddingTitle}`, html });

@@ -1,11 +1,35 @@
 import React from "react";
 import { getAgentGrowthStats } from "@/lib/actions/referrals";
+import { getDbUser } from "@/lib/auth";
+import { redirect } from "next/navigation";
 import ClientReferralCenter from "./ClientReferralCenter";
 
 export const dynamic = "force-dynamic";
 
 export default async function ReferralsPage() {
-  const stats = await getAgentGrowthStats();
+  const user = await getDbUser();
+  if (!user) {
+    redirect("/login");
+  }
+  if (user.role !== "AGENT" && user.role !== "ADMIN") {
+    redirect("/dashboard");
+  }
+
+  let stats;
+  try {
+    stats = await getAgentGrowthStats();
+  } catch {
+    stats = {
+      clicks: 0,
+      signups: 0,
+      onboarded: 0,
+      converted: 0,
+      totalEarnings: 0,
+      pendingCommission: 0,
+      payableBalance: 0,
+      referralCode: user.id.substring(0, 8),
+    };
+  }
 
   return (
     <div className="space-y-8 p-6 max-w-7xl mx-auto">

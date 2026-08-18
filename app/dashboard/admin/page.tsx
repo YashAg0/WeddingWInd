@@ -202,7 +202,7 @@ export default function AdminOverviewPage() {
             Internal Financial Ledger
           </h3>
           <p className="text-charcoal-500 text-xs leading-relaxed">
-            Full internal 22% platform / 78% host breakdown, tiered agent commissions (₹500-₹1800), and affiliate accounting.
+            Authoritative USD gross volume, fixed INR host payouts (₹5,101–₹61,101), fixed agent referrals (₹511–₹2,511), and refunds.
           </p>
           <div className="flex items-center gap-1 text-xs font-bold text-[var(--color-brand-primary)] pt-2">
             Open Financial Ledger <ArrowRight size={12} className="group-hover:translate-x-1 transition-transform" />

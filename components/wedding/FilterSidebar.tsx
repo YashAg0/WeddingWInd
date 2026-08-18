@@ -280,7 +280,9 @@ export function FilterSidebar({
           <option value="">Any Duration</option>
           <option value="1">1 Day</option>
           <option value="2">2 Days</option>
-          <option value="3">3 Days+</option>
+          <option value="3">3 Days</option>
+          <option value="4">4 Days</option>
+          <option value="5">5 Days</option>
         </select>
       </div>
 

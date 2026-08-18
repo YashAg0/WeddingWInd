@@ -90,7 +90,7 @@ export async function GET(
             <div class="section-title">Invoice Meta</div>
             <div><strong>Invoice ID:</strong> INV-${escapeHtml(booking.id.slice(0, 8).toUpperCase())}</div>
             <div><strong>Date Issued:</strong> ${new Date(booking.createdAt).toLocaleDateString()}</div>
-            <div><strong>Transaction Ref:</strong> ${escapeHtml(paidPayment?.stripePaymentIntentId || "TXN-" + booking.id.slice(0, 10))}</div>
+            <div><strong>Transaction Ref:</strong> ${escapeHtml(paidPayment?.transactionId || paidPayment?.stripePaymentIntentId || "TXN-" + booking.id.slice(0, 10))}</div>
           </div>
         </div>
 

@@ -10,13 +10,11 @@ import {
   adminProcessHostPayoutAction,
 } from "@/lib/actions/admin";
 import {
-  createStripeCheckoutAction,
-  retryStripeWebhookEventAction,
-} from "@/lib/actions/stripe";
+  adminMarkPaymentPaidAction,
+} from "@/lib/actions/payment-manual";
 import { searchWeddingsAction } from "@/lib/actions/discovery";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, requireRole } from "@/lib/auth";
-import { stripe } from "@/lib/stripe";
 import {
   UserRole,
   BookingStatus,
@@ -27,22 +25,6 @@ import {
 jest.mock("@/lib/auth", () => ({
   requireAuth: jest.fn(),
   requireRole: jest.fn(),
-}));
-
-jest.mock("@/lib/stripe", () => ({
-  stripe: {
-    transfers: {
-      create: jest.fn().mockResolvedValue({ id: "tr_mock_123" }),
-    },
-    events: {
-      retrieve: jest.fn(),
-    },
-    checkout: {
-      sessions: {
-        create: jest.fn(),
-      },
-    },
-  },
 }));
 
 jest.mock("@/lib/email", () => ({
@@ -224,6 +206,7 @@ describe("Adversarial Production Verification Suite", () => {
             id: "wedding-123",
             capacity: 2,
             date: new Date(Date.now() + 86400000),
+            status: "PUBLISHED",
             suspended: false,
             isDemo: false,
             pricePerGuest: 100,
@@ -451,92 +434,58 @@ describe("Adversarial Production Verification Suite", () => {
         role: UserRole.ADMIN,
       });
 
-      (prisma.stripeWebhookEvent.findUnique as jest.Mock).mockResolvedValue({
-        id: "evt_db_123",
-        stripeEventId: "evt_stripe_123",
-        status: "FAILED",
+      // 4. Payment Confirmation Idempotency
+      (prisma.$transaction as jest.Mock).mockImplementation(async (cb) => {
+        if (typeof cb === "function") {
+          return cb(prisma);
+        }
+        return cb;
       });
 
-      (stripe.events.retrieve as jest.Mock).mockResolvedValue({
-        id: "evt_stripe_123",
-        type: "checkout.session.completed",
-        data: {
-          object: {
-            client_reference_id: "booking-already-paid",
-            currency: "usd",
-            id: "cs_mock_123",
-          },
+      (prisma.payment.findUnique as jest.Mock).mockResolvedValue({
+        id: "pay_already_paid",
+        status: PaymentStatus.PAID,
+        amount: 500,
+        booking: {
+          id: "b_already_paid",
+          status: BookingStatus.PAID,
         },
       });
 
-      (prisma.booking.findUnique as jest.Mock).mockResolvedValue({
-        id: "booking-already-paid",
-        status: BookingStatus.PAID,
-        payments: [{ id: "pay-1", status: PaymentStatus.PAID }],
+      const res = await adminMarkPaymentPaidAction({
+        paymentId: "pay_already_paid",
+        transactionId: "TXN-PP-12345",
       });
 
-      (prisma.stripeWebhookEvent.update as jest.Mock).mockResolvedValue({
-        id: "evt_db_123",
-        status: "PROCESSED",
-      });
-
-      const res = await retryStripeWebhookEventAction("evt_db_123");
       expect(res.success).toBe(true);
-
-      // Verify no duplicate booking update or transaction was initiated
-      expect(prisma.booking.update).not.toHaveBeenCalled();
+      expect(res.alreadyPaid).toBe(true);
+      expect(prisma.guestPass.create).not.toHaveBeenCalled();
     });
   });
 
   // ───────────────────────────────────────────────────────────────────────────
-  // 5. Zero-Value Booking Idempotency
+  // 5. Host Payout Ledger Verification
   // ───────────────────────────────────────────────────────────────────────────
-  describe("5. Zero-Value Booking Idempotency", () => {
-    it("should return already_paid url if booking is already PAID on checkout entry", async () => {
-      (requireAuth as jest.Mock).mockResolvedValue({
-        id: "traveler-user-id",
-        role: UserRole.TRAVELER,
-      });
-
-      (prisma.booking.findUnique as jest.Mock).mockResolvedValue({
-        id: "booking-free",
-        status: BookingStatus.PAID,
-        totalAmount: 0,
-        traveler: { userId: "traveler-user-id" },
-        wedding: { hostCouple: { userId: "host-user-id" } },
-      });
-
-      const res = await createStripeCheckoutAction("booking-free", "FREE100");
-      expect(res.success).toBe(true);
-      expect(res.url).toContain("already_paid=true");
-    });
-  });
-
-  // ───────────────────────────────────────────────────────────────────────────
-  // 6. Zero-Decimal Currency Handling
-  // ───────────────────────────────────────────────────────────────────────────
-  describe("6. Multi-Currency Payout Precision", () => {
-    it("should use 1x multiplier for JPY and 100x for USD/INR in Stripe transfers", async () => {
+  describe("5. Host Payout Ledger Verification", () => {
+    it("should record cleared host payout in database for valid payment", async () => {
       (requireRole as jest.Mock).mockResolvedValue({
         id: "admin-id",
         role: UserRole.ADMIN,
       });
 
-      // 1. Test JPY (Zero-decimal currency)
       (prisma.payment.findUnique as jest.Mock).mockResolvedValue({
-        id: "pay-jpy",
-        amount: 5000,
-        currency: "JPY",
+        id: "pay-payout-1",
+        amount: 500,
+        currency: "USD",
         hostPayoutTransferred: false,
         booking: {
-          id: "book-jpy",
-          traveler: { fullName: "Tokyo Guest" },
+          id: "book-payout-1",
+          traveler: { fullName: "US Guest" },
           wedding: {
-            title: "Kyoto Ceremony",
-            hostCoupleId: "host-jpy",
+            title: "Goa Beach Wedding",
+            hostCoupleId: "host-usd",
             hostCouple: {
-              stripeAccountId: "acct_jpy_123",
-              user: { email: "host@kyoto.jp" },
+              user: { email: "host@goa.com" },
             },
           },
         },
@@ -544,48 +493,11 @@ describe("Adversarial Production Verification Suite", () => {
 
       (prisma.safetyCase.findMany as jest.Mock).mockResolvedValue([]);
       (prisma.review.findMany as jest.Mock).mockResolvedValue([]);
+      (prisma.payout.create as jest.Mock).mockResolvedValue({ id: "payout-new-1" });
       (prisma.payment.update as jest.Mock).mockResolvedValue({});
-      (prisma.transaction.create as jest.Mock).mockResolvedValue({});
 
-      await adminProcessHostPayoutAction("pay-jpy");
-
-      expect(stripe.transfers.create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          amount: 5000, // 1x multiplier for JPY
-          currency: "jpy",
-          destination: "acct_jpy_123",
-        })
-      );
-
-      // 2. Test USD (Standard currency with 100x multiplier)
-      (prisma.payment.findUnique as jest.Mock).mockResolvedValue({
-        id: "pay-usd",
-        amount: 500,
-        currency: "USD",
-        hostPayoutTransferred: false,
-        booking: {
-          id: "book-usd",
-          traveler: { fullName: "US Guest" },
-          wedding: {
-            title: "Goa Beach Wedding",
-            hostCoupleId: "host-usd",
-            hostCouple: {
-              stripeAccountId: "acct_usd_123",
-              user: { email: "host@goa.com" },
-            },
-          },
-        },
-      });
-
-      await adminProcessHostPayoutAction("pay-usd");
-
-      expect(stripe.transfers.create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          amount: 50000, // 100x multiplier for USD ($500 -> 50000 cents)
-          currency: "usd",
-          destination: "acct_usd_123",
-        })
-      );
+      const res = await adminProcessHostPayoutAction("pay-payout-1");
+      expect(res).toHaveProperty("success", true);
     });
   });
 });

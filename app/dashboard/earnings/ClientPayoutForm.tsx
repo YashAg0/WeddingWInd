@@ -10,12 +10,12 @@ interface ClientPayoutFormProps {
 
 export default function ClientPayoutForm({ payableBalance }: ClientPayoutFormProps) {
   const [amount, setAmount] = useState(50);
-  const [method, setMethod] = useState<"BANK_TRANSFER" | "STRIPE_CONNECT" | "MANUAL">("BANK_TRANSFER");
+  const [method, setMethod] = useState<"BANK_TRANSFER" | "UPI" | "PAYPAL" | "MANUAL">("BANK_TRANSFER");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
 
-  const MIN_THRESHOLD = 50;
+  const MIN_THRESHOLD = 500; // ₹500 INR minimum
   const canRequest = payableBalance >= MIN_THRESHOLD;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -29,7 +29,7 @@ export default function ClientPayoutForm({ payableBalance }: ClientPayoutFormPro
         throw new Error("Payout amount exceeds your payable balance.");
       }
       if (amount < MIN_THRESHOLD) {
-        throw new Error(`Minimum payout threshold is $${MIN_THRESHOLD}.`);
+        throw new Error(`Minimum payout threshold is ₹${MIN_THRESHOLD.toLocaleString("en-IN")}.`);
       }
 
       await submitPayoutRequestAction({ amount, method });
@@ -55,7 +55,7 @@ export default function ClientPayoutForm({ payableBalance }: ClientPayoutFormPro
           <div>
             <p className="font-bold text-charcoal-700">Minimum Threshold Unreached</p>
             <p className="mt-0.5">
-              You must reach a payable balance of at least <strong>${MIN_THRESHOLD}.00</strong> before requesting a payout transfer.
+              You must reach a payable balance of at least <strong>₹{MIN_THRESHOLD.toLocaleString("en-IN")}</strong> before requesting a payout transfer.
             </p>
           </div>
         </div>
@@ -75,7 +75,7 @@ export default function ClientPayoutForm({ payableBalance }: ClientPayoutFormPro
 
           {/* Amount input */}
           <div className="space-y-1">
-            <label htmlFor="payout-amount" className="font-bold text-charcoal-700">Transfer Amount ($)</label>
+            <label htmlFor="payout-amount" className="font-bold text-charcoal-700">Transfer Amount (₹ INR)</label>
             <input
               id="payout-amount"
               type="number"
@@ -87,7 +87,7 @@ export default function ClientPayoutForm({ payableBalance }: ClientPayoutFormPro
               required
             />
             <span className="text-[9px] text-charcoal-400">
-              Maximum request limit is your payable balance of ${payableBalance.toFixed(2)}.
+              Maximum request limit is your payable balance of ₹{payableBalance.toLocaleString("en-IN")}.
             </span>
           </div>
 
@@ -97,11 +97,12 @@ export default function ClientPayoutForm({ payableBalance }: ClientPayoutFormPro
             <select
               id="payout-method"
               value={method}
-              onChange={(e) => setMethod(e.target.value as "BANK_TRANSFER" | "STRIPE_CONNECT" | "MANUAL")}
+              onChange={(e) => setMethod(e.target.value as "BANK_TRANSFER" | "UPI" | "PAYPAL" | "MANUAL")}
               className="w-full border border-warm-200 rounded-xl px-3 py-2 bg-warm-50/20 text-charcoal-800 focus:outline-none focus:border-maroon-800"
             >
-              <option value="BANK_TRANSFER">Bank Wire Transfer</option>
-              <option value="STRIPE_CONNECT">Stripe Connect Instant Payout</option>
+              <option value="BANK_TRANSFER">Bank Wire Transfer (NEFT/IMPS)</option>
+              <option value="UPI">UPI Direct Transfer</option>
+              <option value="PAYPAL">PayPal Transfer</option>
               <option value="MANUAL">Manual Wire (Agent Invoice)</option>
             </select>
           </div>

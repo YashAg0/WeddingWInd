@@ -1,5 +1,6 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse, NextRequest, NextFetchEvent } from "next/server";
+import { isE2ETestAuthEnabled, verifyE2ETestSessionToken } from "@/lib/test-auth";
 
 // Public routes accessible without authentication
 const _isPublicRoute = createRouteMatcher([
@@ -20,7 +21,8 @@ const _isPublicRoute = createRouteMatcher([
   "/api/health",
   "/api/webhooks(.*)",
   "/sitemap.xml",
-  "/robots.txt"
+  "/robots.txt",
+  "/api/test(.*)"
 ]);
 
 // Admin-only routes
@@ -48,6 +50,25 @@ const clerkHandler = clerkMiddleware(async (auth, req) => {
 });
 
 export default async function middleware(req: NextRequest, event: NextFetchEvent) {
+  // 1. E2E Testing Authenticated Session Handling (Local/Test environments ONLY)
+  if (isE2ETestAuthEnabled()) {
+    const e2eCookie = req.cookies.get("__wwi_e2e_session")?.value;
+    if (e2eCookie) {
+      const session = verifyE2ETestSessionToken(e2eCookie);
+      if (session) {
+        if (isAdminRoute(req) && session.role !== "ADMIN") {
+          const pathname = req.nextUrl?.pathname || new URL(req.url).pathname;
+          if (pathname.startsWith("/api/")) {
+            return NextResponse.json({ error: "FORBIDDEN: Admin role required." }, { status: 403 });
+          }
+          return NextResponse.redirect(new URL("/dashboard", req.url));
+        }
+        // Session is verified and authorized for route - proceed directly
+        return NextResponse.next();
+      }
+    }
+  }
+
   try {
     const clerkRes = await clerkHandler(req, event);
     const response = clerkRes instanceof NextResponse

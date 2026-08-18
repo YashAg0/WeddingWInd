@@ -58,7 +58,7 @@ async function runSuite() {
     console.log("1. AUDITING FOREIGN GUEST JOURNEY & SIDE SELECTION...");
 
     // Find or create test traveler
-    let travelerUser = await prisma.user.findFirst({
+    const travelerUser = await prisma.user.findFirst({
       where: { role: UserRole.TRAVELER, status: "ACTIVE" },
       include: { travelerProfile: true },
     });

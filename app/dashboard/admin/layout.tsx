@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { auth } from "@clerk/nextjs/server";
-import { prisma, withDbRetry } from "@/lib/prisma";
-import { syncAndGetDbUser } from "@/lib/auth";
+import { getDbUser, syncAndGetDbUser } from "@/lib/auth";
+import { withDbRetry } from "@/lib/prisma";
 import { RefreshCw } from "lucide-react";
 
 export const metadata: Metadata = {
@@ -17,52 +16,35 @@ export const metadata: Metadata = {
  * Admin Route Guard — Server Component Layout
  *
  * Enforces RBAC for all /dashboard/admin/* routes:
- * 1. Requires a valid Clerk session (redirects to /login if missing).
- * 2. Performs a resilient DB lookup to verify User.role === "ADMIN".
+ * 1. Resolves authenticated DB user (via Clerk session or local test session).
+ * 2. Verifies User.role === "ADMIN".
  * 3. Uses bounded retry with exponential backoff for transient DB/pool stalls.
- * 4. If the DB is unreachable after retries, shows a clear service-unavailable screen
- *    — NOT an "admin required" error, because DB failure ≠ authorization failure.
+ * 4. If the DB is unreachable after retries, shows a clear service-unavailable screen.
  */
 export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  let session: any = null;
-  try {
-    session = await auth();
-  } catch {
-    session = null;
-  }
-
-  // Not signed in → redirect to login
-  if (!session?.userId) {
-    redirect("/login?redirect_url=/dashboard/admin");
-  }
-
-  let userRole: string | null = null;
+  let dbUser: any = null;
   let dbError: Error | null = null;
 
   try {
-    const role = await withDbRetry(async () => {
-      let dbUser = await prisma.user.findUnique({
-        where: { clerkUserId: session.userId },
-        select: { role: true },
-      });
-
-      if (!dbUser) {
-        // Attempt sync in case account was recently provisioned
-        const synced = await syncAndGetDbUser();
-        dbUser = synced ? { role: synced.role } : null;
+    dbUser = await withDbRetry(async () => {
+      let u = await getDbUser();
+      if (!u) {
+        u = await syncAndGetDbUser();
       }
-
-      return dbUser?.role ?? null;
-    }, { label: "AdminLayout:roleCheck", maxRetries: 3 });
-
-    userRole = role;
+      return u;
+    }, { label: "AdminLayout:getDbUser", maxRetries: 3 });
   } catch (err: any) {
     dbError = err;
-    console.error("[AdminLayout] Database error during role check:", err.name, err.code, err.message);
+    console.error("[AdminLayout] Database error during role check:", err?.name, err?.code, err?.message);
+  }
+
+  // Not signed in → redirect to login
+  if (!dbUser && !dbError) {
+    redirect("/login?redirect_url=/dashboard/admin");
   }
 
   // DB unreachable — cannot verify admin role. Show a service-unavailable screen with retry.
@@ -101,7 +83,7 @@ export default async function AdminLayout({
   }
 
   // User found in DB but not ADMIN → redirect with clear admin-required error
-  if (userRole !== "ADMIN") {
+  if (dbUser.role !== "ADMIN") {
     redirect("/?error=admin_required");
   }
 

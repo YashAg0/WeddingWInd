@@ -72,8 +72,8 @@ async function verifySponsoredListings() {
   console.log(" WeddingWithIndia — Sponsored Listings Audit");
   console.log("==================================================\n");
 
-  let errors = [];
-  let warnings = [];
+  const errors = [];
+  const warnings = [];
 
   // 1. Audit Unit Logic for Expiration & Time Awareness
   console.log("Checking sponsorship time-awareness logic...");

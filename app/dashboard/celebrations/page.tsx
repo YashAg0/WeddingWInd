@@ -4,9 +4,9 @@ import { redirect } from "next/navigation";
 export default async function CelebrationsAliasPage({
   searchParams,
 }: {
-  searchParams: Promise<Record<string, string | string[] | undefined>> | Record<string, string | string[] | undefined>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const resolvedParams = await Promise.resolve(searchParams);
+  const resolvedParams = await searchParams;
   const query = new URLSearchParams();
   if (resolvedParams) {
     for (const [key, value] of Object.entries(resolvedParams)) {

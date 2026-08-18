@@ -265,66 +265,75 @@ function VerificationWidget({ role, verification, submitVerification }: { role: 
 function HostApplicationStatusCard({ hostAppState }: { hostAppState: any }) {
   if (!hostAppState || !hostAppState.exists) return null;
   const vStatus = hostAppState.verificationStatus;
+  const app = hostAppState.application;
+  const pendingDocsCount = app?.documentRequests?.filter((r: any) => r.status === "PENDING")?.length || 0;
 
-  if (vStatus === "NEED_MORE_DOCUMENTS") {
+  if (vStatus === "NEED_MORE_DOCUMENTS" || app?.appStatus === "ACTION_REQUIRED") {
     return (
-      <div className="bg-blue-50 border border-blue-200 rounded-2xl p-6 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-l-4 border-l-blue-600">
+      <div className="bg-blue-50 border border-blue-200 rounded-3xl p-6 sm:p-8 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 border-l-4 border-l-blue-600">
         <div className="flex items-start gap-4">
-          <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
-            <AlertCircle size={20} />
+          <div className="w-12 h-12 rounded-2xl bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
+            <AlertCircle size={22} />
           </div>
-          <div className="space-y-1">
+          <div className="space-y-1.5">
             <div className="flex items-center gap-2">
-              <span className="text-[0.625rem] font-bold uppercase tracking-wider text-blue-800 bg-blue-100 px-2.5 py-0.5 rounded-full border border-blue-200">
+              <span className="text-[0.625rem] font-bold uppercase tracking-wider text-blue-800 bg-blue-100 px-3 py-0.5 rounded-full border border-blue-200">
                 Action Required
               </span>
-              <span className="text-xs text-blue-700 font-semibold">More Information Requested</span>
+              {pendingDocsCount > 0 && (
+                <span className="text-xs text-blue-800 font-bold">
+                  {pendingDocsCount} Document{pendingDocsCount > 1 ? "s" : ""} Requested
+                </span>
+              )}
             </div>
-            <h3 className="font-display font-bold text-base text-charcoal-900">
-              Update Your Wedding Application
+            <h3 className="font-display font-bold text-lg text-charcoal-900">
+              Additional Information Requested for {app?.coupleNames || "Your Celebration"}
             </h3>
             <p className="text-xs text-charcoal-600 leading-relaxed max-w-xl">
-              {hostAppState.adminNotes || "Our admin team reviewed your application and requested additional information before approval."}
+              {app?.adminNotesHostFacing || hostAppState.adminNotes || "Our verification desk reviewed your celebration and requested additional documents."}
             </p>
           </div>
         </div>
         <Link
           href="/list-wedding"
-          className="btn btn-primary text-xs font-bold py-2.5 px-5 flex items-center gap-2 whitespace-nowrap shadow-md"
+          className="btn btn-primary text-xs font-bold py-3 px-6 flex items-center gap-2 whitespace-nowrap shadow-md shrink-0 cursor-pointer"
         >
           <RefreshCw size={14} />
-          Continue Application
+          Upload Requested Documents
         </Link>
       </div>
     );
   }
 
-  if (vStatus === "PENDING" || vStatus === "UNDER_REVIEW") {
+  if (vStatus === "PENDING" || vStatus === "UNDER_REVIEW" || app?.appStatus === "DRAFT" || app?.appStatus === "SUBMITTED") {
     return (
-      <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-l-4 border-l-amber-500">
+      <div className="bg-gradient-to-r from-warm-50 to-amber-50/50 border border-warm-200 rounded-3xl p-6 sm:p-7 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 border-l-4 border-l-amber-500">
         <div className="flex items-start gap-4">
-          <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+          <div className="w-11 h-11 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center shrink-0">
             <Clock size={20} />
           </div>
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <span className="text-[0.625rem] font-bold uppercase tracking-wider text-amber-800 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-200">
-                Application In Progress
+                Application {app?.appStatus || "In Progress"}
+              </span>
+              <span className="text-xs text-charcoal-600 font-medium">
+                {app?.city} · {app?.durationDays || 3} Days · {app?.requestedTier || "ROYAL"} Tier
               </span>
             </div>
             <h3 className="font-display font-bold text-base text-charcoal-900">
-              Your Wedding Application Is Under Review
+              Celebration Application: {app?.coupleNames || "Your Wedding"}
             </h3>
-            <p className="text-xs text-charcoal-600 leading-relaxed max-w-xl">
-              Our verification operations desk is auditing your celebration application.
+            <p className="text-xs text-charcoal-500 leading-relaxed max-w-xl">
+              Your celebration details are saved in the database and currently under review by our local team.
             </p>
           </div>
         </div>
         <Link
           href="/list-wedding"
-          className="btn btn-secondary text-xs font-bold py-2.5 px-5 flex items-center gap-2 whitespace-nowrap"
+          className="btn btn-secondary text-xs font-bold py-2.5 px-5 flex items-center gap-2 whitespace-nowrap shrink-0 cursor-pointer"
         >
-          View Application Details
+          View / Edit Application
         </Link>
       </div>
     );
@@ -733,14 +742,14 @@ export default function DashboardOverviewPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           <StatCard label="Approved Guests" value={approvedGuestsCount} icon={Check} />
           <StatCard
-            label="Total Revenue"
-            value={`$${(coupleStats?.revenue || 0).toLocaleString()}`}
+            label="Total Host Earnings"
+            value={`₹${(coupleStats?.revenue || 0).toLocaleString("en-IN")}`}
             icon={DollarSign}
-            trend={{ value: "100% Paid", isPositive: true }}
+            trend={{ value: "Confirmed", isPositive: true }}
           />
           <StatCard
             label="Pending Payouts"
-            value={`$${(coupleStats?.pendingPayouts || 0).toLocaleString()}`}
+            value={`₹${(coupleStats?.pendingPayouts || 0).toLocaleString("en-IN")}`}
             icon={Bell}
             trend={{ value: "Awaiting Transfer", isPositive: false }}
           />
