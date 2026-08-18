@@ -12,6 +12,8 @@ describe("Single Source of Truth Wedding DTO Normalizer", () => {
       religion: "Hindu",
       region: "Rajasthan",
       community: "Rajput",
+      tier: "ROYAL",
+      durationDays: 3,
       pricePerGuest: 17999,
       capacity: 20,
       guestsAllowed: 20,

@@ -78,13 +78,18 @@ export function toWeddingDTO(rawWedding: any): Wedding {
 
   // 3. Centralized Tier, Duration & Price
   const tier = normalizeWeddingTier(rawWedding.tier || (rawWedding.category === "Royal" ? "ROYAL" : "STANDARD"));
-  const durationDays = normalizeDurationDays(rawWedding.durationDays || 3);
+  const durationDays = normalizeDurationDays(
+    rawWedding.durationDays ||
+    (Array.isArray(rawWedding.events) && rawWedding.events.length > 0
+      ? Math.min(5, Math.max(1, rawWedding.events.length))
+      : 3)
+  );
   const pricePerGuest = getCustomerPriceUSD(tier, durationDays);
   const ceremoniesCount = typeof rawWedding.ceremoniesCount === "number" && rawWedding.ceremoniesCount > 0
     ? rawWedding.ceremoniesCount
     : Array.isArray(rawWedding.events) && rawWedding.events.length > 0
     ? rawWedding.events.length
-    : 3;
+    : durationDays;
 
   const guestsAllowed = typeof rawWedding.capacity === "number" && rawWedding.capacity > 0
     ? rawWedding.capacity

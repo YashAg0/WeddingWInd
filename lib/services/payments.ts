@@ -165,6 +165,14 @@ export async function createOrUpdatePaymentRequestAtomic(
     throw new Error(`Cannot request payment for a ${booking.status.toLowerCase()} booking.`);
   }
 
+  if (booking.wedding?.isDemo) {
+    throw new Error("Cannot request payment for a demonstration wedding experience.");
+  }
+
+  if (booking.wedding?.suspended) {
+    throw new Error("Cannot request payment for a suspended wedding experience.");
+  }
+
   // Domain validation
   const sysConfig = await getPaymentSystemConfig();
   const urlCheck = validatePaymentLink(params.paymentLink, sysConfig.domainAllowlist);

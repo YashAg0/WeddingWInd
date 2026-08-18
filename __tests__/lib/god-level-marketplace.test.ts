@@ -156,4 +156,75 @@ describe("God-Level Wedding Marketplace Multi-Day Realism & Data Integrity", () 
     });
     expect(completedWed.availabilityStatus).toBe("COMPLETED");
   });
+
+  it("should never display $149 or Standard pricing for 5-Day, 4-Day, 3-Day, or 2-Day premium listings", () => {
+    const signatureRoyal5D = toWeddingDTO({
+      id: "sr-5d",
+      slug: "sr-5d",
+      title: "5-Day Signature Royal",
+      location: "Jodhpur, Rajasthan",
+      tier: "SIGNATURE_ROYAL",
+      durationDays: 5,
+      capacity: 20,
+      status: "PUBLISHED",
+      isDemo: true,
+    });
+    expect(signatureRoyal5D.pricePerGuest).toBe(1199);
+    expect(signatureRoyal5D.pricePerGuest).not.toBe(149);
+
+    const royal4D = toWeddingDTO({
+      id: "r-4d",
+      slug: "r-4d",
+      title: "4-Day Royal",
+      location: "Amritsar, Punjab",
+      tier: "ROYAL",
+      durationDays: 4,
+      capacity: 16,
+      status: "PUBLISHED",
+      isDemo: true,
+    });
+    expect(royal4D.pricePerGuest).toBe(799);
+    expect(royal4D.pricePerGuest).not.toBe(149);
+
+    const grand3D = toWeddingDTO({
+      id: "g-3d",
+      slug: "g-3d",
+      title: "3-Day Grand",
+      location: "Alleppey, Kerala",
+      tier: "GRAND",
+      durationDays: 3,
+      capacity: 12,
+      status: "PUBLISHED",
+      isDemo: true,
+    });
+    expect(grand3D.pricePerGuest).toBe(449);
+    expect(grand3D.pricePerGuest).not.toBe(149);
+
+    const enhanced2D = toWeddingDTO({
+      id: "e-2d",
+      slug: "e-2d",
+      title: "2-Day Enhanced",
+      location: "Mandrem, Goa",
+      tier: "ENHANCED",
+      durationDays: 2,
+      capacity: 10,
+      status: "PUBLISHED",
+      isDemo: true,
+    });
+    expect(enhanced2D.pricePerGuest).toBe(249);
+    expect(enhanced2D.pricePerGuest).not.toBe(149);
+
+    const standard1D = toWeddingDTO({
+      id: "s-1d",
+      slug: "s-1d",
+      title: "1-Day Standard",
+      location: "Madurai, Tamil Nadu",
+      tier: "STANDARD",
+      durationDays: 1,
+      capacity: 8,
+      status: "PUBLISHED",
+      isDemo: true,
+    });
+    expect(standard1D.pricePerGuest).toBe(149);
+  });
 });

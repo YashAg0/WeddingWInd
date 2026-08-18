@@ -1,7 +1,7 @@
 /**
  * WeddingWithIndia — Master Database Seeder
- * Seeds a complete, interconnected demonstration ecosystem with Super Admin, Admin, 22 Unique Hosts, Guest, Agent, Coordinator,
- * 22 Unique Curated Weddings, Events, Traditions, Galleries, Bookings, Guest Passes, Reviews, Payments, Commissions, and Verifications.
+ * Seeds a complete, interconnected demonstration ecosystem with Super Admin, Admin, 21 Unique Hosts, Guest, Agent, Coordinator,
+ * 21 Unique Curated Multi-Day Weddings, Events, Traditions, Galleries, Bookings, Guest Passes, Reviews, Payments, Commissions, and Verifications.
  */
 
 const { PrismaClient } = require("@prisma/client");
@@ -17,21 +17,743 @@ const prisma = new PrismaClient({
   },
 });
 
+const DEMO_WEDDINGS = [
+  {
+    id: "w1",
+    slug: "grand-maharaja-wedding",
+    title: "Rajasthan Royal Heritage Celebration",
+    description: "Spend five days alongside an authentic family celebration in Jodhpur. Experience welcome gatherings, traditional folk performances, and sacred wedding ceremonies in a heritage palace setting.",
+    location: "Umaid Bhawan Palace, Jodhpur, Rajasthan",
+    category: "Royal",
+    tier: "SIGNATURE_ROYAL",
+    durationDays: 5,
+    religion: "Hindu",
+    region: "Rajasthan",
+    community: "Marwari Rajput",
+    capacity: 20,
+    pricePerGuest: 1199,
+    status: "PUBLISHED",
+    featured: true,
+    sponsored: false,
+    isDemo: true,
+    hostCoupleName: "Devika & Kaber Singhania",
+    hostEmail: "host_w1@weddingwithindia.com",
+    hostAvatar: "https://images.unsplash.com/photo-1615966650071-855b15f29ad1?w=400&q=80",
+    mainImageUrl: "https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=1200&q=80",
+    theme: "Royal Marwari Heritage",
+    dressCode: "Festive Indian Royal Attire / Black Tie",
+    ethnicity: "Marwari Rajput",
+    events: [
+      { name: "Day 1: Family Welcome & Evening Gathering", description: "Arrival of guests, welcome tea, traditional folk musicians, and courtyard dinner.", startTime: "16:00", endTime: "21:00", dayOffset: 0 },
+      { name: "Day 2: Pre-Wedding Cultural Celebrations", description: "Daytime cultural activities, floral decorations, and regional culinary stalls.", startTime: "11:00", endTime: "15:00", dayOffset: 1 },
+      { name: "Day 3: Musical Evening & Sangeet", description: "Choreographed family dances, live folk orchestra, and evening banquet.", startTime: "18:00", endTime: "23:00", dayOffset: 2 },
+      { name: "Day 4: Traditional Baraat & Mandap Pheras", description: "Baraat assembly, sacred vows around the holy fire with English cultural commentary, and dinner.", startTime: "16:30", endTime: "22:00", dayOffset: 3 },
+      { name: "Day 5: Royal Gala Banquet & Farewell", description: "Congratulatory dinner, toasts, fireworks, and farewell blessing.", startTime: "19:00", endTime: "23:30", dayOffset: 4 }
+    ],
+    traditions: [
+      { name: "Baraat Procession", description: "Groom's grand arrival accompanied by brass band and dancing family." },
+      { name: "Saptapadi Vows", description: "Seven sacred vows taken together around the holy Agni fire." }
+    ]
+  },
+  {
+    id: "w23",
+    slug: "shimla-himalayan-pine-royal-wedding",
+    title: "Shimla Himalayan Pine Forest Royal Celebration",
+    description: "A highland royal wedding at Wildflower Hall, Shimla amidst pine forests, featuring Himachali Nati folk dances, cedar grove pheras, and Oberoi Dham banquets across 5 unforgettable days.",
+    location: "Wildflower Hall, An Oberoi Resort, Shimla, Himachal Pradesh",
+    category: "Royal",
+    tier: "SIGNATURE_ROYAL",
+    durationDays: 5,
+    religion: "Regional / Cultural",
+    region: "Himachal Pradesh",
+    community: "Himachali Rajput",
+    capacity: 16,
+    pricePerGuest: 1199,
+    status: "PUBLISHED",
+    featured: true,
+    sponsored: false,
+    isDemo: true,
+    hostCoupleName: "Vikram & Ananya Sen",
+    hostEmail: "host_w23@weddingwithindia.com",
+    hostAvatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&q=80",
+    mainImageUrl: "https://images.unsplash.com/photo-1640953148126-1962ec17a92b?w=1200&q=80",
+    theme: "Pahadi Royal Pine Forest",
+    dressCode: "Festive Velvet Sherwani / Silk Dhatu Saree",
+    ethnicity: "Himachali Rajput",
+    events: [
+      { name: "Day 1: Himalayan Welcome High Tea", description: "Arrival tea with mountain views and acoustic Himachali flute.", startTime: "15:00", endTime: "18:30", dayOffset: 0 },
+      { name: "Day 2: Pine Forest Meadow Gathering", description: "Cultural storytelling and Pahari folk music under cedar trees.", startTime: "11:00", endTime: "15:00", dayOffset: 1 },
+      { name: "Day 3: Himachali Nati Sangeet Night", description: "Nati folk dance circle around pine forest bonfire.", startTime: "17:30", endTime: "21:30", dayOffset: 2 },
+      { name: "Day 4: Cedar Grove Mandap Pheras", description: "Vedic vows in open cedar grove overlooking snow peaks.", startTime: "10:30", endTime: "13:30", dayOffset: 3 },
+      { name: "Day 5: Oberoi Estate Dham Banquet", description: "Authentic multi-course Himachali Dham feast served on brass thalis.", startTime: "18:30", endTime: "22:30", dayOffset: 4 }
+    ],
+    traditions: [
+      { name: "Himachali Nati Dance", description: "Folk dance celebrating harvest and union." },
+      { name: "Dham Banquet", description: "Traditional seated brass plate feast." }
+    ]
+  },
+  {
+    id: "w6",
+    slug: "punjabi-amritsar-golden-wedding",
+    title: "Punjabi Sikh Wedding Experience",
+    description: "Four days of vibrant Punjabi warmth in Amritsar, featuring lively Dhol drumming, colorful family folk dances, the sacred Anand Karaj ceremony in a Gurdwara, and celebratory banquets.",
+    location: "Welcomhotel by ITC Hotels, Amritsar, Punjab",
+    category: "Traditional",
+    tier: "ROYAL",
+    durationDays: 4,
+    religion: "Sikh",
+    region: "Punjab",
+    community: "Punjabi Sikh",
+    capacity: 16,
+    pricePerGuest: 799,
+    status: "PUBLISHED",
+    featured: true,
+    sponsored: false,
+    isDemo: true,
+    hostCoupleName: "Gurpreet & Simran Bhasin",
+    hostEmail: "host_w6@weddingwithindia.com",
+    hostAvatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80",
+    mainImageUrl: "https://images.unsplash.com/photo-1571536802807-30451e3955d8?w=1200&q=80",
+    theme: "Sacred Punjabi Heritage",
+    dressCode: "Punjabi Kurta Pajama / Turban / Salwar Kameez",
+    ethnicity: "Punjabi Sikh",
+    events: [
+      { name: "Day 1: Farmstead Welcome Dinner", description: "Traditional tandoori dinner and Punjabi folk welcome.", startTime: "17:00", endTime: "22:00", dayOffset: 0 },
+      { name: "Day 2: Jaggo & Sangeet Night", description: "High-energy Dhol beats, Jaggo procession, and family choreography.", startTime: "18:00", endTime: "23:30", dayOffset: 1 },
+      { name: "Day 3: Sacred Anand Karaj & Langar", description: "Solemn four Laavan hymns in the Gurdwara followed by equality community Langar.", startTime: "09:00", endTime: "14:00", dayOffset: 2 },
+      { name: "Day 4: Grand Reception Banquet", description: "Celebratory banquet dinner, toasts, and cultural music.", startTime: "19:00", endTime: "23:45", dayOffset: 3 }
+    ],
+    traditions: [
+      { name: "Laavan (Anand Karaj)", description: "Four sacred hymns binding the couple in spiritual matrimony." },
+      { name: "Guru Ka Langar", description: "Equality community meal served in the Gurdwara." }
+    ]
+  },
+  {
+    id: "w14",
+    slug: "hyderabad-nizam-wedding",
+    title: "Hyderabad Nizam Heritage Wedding",
+    description: "An opulent Nizami celebration at Taj Falaknuma Palace across 4 days, featuring 101-seat dining table banquets, Hyderabadi Dum Biryani, and classical Ghazal performances.",
+    location: "Taj Falaknuma Palace, Hyderabad, Telangana",
+    category: "Royal",
+    tier: "ROYAL",
+    durationDays: 4,
+    religion: "Muslim",
+    region: "Telangana",
+    community: "Hyderabadi Nizam Heritage",
+    capacity: 14,
+    pricePerGuest: 799,
+    status: "PUBLISHED",
+    featured: true,
+    sponsored: false,
+    isDemo: true,
+    hostCoupleName: "Mir Tariq & Farida Ali",
+    hostEmail: "host_w14@weddingwithindia.com",
+    hostAvatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&q=80",
+    mainImageUrl: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1200&q=80",
+    theme: "Royal Nizami Splendor",
+    dressCode: "Sherwani / Khada Dupatta / Royal Silk",
+    ethnicity: "Hyderabadi Muslim",
+    events: [
+      { name: "Day 1: Falaknuma Palace Dastarkhwan Welcome", description: "Palace terrace welcome tea overlooking old Hyderabad.", startTime: "17:30", endTime: "21:30", dayOffset: 0 },
+      { name: "Day 2: Manjha & Classical Ghazal Night", description: "Live sarangi and ghazal recitals in the Jade Room.", startTime: "18:30", endTime: "23:00", dayOffset: 1 },
+      { name: "Day 3: Sacred Nikah & Arsi Mushaf Ceremony", description: "Traditional wedding vows and mirror ceremony.", startTime: "16:00", endTime: "20:00", dayOffset: 2 },
+      { name: "Day 4: Grand Dawat-e-Walima", description: "Grand banquet at the world-famous 101-seat table.", startTime: "19:00", endTime: "23:30", dayOffset: 3 }
+    ],
+    traditions: [
+      { name: "Nikah Ceremony", description: "Sacred Islamic matrimonial contract with mutual consent." },
+      { name: "Dawat-e-Walima", description: "Sumptuous host wedding banquet." }
+    ]
+  },
+  {
+    id: "w17",
+    slug: "ladakh-monastery-mountain-wedding",
+    title: "Ladakh Monastery Mountain Wedding",
+    description: "A sacred Buddhist celebration in Leh overlooking snow peaks across 4 days, featuring monastic chants, Khatak silk scarf blessings, and authentic Ladakhi banquets.",
+    location: "The Grand Dragon Ladakh & Thiksey Monastery, Leh, Ladakh",
+    category: "Destination",
+    tier: "ROYAL",
+    durationDays: 4,
+    religion: "Buddhist",
+    region: "Ladakh",
+    community: "Ladakhi Buddhist",
+    capacity: 12,
+    pricePerGuest: 799,
+    status: "PUBLISHED",
+    featured: true,
+    sponsored: false,
+    isDemo: true,
+    hostCoupleName: "Stanzin & Rigzin Norbu",
+    hostEmail: "host_w17@weddingwithindia.com",
+    hostAvatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80",
+    mainImageUrl: "https://images.unsplash.com/photo-1519741497674-611481863552?w=1200&q=80",
+    theme: "High Altitude Monastic Blessing",
+    dressCode: "Traditional Ladakhi Goncha / Warm Formalwear",
+    ethnicity: "Ladakhi Buddhist",
+    events: [
+      { name: "Day 1: High-Altitude Acclimatization High Tea", description: "Warm butter tea and Apricot kernel snacks in Leh.", startTime: "15:00", endTime: "18:00", dayOffset: 0 },
+      { name: "Day 2: Thiksey Monastery Blessing & Chants", description: "Sacred prayers by Buddhist monks inside century-old gompa.", startTime: "09:00", endTime: "12:30", dayOffset: 1 },
+      { name: "Day 3: Khatak Offering & Jabro Folk Dance", description: "Silk scarf offerings and community circle dance.", startTime: "14:00", endTime: "18:00", dayOffset: 2 },
+      { name: "Day 4: Himalayan Sunset Cultural Banquet", description: "Traditional Ladakhi Feast under starry trans-Himalayan skies.", startTime: "18:00", endTime: "22:00", dayOffset: 3 }
+    ],
+    traditions: [
+      { name: "Khatak Presentation", description: "White silk scarf blessing signifying purity and auspiciousness." },
+      { name: "Monastic Sutra Chanting", description: "Ancient Buddhist harmonic blessings." }
+    ]
+  },
+  {
+    id: "02f25432-f475-49d4-99ca-b88258a86711",
+    slug: "lakeside-rajput-celebration",
+    title: "Lakeside Rajput Celebration",
+    description: "A romantic 3-day wedding on Lake Pichola, Udaipur featuring sunset boat processions, classical shehnai recitals, and lakeside fine dining under the stars.",
+    location: "Jagmandir Island Palace, Udaipur, Rajasthan",
+    category: "Royal",
+    tier: "GRAND",
+    durationDays: 3,
+    religion: "Hindu",
+    region: "Rajasthan",
+    community: "Mewari Rajput",
+    capacity: 16,
+    pricePerGuest: 449,
+    status: "PUBLISHED",
+    featured: true,
+    sponsored: false,
+    isDemo: true,
+    hostCoupleName: "Aditya & Sanjana Rathore",
+    hostEmail: "host_w2@weddingwithindia.com",
+    hostAvatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&q=80",
+    mainImageUrl: "https://images.unsplash.com/photo-1591604466107-ec97de577aff?w=1200&q=80",
+    theme: "Lakeside Romance & Heritage",
+    dressCode: "Traditional Elegant Ethnic",
+    ethnicity: "Mewari Rajput",
+    events: [
+      { name: "Day 1: Lake Pichola Sunset Boat Procession", description: "Boat transfer and shehnai musical welcome.", startTime: "17:00", endTime: "21:00", dayOffset: 0 },
+      { name: "Day 2: Royal Sangeet & Ghoomar Night", description: "Choreographed folk performances under palace arches.", startTime: "18:30", endTime: "23:00", dayOffset: 1 },
+      { name: "Day 3: Lakeside Pheras & Gala Dinner", description: "Sacred vows by the water followed by candlelit island feast.", startTime: "17:00", endTime: "22:30", dayOffset: 2 }
+    ],
+    traditions: [
+      { name: "Sunset Boat Procession", description: "Arrival across calm waters of Lake Pichola." },
+      { name: "Ghoomar Performance", description: "Imperial Rajasthani dance by court artists." }
+    ]
+  },
+  {
+    id: "w3",
+    slug: "kerala-coastal-christian-matrimony",
+    title: "Kerala Coastal Christian Matrimony",
+    description: "An elegant 3-day Syrian Christian wedding in Kumarakom featuring backwater houseboats, church choir nuptials, Margamkali folk dance, and a 28-course coastal banquet.",
+    location: "Kumarakom Lake Resort, Alleppey, Kerala",
+    category: "Nature",
+    tier: "GRAND",
+    durationDays: 3,
+    religion: "Christian",
+    region: "Kerala",
+    community: "Saint Thomas Christian",
+    capacity: 12,
+    pricePerGuest: 449,
+    status: "PUBLISHED",
+    featured: true,
+    sponsored: false,
+    isDemo: true,
+    hostCoupleName: "Thomas & Anna Kurian",
+    hostEmail: "host_w3@weddingwithindia.com",
+    hostAvatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80",
+    mainImageUrl: "https://images.unsplash.com/photo-1602002418082-a4443e081dd1?w=1200&q=80",
+    theme: "Backwater Serenity & Ancient Heritage",
+    dressCode: "Kasavu Silk / Pastel Formal",
+    ethnicity: "Malayali Christian",
+    events: [
+      { name: "Day 1: Sunset Houseboat Welcome Cruise", description: "Cruise through palm-lined backwaters with tender coconut welcome.", startTime: "16:00", endTime: "20:00", dayOffset: 0 },
+      { name: "Day 2: Traditional Church Nuptials & Minnu", description: "Solemn church service and tying of the sacred Minnu pendant.", startTime: "10:30", endTime: "14:30", dayOffset: 1 },
+      { name: "Day 3: Lakeside Grand Reception & Margamkali", description: "Live Christian folk dance, violin orchestra, and coastal banquet.", startTime: "18:00", endTime: "22:30", dayOffset: 2 }
+    ],
+    traditions: [
+      { name: "Minnu Tying", description: "Tying of the leaf-shaped gold pendant containing 21 tiny beads." },
+      { name: "Margamkali Dance", description: "Ancient devotional Syrian Christian circle dance." }
+    ]
+  },
+  {
+    id: "w10",
+    slug: "kolkata-bengali-heritage-wedding",
+    title: "Kolkata Bengali Heritage Wedding",
+    description: "A cultural 3-day celebration in a North Kolkata Rajbari, featuring the famous Shubho Drishti eye-contact ritual, Saat Paake Ghorar circles, and a 6-course royal Bengali feast.",
+    location: "Sovabazar Rajbari, Kolkata, West Bengal",
+    category: "Traditional",
+    tier: "GRAND",
+    durationDays: 3,
+    religion: "Hindu",
+    region: "West Bengal",
+    community: "Bengali",
+    capacity: 12,
+    pricePerGuest: 449,
+    status: "PUBLISHED",
+    featured: false,
+    sponsored: false,
+    isDemo: true,
+    hostCoupleName: "Sourav & Rupa Banerjee",
+    hostEmail: "host_w10@weddingwithindia.com",
+    hostAvatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&q=80",
+    mainImageUrl: "https://images.unsplash.com/photo-1582510003544-4d00b7f74220?w=1200&q=80",
+    theme: "Vintage Rajbari Nobility",
+    dressCode: "Dhakai Jamdani / Tussar Silk Panjabi",
+    ethnicity: "Bengali",
+    events: [
+      { name: "Day 1: Aiburobhat Family Welcome", description: "Traditional pre-wedding bachelor meal and Rabindrasangeet recital.", startTime: "17:00", endTime: "21:00", dayOffset: 0 },
+      { name: "Day 2: Gaye Holud & Sangeet", description: "Turmeric ceremony and Kolkata Baul folk music night.", startTime: "10:00", endTime: "15:00", dayOffset: 1 },
+      { name: "Day 3: Shubho Drishti & Saat Paak", description: "Bride arrives on wooden seat (Piri) covering eyes with betel leaves.", startTime: "17:30", endTime: "22:30", dayOffset: 2 }
+    ],
+    traditions: [
+      { name: "Shubho Drishti", description: "Auspicious first look when betel leaves are lowered." },
+      { name: "Saat Paak", description: "Bride carried around groom seven times on a wooden stool." }
+    ]
+  },
+  {
+    id: "w12",
+    slug: "kashmir-dal-lake-houseboat-wedding",
+    title: "Kashmir Dal Lake Houseboat Wedding",
+    description: "A scenic 3-day wedding in Srinagar featuring shikara flower flotillas, 36-course royal Wazwan banquets, and evening Santoor recitals over Dal Lake.",
+    location: "The Lalit Grand Palace & Dal Lake, Srinagar, Kashmir",
+    category: "Destination",
+    tier: "GRAND",
+    durationDays: 3,
+    religion: "Interfaith / Multicultural",
+    region: "Kashmir",
+    community: "Kashmiri Heritage",
+    capacity: 10,
+    pricePerGuest: 449,
+    status: "PUBLISHED",
+    featured: false,
+    sponsored: false,
+    isDemo: true,
+    hostCoupleName: "Farhan & Zoya Mir",
+    hostEmail: "host_w12@weddingwithindia.com",
+    hostAvatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&q=80",
+    mainImageUrl: "https://images.unsplash.com/photo-1595815771614-ade9d652a65d?w=1200&q=80",
+    theme: "Paradise on Earth / Chinar Romance",
+    dressCode: "Kashmiri Tilla Pashmina / Velvet Pheran",
+    ethnicity: "Kashmiri",
+    events: [
+      { name: "Day 1: Dal Lake Shikara Welcome", description: "Shikara flotilla cruise with Kahwa and Kashmiri saffron tea.", startTime: "16:00", endTime: "19:30", dayOffset: 0 },
+      { name: "Day 2: Chinar Lawn Nikah & Vows", description: "Garden matrimony under centuries-old Chinar trees.", startTime: "11:00", endTime: "15:00", dayOffset: 1 },
+      { name: "Day 3: Grand 36-Course Royal Wazwan Feast", description: "Multi-course feast served on copper Trammi platters.", startTime: "18:00", endTime: "22:30", dayOffset: 2 }
+    ],
+    traditions: [
+      { name: "Kahwa Toast", description: "Traditional saffron and cardamom welcome toast." },
+      { name: "Wazwan Dastarkhwan", description: "Ceremonial copper tray shared dining experience." }
+    ]
+  },
+  {
+    id: "w15",
+    slug: "uttarakhand-himalayan-meadow-wedding",
+    title: "Uttarakhand Mountain Meadow Wedding",
+    description: "A mountain celebration in Mussoorie across 3 days, featuring panoramic Himalayan sunset vows, Garhwali folk drumming, and candlelit cedar terrace dinners.",
+    location: "JW Marriott Walnut Grove, Mussoorie, Uttarakhand",
+    category: "Nature",
+    tier: "GRAND",
+    durationDays: 3,
+    religion: "Regional / Cultural",
+    region: "Uttarakhand",
+    community: "Garhwali",
+    capacity: 14,
+    pricePerGuest: 449,
+    status: "PUBLISHED",
+    featured: false,
+    sponsored: false,
+    isDemo: true,
+    hostCoupleName: "Deepak & Meera Rawat",
+    hostEmail: "host_w15@weddingwithindia.com",
+    hostAvatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80",
+    mainImageUrl: "https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=1200&q=80",
+    theme: "Highland Pine & Mountain Serenity",
+    dressCode: "Warm Traditional Velvet / Pashmina Formal",
+    ethnicity: "Garhwali",
+    events: [
+      { name: "Day 1: Mountain Terrace Welcome Dinner", description: "Outdoor bonfire with roasted delicacies and pine aroma.", startTime: "17:00", endTime: "21:30", dayOffset: 0 },
+      { name: "Day 2: Meadow Sangeet & Folk Dhol", description: "Garhwali folk performances and live acoustic music.", startTime: "17:30", endTime: "22:00", dayOffset: 1 },
+      { name: "Day 3: Panoramic Ridge Vows & Gala", description: "Ceremony overlooking Doon Valley followed by banquet.", startTime: "15:00", endTime: "21:00", dayOffset: 2 }
+    ],
+    traditions: [
+      { name: "Pahari Welcome", description: "Traditional tilak and pine garland greeting." },
+      { name: "Garhwali Chholiya Dance", description: "Ancient sword-and-shield martial folk dance." }
+    ]
+  },
+  {
+    id: "w18",
+    slug: "ooty-nilgiris-tea-garden-wedding",
+    title: "Ooty Nilgiris Tea Garden Wedding",
+    description: "A heritage colonial tea estate wedding in Ooty across 3 days, featuring tea garden Haldi, outdoor high teas, and South Indian banquets.",
+    location: "Savoy - IHCL SeleQtions, Ooty, Tamil Nadu",
+    category: "Nature",
+    tier: "GRAND",
+    durationDays: 3,
+    religion: "Regional / Cultural",
+    region: "Tamil Nadu",
+    community: "Nilgiri Highland",
+    capacity: 12,
+    pricePerGuest: 449,
+    status: "PUBLISHED",
+    featured: false,
+    sponsored: false,
+    isDemo: true,
+    hostCoupleName: "Nitin & Radhika Gowder",
+    hostEmail: "host_w18@weddingwithindia.com",
+    hostAvatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&q=80",
+    mainImageUrl: "https://images.unsplash.com/photo-1508739773434-c26b3d09e071?w=1200&q=80",
+    theme: "Colonial Tea Estate Charm",
+    dressCode: "Pastel Silk Saree / Heritage Blazer",
+    ethnicity: "Nilgiri Highland",
+    events: [
+      { name: "Day 1: Tea Garden High Tea Welcome", description: "Estate high tea with freshly harvested Nilgiri teas.", startTime: "15:30", endTime: "18:30", dayOffset: 0 },
+      { name: "Day 2: Tea Bush Floral Gathering & Music", description: "Outdoor music and floral decoration among green bushes.", startTime: "10:30", endTime: "14:30", dayOffset: 1 },
+      { name: "Day 3: Highland Wedding Vows & Dinner", description: "Sunset ceremony on estate lawns followed by dinner.", startTime: "16:00", endTime: "21:30", dayOffset: 2 }
+    ],
+    traditions: [
+      { name: "Highland Floral Mandap", description: "Canopy built entirely from native eucalyptus and tea blossoms." },
+      { name: "Estate High Tea", description: "Heritage tea tasting experience." }
+    ]
+  },
+  {
+    id: "w4",
+    slug: "goan-sunset-beach-nuptials",
+    title: "Goan Sunset Beach Nuptials",
+    description: "A lively 2-day beach wedding in North Goa featuring barefoot sunset vows, live jazz & fado music, and a beachside seafood barbecue banquet.",
+    location: "Riva Beach Resort, Mandrem, Goa",
+    category: "Beach",
+    tier: "ENHANCED",
+    durationDays: 2,
+    religion: "Christian",
+    region: "Goa",
+    community: "Goan Catholic",
+    capacity: 10,
+    pricePerGuest: 249,
+    status: "PUBLISHED",
+    featured: true,
+    sponsored: false,
+    isDemo: true,
+    hostCoupleName: "David & Maria Fernandes",
+    hostEmail: "host_w4@weddingwithindia.com",
+    hostAvatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&q=80",
+    mainImageUrl: "https://images.unsplash.com/photo-1519741497674-611481863552?w=1200&q=80",
+    theme: "Bohemian Coastal Breeze",
+    dressCode: "Linen Beach Formal / Flowy Pastel",
+    ethnicity: "Goan Catholic",
+    events: [
+      { name: "Day 1: Sunset Beachside Vows & Toast", description: "Barefoot ceremony on Mandrem beach with violin duet.", startTime: "16:30", endTime: "19:30", dayOffset: 0 },
+      { name: "Day 2: Beach Bonfire, Live Band & Barbecue", description: "Fresh Goan seafood grill, fado music, and seaside dancing.", startTime: "18:00", endTime: "23:00", dayOffset: 1 }
+    ],
+    traditions: [
+      { name: "Beachside Ring Exchange", description: "Nuptial blessing on the seashore at golden hour." },
+      { name: "Goan Toast & Bebinca", description: "Traditional layered cake cutting and coastal toast." }
+    ]
+  },
+  {
+    id: "w13",
+    slug: "coorg-coffee-plantation-wedding",
+    title: "Coorg Coffee Plantation Wedding",
+    description: "An authentic Kodava wedding in a lush Coorg coffee estate across 2 days, featuring the famous Ganga Pooje river ritual and authentic Pandi Curry feasts.",
+    location: "Evolve Back, Chikkana Halli Estate, Coorg, Karnataka",
+    category: "Nature",
+    tier: "ENHANCED",
+    durationDays: 2,
+    religion: "Regional / Cultural",
+    region: "Karnataka",
+    community: "Kodava",
+    capacity: 10,
+    pricePerGuest: 249,
+    status: "PUBLISHED",
+    featured: false,
+    sponsored: false,
+    isDemo: true,
+    hostCoupleName: "Bopanna & Kaveri Muthappa",
+    hostEmail: "host_w13@weddingwithindia.com",
+    hostAvatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80",
+    mainImageUrl: "https://images.unsplash.com/photo-1544644181-1484b3fdfc62?w=1200&q=80",
+    theme: "Kodava Martial Grace & Coffee Fragrance",
+    dressCode: "Kupya Chele / Kodagu Saree",
+    ethnicity: "Kodava",
+    events: [
+      { name: "Day 1: Oorukooduva Family Dinner", description: "Welcome feast under canopy of tall shade trees.", startTime: "18:00", endTime: "22:00", dayOffset: 0 },
+      { name: "Day 2: Dampathi Muhurtham & Ganga Pooje", description: "Sacred Kodava ceremony without priests, led by village elders.", startTime: "10:00", endTime: "15:00", dayOffset: 1 }
+    ],
+    traditions: [
+      { name: "Dampathi Muhurtham", description: "Elders bless couple directly with rice shower." },
+      { name: "Ganga Pooje", description: "Bride draws water from well and balances brass pots." }
+    ]
+  },
+  {
+    id: "w16",
+    slug: "mumbai-skyline-rooftop-wedding",
+    title: "Mumbai Marine Drive Rooftop Wedding",
+    description: "A chic 2-day celebration at The Taj Mahal Palace, Mumbai featuring Arabian Sea sunset views, contemporary cocktail reception, and fine dining.",
+    location: "The Taj Mahal Palace, Colaba, Mumbai",
+    category: "Destination",
+    tier: "ENHANCED",
+    durationDays: 2,
+    religion: "Interfaith / Multicultural",
+    region: "Maharashtra",
+    community: "Cosmopolitan Mumbai",
+    capacity: 12,
+    pricePerGuest: 249,
+    status: "PUBLISHED",
+    featured: false,
+    sponsored: false,
+    isDemo: true,
+    hostCoupleName: "Rohan & Rhea Mehta",
+    hostEmail: "host_w16@weddingwithindia.com",
+    hostAvatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&q=80",
+    mainImageUrl: "https://images.unsplash.com/photo-1566552881560-0be862a7c445?w=1200&q=80",
+    theme: "Art Deco Chic & Sea Breeze",
+    dressCode: "Black Tie / Indo-Western Fusion",
+    ethnicity: "Urban Cosmopolitan",
+    events: [
+      { name: "Day 1: Gateway of India Sunset Soiree", description: "Rooftop gathering overlooking Arabian Sea.", startTime: "18:30", endTime: "22:30", dayOffset: 0 },
+      { name: "Day 2: Grand Ballroom Reception & Dinner", description: "Modern fusion vows and ballroom banquet.", startTime: "19:00", endTime: "23:45", dayOffset: 1 }
+    ],
+    traditions: [
+      { name: "Seafront Toast", description: "Champagne toast as the Sun sets behind the Gateway of India." },
+      { name: "Indo-Western Fusion Vows", description: "Bespoke ceremony celebrating diverse heritages." }
+    ]
+  },
+  {
+    id: "w20",
+    slug: "rajasthan-desert-camp-wedding",
+    title: "Rajasthan Desert Camp Night Wedding",
+    description: "A desert celebration in the golden dunes of Jaisalmer across 2 days, featuring camel caravans, Kalbelia fire dancers, and bonfire banquets under starry skies.",
+    location: "Suryagarh Desert Resort, Jaisalmer, Rajasthan",
+    category: "Destination",
+    tier: "ENHANCED",
+    durationDays: 2,
+    religion: "Hindu",
+    region: "Rajasthan",
+    community: "Thar Desert Rajput",
+    capacity: 12,
+    pricePerGuest: 249,
+    status: "PUBLISHED",
+    featured: false,
+    sponsored: false,
+    isDemo: true,
+    hostCoupleName: "Yuvraj & Trishala Bhati",
+    hostEmail: "host_w20@weddingwithindia.com",
+    hostAvatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&q=80",
+    mainImageUrl: "https://images.unsplash.com/photo-1518548419970-58e3b4079ab2?w=1200&q=80",
+    theme: "Golden Oasis Dunes",
+    dressCode: "Desert Royal / Vibrant Bandhej",
+    ethnicity: "Rajasthani",
+    events: [
+      { name: "Day 1: Thar Sunset Caravan & Welcome", description: "Camel caravan arrival and folk dance around dunes.", startTime: "16:30", endTime: "21:00", dayOffset: 0 },
+      { name: "Day 2: Desert Fort Pheras & Bonfire Feast", description: "Vows in illuminated sandstone courtyard and feast.", startTime: "17:00", endTime: "23:00", dayOffset: 1 }
+    ],
+    traditions: [
+      { name: "Dune Caravan", description: "Spectacular guest caravan to desert pavilion." },
+      { name: "Kalbelia Fire Dance", description: "Ancient Thar desert folk fire dance." }
+    ]
+  },
+  {
+    id: "w22",
+    slug: "ahmedabad-heritage-pol-wedding",
+    title: "Ahmedabad Heritage Pol Haveli Wedding",
+    description: "A traditional Gujarati Jain wedding in a 300-year-old carved wooden haveli across 2 days, featuring vibrant Garba Raas and grand Gujarati Thalis.",
+    location: "The House of MG, Old Ahmedabad, Gujarat",
+    category: "Traditional",
+    tier: "ENHANCED",
+    durationDays: 2,
+    religion: "Jain",
+    region: "Gujarat",
+    community: "Gujarati Jain",
+    capacity: 8,
+    pricePerGuest: 249,
+    status: "PUBLISHED",
+    featured: false,
+    sponsored: false,
+    isDemo: true,
+    hostCoupleName: "Chirag & Mansi Shah",
+    hostEmail: "host_w22@weddingwithindia.com",
+    hostAvatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&q=80",
+    mainImageUrl: "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=1200&q=80",
+    theme: "UNESCO Pol Heritage Grace",
+    dressCode: "Bandhani / Chaniya Choli / Kurta Kediya",
+    ethnicity: "Gujarati Jain",
+    events: [
+      { name: "Day 1: Heritage Pol Garba & Raas Night", description: "High-energy circle dance with sticks in open courtyard.", startTime: "19:00", endTime: "23:00", dayOffset: 0 },
+      { name: "Day 2: Sacred Jain Vivaha & Thali Feast", description: "Auspicious wedding vows and pure vegetarian Jain Thali.", startTime: "09:30", endTime: "15:00", dayOffset: 1 }
+    ],
+    traditions: [
+      { name: "Garba Raas", description: "Traditional Gujarati circle dance celebrating union." },
+      { name: "Pokhanu Welcome", description: "Joyous mother-in-law welcome at the entrance." }
+    ]
+  },
+  {
+    id: "w9",
+    slug: "andaman-island-tropical-wedding",
+    title: "Andaman Islands Tropical Beach Wedding",
+    description: "An exotic island wedding on Havelock Island across 2 days, featuring sunset beach vows, seafood barbecues, and clear coral coastlines.",
+    location: "Taj Exotica Resort & Spa, Havelock Island, Andaman",
+    category: "Beach",
+    tier: "ENHANCED",
+    durationDays: 2,
+    religion: "Interfaith / Multicultural",
+    region: "Andaman and Nicobar Islands",
+    community: "Coastal Island",
+    capacity: 8,
+    pricePerGuest: 249,
+    status: "PUBLISHED",
+    featured: false,
+    sponsored: false,
+    isDemo: true,
+    hostCoupleName: "Varun & Tanya D'Souza",
+    hostEmail: "host_w9@weddingwithindia.com",
+    hostAvatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80",
+    mainImageUrl: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1200&q=80",
+    theme: "Emerald Waters & Tropical Palms",
+    dressCode: "Linen Beach Formal / Island Chic",
+    ethnicity: "Coastal Island",
+    events: [
+      { name: "Day 1: Sunset Beach Vows & Barbecue", description: "Sunset vows on white sands with fresh tropical barbecue.", startTime: "16:30", endTime: "21:30", dayOffset: 0 },
+      { name: "Day 2: Island Morning Coral Excursion & Brunch", description: "Reef boat excursion and farewell brunch.", startTime: "09:30", endTime: "13:30", dayOffset: 1 }
+    ],
+    traditions: [
+      { name: "Beachside Ring Vows", description: "Matrimonial blessing on the secluded coastline." },
+      { name: "Island Coconut Toast", description: "Traditional fresh coconut water toast to new beginnings." }
+    ]
+  },
+  {
+    id: "w8",
+    slug: "tamil-brahmin-wedding-madurai",
+    title: "Tamil Brahmin Madurai Meenakshi Wedding",
+    description: "A sacred 1-day Tamil Brahmin wedding in Madurai featuring morning Vratham prayers, Oonjal swing ceremonies, Mangalya Dharanam, and banana leaf Ela Sadya.",
+    location: "Heritage Madurai, Madurai, Tamil Nadu",
+    category: "Traditional",
+    tier: "STANDARD",
+    durationDays: 1,
+    religion: "Hindu",
+    region: "Tamil Nadu",
+    community: "Tamil Brahmin",
+    capacity: 8,
+    pricePerGuest: 149,
+    status: "PUBLISHED",
+    featured: false,
+    sponsored: false,
+    isDemo: true,
+    hostCoupleName: "Karthik & Deepa Iyer",
+    hostEmail: "host_w8@weddingwithindia.com",
+    hostAvatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80",
+    mainImageUrl: "https://images.unsplash.com/photo-1582510003544-4d00b7f74220?w=1200&q=80",
+    theme: "Dravidian Temple Grace",
+    dressCode: "Kanchipuram Silk Saree / Veshti Dhoti",
+    ethnicity: "Tamil Brahmin",
+    events: [
+      { name: "Day 1: Oonjal Swing & Mangalya Dharanam", description: "Swing ritual, tying of sacred Thali thread, and traditional Ela Sadya.", startTime: "07:30", endTime: "14:30", dayOffset: 0 }
+    ],
+    traditions: [
+      { name: "Mangalya Dharanam", description: "Sacred tying of the golden Thali at auspicious Muhurtham." },
+      { name: "Oonjal Swing", description: "Joyous singing and swinging of couple by family women." }
+    ]
+  },
+  {
+    id: "w11",
+    slug: "mughal-garden-wedding-agra",
+    title: "Mughal Garden Wedding at Agra",
+    description: "A 1-day garden wedding in Agra overlooking the Taj Mahal, featuring Shehnai recitals, Mughal courtly banquets, and sunset nuptials.",
+    location: "The Oberoi Amarvilas, Agra, Uttar Pradesh",
+    category: "Destination",
+    tier: "STANDARD",
+    durationDays: 1,
+    religion: "Interfaith / Multicultural",
+    region: "Uttar Pradesh",
+    community: "Mughal Heritage",
+    capacity: 8,
+    pricePerGuest: 149,
+    status: "PUBLISHED",
+    featured: false,
+    sponsored: false,
+    isDemo: true,
+    hostCoupleName: "Arman & Sara Qureshi",
+    hostEmail: "host_w11@weddingwithindia.com",
+    hostAvatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80",
+    mainImageUrl: "https://images.unsplash.com/photo-1524492412937-b28074a5d7da?w=1200&q=80",
+    theme: "Mughal Architecture & Monumental Romance",
+    dressCode: "Chikankari Kurta / Pastel Formal",
+    ethnicity: "Mughal Heritage",
+    events: [
+      { name: "Day 1: Taj View Sunset Nuptials & Banquet", description: "Sunset vows on marble terrace followed by Awadhi dinner.", startTime: "16:00", endTime: "22:00", dayOffset: 0 }
+    ],
+    traditions: [
+      { name: "Attar Welcome", description: "Fragrant rose and sandalwood attar greeting." },
+      { name: "Awadhi Dastarkhwan", description: "Centuries-old slow-cooked Lucknowi banquet." }
+    ]
+  },
+  {
+    id: "w19",
+    slug: "pondicherry-french-quarter-wedding",
+    title: "Pondicherry French Quarter Wedding",
+    description: "A Franco-Tamil heritage 1-day wedding in Pondicherry's French Quarter, featuring villa courtyard vows and Franco-Tamil seafood feasts.",
+    location: "La Villa & Palais de Mahe, Pondicherry",
+    category: "Destination",
+    tier: "STANDARD",
+    durationDays: 1,
+    religion: "Regional / Cultural",
+    region: "Pondicherry",
+    community: "Franco-Tamil",
+    capacity: 6,
+    pricePerGuest: 149,
+    status: "PUBLISHED",
+    featured: false,
+    sponsored: false,
+    isDemo: true,
+    hostCoupleName: "Pierre & Lakshmi Gautier",
+    hostEmail: "host_w19@weddingwithindia.com",
+    hostAvatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80",
+    mainImageUrl: "https://images.unsplash.com/photo-1533929736458-ca588d08c8be?w=1200&q=80",
+    theme: "Franco-Tamil Coastal Heritage",
+    dressCode: "Resort Chic / Pastel Linen",
+    ethnicity: "Franco-Tamil",
+    events: [
+      { name: "Day 1: French Villa Nuptials & Fusion Dinner", description: "Courtyard ceremony followed by Franco-Tamil seafood banquet.", startTime: "16:00", endTime: "22:00", dayOffset: 0 }
+    ],
+    traditions: [
+      { name: "Franco-Tamil Blessing", description: "Blended cross-cultural wedding vows." },
+      { name: "Courtyard Soiree", description: "Charming heritage villa cocktail reception." }
+    ]
+  },
+  {
+    id: "w5",
+    slug: "varanasi-ganges-spiritual-wedding",
+    title: "Varanasi Ganges Spiritual Union",
+    description: "A sacred 1-day spiritual union on the Ghats of Varanasi, featuring Vedic chanting by senior priests, sunset boat rides, and the grand Ganga Aarti.",
+    location: "BrijRama Palace, Darbhanga Ghat, Varanasi, Uttar Pradesh",
+    category: "Traditional",
+    tier: "STANDARD",
+    durationDays: 1,
+    religion: "Hindu",
+    region: "Uttar Pradesh",
+    community: "Kashi Brahmin",
+    capacity: 8,
+    pricePerGuest: 149,
+    status: "PUBLISHED",
+    featured: false,
+    sponsored: false,
+    isDemo: true,
+    hostCoupleName: "Aalok & Shambhavi Mishra",
+    hostEmail: "host_w5@weddingwithindia.com",
+    hostAvatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80",
+    mainImageUrl: "https://images.unsplash.com/photo-1561361513-2d000a50f0dc?w=1200&q=80",
+    theme: "Ancient Spiritual Sacred Vows",
+    dressCode: "Traditional Benarasi Silk / Dhoti Kurta",
+    ethnicity: "Kashi Heritage",
+    events: [
+      { name: "Day 1: Ganga Aarti & Vedic Ghat Ceremony", description: "Sacred fire vows on riverside palace terrace with evening Aarti.", startTime: "15:00", endTime: "21:30", dayOffset: 0 }
+    ],
+    traditions: [
+      { name: "Maha Aarti Participation", description: "Participating in the divine Ganga evening lamp ceremony." },
+      { name: "Vedic Chanting", description: "Ancient Sanskrit mantras chanted by hereditary priests." }
+    ]
+  }
+];
+
 async function seedMasterData() {
   console.log("==================================================");
   console.log("  WeddingWithIndia — Master Database Seeder");
   console.log("==================================================\n");
 
   try {
-    console.log("[seed] Checking existing database state...");
-    const existingWeddings = await prisma.wedding.count();
-    if (existingWeddings > 0) {
-      console.log(`ℹ️ Database already contains ${existingWeddings} wedding listing(s). Refreshing seed data...\n`);
-    }
-
-    // ------------------------------------------------------------------------
-    // 1. CREATE RBAC DEMO ACCOUNTS
-    // ------------------------------------------------------------------------
     console.log("1. Seeding Core RBAC User Accounts...");
 
     // Super Admin
@@ -64,974 +786,9 @@ async function seedMasterData() {
     });
     console.log(`   ✓ Admin: ${admin.email} (${admin.id})`);
 
-    // Primary Host Couple
-    const hostUser = await prisma.user.upsert({
-      where: { email: "host@weddingwithindia.com" },
-      update: { role: "COUPLE", status: "ACTIVE" },
-      create: {
-        clerkUserId: "user_host_seed",
-        email: "host@weddingwithindia.com",
-        name: "Devika & Kaber Singhania",
-        role: "COUPLE",
-        status: "ACTIVE",
-        avatar: "https://images.unsplash.com/photo-1615966650071-855b15f29ad1?w=400&q=80",
-      },
-    });
-    const hostProfile = await prisma.coupleProfile.upsert({
-      where: { userId: hostUser.id },
-      update: {},
-      create: {
-        userId: hostUser.id,
-        weddingDate: new Date("2026-11-18"),
-        weddingLocation: "Umaid Bhawan Palace, Jodhpur",
-        expectedGuests: 500,
-        languagesSpoken: "English, Hindi, Marwari",
-        photographyRules: "Allowed in designated areas",
-        familyBio: "The Singhania family welcomes global travelers to experience royal Marwari hospitality and centuries-old wedding traditions.",
-      },
-    });
-    console.log(`   ✓ Host Couple: ${hostUser.email} (Profile ID: ${hostProfile.id})`);
+    console.log("\n2. Seeding 21 Authoritative Multi-Day Celebrations in Database...");
 
-    // Traveler (Guest)
-    const guestUser = await prisma.user.upsert({
-      where: { email: "guest@weddingwithindia.com" },
-      update: { role: "TRAVELER", status: "ACTIVE" },
-      create: {
-        clerkUserId: "user_guest_seed",
-        email: "guest@weddingwithindia.com",
-        name: "Sarah & James Whitmore",
-        role: "TRAVELER",
-        status: "ACTIVE",
-        avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&q=80",
-      },
-    });
-    const guestProfile = await prisma.travelerProfile.upsert({
-      where: { userId: guestUser.id },
-      update: {},
-      create: {
-        userId: guestUser.id,
-        fullName: "Sarah Whitmore",
-        country: "United Kingdom",
-        language: "English",
-        interests: "Heritage architecture, Indian culinary arts, classical dance",
-        budget: "25000",
-        preferences: "Royal & Traditional",
-        foodPreferences: "Vegetarian Preferred",
-        accessibility: "None",
-      },
-    });
-    console.log(`   ✓ Traveler (Guest): ${guestUser.email} (Profile ID: ${guestProfile.id})`);
-
-    // Agent
-    const agentUser = await prisma.user.upsert({
-      where: { email: "agent@weddingwithindia.com" },
-      update: { role: "AGENT", status: "ACTIVE" },
-      create: {
-        clerkUserId: "user_agent_seed",
-        email: "agent@weddingwithindia.com",
-        name: "Amir Hussain (Royal Travel Corp)",
-        role: "AGENT",
-        status: "ACTIVE",
-        avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80",
-      },
-    });
-    const agentProfile = await prisma.agentProfile.upsert({
-      where: { userId: agentUser.id },
-      update: {},
-      create: {
-        userId: agentUser.id,
-        organization: "Royal India Hospitality & Luxury Travel",
-        country: "United Arab Emirates",
-        experienceYears: 8,
-        targetAudience: "High-net-worth cultural enthusiasts",
-        verifiedChecks: true,
-        referralCode: "WWI-ROYAL-AGENT",
-      },
-    });
-    console.log(`   ✓ Agent: ${agentUser.email} (Referral Code: ${agentProfile.referralCode})`);
-
-    // Coordinator
-    const coordinatorUser = await prisma.user.upsert({
-      where: { email: "coordinator@weddingwithindia.com" },
-      update: { role: "ADMIN", status: "ACTIVE" },
-      create: {
-        clerkUserId: "user_coordinator_seed",
-        email: "coordinator@weddingwithindia.com",
-        name: "Rajesh Mehta (Lead On-Site Coordinator)",
-        role: "ADMIN",
-        status: "ACTIVE",
-        avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&q=80",
-      },
-    });
-    console.log(`   ✓ Coordinator: ${coordinatorUser.email} (${coordinatorUser.id})`);
-
-    // ------------------------------------------------------------------------
-    // 2. SEED USER VERIFICATIONS
-    // ------------------------------------------------------------------------
-    console.log("\n2. Seeding Verification Records...");
-    const usersToVerify = [superAdmin, admin, hostUser, guestUser, agentUser, coordinatorUser];
-    for (const u of usersToVerify) {
-      await prisma.verification.upsert({
-        where: { userId: u.id },
-        update: { status: "APPROVED" },
-        create: {
-          userId: u.id,
-          status: "APPROVED",
-          phoneVerified: true,
-          emailVerified: true,
-          govtIdUrl: "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=600&q=80",
-          selfieUrl: u.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&q=80",
-          notes: "Auto-verified via Production Bootstrap Suite.",
-          reviewedBy: superAdmin.id,
-        },
-      });
-    }
-    console.log(`   ✓ Verified ${usersToVerify.length} user accounts.`);
-
-    // ------------------------------------------------------------------------
-    // 3. SEED DEMO WEDDING LISTINGS & CONNECTED CONTENT
-    // ------------------------------------------------------------------------
-    console.log("\n3. Seeding Connected Demo Weddings & Events...");
-
-    const demoWeddingsData = [
-      {
-        id: "w1",
-        slug: "grand-maharaja-wedding",
-        title: "The Grand Maharaja Wedding",
-        description: "Experience royal Marwari grandeur at Umaid Bhawan Palace, Jodhpur. Enjoy authentic Sangeet performances, sacred Phera rituals, and a royal procession through the Blue City.",
-        location: "Umaid Bhawan Palace, Jodhpur, Rajasthan",
-        category: "Royal",
-        religion: "Hindu",
-        region: "Rajasthan",
-        community: "Marwari Rajput",
-        foodContext: "Royal Marwari Pure Vegetarian Thali: Dal Baati Churma, Gatte Ki Sabzi, Ker Sangri, Pyaaz Kachori, Ghevar, and Malpua cooked in pure Desi Ghee.",
-        dressExpectations: "Royal Traditional Attire: Vibrant Lehengas / Bandhani Sarees for women; Sherwanis with Rajasthani Safa (Turban) for men.",
-        guestRules: "Guests join the Ghoomar dance, wear colorful Rajasthani turbans, participate in the lively Baraat procession, and observe the sacred Mandap Pheras.",
-        etiquetteNotes: "Remove shoes before entering sacred Mandap areas. Rajasthani Safa turbans tied for all international guests upon arrival.",
-        date: new Date("2026-11-18"),
-        pricePerGuest: 17999,
-        capacity: 0,
-        mainImageUrl: "https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=1200&q=80",
-        status: "PUBLISHED",
-        featured: true,
-        sponsored: true,
-        isDemo: true,
-        hostCoupleName: "Devika & Kaber Singhania",
-        hostEmail: "host_w1@weddingwithindia.com",
-        hostAvatar: "https://images.unsplash.com/photo-1615966650071-855b15f29ad1?w=400&q=80",
-        theme: "Royal Marwari Heritage",
-        dressCode: "Festive Indian Royal Attire / Black Tie",
-        ethnicity: "Marwari Rajput",
-        events: [
-          { name: "Tel Baan & Sangeet Night", description: "Turmeric oil ceremony followed by Ghoomar folk dance, royal musicians, and buffet dinner.", startTime: "17:30", endTime: "22:30" },
-          { name: "Royal Baraat & Mandap Pheras", description: "Groom's grand arrival on a decorated horse/elephant with brass band, followed by Saptapadi (7 sacred vows around holy fire).", startTime: "10:00", endTime: "14:00" },
-          { name: "Rajwada Gala Banquet", description: "Royal candlelit courtyard dinner with puppet shows, Manganiyar folk singers, and fireworks.", startTime: "19:00", endTime: "23:00" }
-        ],
-        traditions: [
-          { name: "Saptapadi (7 Pheras)", description: "Seven sacred vows taken together around the holy Agni fire." },
-          { name: "Baraat Procession", description: "Groom's grand arrival accompanied by brass band and dancing family." }
-        ],
-      },
-      {
-        id: "w2",
-        slug: "lakeside-rajput-celebration",
-        title: "Lakeside Rajput Celebration",
-        description: "A romantic wedding on Lake Pichola, Udaipur featuring sunset boat processions, classical shehnai recitals, and lakeside fine dining under the stars.",
-        location: "Jagmandir Island Palace, Udaipur, Rajasthan",
-        category: "Royal",
-        religion: "Hindu",
-        region: "Rajasthan",
-        community: "Mewari Rajput",
-        foodContext: "Imperial Mewari Banquet: Royal Mewari Thali, Govind Gatta, Ker Sangri, and Rabri Ghevar.",
-        dressExpectations: "Traditional Elegant Ethnic: Silk Sarees / Lehengas; Bandhgala Suits or Kurta Pajama for men.",
-        guestRules: "Guests join the sunset boat procession across Lake Pichola, observe the lakefront Pheras, and attend the candlelit island feast.",
-        etiquetteNotes: "Life jackets provided for boat transfers. Remove shoes near sacred Mandap fire.",
-        date: new Date("2026-12-04"),
-        pricePerGuest: 14999,
-        capacity: 0,
-        mainImageUrl: "https://images.unsplash.com/photo-1591604466107-ec97de577aff?w=1200&q=80",
-        status: "PUBLISHED",
-        featured: true,
-        sponsored: false,
-        isDemo: true,
-        hostCoupleName: "Aditya & Sanjana Rathore",
-        hostEmail: "host_w2@weddingwithindia.com",
-        hostAvatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&q=80",
-        theme: "Lakeside Romance & Heritage",
-        dressCode: "Traditional Elegant Ethnic",
-        ethnicity: "Mewari Rajput",
-        events: [
-          { name: "Lake Pichola Sunset Boat Procession", description: "Royal boat procession across Lake Pichola with Shehnai recitals.", startTime: "17:00", endTime: "19:00" },
-          { name: "Lakeside Pheras & Saptapadi", description: "Vedic vows by the lake under illuminated island arches.", startTime: "19:30", endTime: "21:30" },
-          { name: "Island Palace Banquet", description: "Fine dining banquet under the stars with Mewari Ghoomar dance.", startTime: "21:30", endTime: "23:30" }
-        ],
-        traditions: [
-          { name: "Sunset Boat Procession", description: "Arrival across calm waters of Lake Pichola." },
-          { name: "Ghoomar Performance", description: "Imperial Rajasthani dance by court artists." }
-        ],
-      },
-      {
-        id: "w3",
-        slug: "kerala-backwater-matrimony",
-        title: "Kerala Backwater Matrimony",
-        description: "Serene backwater matrimony amidst palm groves in Alleppey. Features traditional Kerala Sadya on banana leaves and Kathakali cultural performances.",
-        location: "Kumarakom Lake Resort, Alleppey, Kerala",
-        category: "Nature",
-        religion: "Hindu",
-        region: "Kerala",
-        community: "Malayali Hindu",
-        foodContext: "Traditional Kerala Ela Sadya: 24-item pure vegetarian feast served on fresh banana leaves (Avial, Thoran, Sambar, Payasam).",
-        dressExpectations: "Traditional Kerala Wear: Kasavu Saree (white with gold border) for women; Mundu (dhoti) with shirt for men.",
-        guestRules: "Guests attend the twilight Kathakali performance, observe the Thalikettu ceremony, and eat the traditional Ela Sadya with hands.",
-        etiquetteNotes: "Eat with your right hand on the banana leaf. Fold the leaf towards you after finishing.",
-        date: new Date("2027-01-14"),
-        pricePerGuest: 11499,
-        capacity: 0,
-        mainImageUrl: "https://images.unsplash.com/photo-1593693397690-362cb9666fc2?w=1200&q=80",
-        status: "PUBLISHED",
-        featured: false,
-        sponsored: false,
-        isDemo: true,
-        hostCoupleName: "Karan & Meera Nambiar",
-        hostEmail: "host_w3@weddingwithindia.com",
-        hostAvatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80",
-        theme: "Backwater Serenade",
-        dressCode: "Traditional Kerala Kasavu Saree / Mundu",
-        ethnicity: "Malayali Hindu",
-        events: [
-          { name: "Kathakali & Backwater Evening", description: "Twilight Kathakali dance storytelling amidst coconut groves.", startTime: "17:30", endTime: "20:30" },
-          { name: "Thalikettu & Pudamuri", description: "Sacred tying of the Thali thread and gifting of bridal cloth.", startTime: "09:00", endTime: "11:30" },
-          { name: "Banana Leaf Ela Sadya Feast", description: "24-item vegetarian feast served on green plantain leaves.", startTime: "12:00", endTime: "14:30" }
-        ],
-        traditions: [
-          { name: "Thalikettu", description: "Sacred tying of the Thali string symbolizing eternal marital bond." },
-          { name: "Ela Sadya", description: "Traditional 24-course feast served on fresh banana leaves." }
-        ],
-      },
-      {
-        id: "w4",
-        slug: "goan-sunset-beach-wedding",
-        title: "Goan Sunset Beach Nuptials",
-        description: "A vibrant beachfront celebration on Mandrem Beach with sunset ocean views, live Goan brass music, fresh seafood banquets, and floral ceremony arches.",
-        location: "Riva Beach Resort, Mandrem, Goa",
-        category: "Beach",
-        religion: "Christian",
-        region: "Goa",
-        community: "Goan Catholic",
-        foodContext: "Indo-Portuguese Goan Feast: Pork Sorpotel, Chicken Xacuti, Prawn Balchão, Sannas, Bebinca dessert, and local Goan wine.",
-        dressExpectations: "Beach Formal / Pastel Linen: Suits/Blazers for men; Elegant Gowns or Pastel Sarees for women.",
-        guestRules: "Guests join the Roce coconut milk evening, observe the Church Nuptial Mass & Vows, and dance at the sunset beach reception.",
-        etiquetteNotes: "Maintain quiet respect inside the Church during Nuptial Mass prayers. Flash photography restricted during vows.",
-        date: new Date("2027-02-12"),
-        pricePerGuest: 12999,
-        capacity: 0,
-        mainImageUrl: "https://images.unsplash.com/photo-1519741497674-611481863552?w=1200&q=80",
-        status: "PUBLISHED",
-        featured: true,
-        sponsored: false,
-        isDemo: true,
-        hostCoupleName: "Rohan & Alisha D'Souza",
-        hostEmail: "host_w4@weddingwithindia.com",
-        hostAvatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&q=80",
-        theme: "Tropical Beach Romance",
-        dressCode: "Beach Formal / Pastel Linen",
-        ethnicity: "Goan Catholic",
-        events: [
-          { name: "Roce & Henna Sunset Party", description: "Coconut milk blessing (Roce), acoustic guitar music, and beach henna art.", startTime: "17:00", endTime: "20:30" },
-          { name: "Church Nuptial Mass & Sacred Vows", description: "Catholic marriage mass in a heritage church with organ choir.", startTime: "15:30", endTime: "17:30" },
-          { name: "Sunset Beach Reception & Band", description: "Live Goan brass band, first dance, cake cutting, and seafood dinner.", startTime: "18:30", endTime: "23:30" }
-        ],
-        traditions: [
-          { name: "Roce Blessing", description: "Anointing couple with fresh coconut milk for prosperity." },
-          { name: "Nuptial Mass", description: "Church matrimony with sacred organ hymns and ring exchange." }
-        ],
-      },
-      {
-        id: "w5",
-        slug: "varanasi-ganges-spiritual-union",
-        title: "Varanasi Ganges Spiritual Union",
-        description: "A sacred heritage wedding overlooking the holy Ganges River at Darbhanga Ghat. Features private Ganga Aarti, classical sitar recitals, and traditional Vedic chants.",
-        location: "BrijRama Palace, Darbhanga Ghat, Varanasi, Uttar Pradesh",
-        category: "Traditional",
-        religion: "Hindu",
-        region: "Uttar Pradesh",
-        community: "Vedic Hindu",
-        foodContext: "Sattvic Banarasi Feast: Pure vegetarian (no onion/garlic), Kachori Sabzi, Banarasi Thali, Rabri Jalebi, and Kulhad Chai.",
-        dressExpectations: "Traditional Banarasi Silk: Silk Sarees / Dupattas for women; Kurta Pajama for men.",
-        guestRules: "Guests attend private Ganga Aarti by boat, observe Vedic sunrise Pheras at Darbhanga Ghat, and enjoy classical Sitar recitals.",
-        etiquetteNotes: "Strictly vegetarian & alcohol-free. Remove shoes at Ghat mandap and riverfront shrines.",
-        date: new Date("2027-03-05"),
-        pricePerGuest: 10999,
-        capacity: 0,
-        mainImageUrl: "https://images.unsplash.com/photo-1544124499-58912cbddaad?w=1200&q=80",
-        status: "PUBLISHED",
-        featured: false,
-        sponsored: false,
-        isDemo: true,
-        hostCoupleName: "Shivam & Priya Tripathi",
-        hostEmail: "host_w5@weddingwithindia.com",
-        hostAvatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&q=80",
-        theme: "Spiritual Ganges Heritage",
-        dressCode: "Traditional Banarasi Silk",
-        ethnicity: "Vedic Hindu",
-        events: [
-          { name: "Private Ganges Boat Aarti", description: "Sunset boat ride to witness brass lamp Aarti on the Ganges.", startTime: "17:30", endTime: "20:00" },
-          { name: "Sunrise Ghat Vedic Pheras", description: "Auspicious morning Saptapadi vows with Vedic chanting overlooking the river.", startTime: "06:30", endTime: "09:30" },
-          { name: "Sattvic Banarasi Feast", description: "Traditional Sattvic vegetarian thali served in palace courtyard.", startTime: "12:00", endTime: "14:30" }
-        ],
-        traditions: [
-          { name: "Ganga Aarti Blessing", description: "Fire lamp offering to the sacred Ganges River." },
-          { name: "Vedic Saptapadi", description: "Ancient Sanskrit chanting during 7 vows around the holy fire." }
-        ],
-      },
-      {
-        id: "w6",
-        slug: "punjabi-amritsar-golden-wedding",
-        title: "Amritsar Golden Temple Wedding",
-        description: "A sacred Sikh Anand Karaj wedding in Amritsar, followed by high-energy Dhol drumming, Bhangra dances, and authentic Punjabi feasts.",
-        location: "Welcomhotel by ITC Hotels, Amritsar, Punjab",
-        category: "Traditional",
-        religion: "Sikh",
-        region: "Punjab",
-        community: "Punjabi Sikh",
-        foodContext: "Punjabi Royal & Sacred Cuisine: Amritsari Kulcha, Dal Makhani, Paneer Tikka, Sarson Da Saag, Jalebi, and Kadah Prasad.",
-        dressExpectations: "Vibrant Punjabi Attire: Salwar Kameez / Lehenga for women; Kurta Pajama with Turban for men. MANDATORY head covering inside Gurdwara.",
-        guestRules: "Guests join the Jaggo night, attend the solemn Anand Karaj in the Gurdwara as respectful observers, and sit for Guru Ka Langar.",
-        etiquetteNotes: "MANDATORY: Remove shoes and cover head (Rumaal provided) before entering Gurdwara. Tobacco and alcohol strictly prohibited on Gurdwara grounds.",
-        date: new Date("2027-04-12"),
-        pricePerGuest: 13999,
-        capacity: 0,
-        mainImageUrl: "https://images.unsplash.com/photo-1571536802807-30451e3955d8?w=1200&q=80",
-        status: "PUBLISHED",
-        featured: false,
-        sponsored: false,
-        isDemo: true,
-        hostCoupleName: "Gurpreet & Harleen Dhillon",
-        hostEmail: "host_w6@weddingwithindia.com",
-        hostAvatar: "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=400&q=80",
-        theme: "Sacred Punjabi Heritage",
-        dressCode: "Punjabi Kurta Pajama / Turban / Salwar Kameez",
-        ethnicity: "Punjabi Sikh",
-        events: [
-          { name: "Jaggo & Sangeet Night", description: "Lively Punjabi folk dance, dhol drumming, and Jaggo procession.", startTime: "18:00", endTime: "23:00" },
-          { name: "Milni & Anand Karaj", description: "Family greetings (Milni) followed by sacred Anand Karaj in Gurdwara around Sri Guru Granth Sahib Ji.", startTime: "09:00", endTime: "12:30" },
-          { name: "Guru Ka Langar & Reception", description: "Seated vegetarian Langar meal followed by festive afternoon reception.", startTime: "13:00", endTime: "16:00" }
-        ],
-        traditions: [
-          { name: "Laavan (Anand Karaj)", description: "Four sacred hymns binding the couple in spiritual matrimony." },
-          { name: "Guru Ka Langar", description: "Equality community meal served in the Gurdwara." }
-        ],
-      },
-      {
-        id: "w7",
-        slug: "jaipur-havelis-rajwada-wedding",
-        title: "Jaipur Havelis Rajwada Wedding",
-        description: "Royal Shekhawat wedding at Samode Palace, Jaipur. Features elephant Baraat processions, mirror hall sangeets, and candlelit courtyard banquets.",
-        location: "Samode Palace, Jaipur, Rajasthan",
-        category: "Royal",
-        religion: "Hindu",
-        region: "Rajasthan",
-        community: "Rajput Shekhawat",
-        foodContext: "Rajasthani Heritage Feast: Dal Baati Churma, Ker Sangri, Gatte Ki Sabzi, Bajra Roti, and Ghevar.",
-        dressExpectations: "Royal Rajput Wear: Rajasthani Poshak / Lehenga for women; Sherwani & Safa for men.",
-        guestRules: "Guests join the elephant/horse Baraat procession, watch royal Ghoomar dance, and observe palace Mandap Pheras.",
-        etiquetteNotes: "Remove shoes at the Sheesh Mahal mandap. Safa turbans tied for male guests.",
-        date: new Date("2027-05-08"),
-        pricePerGuest: 16499,
-        capacity: 0,
-        mainImageUrl: "https://images.unsplash.com/photo-1599661046827-dacff0c0f09a?w=1200&q=80",
-        status: "PUBLISHED",
-        featured: true,
-        sponsored: false,
-        isDemo: true,
-        hostCoupleName: "Ranveer & Kavya Shekhawat",
-        hostEmail: "host_w7@weddingwithindia.com",
-        hostAvatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&q=80",
-        theme: "Shekhawat Palace Splendor",
-        dressCode: "Rajput Royal Attire",
-        ethnicity: "Rajput Shekhawat",
-        events: [
-          { name: "Sheesh Mahal Sangeet & Ghoomar", description: "Mirror hall music and Ghoomar dance performance.", startTime: "18:00", endTime: "22:30" },
-          { name: "Grand Rajwada Baraat & Pheras", description: "Baraat through palace courtyard followed by Saptapadi.", startTime: "10:30", endTime: "14:00" },
-          { name: "Samode Courtyard Banquet", description: "Candlelit courtyard dinner with Manganiyar musicians.", startTime: "19:30", endTime: "23:00" }
-        ],
-        traditions: [
-          { name: "Rajwada Baraat", description: "Grand royal procession with horses and folk performers." },
-          { name: "Saptapadi Vows", description: "Seven sacred steps around the Agni fire." }
-        ],
-      },
-      {
-        id: "w8",
-        slug: "tamil-brahmin-wedding-madurai",
-        title: "Tamil Brahmin Madurai Meenakshi Wedding",
-        description: "A sacred Tamil Brahmin wedding in Madurai featuring morning Vratham prayers, Oonjal swing ceremonies, Mangalya Dharanam, and authentic banana leaf Ela Sadya.",
-        location: "Heritage Madurai, Madurai, Tamil Nadu",
-        category: "Traditional",
-        religion: "Hindu",
-        region: "Tamil Nadu",
-        community: "Tamil Brahmin",
-        foodContext: "Pure Vegetarian Tamil Brahmin Ela Sadya: Sambar, Rasam, Poriyal, Kootu, Vadai, Paal Payasam, Filter Coffee.",
-        dressExpectations: "Traditional Tamil Attire: Kanchipuram Silk Saree for women; Veshti (Dhoti) with Angavastram shirt for men.",
-        guestRules: "Guests join the Oonjal swing ceremony, observe Mangalya Dharanam, and eat banana leaf Sadya.",
-        etiquetteNotes: "Eat with right hand on banana leaf. Fold leaf towards you after finishing meal.",
-        date: new Date("2027-06-11"),
-        pricePerGuest: 9999,
-        capacity: 0,
-        mainImageUrl: "https://images.unsplash.com/photo-1582510003544-4d00b7f74220?w=1200&q=80",
-        status: "PUBLISHED",
-        featured: false,
-        sponsored: false,
-        isDemo: true,
-        hostCoupleName: "Karthik & Deepa Iyer",
-        hostEmail: "host_w8@weddingwithindia.com",
-        hostAvatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80",
-        theme: "Dravidian Temple Grace",
-        dressCode: "Kanchipuram Silk Saree / Veshti Dhoti",
-        ethnicity: "Tamil Brahmin",
-        events: [
-          { name: "Vratham & Oonjal Ceremony", description: "Morning prayers and swing ceremony with floral garlands.", startTime: "07:00", endTime: "09:30" },
-          { name: "Mangalya Dharanam & Pheras", description: "Tying of Thali thread at auspicious Muhurtham.", startTime: "09:30", endTime: "11:30" },
-          { name: "Traditional Ela Sadya Feast", description: "Pure vegetarian banana leaf banquet.", startTime: "12:00", endTime: "14:30" }
-        ],
-        traditions: [
-          { name: "Mangalya Dharanam", description: "Sacred tying of Thali thread." },
-          { name: "Oonjal Swing", description: "Joyous swing ceremony warding off negative energies." }
-        ],
-      },
-      {
-        id: "w9",
-        slug: "andaman-island-tropical-wedding",
-        title: "Andaman Islands Tropical Wedding",
-        description: "An exotic island wedding on Havelock Island featuring sunset beach vows, seafood barbecues, and coral reef excursions.",
-        location: "Taj Exotica Resort & Spa, Havelock Island, Andaman",
-        category: "Beach",
-        religion: "Interfaith",
-        region: "Other",
-        community: "Coastal Island",
-        foodContext: "Fresh Island Seafood & Tropical Grill: Grilled Lobster, Coconut Fish Curry, Mango Sticky Rice.",
-        dressExpectations: "Tropical Beach Elegant: Linen suits for men; Flowy Maxi dresses or Light Silk Sarees for women.",
-        guestRules: "Guests attend sunset beach vows, join beachside bonfire barbecue, and go on morning coral reef boat trip.",
-        etiquetteNotes: "Respect island marine conservation guidelines. Eco-friendly bio-degradable confetti used.",
-        date: new Date("2027-07-16"),
-        pricePerGuest: 15499,
-        capacity: 0,
-        mainImageUrl: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1200&q=80",
-        status: "PUBLISHED",
-        featured: false,
-        sponsored: false,
-        isDemo: true,
-        hostCoupleName: "Varun & Sneha Roy",
-        hostEmail: "host_w9@weddingwithindia.com",
-        hostAvatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&q=80",
-        theme: "Island Serenity",
-        dressCode: "Linen Formal / Beach Chic",
-        ethnicity: "Coastal Island",
-        events: [
-          { name: "Beachside Sunset Vows", description: "Exchange of marital vows on white sands of Radhanagar Beach.", startTime: "16:30", endTime: "18:30" },
-          { name: "Seafood Barbecue & Fire Dance", description: "Beach bonfire with island musicians and tropical dinner.", startTime: "19:00", endTime: "23:00" }
-        ],
-        traditions: [
-          { name: "Ocean Vows", description: "Personal vows exchanged against the Arabian sea horizon." },
-          { name: "Island Blessing", description: "Floral shell blessing by family elders." }
-        ],
-      },
-      {
-        id: "w10",
-        slug: "bengali-durga-puja-wedding",
-        title: "Kolkata Bengali Heritage Wedding",
-        description: "A traditional Bengali wedding at Rajbari Bawali palace featuring Gaye Holud turmeric ceremonies, Subho Drishti betel leaf reveals, and legendary Bengali sweet banquets.",
-        location: "The Rajbari Bawali, Kolkata, West Bengal",
-        category: "Traditional",
-        religion: "Hindu",
-        region: "West Bengal",
-        community: "Bengali Hindu",
-        foodContext: "Traditional Bengali Bhoj: Chingri Malai Curry, Bhetki Paturi, Kosha Mangsho, Luchi, Mishti Doi, Rosogolla.",
-        dressExpectations: "Bengali Heritage Attire: Red & White Baluchari Saree for women; Kurta with Dhoti for men.",
-        guestRules: "Guests blow conch shells during Subho Drishti, observe Mala Badal, and attend Bou Bhat reception.",
-        etiquetteNotes: "Conch shell sound greetings during auspicious moments.",
-        date: new Date("2027-08-20"),
-        pricePerGuest: 11999,
-        capacity: 0,
-        mainImageUrl: "https://images.unsplash.com/photo-1558431382-27e303142255?w=1200&q=80",
-        status: "PUBLISHED",
-        featured: true,
-        sponsored: false,
-        isDemo: true,
-        hostCoupleName: "Aritra & Pooja Mukherjee",
-        hostEmail: "host_w10@weddingwithindia.com",
-        hostAvatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&q=80",
-        theme: "Bengali Rajbari Nostalgia",
-        dressCode: "Red & White Baluchari Silk Saree / Dhoti Panjabi",
-        ethnicity: "Bengali Hindu",
-        events: [
-          { name: "Gaye Holud (Turmeric Ceremony)", description: "Turmeric application with Rabindra Sangeet music.", startTime: "09:30", endTime: "12:00" },
-          { name: "Subho Drishti & Sampradan", description: "Betel leaf eyes-reveal (Subho Drishti) and garland exchange.", startTime: "18:00", endTime: "21:00" },
-          { name: "Bou Bhat Reception Feast", description: "Groom's family reception with legendary Bengali sweet counter.", startTime: "19:00", endTime: "23:00" }
-        ],
-        traditions: [
-          { name: "Subho Drishti", description: "First auspicious gaze behind betel leaves." },
-          { name: "Mala Badal", description: "Garland exchange three times." }
-        ],
-      },
-      {
-        id: "w11",
-        slug: "mughal-agra-taj-wedding",
-        title: "Mughal Garden Wedding at Agra",
-        description: "A majestic garden celebration overlooking the Taj Mahal, featuring classical Qawwali performances, royal Mughlai cuisine, and lighted fountain displays.",
-        location: "ITC Mughal, Agra, Uttar Pradesh",
-        category: "Royal",
-        religion: "Muslim",
-        region: "Uttar Pradesh",
-        community: "Mughal Heritage",
-        foodContext: "Royal Mughlai & Awadhi Feast: Dum Pukht Biryani, Galouti Kebabs, Shahi Tukda, Sheer Khurma, Firni.",
-        dressExpectations: "Imperial Anarkali / Sharara for women; Sherwani for men. Modest attire for Nikah.",
-        guestRules: "Guests attend Henna/Qawwali evening, observe solemn Nikah vows, and join the royal Walima banquet.",
-        etiquetteNotes: "Remove shoes on prayer carpets. No alcohol during religious solemnization.",
-        date: new Date("2027-09-18"),
-        pricePerGuest: 14499,
-        capacity: 0,
-        mainImageUrl: "https://images.unsplash.com/photo-1564507592333-c60657eea523?w=1200&q=80",
-        status: "PUBLISHED",
-        featured: false,
-        sponsored: false,
-        isDemo: true,
-        hostCoupleName: "Tariq & Zoya Mirza",
-        hostEmail: "host_w11@weddingwithindia.com",
-        hostAvatar: "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=400&q=80",
-        theme: "Mughal Garden Elegance",
-        dressCode: "Imperial Anarkali / Sherwani with Emerald Accents",
-        ethnicity: "Mughal Heritage",
-        events: [
-          { name: "Sufi Qawwali & Henna Evening", description: "Sufi vocal music in garden arches with henna artwork.", startTime: "18:00", endTime: "22:00" },
-          { name: "Nikah Solemnization", description: "Solemn contract by Qazi with Dua blessings.", startTime: "11:00", endTime: "13:00" },
-          { name: "Royal Walima Banquet", description: "Slow-cooked Mughlai feast and classical music.", startTime: "19:00", endTime: "23:00" }
-        ],
-        traditions: [
-          { name: "Iqrar & Qabul Hai", description: "Mutual affirmation of Nikah contract." },
-          { name: "Sufi Qawwali", description: "Spiritual music celebrating union." }
-        ],
-      },
-      {
-        id: "w12",
-        slug: "kashmiri-dal-lake-wedding",
-        title: "Kashmir Dal Lake Houseboat Wedding",
-        description: "Enchanting wedding on Dal Lake houseboats, Srinagar. Floating flower shikaras, traditional Wazwan 36-course feast, and Kahwa tea ceremony.",
-        location: "Luxury Houseboats, Dal Lake, Srinagar, Kashmir",
-        category: "Nature",
-        religion: "Muslim",
-        region: "Kashmir",
-        community: "Kashmiri Muslim",
-        foodContext: "36-Course Kashmiri Wazwan: Rista, Rogan Josh, Tabak Maaz, Gushtaba, Kahwa green tea.",
-        dressExpectations: "Kashmiri Pheran with Tilla embroidery or formal wear. Warm layers recommended.",
-        guestRules: "Guests arrive in flower Shikaras, observe Nikah, and join seated Wazwan feast.",
-        etiquetteNotes: "Wazwan eaten in groups of 4 (Trami). Wash hands at Tash-t-nari.",
-        date: new Date("2027-10-10"),
-        pricePerGuest: 13499,
-        capacity: 0,
-        mainImageUrl: "https://images.unsplash.com/photo-1548013146-72479768bada?w=1200&q=80",
-        status: "PUBLISHED",
-        featured: true,
-        sponsored: false,
-        isDemo: true,
-        hostCoupleName: "Tariq & Bushra Dar",
-        hostEmail: "host_w12@weddingwithindia.com",
-        hostAvatar: "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=400&q=80",
-        theme: "Kashmiri Valley Romance",
-        dressCode: "Traditional Pheran with Tilla Embroidery",
-        ethnicity: "Kashmiri",
-        events: [
-          { name: "Manjha Henna Evening", description: "Henna gathering with Kashmiri Rouf songs.", startTime: "17:00", endTime: "21:00" },
-          { name: "Floating Shikara Baraat & Nikah", description: "Arrival in wooden boats and Nikah vows.", startTime: "10:30", endTime: "13:00" },
-          { name: "Wazwan Feast & Celebration", description: "36-dish feast on copper platters.", startTime: "18:30", endTime: "22:30" }
-        ],
-        traditions: [
-          { name: "Floating Shikara Procession", description: "Lake arrival in houseboats." },
-          { name: "Wazwan Hospitality", description: "Royal 36-course feast." }
-        ],
-      },
-      {
-        id: "w13",
-        slug: "coorg-plantation-wedding",
-        title: "Coorg Coffee Plantation Wedding",
-        description: "A lush highland wedding in the coffee hills of Coorg featuring Kodava sword dances, Dampathi Muhurtham blessings, and estate bonfires.",
-        location: "Evolve Back Resort, Siddapur, Coorg, Karnataka",
-        category: "Nature",
-        religion: "Hindu",
-        region: "Karnataka",
-        community: "Kodava Hindu",
-        foodContext: "Kodava Highland Feast: Pandi Curry, Kadambuttu (steamed rice balls), Bamboo Shoot Curry, Coffee Kheer.",
-        dressExpectations: "Kodava Style Back-Draped Saree for women; Kupya (black tunic) with Peeche dagger for men.",
-        guestRules: "Guests watch Valagaga sword dance, receive Dampathi Muhurtham blessings, and dine in coffee estate.",
-        etiquetteNotes: "Kodava tradition is non-Brahminical; respect unique highland warrior customs.",
-        date: new Date("2027-10-28"),
-        pricePerGuest: 10499,
-        capacity: 0,
-        mainImageUrl: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&q=80",
-        status: "PUBLISHED",
-        featured: false,
-        sponsored: false,
-        isDemo: true,
-        hostCoupleName: "Bopanna & Thanusha Muttappa",
-        hostEmail: "host_w13@weddingwithindia.com",
-        hostAvatar: "https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=400&q=80",
-        theme: "Highland Coffee Estate Serenity",
-        dressCode: "Kodava Style Back-Draped Saree / Kupya",
-        ethnicity: "Kodava Hindu",
-        events: [
-          { name: "Valagaga Sword & Drum Dance", description: "High-energy Kodava drum and dance around bonfire.", startTime: "18:00", endTime: "21:30" },
-          { name: "Dampathi Muhurtham", description: "Blessing ceremony with fresh coffee leaves and holy water.", startTime: "10:00", endTime: "12:30" },
-          { name: "Highland Estate Feast", description: "Kodava culinary feast in coffee grove.", startTime: "13:00", endTime: "15:30" }
-        ],
-        traditions: [
-          { name: "Valagaga Dance", description: "Highland Kodava sword dance." },
-          { name: "Dampathi Muhurtham", description: "Coffee leaf family blessing." }
-        ],
-      },
-      {
-        id: "w14",
-        slug: "hyderabad-nizam-wedding",
-        title: "Hyderabad Nizam Heritage Wedding",
-        description: "An opulent Nizami celebration at Taj Falaknuma Palace, featuring 101-seat dining table banquets, Hyderabadi Dum Biryani, and classical Ghazal performances.",
-        location: "Taj Falaknuma Palace, Hyderabad, Telangana",
-        category: "Royal",
-        religion: "Muslim",
-        region: "Telangana",
-        community: "Hyderabadi Nizam Heritage",
-        foodContext: "Nizam Royal Banquet: Hyderabadi Dum Biryani, Mirchi Ka Salan, Double Ka Meetha, Khubani Ka Meetha.",
-        dressExpectations: "Khada Dupatta or Sharara for women; Sherwani for men.",
-        guestRules: "Guests attend Ghazal night, observe Nikah at Durbar Hall, and dine at 101-seat dining table.",
-        etiquetteNotes: "Strictly formal dress code. Respect palace photography guidelines.",
-        date: new Date("2027-11-12"),
-        pricePerGuest: 18999,
-        capacity: 0,
-        mainImageUrl: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1200&q=80",
-        status: "PUBLISHED",
-        featured: true,
-        sponsored: false,
-        isDemo: true,
-        hostCoupleName: "Zaid & Nusrat Farooqui",
-        hostEmail: "host_w14@weddingwithindia.com",
-        hostAvatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80",
-        theme: "Nizami Palace Splendor",
-        dressCode: "Khada Dupatta / Royal Sherwani",
-        ethnicity: "Hyderabadi Nizam Heritage",
-        events: [
-          { name: "Ghazal & Henna Soiree", description: "Classical ghazals by master artists.", startTime: "18:30", endTime: "22:30" },
-          { name: "Nikah Ceremony at Falaknuma", description: "Solemn Nikah in Belgian crystal Durbar hall.", startTime: "11:00", endTime: "13:30" },
-          { name: "Grand Nizam Walima", description: "101-seat dining table banquet.", startTime: "19:30", endTime: "23:30" }
-        ],
-        traditions: [
-          { name: "Nizami Ghazal Night", description: "Poetic musical night." },
-          { name: "Khada Dupatta Custom", description: "Heritage 6-yard draped bridal outfit." }
-        ],
-      },
-      {
-        id: "w15",
-        slug: "uttarakhand-hills-wedding",
-        title: "Uttarakhand Mountain Meadow Wedding",
-        description: "A mountain meadow celebration in Mussoorie featuring Garhwali Pahari folk dances, cedar forest pheras, and Himalayan ridge views.",
-        location: "JW Marriott Walnut Grove, Mussoorie, Uttarakhand",
-        category: "Nature",
-        religion: "Hindu",
-        region: "Uttarakhand",
-        community: "Garhwali Pahari",
-        foodContext: "Pahari Feast: Kafuli, Phaanu, Aloo ke Gutke, Jhangora Kheer.",
-        dressExpectations: "Pahari Garhwali Attire: Pichora Saree / Kurta Pajama.",
-        guestRules: "Guests attend Pahari Sangeet, observe mountain meadow Pheras, and join bonfire dinner.",
-        etiquetteNotes: "Warm footwear recommended for mountain slopes.",
-        date: new Date("2027-11-26"),
-        pricePerGuest: 12499,
-        capacity: 0,
-        mainImageUrl: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1200&q=80",
-        status: "PUBLISHED",
-        featured: false,
-        sponsored: false,
-        isDemo: true,
-        hostCoupleName: "Devendra & Smriti Rawat",
-        hostEmail: "host_w15@weddingwithindia.com",
-        hostAvatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&q=80",
-        theme: "Himalayan Ridge Tranquility",
-        dressCode: "Pahari Traditional / Warm Woolen Festive",
-        ethnicity: "Garhwali Pahari",
-        events: [
-          { name: "Pahari Sangeet & Folk Night", description: "Garhwali folk songs and dance.", startTime: "17:30", endTime: "21:30" },
-          { name: "Meadow Pheras", description: "Vedic vows overlooking Himalayan peaks.", startTime: "10:00", endTime: "13:00" },
-          { name: "Himalayan Bonfire Dinner", description: "Pahari banquet around fire.", startTime: "18:30", endTime: "22:00" }
-        ],
-        traditions: [
-          { name: "Pahari Sangeet", description: "Folk songs celebrating nature." },
-          { name: "Mandap Pheras", description: "Vedic vows in mountain air." }
-        ],
-      },
-      {
-        id: "w16",
-        slug: "mumbai-marine-drive-wedding",
-        title: "Mumbai Marine Drive Rooftop Wedding",
-        description: "An urban sunset celebration overlooking Mumbai's Queen's Necklace at Marine Drive. Features DJ sangeet, rooftop mandap, and modern coastal cuisine.",
-        location: "The InterContinental, Marine Drive, Mumbai, Maharashtra",
-        category: "Destination",
-        religion: "Hindu",
-        region: "Maharashtra",
-        community: "Contemporary Urban Maharastrian",
-        foodContext: "Mumbai Fine Dining: Modern Indian Gastronomy & Coastal Seafood.",
-        dressExpectations: "Black Tie / Modern Designer Ethnic.",
-        guestRules: "Guests attend rooftop cocktail Sangeet, observe Mandap vows, and enjoy skyline reception.",
-        etiquetteNotes: "Smart formal wear required.",
-        date: new Date("2027-12-10"),
-        pricePerGuest: 15999,
-        capacity: 0,
-        mainImageUrl: "https://images.unsplash.com/photo-1567157577867-05ccb1388e66?w=1200&q=80",
-        status: "PUBLISHED",
-        featured: false,
-        sponsored: false,
-        isDemo: true,
-        hostCoupleName: "Sameer & Neha Deshmukh",
-        hostEmail: "host_w16@weddingwithindia.com",
-        hostAvatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80",
-        theme: "Mumbai Skyline Glamour",
-        dressCode: "Black Tie / High-Fashion Ethnic",
-        ethnicity: "Contemporary Urban Maharastrian",
-        events: [
-          { name: "Rooftop Sangeet & Cocktails", description: "DJ set and cocktail evening.", startTime: "19:00", endTime: "23:30" },
-          { name: "Sunset Marine Drive Pheras", description: "Vows against Mumbai sunset.", startTime: "17:00", endTime: "19:30" },
-          { name: "Skyline Reception Gala", description: "Grand reception party.", startTime: "20:00", endTime: "01:00" }
-        ],
-        traditions: [
-          { name: "Rooftop Mandap", description: "Oceanfront urban wedding mandap." },
-          { name: "Sangeet Dance Off", description: "Choreographed family dances." }
-        ],
-      },
-      {
-        id: "w17",
-        slug: "ladakh-mountain-monastery-wedding",
-        title: "Ladakh Monastery Mountain Wedding",
-        description: "A high-altitude Buddhist wedding blessing at Thiksey Monastery in Leh. Features monastic prayers, ceremonial Khatak silk scarf offerings, and Jabro folk dances.",
-        location: "The Grand Dragon & Thiksey Monastery, Leh, Ladakh",
-        category: "Destination",
-        religion: "Buddhist",
-        region: "Ladakh",
-        community: "Ladakhi Buddhist",
-        foodContext: "Ladakhi Feast: Mokmoks (dumplings), Skyu, Thukpa, Butter Tea, Chhang.",
-        dressExpectations: "Ladakhi Goncha with silk sashes. Warm woolen layers.",
-        guestRules: "Guests receive Khatak silk scarves, observe monk chanting, and join Jabro folk dance.",
-        etiquetteNotes: "Walk clockwise around prayer flags. Quiet respect during chanting.",
-        date: new Date("2027-12-28"),
-        pricePerGuest: 17499,
-        capacity: 0,
-        mainImageUrl: "https://images.unsplash.com/photo-1506197603052-3cc9c3a201bd?w=1200&q=80",
-        status: "PUBLISHED",
-        featured: true,
-        sponsored: false,
-        isDemo: true,
-        hostCoupleName: "Stanzin & Sonam Namgyal",
-        hostEmail: "host_w17@weddingwithindia.com",
-        hostAvatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&q=80",
-        theme: "Himalayan Monastic Grace",
-        dressCode: "Traditional Ladakhi Goncha / High-Altitude Warmth",
-        ethnicity: "Ladakhi Buddhist",
-        events: [
-          { name: "Monastery Blessing Ceremony", description: "Monk prayers at Thiksey Monastery.", startTime: "09:00", endTime: "11:30" },
-          { name: "Khatak Offering & Folk Dance", description: "Silk scarf ceremony and Jabro dance.", startTime: "13:00", endTime: "16:00" },
-          { name: "Himalayan Cultural Banquet", description: "Community feast with Ladakhi music.", startTime: "18:00", endTime: "21:30" }
-        ],
-        traditions: [
-          { name: "Khatak Presentation", description: "White silk scarf blessing." },
-          { name: "Monastic Chanting", description: "Sacred sutra recitation." }
-        ],
-      },
-      {
-        id: "w18",
-        slug: "ooty-nilgiris-tea-garden-wedding",
-        title: "Ooty Nilgiris Tea Garden Wedding",
-        description: "A heritage colonial tea estate wedding in Ooty surrounded by misty green hills, featuring tea garden Haldi, outdoor high teas, and South Indian banquets.",
-        location: "Savoy - IHCL SeleQtions, Ooty, Tamil Nadu",
-        category: "Nature",
-        religion: "Hindu",
-        region: "Tamil Nadu",
-        community: "Nilgiri Highland",
-        foodContext: "Nilgiri Plantation Buffet: Fresh Tea Infused Dishes, South Indian & Colonial Fusion.",
-        dressExpectations: "Heritage Casual / Soft Pastel Ethnic.",
-        guestRules: "Guests attend tea garden Haldi, observe wedding ceremony, and join garden high tea.",
-        etiquetteNotes: "Comfortable flat shoes for garden turf.",
-        date: new Date("2028-01-15"),
-        pricePerGuest: 11999,
-        capacity: 0,
-        mainImageUrl: "https://images.unsplash.com/photo-1508739773434-c26b3d09e071?w=1200&q=80",
-        status: "PUBLISHED",
-        featured: false,
-        sponsored: false,
-        isDemo: true,
-        hostCoupleName: "Nitin & Radhika Gowder",
-        hostEmail: "host_w18@weddingwithindia.com",
-        hostAvatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&q=80",
-        theme: "Colonial Tea Estate Charm",
-        dressCode: "Pastel Silk Saree / Heritage Blazer",
-        ethnicity: "Nilgiri Highland",
-        events: [
-          { name: "Tea Garden Haldi", description: "Turmeric fun among green tea bushes.", startTime: "10:00", endTime: "12:30" },
-          { name: "Highland Wedding Vows", description: "Sunset wedding ceremony.", startTime: "16:00", endTime: "18:30" },
-          { name: "Colonial Garden High Tea & Dinner", description: "High tea & dinner banquet.", startTime: "19:00", endTime: "22:00" }
-        ],
-        traditions: [
-          { name: "Tea Garden Haldi", description: "Turmeric ceremony in tea estate." },
-          { name: "Highland Mandap", description: "Floral garden mandap." }
-        ],
-      },
-      {
-        id: "w19",
-        slug: "pondicherry-french-quarter-wedding",
-        title: "Pondicherry French Quarter Wedding",
-        description: "A Franco-Tamil heritage wedding in Pondicherry's French Quarter, featuring villa courtyard cocktail soirees, garden vows, and Franco-Tamil seafood fusion feasts.",
-        location: "La Villa & Palais de Mahe, Pondicherry",
-        category: "Destination",
-        religion: "Christian",
-        region: "Pondicherry",
-        community: "Franco-Tamil Christian",
-        foodContext: "Franco-Tamil Fusion: Seafood Bouillabaisse, Ratatouille, Crepes, Mango Curry.",
-        dressExpectations: "Resort Chic / Linen Formal.",
-        guestRules: "Guests attend French courtyard cocktail, observe garden blessing, and join seafood banquet.",
-        etiquetteNotes: "Casual elegance.",
-        date: new Date("2028-02-04"),
-        pricePerGuest: 12499,
-        capacity: 0,
-        mainImageUrl: "https://images.unsplash.com/photo-1533929736458-ca588d08c8be?w=1200&q=80",
-        status: "PUBLISHED",
-        featured: false,
-        sponsored: false,
-        isDemo: true,
-        hostCoupleName: "Pierre & Lakshmi Gautier",
-        hostEmail: "host_w19@weddingwithindia.com",
-        hostAvatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80",
-        theme: "Franco-Tamil Coastal Heritage",
-        dressCode: "Resort Chic / Pastel Linen",
-        ethnicity: "Franco-Tamil Christian",
-        events: [
-          { name: "Courtyard Cocktail Soiree", description: "French wine & acoustic music.", startTime: "18:00", endTime: "21:30" },
-          { name: "Franco-Tamil Blessing Ceremony", description: "Garden nuptial blessing.", startTime: "16:00", endTime: "18:00" },
-          { name: "French Quarter Gala Dinner", description: "Franco-Tamil fusion feast.", startTime: "19:30", endTime: "23:00" }
-        ],
-        traditions: [
-          { name: "Franco-Tamil Blessing", description: "Blended cultural wedding vows." },
-          { name: "Courtyard Soiree", description: "Charming heritage villa reception." }
-        ],
-      },
-      {
-        id: "w20",
-        slug: "rajasthan-desert-camp-wedding",
-        title: "Rajasthan Desert Camp Night Wedding",
-        description: "A magical desert camp wedding in Jaisalmer under starry skies, featuring camel Baraats, Kalbelia fire dances, and moonlight sand dune pheras.",
-        location: "Sam Sand Dunes, Jaisalmer, Rajasthan",
-        category: "Royal",
-        religion: "Hindu",
-        region: "Rajasthan",
-        community: "Rajasthani Desert Rajput",
-        foodContext: "Desert Camp Feast: Ker Sangri, Dal Baati, Mutton Junglee (or Paneer Junglee), Bajra Roti.",
-        dressExpectations: "Vibrant Desert Ethnic: Lehengas / Kurtas with Safa.",
-        guestRules: "Guests ride camels in sunset Baraat, watch Kalbelia fire dance, and observe moonlight Pheras.",
-        etiquetteNotes: "Warm outerwear for desert night drop in temperature.",
-        date: new Date("2028-02-22"),
-        pricePerGuest: 13999,
-        capacity: 0,
-        mainImageUrl: "https://images.unsplash.com/photo-1451337516015-6b6e9a44a8a3?w=1200&q=80",
-        status: "PUBLISHED",
-        featured: false,
-        sponsored: false,
-        isDemo: true,
-        hostCoupleName: "Yuvraj & Divya Bhati",
-        hostEmail: "host_w20@weddingwithindia.com",
-        hostAvatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&q=80",
-        theme: "Thar Desert Moonlight Romance",
-        dressCode: "Vibrant Rajasthani Ethnic",
-        ethnicity: "Rajasthani Desert Rajput",
-        events: [
-          { name: "Desert Camp Kalbelia Night", description: "Fire dance & folk music around dune bonfire.", startTime: "18:00", endTime: "22:00" },
-          { name: "Camel Baraat & Dune Pheras", description: "Camel procession & moonlight Saptapadi.", startTime: "16:30", endTime: "20:00" },
-          { name: "Starry Dune Banquet", description: "Candlelit dune feast under desert stars.", startTime: "20:30", endTime: "23:30" }
-        ],
-        traditions: [
-          { name: "Camel Baraat", description: "Desert procession on camels." },
-          { name: "Dune Pheras", description: "Moonlight vows in desert sands." }
-        ],
-      },
-      {
-        id: "w23",
-        slug: "shimla-himalayan-pine-royal-wedding",
-        title: "Shimla Himalayan Pine Forest Royal Celebration",
-        description: "A highland royal wedding at Wildflower Hall, Shimla amidst pine forests, featuring Himachali Nati folk dances, cedar grove pheras, and Oberoi Dham banquets.",
-        location: "Wildflower Hall, An Oberoi Resort, Shimla, Himachal Pradesh",
-        category: "Royal",
-        religion: "Hindu",
-        region: "Himachal Pradesh",
-        community: "Himachali Rajput",
-        foodContext: "Himachali Dham Feast: Madra, Sepu Badi, Kaddi, Mittha dessert prepared by hereditary Botis.",
-        dressExpectations: "Pahadi Royal Wear: Velvet Sherwani / Silk Dhatu Saree.",
-        guestRules: "Guests watch Himachali Nati dance, attend pine forest Pheras, and enjoy mountain Dham feast.",
-        etiquetteNotes: "Warm outerwear essential for pine forest evening.",
-        date: new Date("2028-05-18"),
-        pricePerGuest: 16999,
-        capacity: 0,
-        mainImageUrl: "https://images.unsplash.com/photo-1640953148126-1962ec17a92b?w=1200&q=80",
-        status: "PUBLISHED",
-        featured: true,
-        sponsored: true,
-        isDemo: true,
-        hostCoupleName: "Vikramaditya & Gayatri Himachal",
-        hostEmail: "host_w23@weddingwithindia.com",
-        hostAvatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80",
-        theme: "Pahadi Royal Pine Forest",
-        dressCode: "Festive Velvet Sherwani / Silk Dhatu Saree",
-        ethnicity: "Himachali Rajput",
-        events: [
-          { name: "Himachali Nati Sangeet", description: "Nati folk dance around pine forest fire.", startTime: "17:30", endTime: "21:30" },
-          { name: "Pine Forest Pheras", description: "Vedic vows in cedar grove.", startTime: "10:30", endTime: "13:30" },
-          { name: "Oberoi Estate Dham Banquet", description: "Authentic Himachali Dham feast.", startTime: "18:30", endTime: "22:30" }
-        ],
-        traditions: [
-          { name: "Himachali Nati Dance", description: "Folk dance celebrating harvest & union." },
-          { name: "Dham Banquet", description: "Traditional seated brass plate feast." }
-        ],
-      },
-      {
-        id: "w22",
-        slug: "ahmedabad-heritage-pol-wedding",
-        title: "Ahmedabad Heritage Pol Haveli Wedding",
-        description: "A heritage haveli wedding in Ahmedabad's ancient Pols, featuring Garba & Dandiya Raas dance nights, Pokhanu welcomes, and authentic Gujarati Thali banquets.",
-        location: "House of MG Heritage Hotel, Ahmedabad, Gujarat",
-        category: "Traditional",
-        religion: "Hindu",
-        region: "Gujarat",
-        community: "Gujarati",
-        foodContext: "Grand Gujarati Thali: Undhiyu, Dhokla, Basundi, Shrikhand, Dal, Rotli.",
-        dressExpectations: "Bandhani / Chaniya Choli for women; Kurta Kediya for men.",
-        guestRules: "Guests join Garba & Dandiya Raas, observe Pokhanu welcome and Lagna Pheras, and enjoy Gujarati Thali.",
-        etiquetteNotes: "Pure vegetarian & non-alcoholic event.",
-        date: new Date("2028-04-10"),
-        pricePerGuest: 10999,
-        capacity: 0,
-        mainImageUrl: "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=1200&q=80",
-        status: "PUBLISHED",
-        featured: false,
-        sponsored: false,
-        isDemo: true,
-        hostCoupleName: "Chirag & Mansi Patel",
-        hostEmail: "host_w22@weddingwithindia.com",
-        hostAvatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&q=80",
-        theme: "Gujarati Heritage Pol",
-        dressCode: "Bandhani / Chaniya Choli / Kurta Kediya",
-        ethnicity: "Gujarati",
-        events: [
-          { name: "Garba & Dandiya Raas Night", description: "High-energy Gujarati Garba dance with sticks.", startTime: "19:00", endTime: "23:30" },
-          { name: "Mandap Mahurat & Lagna Pheras", description: "Pokhanu mother-in-law welcome & 4 Lagna Pheras.", startTime: "09:30", endTime: "12:30" },
-          { name: "Heritage Pol Thali Banquet", description: "Grand Gujarati Thali feast.", startTime: "13:00", endTime: "15:30" }
-        ],
-        traditions: [
-          { name: "Garba Raas", description: "Traditional Gujarati circle dance." },
-          { name: "Pokhanu Welcome", description: "Playful nose-pulling welcome by bride's mother." }
-        ],
-      },
-    ];
-
-    for (const wData of demoWeddingsData) {
+    for (const wData of DEMO_WEDDINGS) {
       // Find or create host user & couple profile
       const hUser = await prisma.user.upsert({
         where: { email: wData.hostEmail },
@@ -1046,16 +803,18 @@ async function seedMasterData() {
         },
       });
 
+      const startDate = new Date(Date.now() + 30 * 86400000);
+
       const hProfile = await prisma.coupleProfile.upsert({
         where: { userId: hUser.id },
         update: {
-          weddingDate: wData.date,
+          weddingDate: startDate,
           weddingLocation: wData.location,
           familyBio: `${wData.hostCoupleName} welcome global travelers to experience authentic ${wData.ethnicity} wedding traditions.`,
         },
         create: {
           userId: hUser.id,
-          weddingDate: wData.date,
+          weddingDate: startDate,
           weddingLocation: wData.location,
           expectedGuests: 200,
           languagesSpoken: "English, Hindi",
@@ -1064,7 +823,7 @@ async function seedMasterData() {
         },
       });
 
-      // Match existing wedding by slug or ID to prevent P2002 slug collision
+      // Match existing wedding by slug or ID
       const existingBySlug = await prisma.wedding.findUnique({ where: { slug: wData.slug } });
       const targetId = existingBySlug ? existingBySlug.id : wData.id;
 
@@ -1080,21 +839,19 @@ async function seedMasterData() {
           description: wData.description,
           location: wData.location,
           category: wData.category,
+          tier: wData.tier,
+          durationDays: wData.durationDays,
           religion: wData.religion || "Hindu",
           region: wData.region || null,
           community: wData.community || null,
-          foodContext: wData.foodContext || null,
-          dressExpectations: wData.dressExpectations || null,
-          guestRules: wData.guestRules || null,
-          etiquetteNotes: wData.etiquetteNotes || null,
-          date: wData.date,
+          date: startDate,
           pricePerGuest: wData.pricePerGuest,
+          capacity: wData.capacity,
           mainImageUrl: wData.mainImageUrl,
           status: wData.status,
           featured: wData.featured,
           sponsored: wData.sponsored ?? false,
           isDemo: true,
-          capacity: 20,
           theme: wData.theme,
           dressCode: wData.dressCode,
           ethnicity: wData.ethnicity,
@@ -1102,7 +859,7 @@ async function seedMasterData() {
             create: (wData.events || []).map((e) => ({
               name: e.name,
               description: e.description,
-              date: wData.date,
+              date: new Date(startDate.getTime() + (e.dayOffset || 0) * 86400000),
               startTime: e.startTime || "17:00",
               endTime: e.endTime || "22:00",
               location: wData.location,
@@ -1123,16 +880,14 @@ async function seedMasterData() {
           description: wData.description,
           location: wData.location,
           category: wData.category,
+          tier: wData.tier,
+          durationDays: wData.durationDays,
           religion: wData.religion || "Hindu",
           region: wData.region || null,
           community: wData.community || null,
-          foodContext: wData.foodContext || null,
-          dressExpectations: wData.dressExpectations || null,
-          guestRules: wData.guestRules || null,
-          etiquetteNotes: wData.etiquetteNotes || null,
-          date: wData.date,
+          date: startDate,
           pricePerGuest: wData.pricePerGuest,
-          capacity: 20,
+          capacity: wData.capacity,
           mainImageUrl: wData.mainImageUrl,
           status: wData.status,
           featured: wData.featured,
@@ -1150,7 +905,7 @@ async function seedMasterData() {
             create: (wData.events || []).map((e) => ({
               name: e.name,
               description: e.description,
-              date: wData.date,
+              date: new Date(startDate.getTime() + (e.dayOffset || 0) * 86400000),
               startTime: e.startTime || "17:00",
               endTime: e.endTime || "22:00",
               location: wData.location,
@@ -1165,120 +920,22 @@ async function seedMasterData() {
         },
       });
 
-      console.log(`   ✓ Curated Wedding Created/Updated: "${wedding.title}" (${wedding.slug}) — religion: ${wedding.religion}, region: ${wedding.region}`);
+      console.log(`   ✓ [${wData.durationDays}d] [${wData.tier}] ${wedding.title} ($${wData.pricePerGuest}/guest, capacity: ${wData.capacity})`);
     }
 
-    console.log("\n4. Seeding Demo Bookings, Passes & Preparations...");
-    const targetWedding = await prisma.wedding.findFirst({ where: { slug: "grand-maharaja-wedding" } });
-    if (targetWedding) {
-      const demoBooking = await prisma.booking.upsert({
-        where: { id: "booking-demo-1" },
-        update: {},
-        create: {
-          id: "booking-demo-1",
-          weddingId: targetWedding.id,
-          travelerId: guestProfile.id,
-          date: targetWedding.date,
-          guestsCount: 2,
-          pricePerGuest: targetWedding.pricePerGuest,
-          totalAmount: targetWedding.pricePerGuest * 2,
-          status: "APPROVED",
-        },
-      });
-
-      await prisma.guestPass.upsert({
-        where: { id: "pass-demo-1" },
-        update: {},
-        create: {
-          id: "pass-demo-1",
-          bookingId: demoBooking.id,
-          passCode: "PASS-VIP-999",
-          qrTokenHash: "TOKEN_HASH_DEMO_999",
-          status: "ACTIVE",
-        },
-      });
-
-      // Demo Review
-      await prisma.review.upsert({
-        where: { id: "rev-demo-1" },
-        update: {},
-        create: {
-          id: "rev-demo-1",
-          booking: { connect: { id: demoBooking.id } },
-          traveler: { connect: { id: guestProfile.id } },
-          rating: 5,
-          comment: "Attending the wedding at Umaid Bhawan was the absolute highlight of our trip to India! The warmth of the family, the food, and the cultural immersion were unmatched.",
-          ratingCulture: 5,
-          ratingHospitality: 5,
-          ratingSafety: 5,
-          status: "APPROVED",
-        },
-      });
-    }
-
-    // ------------------------------------------------------------------------
-    // 5. SEED WISHLISTS, NOTIFICATIONS & AUDIT LOGS
-    // ------------------------------------------------------------------------
-    console.log("\n5. Seeding Wishlists, Notifications & Audit Logs...");
-    if (targetWedding) {
-      await prisma.wishlist.upsert({
-        where: {
-          travelerId_weddingId: {
-            travelerId: guestProfile.id,
-            weddingId: targetWedding.id,
-          },
-        },
-        update: {},
-        create: {
-          traveler: { connect: { id: guestProfile.id } },
-          wedding: { connect: { id: targetWedding.id } },
-        },
-      });
-    }
-
-    await prisma.notification.upsert({
-      where: { id: "notif-demo-1" },
-      update: {},
-      create: {
-        id: "notif-demo-1",
-        userId: guestUser.id,
-        title: "Pass Approved!",
-        message: "Your guest pass for The Grand Maharaja Wedding has been approved by the host.",
-        type: "BOOKING_APPROVED",
-        read: false,
-      },
-    });
-
-    await prisma.auditLog.create({
-      data: {
-        userId: superAdmin.id,
-        userName: superAdmin.name || "Super Admin",
-        action: "SEED_MASTER_BOOTSTRAP",
-        entity: "SYSTEM",
-        entityId: "SYSTEM_GLOBAL",
-        details: JSON.stringify({ message: "Master Database Seed execution completed with 22 unique curated listings." }),
-      },
-    });
-
-    console.log("\n--------------------------------------------------");
-    console.log("✅ Master Database Seeding Completed Successfully!");
-    console.log("--------------------------------------------------");
-    const finalUserCount = await prisma.user.count();
-    const finalWeddingCount = await prisma.wedding.count();
-    const finalBookingCount = await prisma.booking.count();
-    const finalReviewCount = await prisma.review.count();
-
-    console.log(`  Users: ${finalUserCount}`);
-    console.log(`  Weddings: ${finalWeddingCount}`);
-    console.log(`  Bookings: ${finalBookingCount}`);
-    console.log(`  Reviews: ${finalReviewCount}`);
-    console.log("==================================================\n");
+    console.log("\n==================================================");
+    console.log("  Master Seed Completed Successfully!");
+    console.log("==================================================");
   } catch (error) {
-    console.error("❌ Seeding Error:", error);
+    console.error("❌ Master Seeder Error:", error);
     process.exit(1);
   } finally {
     await prisma.$disconnect();
   }
 }
 
-seedMasterData();
+if (require.main === module) {
+  seedMasterData();
+}
+
+module.exports = { seedMasterData };

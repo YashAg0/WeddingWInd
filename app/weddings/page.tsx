@@ -9,16 +9,16 @@ import { SortSelect } from "./SortSelect";
 import { CANONICAL_RELIGIONS, normalizeReligion } from "@/lib/culture";
 
 export const metadata: Metadata = {
-  title: "Explore Indian Wedding Celebrations",
+  title: "Explore Indian Wedding Celebrations | WeddingWithIndia",
   description:
-    "Explore verified Indian wedding celebrations across Rajasthan, Goa, Punjab, and Kerala. Filter by style, date, and budget to attend as an honoured guest.",
+    "Explore authentic multi-day Indian wedding celebrations across Rajasthan, Goa, Punjab, and Kerala. Filter by duration (1–5 days), destination, and cultural tradition.",
   alternates: {
     canonical: "https://weddingwithindia.com/weddings",
   },
   openGraph: {
     title: "Explore Indian Wedding Celebrations | WeddingWithIndia",
     description:
-      "Explore verified Indian wedding celebrations across Rajasthan, Goa, Punjab, and Kerala. Filter by style, date, and budget to attend as an honoured guest.",
+      "Explore authentic multi-day Indian wedding celebrations across Rajasthan, Goa, Punjab, and Kerala. Filter by duration (1–5 days), destination, and cultural tradition.",
     url: "https://weddingwithindia.com/weddings",
     siteName: "WeddingWithIndia",
     type: "website",
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Explore Indian Wedding Celebrations | WeddingWithIndia",
     description:
-      "Explore verified Indian wedding celebrations across Rajasthan, Goa, Punjab, and Kerala. Filter by style, date, and budget to attend as an honoured guest.",
+      "Explore authentic multi-day Indian wedding celebrations across Rajasthan, Goa, Punjab, and Kerala. Filter by duration (1–5 days), destination, and cultural tradition.",
   },
 };
 
@@ -36,15 +36,16 @@ export const dynamic = "force-dynamic";
 
 interface SearchParams {
   destination?: string;
+  destinations?: string;
   category?: string;
   date?: string;
-  styles?: string;
-  maxBudget?: string;
-  luxuryLevels?: string;
-  religions?: string;
-  minSlots?: string;
-  languages?: string;
+  durations?: string;
   duration?: string;
+  tiers?: string;
+  religions?: string;
+  minGuests?: string;
+  maxBudget?: string;
+  availability?: string;
   sort?: string;
 }
 
@@ -56,126 +57,151 @@ export default async function WeddingsPage({ searchParams }: PageProps) {
   const resolvedParams = await searchParams;
   const weddings = await getWeddings();
 
-  // Compute dynamic bounds & category counts from database weddings
+  // 1. Compute dynamic bounds & counts from database weddings
+  const durationCounts: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+  const destinationCounts: Record<string, number> = {};
   const religionCounts: Record<string, number> = {};
   CANONICAL_RELIGIONS.forEach((r) => { religionCounts[r] = 0; });
-
-  const styleCounts: Record<string, number> = {};
-  const stylesList = ["Royal", "Punjabi", "South Indian", "Beach", "Destination", "Traditional"];
-  stylesList.forEach((s) => { styleCounts[s] = 0; });
+  const tierCounts: Record<string, number> = {};
 
   let minPriceInSystem = 999999;
   let maxPriceInSystem = 0;
 
   weddings.forEach((w) => {
+    // Duration
+    const d = w.durationDays || 1;
+    if (durationCounts[d] !== undefined) {
+      durationCounts[d] += 1;
+    }
+
+    // Destination (State / Region / City)
+    const stateKey = (w.state || w.region || w.city || "").toLowerCase().trim();
+    if (stateKey) {
+      destinationCounts[stateKey] = (destinationCounts[stateKey] || 0) + 1;
+    }
+
+    // Culture / Religion
     const normRel = normalizeReligion(w.religion);
     religionCounts[normRel] = (religionCounts[normRel] || 0) + 1;
 
-    if (styleCounts[w.category] !== undefined) {
-      styleCounts[w.category] += 1;
-    }
+    // Experience Tier
+    const tierKey = (w.tier || "STANDARD").toUpperCase();
+    tierCounts[tierKey] = (tierCounts[tierKey] || 0) + 1;
 
+    // Price Bounds
     if (w.pricePerGuest > 0) {
       if (w.pricePerGuest < minPriceInSystem) minPriceInSystem = w.pricePerGuest;
       if (w.pricePerGuest > maxPriceInSystem) maxPriceInSystem = w.pricePerGuest;
     }
   });
 
-  if (minPriceInSystem === 999999) minPriceInSystem = 100;
-  if (maxPriceInSystem === 0) maxPriceInSystem = 25000;
+  if (minPriceInSystem === 999999) minPriceInSystem = 149;
+  if (maxPriceInSystem === 0) maxPriceInSystem = 1199;
 
-  const destination = resolvedParams.destination?.toLowerCase() || "";
-  const category = resolvedParams.category?.toLowerCase() || "";
-  const date = resolvedParams.date || ""; // YYYY-MM format
-  
-  const stylesFilter = resolvedParams.styles ? resolvedParams.styles.split(",") : [];
-  const maxBudgetFilter = Number(resolvedParams.maxBudget || maxPriceInSystem.toString());
-  const luxuryFilter = resolvedParams.luxuryLevels ? resolvedParams.luxuryLevels.split(",") : [];
-  const religionFilter = resolvedParams.religions
-    ? resolvedParams.religions.split(",").map((r) => normalizeReligion(r).toLowerCase())
+  // 2. Parse Search Parameters
+  const destinationQuery = (resolvedParams.destination || "").toLowerCase().trim();
+  const selectedDestinations = resolvedParams.destinations
+    ? resolvedParams.destinations.split(",").map((d) => d.toLowerCase().trim()).filter(Boolean)
     : [];
-  const minSlotsFilter = Number(resolvedParams.minSlots || "0");
-  const languagesFilter = resolvedParams.languages ? resolvedParams.languages.split(",") : [];
-  const durationFilter = resolvedParams.duration ? Number(resolvedParams.duration) : null;
+
+  const rawDurations = resolvedParams.durations
+    ? resolvedParams.durations.split(",").map(Number).filter(Boolean)
+    : resolvedParams.duration
+    ? [Number(resolvedParams.duration)]
+    : [];
+
+  const selectedTiers = resolvedParams.tiers
+    ? resolvedParams.tiers.split(",").map((t) => t.toUpperCase().trim()).filter(Boolean)
+    : [];
+
+  const selectedReligions = resolvedParams.religions
+    ? resolvedParams.religions.split(",").map((r) => normalizeReligion(r).toLowerCase()).filter(Boolean)
+    : [];
+
+  const minGuests = Number(resolvedParams.minGuests || "0");
+  const maxBudget = Number(resolvedParams.maxBudget || maxPriceInSystem.toString());
+  const availability = (resolvedParams.availability || "").toLowerCase();
+  const date = resolvedParams.date || ""; // YYYY-MM
   const sort = resolvedParams.sort || "featured";
 
-  // Filter listings
+  // 3. Filter Listings
   const filteredWeddings = weddings.filter((wedding) => {
-    // 1. Destination
-    if (destination) {
-      const matchLoc = wedding.location.toLowerCase().includes(destination);
-      const matchCity = wedding.city.toLowerCase().includes(destination);
-      const matchState = wedding.state.toLowerCase().includes(destination);
+    // A. Destination (Search bar text + Checkboxes)
+    if (destinationQuery) {
+      const matchLoc = (wedding.location || "").toLowerCase().includes(destinationQuery);
+      const matchCity = (wedding.city || "").toLowerCase().includes(destinationQuery);
+      const matchState = (wedding.state || wedding.region || "").toLowerCase().includes(destinationQuery);
       if (!matchLoc && !matchCity && !matchState) return false;
     }
 
-    // 2. Style (category from SearchBar or Styles checklist)
-    if (category) {
-      if (wedding.category.toLowerCase() !== category) return false;
-    }
-    if (stylesFilter.length > 0) {
-      if (!stylesFilter.includes(wedding.category.toLowerCase())) return false;
+    if (selectedDestinations.length > 0) {
+      const locLower = (wedding.location || "").toLowerCase();
+      const cityLower = (wedding.city || "").toLowerCase();
+      const stateLower = (wedding.state || wedding.region || "").toLowerCase();
+      const matchesAnyDest = selectedDestinations.some((d) =>
+        locLower.includes(d) || cityLower.includes(d) || stateLower.includes(d)
+      );
+      if (!matchesAnyDest) return false;
     }
 
-    // 3. Date
+    // B. Duration (1–5 Days)
+    if (rawDurations.length > 0) {
+      if (!rawDurations.includes(wedding.durationDays)) return false;
+    }
+
+    // C. Experience Tier
+    if (selectedTiers.length > 0) {
+      const weddingTier = (wedding.tier || "STANDARD").toUpperCase();
+      if (!selectedTiers.includes(weddingTier)) return false;
+    }
+
+    // D. Religion / Tradition
+    if (selectedReligions.length > 0) {
+      const normWeddingRel = normalizeReligion(wedding.religion).toLowerCase();
+      if (!selectedReligions.includes(normWeddingRel)) return false;
+    }
+
+    // E. Guest Capacity
+    if (minGuests > 0) {
+      const capacity = wedding.guestsAllowed || 20;
+      if (capacity < minGuests) return false;
+    }
+
+    // F. Budget
+    if (wedding.pricePerGuest > maxBudget) return false;
+
+    // G. Availability
+    const isSoldOut = wedding.isDemo === true || wedding.availabilityStatus === "FULLY_BOOKED" || (wedding.guestsAllowed > 0 && (wedding.guestsAllowed - (wedding.guestsBooked || 0)) <= 0);
+    if (availability === "available" && isSoldOut) return false;
+    if (availability === "fully_booked" && !isSoldOut) return false;
+
+    // H. Date
     if (date) {
       if (!wedding.date.startsWith(date)) return false;
-    }
-
-    // 4. Budget
-    if (wedding.pricePerGuest > maxBudgetFilter) return false;
-
-    // 5. Luxury Level
-    if (luxuryFilter.length > 0) {
-      if (!luxuryFilter.includes(wedding.luxuryLevel.toLowerCase())) return false;
-    }
-
-    // 6. Religion (Canonical Normalized Match)
-    if (religionFilter.length > 0) {
-      const normWeddingRel = normalizeReligion(wedding.religion).toLowerCase();
-      if (!religionFilter.includes(normWeddingRel)) return false;
-    }
-
-    // 7. Slots
-    const availableSlots = wedding.guestsAllowed <= 0 ? 20 : (wedding.guestsAllowed - wedding.guestsBooked);
-    if (availableSlots < minSlotsFilter) return false;
-
-    // 8. Languages
-    if (languagesFilter.length > 0) {
-      const hasLang = wedding.languages.some((l: string) =>
-        languagesFilter.includes(l.toLowerCase())
-      );
-      if (!hasLang) return false;
-    }
-
-    // 9. Duration
-    if (durationFilter !== null) {
-      if (wedding.durationDays !== durationFilter) return false;
     }
 
     return true;
   });
 
-  // Sort listings
-  // INVARIANT: Active sponsored listings always rank above featured & normal,
-  // regardless of the user's sort selection. Within each sponsorship tier,
-  // listings are ordered by the user's chosen criterion.
+  // 4. Sort listings
   const getTier = (w: { sponsored: boolean; featured: boolean }) =>
     w.sponsored ? 2 : w.featured ? 1 : 0;
 
   const sortedWeddings = [...filteredWeddings].sort((a, b) => {
-    // 1. Sponsorship tier is always the primary sort key.
+    // 1. Sponsorship tier is always the primary sort key
     const tierDiff = getTier(b) - getTier(a);
     if (tierDiff !== 0) return tierDiff;
 
-    // 2. Within the same tier, apply the user's requested sort.
+    // 2. Secondary sort criteria
     if (sort === "price_asc") return a.pricePerGuest - b.pricePerGuest;
     if (sort === "price_desc") return b.pricePerGuest - a.pricePerGuest;
-    if (sort === "rating") return b.rating - a.rating;
+    if (sort === "duration_desc") return b.durationDays - a.durationDays;
+    if (sort === "duration_asc") return a.durationDays - b.durationDays;
     if (sort === "date_asc") return new Date(a.date).getTime() - new Date(b.date).getTime();
 
-    // Default ("featured"): secondary sort by rating
-    return b.rating - a.rating;
+    // Default ("featured"): featured priority then deterministic by duration & id
+    if (b.durationDays !== a.durationDays) return b.durationDays - a.durationDays;
+    return a.id.localeCompare(b.id);
   });
 
   return (
@@ -192,7 +218,7 @@ export default async function WeddingsPage({ searchParams }: PageProps) {
             Explore Wedding Celebrations
           </h1>
           <p className="text-charcoal-500 text-sm md:text-base leading-relaxed">
-            Attend an authentic Indian wedding as an honored guest. Thoughtfully curated experiences, transparent details, and dedicated guest support.
+            Attend an authentic Indian wedding as an honored guest. Experience diverse 1 to 5 day celebrations across India with transparent pricing and dedicated cultural host support.
           </p>
         </div>
 
@@ -208,8 +234,10 @@ export default async function WeddingsPage({ searchParams }: PageProps) {
           <div className="hidden lg:block lg:col-span-1 sticky top-24 z-20 max-h-[calc(100vh-7rem)] overflow-y-auto overscroll-contain pr-1 bg-white border border-warm-200/60 rounded-3xl p-5 shadow-card scrollbar-thin">
             <Suspense fallback={<div className="h-96 bg-warm-100 rounded-2xl animate-pulse" />}>
               <FilterSidebar
+                durationCounts={durationCounts}
+                destinationCounts={destinationCounts}
                 religionCounts={religionCounts}
-                styleCounts={styleCounts}
+                tierCounts={tierCounts}
                 minPriceInSystem={minPriceInSystem}
                 maxPriceInSystem={maxPriceInSystem}
                 totalWeddingsCount={weddings.length}
@@ -222,7 +250,7 @@ export default async function WeddingsPage({ searchParams }: PageProps) {
             {/* Top Toolbar / Counts & Sorting */}
             <div className="flex items-center justify-between bg-white border border-warm-200/60 px-5 py-3.5 rounded-2xl shadow-sm">
               <span className="text-xs font-semibold text-charcoal-500 uppercase tracking-widest">
-                {sortedWeddings.length} {sortedWeddings.length === 1 ? "wedding" : "weddings"} found
+                {sortedWeddings.length} {sortedWeddings.length === 1 ? "celebration" : "celebrations"} found
               </span>
               
               <Suspense fallback={<div className="h-8 w-28 bg-warm-100 rounded animate-pulse" />}>
@@ -235,7 +263,7 @@ export default async function WeddingsPage({ searchParams }: PageProps) {
               <div
                 className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
                 role="list"
-                aria-label="Featured wedding listings"
+                aria-label="Wedding listings"
               >
                 {sortedWeddings.map((wedding) => (
                   <div key={wedding.id} role="listitem">
@@ -251,7 +279,7 @@ export default async function WeddingsPage({ searchParams }: PageProps) {
                   No celebrations found
                 </h3>
                 <p className="text-charcoal-500 text-sm max-w-sm">
-                  Try adjusting your filters, modifying your date, or searching for other regions in India.
+                  Try adjusting your filters, modifying your duration or date, or searching for other regions in India.
                 </p>
               </div>
             )}
@@ -262,12 +290,10 @@ export default async function WeddingsPage({ searchParams }: PageProps) {
   );
 }
 
-// Separate search bar to client scope for searchParams hook usage
 function MarketplaceHeaderWrapper() {
   return <MarketplaceHeader />;
 }
 
-// Client wrapper for Sort dropdown to update Search params
 function SortDropdownWrapper({ activeSort }: { activeSort: string }) {
   return <SortSelect activeSort={activeSort} />;
 }

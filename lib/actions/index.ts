@@ -1539,11 +1539,13 @@ export const getWeddings = unstable_cache(
         });
       });
 
-      // Sort with time-aware sponsored priority
+      // Sort with time-aware sponsored priority and duration diversity
       results.sort((a, b) => {
-        if (a.sponsored !== b.sponsored) return a.sponsored ? -1 : 1;
-        if (a.featured !== b.featured) return a.featured ? -1 : 1;
-        return 0;
+        const tierA = a.sponsored ? 2 : a.featured ? 1 : 0;
+        const tierB = b.sponsored ? 2 : b.featured ? 1 : 0;
+        if (tierB !== tierA) return tierB - tierA;
+        if (b.durationDays !== a.durationDays) return b.durationDays - a.durationDays;
+        return a.id.localeCompare(b.id);
       });
 
       return results;
@@ -1622,14 +1624,13 @@ export const getHomepageWeddings = unstable_cache(
         });
       });
 
-      // Time-aware in-memory re-sort: active sponsored > featured > normal.
-      // This is required because DB orderBy on `sponsored` boolean does not
-      // evaluate sponsorshipStart/End — only isSponsorshipActive() (in DTO) does.
-      // Priority tiers: 2 = active sponsored, 1 = featured, 0 = normal.
+      // Sort with time-aware sponsored priority and duration diversity
       results.sort((a, b) => {
         const tierA = a.sponsored ? 2 : a.featured ? 1 : 0;
         const tierB = b.sponsored ? 2 : b.featured ? 1 : 0;
-        return tierB - tierA;
+        if (tierB !== tierA) return tierB - tierA;
+        if (b.durationDays !== a.durationDays) return b.durationDays - a.durationDays;
+        return a.id.localeCompare(b.id);
       });
 
       return results;
