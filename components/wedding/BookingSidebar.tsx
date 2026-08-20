@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { Users, Heart, Share2, ShieldCheck, Check, Info, Sparkles, Calendar } from "lucide-react";
+import { Users, Heart, Share2, ShieldCheck, Check } from "lucide-react";
 import type { Wedding } from "@/types";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";

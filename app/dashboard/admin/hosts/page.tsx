@@ -6,18 +6,12 @@ import { toast } from "sonner";
 import {
   Building2,
   CheckCircle2,
-  XCircle,
   Search,
   Eye,
-  ShieldCheck,
   Calendar,
   MapPin,
-  Users,
   AlertCircle,
   RefreshCw,
-  Clock,
-  Sparkles,
-  FileText,
 } from "lucide-react";
 import {
   adminGetHostApplicationsAction,
@@ -25,7 +19,6 @@ import {
   adminVerifyHostApplicationAction,
 } from "@/lib/actions/admin";
 import { formatDate, cn } from "@/lib/utils";
-import { WEDDING_TIER_CONFIG } from "@/lib/services/pricing-engine";
 
 export default function AdminHostsPage() {
   const [hostApplications, setHostApplications] = useState<any[]>([]);

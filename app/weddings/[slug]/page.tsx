@@ -182,16 +182,16 @@ export default async function WeddingDetailPage({ params }: PageProps) {
             <h1 className="font-display font-bold text-3xl md:text-4xl text-charcoal-900 leading-tight">
               {wedding.title}
             </h1>
-            <div className="flex flex-wrap items-center gap-4 text-xs font-medium text-charcoal-500">
-              {wedding.reviewCount > 0 ? (
+            <div className="flex flex-wrap items-center gap-3 text-xs font-medium text-charcoal-500">
+              {wedding.experienceCompleted && wedding.reviewCount > 0 ? (
                 <div className="flex items-center gap-1 text-charcoal-900">
                   <Star size={14} className="text-[var(--color-brand-secondary)] fill-[var(--color-brand-secondary)]" />
                   <span className="font-bold">{wedding.rating}</span>
-                  <span className="text-charcoal-400">({wedding.reviewCount} reviews)</span>
+                  <span className="text-charcoal-400">({wedding.reviewCount} verified reviews)</span>
                 </div>
               ) : (
-                <span className="text-xs font-semibold text-charcoal-400 bg-warm-50 border border-warm-100 rounded-full px-3 py-1">
-                  Be the first to review
+                <span className="text-xs font-semibold text-charcoal-600 bg-white border border-warm-200/80 rounded-full px-3 py-0.5">
+                  Upcoming Celebration
                 </span>
               )}
               <span className="w-1.5 h-1.5 rounded-full bg-warm-300" aria-hidden="true" />
@@ -222,6 +222,11 @@ export default async function WeddingDetailPage({ params }: PageProps) {
       {/* ─── IMMERSIVE GALLERY HERO ─── */}
       <div className="container-luxury mt-6">
         <WeddingGallery images={wedding.gallery} title={wedding.title} />
+        {(!wedding.isVerifiedRealMedia || wedding.coverImageType === "representative") && (
+          <p className="text-[0.6875rem] text-charcoal-400 mt-2 text-right">
+            Representative cultural imagery — host family photos and specific ceremony schedules are shared with confirmed guests.
+          </p>
+        )}
       </div>
 
       {/* ─── Main 2-col layout ─── */}
@@ -442,17 +447,19 @@ export default async function WeddingDetailPage({ params }: PageProps) {
               </div>
             </section>
 
-            {/* ─── Reviews ─── */}
-            <section className="space-y-5" aria-labelledby="reviews-heading">
-              <h2 id="reviews-heading" className="font-display font-bold text-2xl text-charcoal-900">
-                Guest Reviews ({wedding.reviews.length})
-              </h2>
-              <WeddingDetailReviews
-                weddingId={wedding.id}
-                reviews={wedding.reviews as unknown as Parameters<typeof WeddingDetailReviews>[0]["reviews"]}
-                userId={userId}
-              />
-            </section>
+            {/* ─── Reviews (Rendered only once celebration is completed and genuine reviews exist) ─── */}
+            {wedding.experienceCompleted && Array.isArray(wedding.reviews) && wedding.reviews.length > 0 && (
+              <section className="space-y-5" aria-labelledby="reviews-heading">
+                <h2 id="reviews-heading" className="font-display font-bold text-2xl text-charcoal-900">
+                  Verified Guest Reviews ({wedding.reviews.length})
+                </h2>
+                <WeddingDetailReviews
+                  weddingId={wedding.id}
+                  reviews={wedding.reviews as unknown as Parameters<typeof WeddingDetailReviews>[0]["reviews"]}
+                  userId={userId}
+                />
+              </section>
+            )}
 
           </div>
 

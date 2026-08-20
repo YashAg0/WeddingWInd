@@ -46,7 +46,10 @@ export function WeddingGallery({ images, title }: WeddingGalleryProps) {
             priority
             sizes="100vw"
             className="object-cover"
-            onError={() => setHeroImgSrc("https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=1200&q=85")}
+            onError={() => {
+              const fallback = "https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=1200&q=85";
+              if (heroImgSrc !== fallback) setHeroImgSrc(fallback);
+            }}
           />
           <button
             onClick={() => handleOpenModal(0)}

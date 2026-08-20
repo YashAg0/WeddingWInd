@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Users, ShieldCheck, ArrowRight, Award, CheckCircle, AlertTriangle, Briefcase, Globe } from "lucide-react";
 import { AgentJourneyDiagram } from "@/components/diagrams/AgentJourneyDiagram";
 import { SectionHeader } from "@/components/ui/SectionHeader";
-import { AGENT_PAYOUT_MATRIX_INR, formatCurrencyINR } from "@/lib/constants/financial-model";
+import { AGENT_PAYOUT_MATRIX_INR } from "@/lib/constants/financial-model";
 
 export default function ForAgentsPage() {
   const minAgentPayoutINR = AGENT_PAYOUT_MATRIX_INR.STANDARD; // ₹511

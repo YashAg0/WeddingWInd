@@ -32,7 +32,7 @@ const navItems: NavItem[] = [
   },
   { label: "How It Works?", href: "/#how-it-works" },
   { label: "Destinations", href: "/#countries" },
-  { label: "Host Your Wedding", href: "/list-wedding" },
+  { label: "List Your Wedding", href: "/list-wedding" },
 ];
 
 const CURRENCIES = ["INR", "USD", "EUR"] as const;

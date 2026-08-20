@@ -2,7 +2,7 @@
 
 import { revalidatePath, revalidateTag } from "next/cache";
 import { prisma } from "../prisma";
-import { requireRole } from "../auth";
+import { requireAuth, requireRole } from "../auth";
 import { UserRole, BookingStatus, PaymentStatus, VerificationStatus, WeddingStatus, ReputationEntityType, ReputationEventType } from "@prisma/client";
 import { z } from "zod";
 import { sendVerificationApprovedEmail, sendVerificationRejectedEmail } from "../email";
@@ -15,17 +15,31 @@ export async function createAuditLog(
   action: string,
   entity: string,
   entityId: string | null,
-  details: string
+  details: string,
+  actorOverride?: { id: string; name?: string | null; email?: string }
 ) {
   try {
-    const adminUser = await requireRole([UserRole.ADMIN]);
+    let actorId = actorOverride?.id;
+    let actorName = actorOverride?.name || actorOverride?.email;
+
+    if (!actorId) {
+      try {
+        const user = await requireAuth();
+        actorId = user.id;
+        actorName = user.name || user.email;
+      } catch {
+        actorId = "SYSTEM";
+        actorName = "SYSTEM / AUTOMATION";
+      }
+    }
+
     await prisma.auditLog.create({
       data: {
         action,
         entity,
         entityId,
-        userId: adminUser.id,
-        userName: adminUser.name || adminUser.email,
+        userId: actorId || "SYSTEM",
+        userName: actorName || "SYSTEM",
         details,
       },
     });
@@ -41,25 +55,24 @@ export async function createAuditLog(
 export async function adminGetDashboardStatsAction() {
   await requireRole([UserRole.ADMIN]);
 
-  const allPayments = await prisma.payment.findMany({
-    orderBy: { createdAt: "desc" },
-  });
+  const [allPayments, activeWeddingsCount, pendingBookingsCount, pendingVerificationsCount] = await Promise.all([
+    prisma.payment.findMany({
+      where: { status: PaymentStatus.PAID },
+      select: { amount: true, createdAt: true },
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.wedding.count({
+      where: { status: "PUBLISHED", deletedAt: null },
+    }),
+    prisma.booking.count({
+      where: { status: BookingStatus.PENDING },
+    }),
+    prisma.verification.count({
+      where: { status: VerificationStatus.PENDING },
+    }),
+  ]);
 
-  const totalRevenue = allPayments
-    .filter((p) => p.status === PaymentStatus.PAID)
-    .reduce((sum, p) => sum + p.amount, 0);
-
-  const activeWeddingsCount = await prisma.wedding.count({
-    where: { status: "PUBLISHED" },
-  });
-
-  const pendingBookingsCount = await prisma.booking.count({
-    where: { status: BookingStatus.PENDING },
-  });
-
-  const pendingVerificationsCount = await prisma.verification.count({
-    where: { status: VerificationStatus.PENDING },
-  });
+  const totalRevenue = allPayments.reduce((sum, p) => sum + p.amount, 0);
 
   // Calculate growth data (last 6 months payments volume)
   const monthlyData: Record<string, number> = {};
@@ -71,11 +84,9 @@ export async function adminGetDashboardStatsAction() {
   }
 
   allPayments.forEach((p) => {
-    if (p.status === PaymentStatus.PAID) {
-      const monthName = p.createdAt.toLocaleString("default", { month: "short" });
-      if (monthName in monthlyData) {
-        monthlyData[monthName] += p.amount;
-      }
+    const monthName = p.createdAt.toLocaleString("default", { month: "short" });
+    if (monthName in monthlyData) {
+      monthlyData[monthName] += p.amount;
     }
   });
 
@@ -753,49 +764,48 @@ export async function adminGlobalSearchAction(query: string) {
   const term = query.trim().toLowerCase();
   if (!term || term.length < 2) return { results: [] };
 
-  const users = await prisma.user.findMany({
-    where: {
-      OR: [
-        { name: { contains: term, mode: "insensitive" } },
-        { email: { contains: term, mode: "insensitive" } },
-      ],
-    },
-    take: 5,
-    select: { id: true, name: true, email: true, role: true, status: true },
-  });
-
-  const weddings = await prisma.wedding.findMany({
-    where: {
-      OR: [
-        { title: { contains: term, mode: "insensitive" } },
-        { location: { contains: term, mode: "insensitive" } },
-      ],
-    },
-    take: 5,
-    select: { id: true, title: true, location: true, status: true, slug: true },
-  });
-
-  const bookings = await prisma.booking.findMany({
-    where: {
-      OR: [
-        { id: { contains: term, mode: "insensitive" } },
-        { traveler: { fullName: { contains: term, mode: "insensitive" } } },
-      ],
-    },
-    take: 5,
-    select: { id: true, status: true, totalAmount: true, traveler: { select: { fullName: true } }, wedding: { select: { title: true } } },
-  });
-
-  const safetyCases = await prisma.safetyCase.findMany({
-    where: {
-      OR: [
-        { caseNumber: { contains: term, mode: "insensitive" } },
-        { title: { contains: term, mode: "insensitive" } },
-      ],
-    },
-    take: 5,
-    select: { id: true, caseNumber: true, title: true, status: true, severity: true },
-  });
+  const [users, weddings, bookings, safetyCases] = await Promise.all([
+    prisma.user.findMany({
+      where: {
+        OR: [
+          { name: { contains: term, mode: "insensitive" } },
+          { email: { contains: term, mode: "insensitive" } },
+        ],
+      },
+      take: 5,
+      select: { id: true, name: true, email: true, role: true, status: true },
+    }),
+    prisma.wedding.findMany({
+      where: {
+        OR: [
+          { title: { contains: term, mode: "insensitive" } },
+          { location: { contains: term, mode: "insensitive" } },
+        ],
+      },
+      take: 5,
+      select: { id: true, title: true, location: true, status: true, slug: true },
+    }),
+    prisma.booking.findMany({
+      where: {
+        OR: [
+          { id: { contains: term, mode: "insensitive" } },
+          { traveler: { fullName: { contains: term, mode: "insensitive" } } },
+        ],
+      },
+      take: 5,
+      select: { id: true, status: true, totalAmount: true, traveler: { select: { fullName: true } }, wedding: { select: { title: true } } },
+    }),
+    prisma.safetyCase.findMany({
+      where: {
+        OR: [
+          { caseNumber: { contains: term, mode: "insensitive" } },
+          { title: { contains: term, mode: "insensitive" } },
+        ],
+      },
+      take: 5,
+      select: { id: true, caseNumber: true, title: true, status: true, severity: true },
+    }),
+  ]);
 
   return {
     users: users.map((u) => ({
@@ -1864,6 +1874,9 @@ export async function adminGetHostApplicationByIdAction(id: string) {
                   payments: true,
                 },
               },
+              sponsorshipRequests: {
+                orderBy: { requestedAt: "desc" },
+              },
             },
           },
           user: {
@@ -1906,6 +1919,9 @@ export async function adminGetHostApplicationByIdAction(id: string) {
       gallery: true,
       events: true,
       traditions: true,
+      sponsorshipRequests: {
+        orderBy: { requestedAt: "desc" },
+      },
       bookings: {
         include: {
           traveler: { include: { user: true } },
@@ -2149,7 +2165,7 @@ export async function adminVerifyHostApplicationAction(data: {
   const duration = normalizeDurationDays(data.verifiedDurationDays);
   const customerPriceUSD = getCustomerPriceUSD(tier, duration);
 
-  let hostApp = await prisma.hostApplication.findUnique({
+  const hostApp = await prisma.hostApplication.findUnique({
     where: { id: data.applicationId },
     include: {
       days: { include: { events: true }, orderBy: { dayNumber: "asc" } },
@@ -2439,111 +2455,252 @@ export async function adminReviewHostApplicationAction(
   return { success: true, wedding: updatedWedding };
 }
 
-// ─── Admin: Sponsorship Request Review ────────────────────────────────────────
+// ─── Admin: Sponsorship Request Review & CRM ─────────────────────────────────
 
 /**
  * Admin reviews a pending host sponsorship request.
- * On APPROVED: auto-enables sponsored flag on the linked wedding.
- * Notifies the host couple of the decision.
+ * Supports configurable pricing, duration, payment method (UPI / PayPal / Bank), and payment requirements.
  */
 export async function adminReviewSponsorshipRequestAction(
   requestId: string,
   decision: "APPROVED" | "REJECTED",
   adminNotes?: string,
   sponsorshipStart?: string | null,
-  sponsorshipEnd?: string | null
+  sponsorshipEnd?: string | null,
+  options?: {
+    promotionType?: "SPONSORED" | "FEATURED";
+    amount?: number;
+    currency?: string;
+    durationDays?: number;
+    paymentMethod?: "UPI" | "PAYPAL" | "BANK_TRANSFER" | "CASH" | "OTHER" | "WAIVED";
+    paymentRequired?: boolean;
+    rejectionReason?: string;
+  }
 ) {
-  const admin = await requireRole([UserRole.ADMIN]);
-
-  const request = await prisma.sponsorshipRequest.findUnique({
-    where: { id: requestId },
-    include: {
-      wedding: {
-        include: {
-          hostCouple: { include: { user: true } }
-        }
-      }
-    }
-  });
-  if (!request) throw new Error("Sponsorship request not found.");
-  if (request.status !== "PENDING") {
-    throw new Error("Only pending sponsorship requests can be reviewed.");
-  }
-
-  if (decision === "APPROVED" && sponsorshipStart && sponsorshipEnd) {
-    const start = new Date(sponsorshipStart);
-    const end = new Date(sponsorshipEnd);
-    if (end <= start) {
-      throw new Error("Sponsorship end date must be after the start date.");
-    }
-  }
-
-  const now = new Date();
-
-  await prisma.$transaction(async (tx) => {
-    // 1. Update the request record
-    await tx.sponsorshipRequest.update({
-      where: { id: requestId },
-      data: {
-        status: decision,
-        reviewedAt: now,
-        reviewedBy: admin.email,
-        adminNotes: adminNotes || null,
-      }
-    });
-
-    // 2. If approved, enable sponsorship on the wedding
-    if (decision === "APPROVED") {
-      await tx.wedding.update({
-        where: { id: request.weddingId },
-        data: {
-          sponsored: true,
-          sponsorshipStart: sponsorshipStart ? new Date(sponsorshipStart) : now,
-          sponsorshipEnd: sponsorshipEnd ? new Date(sponsorshipEnd) : null,
-        }
-      });
-    }
-
-    // 3. Notify host couple if user exists
-    const hostUserId = request.wedding.hostCouple?.user?.id || request.wedding.hostCouple?.userId;
-    if (hostUserId) {
-      await tx.notification.create({
-        data: {
-          userId: hostUserId,
-          title: decision === "APPROVED" ? "Sponsorship Approved!" : "Sponsorship Request Update",
-          message: decision === "APPROVED"
-            ? `Your sponsorship request for "${request.wedding.title}" has been approved. Your wedding is now featured as a Sponsored listing in the marketplace.`
-            : `Your sponsorship request for "${request.wedding.title}" was not approved at this time.${adminNotes ? ` Admin note: ${adminNotes}` : ""}`,
-          type: decision === "APPROVED" ? "SUCCESS" : "INFO",
-        }
-      });
-    }
-  });
-
-  await createAuditLog(
-    decision === "APPROVED" ? "ADMIN_SPONSORSHIP_REQUEST_APPROVED" : "ADMIN_SPONSORSHIP_REQUEST_REJECTED",
-    "SponsorshipRequest",
+  const { adminReviewSponsorshipRequest } = await import("../services/sponsorship");
+  return adminReviewSponsorshipRequest({
     requestId,
-    `Admin (${admin.email}) ${decision.toLowerCase()} sponsorship request for wedding "${request.wedding.title}" (requestId=${requestId})${adminNotes ? `. Notes: ${adminNotes}` : ""}`
-  );
-
-  revalidatePath("/dashboard/admin/weddings");
-  revalidatePath("/dashboard/admin/weddings/sponsorship");
-  revalidatePath("/weddings");
-  revalidatePath("/weddings/map");
-  revalidatePath("/");
-  revalidateTag("weddings", "max");
-  revalidateTag("homepage", "max");
-  return { success: true };
+    decision,
+    adminNotes,
+    sponsorshipStart,
+    sponsorshipEnd,
+    promotionType: options?.promotionType,
+    amount: options?.amount,
+    currency: options?.currency,
+    durationDays: options?.durationDays,
+    paymentMethod: options?.paymentMethod,
+    paymentRequired: options?.paymentRequired,
+    rejectionReason: options?.rejectionReason,
+  });
 }
 
 /**
- * Fetch all pending sponsorship requests for the admin queue.
+ * Admin directly creates and activates/schedules sponsored or featured placement on any published wedding.
+ * Supports direct outreach details, contact tracking, external payment methods, and immediate activation.
  */
-export async function adminGetSponsorshipRequestsAction(status?: string) {
+export async function adminDirectAddSponsorshipAction(input: {
+  weddingId: string;
+  promotionType?: "SPONSORED" | "FEATURED";
+  source?: "HOST_REQUEST" | "ADMIN_OUTREACH" | "PARTNER" | "MANUAL" | "OTHER";
+  contactMethod?: "WHATSAPP" | "PHONE" | "EMAIL" | "IN_PERSON" | "WEBSITE" | "OTHER";
+  contactDate?: string | null;
+  contactNotes?: string;
+  agreementNotes?: string;
+  amount?: number;
+  currency?: string;
+  durationDays?: number;
+  paymentMethod?: "UPI" | "PAYPAL" | "BANK_TRANSFER" | "CASH" | "OTHER" | "WAIVED";
+  paymentStatus?: "NOT_REQUESTED" | "PAYMENT_REQUESTED" | "PAYMENT_SUBMITTED" | "PAYMENT_VERIFIED" | "REJECTED" | "WAIVED";
+  paymentRequired?: boolean;
+  sponsorshipStart?: string | null;
+  sponsorshipEnd?: string | null;
+  adminNotes?: string;
+  completedChecklistKeys?: string[];
+}) {
+  const { adminDirectAddSponsorship } = await import("../services/sponsorship");
+  return adminDirectAddSponsorship(input);
+}
+
+/**
+ * Admin updates promotion parameters (pricing, duration, dates, notes, payment status).
+ */
+export async function adminUpdatePromotionParametersAction(input: {
+  sponsorshipId: string;
+  amount?: number;
+  currency?: string;
+  durationDays?: number;
+  startsAt?: string | null;
+  endsAt?: string | null;
+  promotionType?: "SPONSORED" | "FEATURED";
+  paymentMethod?: "UPI" | "PAYPAL" | "BANK_TRANSFER" | "CASH" | "OTHER" | "WAIVED";
+  paymentStatus?: "NOT_REQUESTED" | "PAYMENT_REQUESTED" | "PAYMENT_SUBMITTED" | "PAYMENT_VERIFIED" | "REJECTED" | "WAIVED";
+  adminNotes?: string;
+}) {
+  const { adminUpdatePromotionParameters } = await import("../services/sponsorship");
+  return adminUpdatePromotionParameters(input);
+}
+
+/**
+ * Admin manually verifies that payment was received and activates placement.
+ */
+export async function adminVerifyPaymentAndActivateAction(input: {
+  sponsorshipId: string;
+  transactionReference?: string;
+  paymentMethod?: "UPI" | "PAYPAL" | "BANK_TRANSFER" | "CASH" | "OTHER" | "WAIVED";
+  verifiedAmount?: number;
+  currency?: string;
+  notes?: string;
+}) {
+  const { adminVerifyAndActivatePayment } = await import("../services/sponsorship");
+  return adminVerifyAndActivatePayment(input);
+}
+
+/**
+ * Admin updates a checklist item on a sponsorship request.
+ */
+export async function adminUpdateChecklistAction(
+  sponsorshipId: string,
+  itemKey: string,
+  completed: boolean
+) {
+  const { adminUpdateChecklist } = await import("../services/sponsorship");
+  return adminUpdateChecklist(sponsorshipId, itemKey, completed);
+}
+
+/**
+ * Admin gets the current sponsorship payment configuration.
+ */
+export async function adminGetPaymentConfigAction() {
+  const { getSponsorshipPaymentConfig } = await import("../services/sponsorship");
+  return getSponsorshipPaymentConfig();
+}
+
+/**
+ * Admin updates the sponsorship payment configuration (UPI QR, UPI ID, PayPal URL, Bank details).
+ */
+export async function adminUpdatePaymentConfigAction(input: {
+  upiId?: string;
+  upiName?: string;
+  upiQrImageUrl?: string | null;
+  upiPaymentLink?: string | null;
+  upiInstructions?: string;
+  paypalPaymentLink?: string;
+  paypalDisplayName?: string;
+  paypalInstructions?: string;
+  bankTransferInstructions?: string;
+  otherPaymentInstructions?: string;
+}) {
+  const { adminUpdatePaymentConfig } = await import("../services/sponsorship");
+  return adminUpdatePaymentConfig(input);
+}
+
+/**
+ * Admin revokes an active sponsorship with mandatory reason and full audit logging.
+ */
+export async function adminRevokeSponsorshipAction(sponsorshipId: string, reason: string) {
+  const { adminRevokeSponsorship } = await import("../services/sponsorship");
+  return adminRevokeSponsorship(sponsorshipId, reason);
+}
+
+/**
+ * Admin extends duration of an active sponsorship by X days.
+ */
+export async function adminExtendSponsorshipAction(
+  sponsorshipId: string,
+  extensionDays: number,
+  adminNotes?: string
+) {
+  const { adminExtendSponsorship } = await import("../services/sponsorship");
+  return adminExtendSponsorship(sponsorshipId, extensionDays, adminNotes);
+}
+
+/**
+ * Server-authoritative / Webhook verified payment execution to activate a paid sponsorship.
+ */
+export async function verifyAndActivateSponsorshipPaymentAction(params: {
+  sponsorshipId: string;
+  transactionReference: string;
+  provider?: string;
+  paymentNotes?: string;
+}) {
+  const { verifyAndActivateSponsorshipPayment } = await import("../services/sponsorship");
+  return verifyAndActivateSponsorshipPayment(params);
+}
+
+/**
+ * Fetch all sponsorship & promotion requests for the admin CRM queue, with comprehensive filter options.
+ */
+export async function adminGetSponsorshipRequestsAction(filter?: string) {
   await requireRole([UserRole.ADMIN]);
 
-  const where = status ? { status: status as any } : { status: "PENDING" as any };
+  const now = new Date();
+  let where: any = {};
+
+  if (filter === "SPONSORED_REQUESTS" || filter === "SPONSORED") {
+    where = {
+      OR: [
+        { promotionType: "SPONSORED" },
+        { promotionType: null },
+      ],
+    };
+  } else if (filter === "FEATURED_REQUESTS" || filter === "FEATURED") {
+    where = {
+      promotionType: "FEATURED",
+    };
+  } else if (filter === "PAYMENT_SUBMITTED") {
+    where = {
+      OR: [
+        { paymentStatus: "PAYMENT_SUBMITTED" },
+        { status: "PAYMENT_PENDING", paymentStatus: "PAYMENT_SUBMITTED" },
+      ],
+    };
+  } else if (filter === "PAYMENT_PENDING") {
+    where = {
+      status: "PAYMENT_PENDING",
+      paymentStatus: { in: ["PENDING", "PAYMENT_REQUESTED"] },
+    };
+  } else if (filter === "PAYMENT_VERIFIED") {
+    where = {
+      paymentStatus: "PAYMENT_VERIFIED",
+    };
+  } else if (filter === "ACTIVE") {
+    where = {
+      status: "ACTIVE",
+      revokedAt: null,
+      endsAt: { gt: now },
+    };
+  } else if (filter === "EXPIRING_SOON") {
+    const soon = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
+    where = {
+      status: "ACTIVE",
+      revokedAt: null,
+      endsAt: { gt: now, lte: soon },
+    };
+  } else if (filter === "EXPIRED") {
+    where = {
+      OR: [
+        { status: "EXPIRED" },
+        { status: "ACTIVE", endsAt: { lte: now } },
+      ],
+    };
+  } else if (filter === "REVOKED") {
+    where = {
+      OR: [
+        { status: "REVOKED" },
+        { revokedAt: { not: null } },
+      ],
+    };
+  } else if (filter === "REJECTED") {
+    where = {
+      status: "REJECTED",
+    };
+  } else if (filter === "PENDING") {
+    where = {
+      status: "PENDING",
+    };
+  } else if (filter && filter !== "ALL") {
+    where = { status: filter as any };
+  }
 
   const requests = await prisma.sponsorshipRequest.findMany({
     where,
@@ -2555,7 +2712,7 @@ export async function adminGetSponsorshipRequestsAction(status?: string) {
         }
       }
     },
-    orderBy: { requestedAt: "asc" }
+    orderBy: { requestedAt: "desc" }
   });
 
   return requests;

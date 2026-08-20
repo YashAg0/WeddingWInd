@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import { Hero } from "@/components/home/Hero";
-
 import { FeaturedWeddings } from "@/components/home/FeaturedWeddings";
 import { HowItWorks } from "@/components/home/HowItWorks";
+import { CulturalCode } from "@/components/home/CulturalCode";
+import { WhyChooseUs } from "@/components/home/WhyChooseUs";
+import { Countries } from "@/components/home/Countries";
 import { Categories } from "@/components/home/Categories";
 import { Testimonials } from "@/components/home/Testimonials";
-import { Countries } from "@/components/home/Countries";
 import { FAQ } from "@/components/home/FAQ";
 import { CTASection } from "@/components/home/CTASection";
 import { getHomepageWeddings } from "@/lib/actions";
@@ -15,7 +16,6 @@ import {
   countries,
   faqItems,
   heroStats,
-  howItWorksSteps,
 } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
@@ -48,13 +48,34 @@ export default async function HomePage() {
 
   return (
     <>
+      {/* 1. HERO — Attention + immediate understanding */}
       <Hero stats={heroStats} />
+
+      {/* 2. FEATURED WEDDINGS — Core product proof immediately after Hero */}
       <FeaturedWeddings weddings={homepageWeddings} />
-      <HowItWorks steps={howItWorksSteps} />
-      <Categories categories={weddingCategories} />
-      <Testimonials testimonials={testimonials} />
+
+      {/* 3. GUEST JOURNEY — 6-Step Visual Flowchart */}
+      <HowItWorks />
+
+      {/* 4. CULTURAL TRADITIONS / GUEST CODE — "Be a guest, not a disruption" */}
+      <CulturalCode />
+
+      {/* 5. WHY GUESTS CHOOSE WEDDINGWITHINDIA — 4-Pillar Value Proposition */}
+      <WhyChooseUs />
+
+      {/* 6. DESTINATIONS — Geographic discovery */}
       <Countries countries={countries} />
+
+      {/* 7. WEDDING STYLES & TRADITIONS */}
+      <Categories categories={weddingCategories} />
+
+      {/* 8. SOCIAL PROOF & REVIEWS — Verified guest stories */}
+      <Testimonials testimonials={testimonials} />
+
+      {/* 9. FAQ — Common guest questions & concierge support */}
       <FAQ items={faqItems} />
+
+      {/* 10. FINAL CTA — Emotional conversion invitation */}
       <CTASection />
     </>
   );

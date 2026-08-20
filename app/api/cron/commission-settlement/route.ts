@@ -12,9 +12,11 @@ export async function GET(req: Request) {
   try {
     const authHeader = req.headers.get("authorization");
     const cronSecret = process.env.CRON_SECRET;
-    
-    // Validate cron authorization token
-    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+    if (!cronSecret) {
+      logger.error("[cron/commission-settlement] CRON_SECRET is not configured");
+      return new NextResponse("Service unavailable", { status: 503 });
+    }
+    if (authHeader !== `Bearer ${cronSecret}`) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 

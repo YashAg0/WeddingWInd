@@ -10,7 +10,12 @@ const escapeHtml = (value: string | number) => String(value)
   .replace(/\"/g, "&quot;")
   .replace(/'/g, "&#39;");
 
-const formatInr = (amount: number) => `₹${amount.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const formatCurrency = (amount: number, currency: string = "USD") => {
+  if (currency === "INR") {
+    return `₹${amount.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  }
+  return `$${amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency}`;
+};
 
 export async function GET(
   request: NextRequest,
@@ -113,8 +118,8 @@ export async function GET(
             <tr>
               <td><strong>Guest Reservation Pass</strong><br/><span style="font-size: 12px; color: #8f8585;">Full ceremonial access, feasts, welcome gifts & liaison</span></td>
               <td>${booking.guestsCount} Guest(s)</td>
-              <td>${formatInr(booking.pricePerGuest)}</td>
-              <td style="text-align: right;">${formatInr(booking.guestsCount * booking.pricePerGuest)}</td>
+              <td>${formatCurrency(booking.pricePerGuest, booking.currency || "USD")}</td>
+              <td style="text-align: right;">${formatCurrency(booking.guestsCount * booking.pricePerGuest, booking.currency || "USD")}</td>
             </tr>
             <tr>
               <td><strong>Platform Concierge & Safety Hold Fee</strong></td>
@@ -124,7 +129,7 @@ export async function GET(
             </tr>
             <tr class="total-row">
               <td colspan="3" style="text-align: right;">Total Amount Paid</td>
-              <td style="text-align: right;">${formatInr(booking.totalAmount)}</td>
+              <td style="text-align: right;">${formatCurrency(booking.totalAmount, booking.currency || "USD")}</td>
             </tr>
           </tbody>
         </table>

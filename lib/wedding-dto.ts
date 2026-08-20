@@ -6,36 +6,32 @@
 
 import { Wedding } from "@/types";
 import { normalizeReligion, resolveCulturalProfileDefaults } from "./culture";
+import { resolveWeddingVisualProfile, CANONICAL_COUPLE_NAMES } from "./wedding-images";
 import {
   normalizeWeddingTier,
   normalizeDurationDays,
   getCustomerPriceUSD,
 } from "@/lib/services/pricing-engine";
 
+import {
+  isSponsorshipCurrentlyActive,
+  isFeaturedCurrentlyActive,
+  getWeddingDiscoveryPriority,
+  sortWeddingsByDiscoveryPriority,
+} from "./marketplace/ranking";
+
+export { isSponsorshipCurrentlyActive, isFeaturedCurrentlyActive, getWeddingDiscoveryPriority, sortWeddingsByDiscoveryPriority };
+
 /**
  * Evaluates whether a wedding has active (unexpired) sponsorship.
  * Sponsored state is time-aware: if sponsorshipEnd is set and in the past, sponsorship is expired.
  */
 export function isSponsorshipActive(rawWedding: any): boolean {
-  if (!rawWedding || !rawWedding.sponsored) return false;
+  return isSponsorshipCurrentlyActive(rawWedding);
+}
 
-  const now = new Date();
-
-  if (rawWedding.sponsorshipStart) {
-    const startDate = new Date(rawWedding.sponsorshipStart);
-    if (!isNaN(startDate.getTime()) && startDate > now) {
-      return false; // Campaign starts in the future
-    }
-  }
-
-  if (rawWedding.sponsorshipEnd) {
-    const endDate = new Date(rawWedding.sponsorshipEnd);
-    if (!isNaN(endDate.getTime()) && endDate <= now) {
-      return false; // Campaign expired
-    }
-  }
-
-  return true;
+export function isFeaturedActive(rawWedding: any): boolean {
+  return isFeaturedCurrentlyActive(rawWedding);
 }
 
 export function toWeddingDTO(rawWedding: any): Wedding {
@@ -44,12 +40,13 @@ export function toWeddingDTO(rawWedding: any): Wedding {
   }
 
   const activeSponsored = isSponsorshipActive(rawWedding);
+  const activeFeatured = isFeaturedActive(rawWedding);
 
-  // 1. Host information fallback
+  // 1. Host & Couple Identity Synchronization (Single Source of Truth)
+  const slugKey = (rawWedding.slug || "").toLowerCase().trim();
+  const canonicalCoupleName = CANONICAL_COUPLE_NAMES[slugKey];
   const hostUser = rawWedding.hostCouple?.user || {};
-  const coupleName = rawWedding.hostCouple?.name || hostUser.name || rawWedding.coupleName || rawWedding.hostName || "Host Family";
-  const coupleImage = rawWedding.mainImageUrl || hostUser.avatar || rawWedding.coupleImage || "https://images.unsplash.com/photo-1615966650071-855b15f29ad1?w=400&q=80";
-  const hostAvatar = hostUser.avatar || rawWedding.hostAvatar || coupleImage;
+  const coupleName = canonicalCoupleName || rawWedding.hostCouple?.name || hostUser.name || rawWedding.coupleName || rawWedding.hostName || "Host Couple";
 
   // 2. Cultural identity & defaults
   const rawReligion = rawWedding.religion || "Hindu";
@@ -119,10 +116,23 @@ export function toWeddingDTO(rawWedding: any): Wedding {
     }
   }
 
-  // 6. Gallery & Tags
-  const gallery: string[] = Array.isArray(rawWedding.gallery)
+  // 6. Visual Profile & Canonical Image Resolution (1 Wedding = 1 Canonical Image Everywhere)
+  const isVerifiedHostMedia = !rawWedding.isDemo && (rawWedding.status === "VERIFIED" || rawWedding.status === "PUBLISHED" || !!rawWedding.isVerified);
+  const visualProfile = resolveWeddingVisualProfile({
+    slug: rawWedding.slug,
+    id: rawWedding.id,
+    imageUrl: rawWedding.mainImageUrl || rawWedding.imageUrl,
+    title: rawWedding.title,
+    location: rawWedding.location,
+    isVerified: isVerifiedHostMedia,
+  });
+  const canonicalImageUrl = isVerifiedHostMedia && rawWedding.mainImageUrl ? rawWedding.mainImageUrl : visualProfile.imageUrl;
+
+  // 7. Gallery & Tags
+  const rawGallery = Array.isArray(rawWedding.gallery)
     ? rawWedding.gallery.map((g: any) => (typeof g === "string" ? g : g.imageUrl))
-    : [rawWedding.mainImageUrl || "https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=1200&q=80"];
+    : [];
+  const gallery: string[] = [canonicalImageUrl, ...rawGallery.filter((url: string) => url && url !== canonicalImageUrl)];
 
   const traditions = Array.isArray(rawWedding.traditions)
     ? rawWedding.traditions.map((t: any) => ({
@@ -175,12 +185,14 @@ export function toWeddingDTO(rawWedding: any): Wedding {
     reviewCount,
     guestsAllowed,
     guestsBooked,
-    imageUrl: rawWedding.mainImageUrl || rawWedding.imageUrl || gallery[0],
-    coupleImage,
+    imageUrl: canonicalImageUrl,
+    imageMeta: visualProfile,
+    objectPosition: visualProfile.objectPosition || "center 35%",
+    coupleImage: isVerifiedHostMedia && (rawWedding.coupleImage || rawWedding.hostCouple?.avatar) ? (rawWedding.coupleImage || rawWedding.hostCouple?.avatar) : canonicalImageUrl,
     coupleName,
-    hostName: coupleName,
-    hostAvatar,
-    featured: !!rawWedding.featured,
+    hostName: isVerifiedHostMedia && (hostUser.name || rawWedding.hostName) ? (hostUser.name || rawWedding.hostName) : coupleName,
+    hostAvatar: isVerifiedHostMedia && (hostUser.avatar || rawWedding.hostAvatar) ? (hostUser.avatar || rawWedding.hostAvatar) : canonicalImageUrl,
+    featured: activeFeatured,
     sponsored: activeSponsored,
     sponsorshipStart: (() => {
       if (!rawWedding.sponsorshipStart) return null;
@@ -214,8 +226,8 @@ export function toWeddingDTO(rawWedding: any): Wedding {
       ? rawWedding.languages
       : rawWedding.hostCouple?.languagesSpoken?.split(",").map((l: string) => l.trim()) || ["English", "Hindi"],
     isVerified: !rawWedding.isDemo && (rawWedding.status === "VERIFIED" || rawWedding.status === "PUBLISHED" || !!rawWedding.isVerified),
-    isCurated: !!(activeSponsored || rawWedding.featured || rawWedding.isCurated),
-    curatedBadge: activeSponsored ? "Sponsored" : rawWedding.featured ? "Featured" : undefined,
+    isCurated: !!(activeSponsored || activeFeatured || rawWedding.isCurated),
+    curatedBadge: activeSponsored ? "Sponsored" : activeFeatured ? "Featured" : undefined,
     gallery,
     story: rawWedding.description || rawWedding.story || "A beautiful celebration of love and culture.",
     coupleBio: rawWedding.hostCouple?.familyBio || rawWedding.coupleBio || `The ${coupleName} family welcomes global guests with warm hospitality.`,

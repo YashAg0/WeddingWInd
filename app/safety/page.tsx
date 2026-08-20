@@ -741,6 +741,39 @@ export default function SafetyPolicyPage() {
             </div>
           </section>
 
+          {/* Related Safety & Compliance Resources */}
+          <section className="pt-6 border-t border-warm-200/80 space-y-3">
+            <h3 className="font-display font-bold text-base text-charcoal-900">
+              Dedicated Safety & Compliance Resources
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
+              <a href="/guest-safety" className="p-3 rounded-xl bg-warm-50 border border-warm-200 hover:border-amber-400 block transition-colors">
+                <span className="font-bold text-charcoal-900 block">Guest Safety Guide</span>
+                <span className="text-charcoal-500">Etiquette, boundaries & preparation</span>
+              </a>
+              <a href="/host-safety" className="p-3 rounded-xl bg-warm-50 border border-warm-200 hover:border-amber-400 block transition-colors">
+                <span className="font-bold text-charcoal-900 block">Host Safety Guide</span>
+                <span className="text-charcoal-500">Hosting guidelines & coordinator support</span>
+              </a>
+              <a href="/incident-report" className="p-3 rounded-xl bg-warm-50 border border-warm-200 hover:border-amber-400 block transition-colors">
+                <span className="font-bold text-charcoal-900 block">Incident Reporting</span>
+                <span className="text-charcoal-500">Official protocol for urgent reports</span>
+              </a>
+              <a href="/photo-video-consent" className="p-3 rounded-xl bg-warm-50 border border-warm-200 hover:border-amber-400 block transition-colors">
+                <span className="font-bold text-charcoal-900 block">Photo & Video Consent</span>
+                <span className="text-charcoal-500">Social media & sacred ritual rules</span>
+              </a>
+              <a href="/insurance" className="p-3 rounded-xl bg-warm-50 border border-warm-200 hover:border-amber-400 block transition-colors">
+                <span className="font-bold text-charcoal-900 block">Travel Insurance</span>
+                <span className="text-charcoal-500">Medical & trip protection advice</span>
+              </a>
+              <a href="/grievance" className="p-3 rounded-xl bg-warm-50 border border-warm-200 hover:border-amber-400 block transition-colors">
+                <span className="font-bold text-charcoal-900 block">Grievance Redressal</span>
+                <span className="text-charcoal-500">Statutory officer & dispute contacts</span>
+              </a>
+            </div>
+          </section>
+
           {/* Footer */}
           <section className="pt-2 border-t border-warm-100">
             <p className="text-xs sm:text-sm text-charcoal-500">

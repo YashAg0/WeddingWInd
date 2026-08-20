@@ -7,9 +7,10 @@ import { MapPin, Users, Heart, Calendar, Sparkles, ShieldCheck, ArrowRight } fro
 import type { Wedding } from "@/types";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
+import { resolveWeddingVisualProfile } from "@/lib/wedding-images";
 
 const FALLBACK_IMAGE =
-  "https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=1200&q=85";
+  "https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=800&q=80";
 
 interface WeddingCardProps {
   wedding: Wedding;
@@ -18,7 +19,7 @@ interface WeddingCardProps {
 }
 
 function formatTierLabel(tier?: string, category?: string): string {
-  if (!tier && !category) return "Standard";
+  if (!tier && !category) return "Traditional";
   const str = (tier || category || "").toUpperCase().trim();
   if (str === "SIGNATURE_ROYAL" || str === "SIGNATURE ROYAL") return "Signature Royal";
   if (str === "ROYAL") return "Royal";
@@ -30,7 +31,10 @@ function formatTierLabel(tier?: string, category?: string): string {
 
 export function WeddingCard({ wedding, className, hidePrice = false }: WeddingCardProps) {
   const { toggleWishlist, wishlist } = useAuth();
-  const [imgSrc, setImgSrc] = useState(wedding.imageUrl || FALLBACK_IMAGE);
+  const visualProfile = resolveWeddingVisualProfile(wedding);
+  const initialImg = wedding.imageUrl || visualProfile.imageUrl || FALLBACK_IMAGE;
+  const [imgSrc, setImgSrc] = useState(initialImg);
+  const objectPosition = wedding.objectPosition || visualProfile.objectPosition || "center 35%";
 
   // Capacity & calculations
   const guestsAllowed = wedding.guestsAllowed || 20;
@@ -38,214 +42,270 @@ export function WeddingCard({ wedding, className, hidePrice = false }: WeddingCa
   const availableSlots = isUnlimitedCapacity
     ? 20
     : Math.max(0, guestsAllowed - (wedding.guestsBooked || 0));
-  const isSoldOut = wedding.isDemo === true || wedding.availabilityStatus === "FULLY_BOOKED" || (!isUnlimitedCapacity && availableSlots <= 0);
-  
-  const displayPriceUSD = typeof wedding.pricePerGuest === "number" && wedding.pricePerGuest > 0
-    ? wedding.pricePerGuest
-    : 149;
+  const isSoldOut =
+    wedding.isDemo === true ||
+    wedding.availabilityStatus === "FULLY_BOOKED" ||
+    (!isUnlimitedCapacity && availableSlots <= 0);
+
+  const displayPriceUSD =
+    typeof wedding.pricePerGuest === "number" && wedding.pricePerGuest > 0
+      ? wedding.pricePerGuest
+      : 149;
   const durationDays = wedding.durationDays || 1;
-  const ceremoniesCount = wedding.ceremoniesCount || (wedding.timeline?.length || durationDays);
+  const ceremoniesCount =
+    wedding.ceremoniesCount || (wedding.timeline?.length || durationDays);
   const isWishlisted = wishlist.includes(wedding.id);
   const isSponsored = Boolean(wedding.sponsored);
+  const isFeatured = !isSponsored && Boolean(wedding.featured);
   const tierDisplay = formatTierLabel(wedding.tier, wedding.category);
+
+  // Location display: prefer city+state, fallback to location
+  const locationDisplay = wedding.city
+    ? `${wedding.city}, ${wedding.state || wedding.region || "India"}`
+    : wedding.location || "India";
+
+  // Community/tradition display for footer
+  const traditionDisplay = wedding.community || wedding.region || "India";
 
   return (
     <div
       className={cn(
-        "relative group/sponsored h-full flex flex-col w-full",
-        isSponsored ? "p-[2.5px] rounded-2xl" : "",
+        "relative group/card h-full flex flex-col w-full transition-all duration-300",
+        isSponsored
+          ? "sponsored-luxury-frame p-[3.5px] rounded-2xl shadow-md hover:shadow-2xl hover:shadow-amber-500/28 transform hover:-translate-y-1.5"
+          : isFeatured
+          ? "featured-luxury-frame p-[1.5px] rounded-2xl shadow-sm hover:shadow-xl hover:shadow-amber-900/15 transform hover:-translate-y-1"
+          : "hover:transform hover:-translate-y-1",
         className
       )}
+      data-testid="wedding-card-container"
     >
       <style>{`
-        @keyframes sponsoredSpin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
+        @keyframes luxuryGoldSweep {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
         }
-        .sponsored-ring-anim {
-          animation: sponsoredSpin 5s linear infinite;
+        .sponsored-luxury-frame {
+          background: linear-gradient(
+            135deg,
+            #8f6b1f 0%,
+            #d4af37 20%,
+            #f4d77a 40%,
+            #ffe9a6 50%,
+            #d4af37 65%,
+            #b8860b 80%,
+            #8f6b1f 100%
+          );
+          background-size: 250% 250%;
+          animation: luxuryGoldSweep 6s ease-in-out infinite;
+          box-shadow: 0 8px 24px -2px rgba(212, 175, 55, 0.22), 0 2px 8px -1px rgba(0, 0, 0, 0.06);
+        }
+        .featured-luxury-frame {
+          background: linear-gradient(
+            135deg,
+            #7a1c32 0%,
+            #d4af37 50%,
+            #581022 100%
+          );
+          box-shadow: 0 3px 16px -2px rgba(122, 28, 50, 0.12);
         }
         @media (prefers-reduced-motion: reduce) {
-          .sponsored-ring-anim {
+          .sponsored-luxury-frame, .featured-luxury-frame {
             animation: none !important;
+            transform: none !important;
           }
         }
       `}</style>
 
-      {/* Rotating conic-gradient ring around sponsored card */}
-      {isSponsored && (
-        <div
-          className="absolute inset-0 rounded-2xl overflow-hidden pointer-events-none z-0"
-          aria-hidden="true"
-        >
-          <div
-            className="sponsored-ring-anim absolute inset-[-100%] opacity-85 transition-opacity duration-300 group-hover/sponsored:opacity-100"
-            style={{
-              background:
-                "conic-gradient(from 0deg, var(--color-brand-secondary) 0%, var(--color-brand-primary) 30%, #fcd34d 50%, var(--color-brand-primary) 70%, var(--color-brand-secondary) 100%)",
-            }}
-          />
-        </div>
-      )}
-
       <article
         className={cn(
-          "card-luxury group h-full flex flex-col bg-white transition-all duration-300 relative z-10 overflow-hidden",
+          "group h-full flex flex-col bg-white transition-all duration-300 relative z-10 overflow-hidden",
           isSponsored
-            ? "rounded-[14px] shadow-xl shadow-amber-500/10 hover:shadow-amber-500/25"
-            : "rounded-2xl border border-warm-200/60 hover:shadow-lg hover:border-warm-300"
+            ? "rounded-[13px] border border-amber-200/50 shadow-[inset_0_0_8px_rgba(212,175,55,0.08)]"
+            : isFeatured
+            ? "rounded-[14.5px] border border-amber-300/40 hover:shadow-[0_8px_32px_0_rgba(107,16,38,0.14)]"
+            : "rounded-2xl border border-warm-200/70 hover:shadow-[0_8px_32px_0_rgba(107,16,38,0.12)] hover:border-warm-300"
         )}
         aria-labelledby={`wedding-title-${wedding.id}`}
         data-testid="wedding-card"
       >
-        {/* Top Banner for Sponsored Listings */}
-        {isSponsored && (
-          <div className="bg-gradient-to-r from-amber-600 via-amber-500 to-amber-700 text-white text-[0.625rem] font-extrabold tracking-widest uppercase py-1.5 px-3 text-center flex items-center justify-center gap-1.5 shadow-inner border-b border-amber-400/30">
-            <Sparkles size={11} className="text-amber-200 animate-pulse" aria-hidden="true" />
-            <span>Sponsored Experience</span>
-            <Sparkles size={11} className="text-amber-200 animate-pulse" aria-hidden="true" />
-          </div>
-        )}
-
-        {/* Image Frame with strict 4:3 Aspect Ratio */}
-        <div className="relative w-full aspect-[4/3] overflow-hidden bg-warm-100 flex-shrink-0">
+        {/* ── IMAGE FRAME ─────────────────────────────────────────────────── */}
+        <div className="relative w-full overflow-hidden bg-warm-100 flex-shrink-0" style={{ aspectRatio: "16/10" }}>
           <Image
             src={imgSrc}
-            alt={`${wedding.title} wedding in ${wedding.location}`}
+            alt={visualProfile.altText || `Authentic ${wedding.title} wedding celebration in ${locationDisplay}`}
             fill
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-            className="object-cover transition-transform duration-700 group-hover:scale-105"
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+            className="object-cover transition-transform duration-700 group-hover/card:scale-105"
+            style={{ objectPosition }}
             loading="lazy"
-            onError={() => setImgSrc(FALLBACK_IMAGE)}
+            onError={() => {
+              if (imgSrc !== FALLBACK_IMAGE) setImgSrc(FALLBACK_IMAGE);
+            }}
           />
 
+          {/* Subtle overlay */}
           <div
-            className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"
+            className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20 pointer-events-none"
             aria-hidden="true"
           />
 
-          {/* Badges Top Left & Center */}
-          <div className="absolute top-3 left-3 right-14 flex items-center gap-1.5 flex-wrap z-10">
-            {/* Prominent Multi-Day Badge */}
-            <span className="inline-flex items-center gap-1 bg-charcoal-900/90 backdrop-blur-md text-amber-300 text-[0.6875rem] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-full shadow-md border border-amber-400/30">
-              <Calendar size={11} className="text-amber-300" />
-              {durationDays} {durationDays === 1 ? "DAY" : "DAYS"}
+          {/* ── ROW 1 (TOP BAR): Left = Duration, Right = Wishlist ──────────── */}
+          <div className="absolute top-3 left-3 right-3 flex items-center justify-between z-10 pointer-events-none">
+            {/* Top-Left: Duration Pill */}
+            <span className="inline-flex items-center gap-1 bg-black/75 backdrop-blur-md text-amber-300 text-[0.6875rem] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md border border-amber-400/30 shadow-xs pointer-events-auto">
+              <Calendar size={11} className="text-amber-300 flex-shrink-0" aria-hidden="true" />
+              <span>{durationDays} {durationDays === 1 ? "Day" : "Days"}</span>
             </span>
 
-            <span className="inline-flex items-center gap-1 bg-white/95 backdrop-blur-sm text-[var(--color-brand-primary)] text-[0.6875rem] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full shadow-sm">
-              {tierDisplay}
-            </span>
-
-            {isSoldOut && (
-              <span className="inline-flex items-center gap-1 bg-amber-950/85 backdrop-blur-sm text-amber-200 text-[0.625rem] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border border-amber-400/30">
-                Fully Booked
-              </span>
-            )}
+            {/* Top-Right: Wishlist Heart */}
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                toggleWishlist(wedding.id);
+              }}
+              className="p-1.5 rounded-full bg-black/45 backdrop-blur-md text-white hover:bg-black/65 transition-colors pointer-events-auto border border-white/15"
+              aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
+            >
+              <Heart
+                size={14}
+                className={cn("transition-colors", isWishlisted && "fill-red-500 text-red-500")}
+              />
+            </button>
           </div>
 
-          {/* Wishlist Button */}
-          <button
-            onClick={(e) => {
-              e.preventDefault();
-              toggleWishlist(wedding.id);
-            }}
-            className="absolute top-3 right-3 z-10 p-2 rounded-full bg-black/40 backdrop-blur-md text-white hover:bg-black/60 transition-colors"
-            aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
-          >
-            <Heart
-              size={16}
-              className={cn("transition-colors", isWishlisted && "fill-red-500 text-red-500")}
-            />
-          </button>
-
-          {/* Location & Religion on Image bottom */}
-          <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-white text-xs z-10">
-            <div className="flex items-center gap-1.5 truncate max-w-[200px]">
-              <MapPin size={13} className="text-amber-300 flex-shrink-0" />
-              <span className="truncate font-semibold drop-shadow-sm text-xs">
-                {wedding.city ? `${wedding.city}, ${wedding.state || wedding.region || "India"}` : wedding.location}
+          {/* ── ROW 2: Dedicated Promotion Ribbon (SPONSORED > FEATURED > NORMAL) ── */}
+          {isSponsored ? (
+            <div className="absolute top-11 left-3 z-10 pointer-events-none">
+              <span className="inline-flex items-center gap-1.5 bg-[#130206]/95 backdrop-blur-md text-[#fef08a] text-[0.625rem] font-extrabold uppercase tracking-[0.16em] px-2.5 py-1 rounded-md border border-[#d4af37]/60 shadow-[0_2px_8px_rgba(212,175,55,0.25)] whitespace-nowrap flex-shrink-0">
+                <Sparkles size={10} className="text-[#fde047] flex-shrink-0" aria-hidden="true" />
+                <span>✦ SPONSORED</span>
               </span>
             </div>
-
-            {wedding.religion && (
-              <span className="text-[0.6875rem] font-medium text-warm-200/90 bg-black/40 backdrop-blur-xs px-2 py-0.5 rounded-md truncate max-w-[120px]">
-                {wedding.religion}
+          ) : isFeatured ? (
+            <div className="absolute top-11 left-3 z-10 pointer-events-none">
+              <span className="inline-flex items-center gap-1 bg-[#4a081a]/90 backdrop-blur-md text-amber-200 text-[0.625rem] font-extrabold uppercase tracking-[0.14em] px-2.5 py-1 rounded-md border border-amber-400/40 shadow-xs whitespace-nowrap flex-shrink-0">
+                <span>★ FEATURED</span>
               </span>
-            )}
+            </div>
+          ) : (
+            <div className="absolute top-11 left-3 z-10 pointer-events-none">
+              <span className="inline-flex items-center bg-white/95 backdrop-blur-sm text-[var(--color-brand-primary)] text-[0.625rem] font-bold uppercase tracking-wide px-2 py-0.5 rounded-md shadow-xs">
+                {tierDisplay}
+              </span>
+            </div>
+          )}
+
+          {/* ── BOTTOM: Location + Availability ───────────────────────────── */}
+          <div className="absolute bottom-0 left-0 right-0 px-3 py-2.5 z-10 flex items-end justify-between gap-2 pointer-events-none">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <MapPin size={12} className="text-amber-300 flex-shrink-0 drop-shadow" aria-hidden="true" />
+              <span className="text-white text-xs font-semibold truncate drop-shadow-md">
+                {locationDisplay}
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5 flex-shrink-0 pointer-events-auto">
+              {isSoldOut && (
+                <span className="inline-flex items-center bg-black/75 backdrop-blur-md text-amber-200 text-[0.6125rem] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border border-amber-400/30 whitespace-nowrap">
+                  Fully Booked
+                </span>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Card Body — strict flex column with aligned slots */}
-        <div className="p-5 flex flex-col flex-1 justify-between gap-3">
-          <div className="space-y-2.5 flex-1">
-            <div className="flex items-start justify-between gap-2 min-h-[1.75rem]">
-              <h3
-                id={`wedding-title-${wedding.id}`}
-                className="font-display font-bold text-base sm:text-lg text-charcoal-900 line-clamp-1 group-hover:text-[var(--color-brand-primary)] transition-colors"
-                title={wedding.title}
+        {/* ── CARD BODY ────────────────────────────────────────────────────── */}
+        <div className="p-4 flex flex-col flex-1 gap-3">
+          {/* Title + Verified */}
+          <div className="flex items-start justify-between gap-2">
+            <h3
+              id={`wedding-title-${wedding.id}`}
+              className="font-display font-bold text-[0.9375rem] sm:text-base text-charcoal-900 line-clamp-2 group-hover/card:text-[var(--color-brand-primary)] transition-colors leading-snug flex-1 min-w-0"
+              title={wedding.title}
+            >
+              {wedding.title}
+            </h3>
+            {wedding.isVerified && !wedding.isDemo && (
+              <span
+                className="text-emerald-600 flex-shrink-0 mt-0.5"
+                title="Verified Host Celebration"
               >
-                {wedding.title}
-              </h3>
-              {wedding.isVerified && !wedding.isDemo && (
-                <span className="text-emerald-600 flex-shrink-0" title="Verified Host Celebration">
-                  <ShieldCheck size={16} />
-                </span>
-              )}
-            </div>
-
-            <p className="text-xs text-charcoal-600 line-clamp-2 leading-relaxed min-h-[2.25rem]">
-              {wedding.story}
-            </p>
-
-            {/* Structured Multi-Day Details & Highlights */}
-            <div className="flex flex-wrap gap-1.5 pt-1 min-h-[1.85rem] items-center">
-              <span className="inline-flex items-center gap-1 text-[0.6875rem] font-semibold text-charcoal-700 bg-warm-50 px-2 py-1 rounded-md border border-warm-200/60">
-                <Sparkles size={11} className="text-[var(--color-brand-primary)]" />
-                {ceremoniesCount} {ceremoniesCount === 1 ? "Event" : "Events"}
+                <ShieldCheck size={15} />
               </span>
-
-              {guestsAllowed > 0 && (
-                <span className="inline-flex items-center gap-1 text-[0.6875rem] font-semibold text-charcoal-700 bg-warm-50 px-2 py-1 rounded-md border border-warm-200/60">
-                  <Users size={11} className="text-[var(--color-brand-primary)]" />
-                  Up to {guestsAllowed} guests
-                </span>
-              )}
-            </div>
+            )}
           </div>
 
-          {/* Card Footer — fixed baseline */}
-          <div className="flex items-center justify-between pt-3.5 mt-auto border-t border-warm-100">
+          {/* Description — fixed 2-line slot */}
+          <p className="text-xs text-charcoal-500 line-clamp-2 leading-relaxed flex-1">
+            {wedding.story || "An authentic Indian wedding celebration welcoming international guests."}
+          </p>
+
+          {/* Meta row — ceremonies + capacity + tier */}
+          <div className="flex items-center gap-2 text-xs text-charcoal-600">
+            <span className="inline-flex items-center gap-1 font-medium">
+              <Sparkles size={10} className="text-[var(--color-brand-primary)]" aria-hidden="true" />
+              {ceremoniesCount} {ceremoniesCount === 1 ? "event" : "events"}
+            </span>
+            <span className="text-warm-300" aria-hidden="true">·</span>
+            <span className="inline-flex items-center gap-1 font-medium">
+              <Users size={10} className="text-[var(--color-brand-primary)]" aria-hidden="true" />
+              Up to {guestsAllowed} guests
+            </span>
+            {isSponsored && (
+              <>
+                <span className="text-warm-300" aria-hidden="true">·</span>
+                <span className="text-[0.625rem] font-bold text-amber-700 uppercase tracking-wide">
+                  {tierDisplay}
+                </span>
+              </>
+            )}
+          </div>
+
+          {/* ── FOOTER ────────────────────────────────────────────────────── */}
+          <div className="border-t border-warm-100 pt-3 mt-auto">
             {hidePrice ? (
-              // Emotional / Visual Selling on Homepage (NO PRICE)
-              <div className="min-w-0 pr-2">
-                <span className="text-[0.6875rem] font-bold text-[var(--color-brand-primary)] uppercase tracking-wider block truncate">
-                  {durationDays}-Day Celebration
-                </span>
-                <span className="text-[0.6875rem] font-medium text-charcoal-500 block truncate">
-                  {wedding.community || wedding.region || "Authentic Tradition"}
-                </span>
+              // Homepage: duration + tradition label, then full-width CTA
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-between gap-1 min-w-0">
+                  <span className="text-[0.6875rem] font-bold text-[var(--color-brand-primary)] uppercase tracking-wider leading-tight whitespace-nowrap">
+                    {durationDays}-Day Celebration
+                  </span>
+                  <span className="text-[0.625rem] text-charcoal-400 truncate text-right">
+                    {traditionDisplay}
+                  </span>
+                </div>
+                <Link
+                  href={`/weddings/${wedding.slug}`}
+                  className="btn btn-primary w-full text-xs font-bold py-2 rounded-xl transition-all inline-flex items-center justify-center gap-1.5 shadow-xs group/btn"
+                  aria-label={`Explore ${wedding.title}`}
+                >
+                  <span>Explore Celebration</span>
+                  <ArrowRight size={12} className="group-hover/btn:translate-x-0.5 transition-transform" aria-hidden="true" />
+                </Link>
               </div>
             ) : (
-              // Marketplace & Discovery Detail Price
-              <div>
-                <div className="flex items-baseline gap-1">
-                  <span className="font-display font-bold text-xl text-charcoal-900">
-                    ${displayPriceUSD.toLocaleString()}
-                  </span>
-                  <span className="text-xs font-medium text-charcoal-500">/guest</span>
+              // Marketplace: price + CTA side by side
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="flex items-baseline gap-1">
+                    <span className="font-display font-bold text-lg text-charcoal-900">
+                      ${displayPriceUSD.toLocaleString()}
+                    </span>
+                    <span className="text-xs text-charcoal-500">/guest</span>
+                  </div>
+                  <div className="text-[0.625rem] text-charcoal-400">Experience Pass</div>
                 </div>
-                <span className="text-[0.625rem] font-medium text-charcoal-400 block">All-Inclusive Pass</span>
+                <Link
+                  href={`/weddings/${wedding.slug}`}
+                  className="btn btn-primary text-xs font-bold py-2 px-4 rounded-xl transition-all inline-flex items-center gap-1.5 shadow-xs group/btn flex-shrink-0 whitespace-nowrap"
+                  aria-label={`View ${wedding.title}`}
+                >
+                  <span>View</span>
+                  <ArrowRight size={12} className="group-hover/btn:translate-x-0.5 transition-transform" aria-hidden="true" />
+                </Link>
               </div>
             )}
-
-            <Link
-              href={`/weddings/${wedding.slug}`}
-              className="btn btn-primary btn-sm font-bold transition-all inline-flex items-center gap-1 shadow-xs group/btn flex-shrink-0"
-              aria-label={`View celebration details for ${wedding.title}`}
-            >
-              {hidePrice ? "Explore Wedding" : "View Celebration"}
-              <ArrowRight size={13} className="group-hover/btn:translate-x-0.5 transition-transform" aria-hidden="true" />
-            </Link>
           </div>
         </div>
       </article>

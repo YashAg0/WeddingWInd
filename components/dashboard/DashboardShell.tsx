@@ -151,7 +151,7 @@ function DashboardShellContent({ children }: { children: React.ReactNode }) {
               animate={{ x: 0 }}
               exit={{ x: "-100%" }}
               transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-              className="fixed top-0 bottom-0 left-0 z-50 lg:hidden w-64"
+              className="fixed top-0 bottom-0 left-0 z-50 lg:hidden w-64 h-full overflow-hidden shadow-2xl"
             >
               <Sidebar onCloseMobile={() => setMobileSidebarOpen(false)} />
             </motion.div>
@@ -160,7 +160,7 @@ function DashboardShellContent({ children }: { children: React.ReactNode }) {
       </AnimatePresence>
 
       {/* Main viewport */}
-      <div className="flex flex-col flex-1 overflow-hidden min-w-0">
+      <div className="flex flex-col flex-1 overflow-hidden min-w-0 h-full">
         <DashboardHeader onOpenMobileSidebar={() => setMobileSidebarOpen(true)} />
         {dbOffline && user && (
           // DB went offline AFTER the user was already synced — show a non-blocking banner
@@ -174,8 +174,8 @@ function DashboardShellContent({ children }: { children: React.ReactNode }) {
             </button>
           </div>
         )}
-        <div className="flex-1 overflow-y-auto bg-warm-50 p-4 sm:p-6 md:p-8 focus:outline-none" role="region" aria-label="Dashboard Content">
-          <div className="max-w-6xl mx-auto w-full">
+        <div className="flex-1 overflow-y-auto min-h-0 bg-warm-50 p-4 sm:p-6 md:p-8 focus:outline-none" role="region" aria-label="Dashboard Content">
+          <div className="max-w-6xl mx-auto w-full pb-16">
             {children}
           </div>
         </div>

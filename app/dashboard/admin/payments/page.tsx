@@ -4,7 +4,6 @@ import { adminGetPaymentsAndQueuesAction } from "@/lib/actions/admin";
 import { prisma } from "@/lib/prisma";
 import AdminManualPaymentManager from "@/components/dashboard/AdminManualPaymentManager";
 import { CreditCard, RefreshCcw, Landmark, AlertTriangle, ShieldCheck, DollarSign } from "lucide-react";
-import { formatCurrencyINR } from "@/lib/constants/financial-model";
 
 export const dynamic = "force-dynamic";
 

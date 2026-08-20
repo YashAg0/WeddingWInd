@@ -1,6 +1,15 @@
-import { requireRole, getDbUser } from "@/lib/auth";
+import { getDbUser } from "@/lib/auth";
 import { UserRole } from "@prisma/client";
-import { createWedding, editWedding, deleteWedding, getMyWeddings, requestSponsorshipAction, cancelSponsorshipRequestAction } from "@/lib/actions";
+import {
+  createWedding,
+  editWedding,
+  deleteWedding,
+  getMyWeddings,
+  requestSponsorshipAction,
+  cancelSponsorshipRequestAction,
+  submitHostPaymentProofAction,
+  getSponsorshipPaymentConfigAction,
+} from "@/lib/actions";
 import {
   Calendar as CalendarIcon,
   MapPin,
@@ -9,12 +18,14 @@ import {
   Plus,
   Edit2,
   Trash2,
-  Palette,
-  Globe2,
   Eye,
   Sparkles,
   Zap,
   Clock,
+  QrCode,
+  CreditCard,
+  ExternalLink,
+  CheckCircle,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -25,7 +36,7 @@ export const dynamic = "force-dynamic";
 export default async function CoupleListingsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ action?: string; id?: string }>;
+  searchParams: Promise<{ action?: string; id?: string; checkout?: string }>;
 }) {
   // Only host couples may manage their own listings
   const user = await getDbUser();
@@ -36,7 +47,10 @@ export default async function CoupleListingsPage({
     redirect("/dashboard");
   }
 
-  const weddings = await getMyWeddings();
+  const [weddings, paymentConfig] = await Promise.all([
+    getMyWeddings(),
+    getSponsorshipPaymentConfigAction(),
+  ]);
 
   const params = await searchParams;
   const action = params.action;
@@ -81,9 +95,20 @@ export default async function CoupleListingsPage({
   async function handleRequestSponsorship(formData: FormData) {
     "use server";
     const weddingId = formData.get("weddingId") as string;
+    const promotionType = (formData.get("promotionType") as "SPONSORED" | "FEATURED") || "SPONSORED";
     const message = (formData.get("message") as string) || undefined;
-    const budget = (formData.get("budget") as string) || undefined;
-    await requestSponsorshipAction({ weddingId, message, budget });
+    const proposedAmountStr = (formData.get("proposedAmount") as string) || (formData.get("budget") as string) || undefined;
+    const proposedAmount = proposedAmountStr ? parseFloat(proposedAmountStr) : undefined;
+    const budget = proposedAmountStr;
+    const requestedDurationDays = Number(formData.get("requestedDurationDays") || 7);
+    await requestSponsorshipAction({
+      weddingId,
+      promotionType,
+      message,
+      budget,
+      proposedAmount,
+      requestedDurationDays,
+    });
     redirect("/dashboard/listings");
   }
 
@@ -94,13 +119,29 @@ export default async function CoupleListingsPage({
     redirect("/dashboard/listings");
   }
 
+  async function handleHostSubmitProof(formData: FormData) {
+    "use server";
+    const sponsorshipId = formData.get("sponsorshipId") as string;
+    const transactionReference = formData.get("transactionReference") as string;
+    const paymentProofUrl = (formData.get("paymentProofUrl") as string) || undefined;
+    const paymentNotes = (formData.get("paymentNotes") as string) || undefined;
+
+    await submitHostPaymentProofAction({
+      sponsorshipId,
+      transactionReference,
+      paymentProofUrl,
+      paymentNotes,
+    });
+    redirect("/dashboard/listings");
+  }
+
   return (
     <div className="space-y-8">
       {/* Page Header */}
       <div className="flex justify-between items-center">
         <div className="space-y-1">
           <h1 className="font-display font-bold text-2xl sm:text-3xl text-charcoal-900">
-            My Our Indian Weddings
+            My Wedding Experiences
           </h1>
           <p className="text-charcoal-500 text-xs sm:text-sm">
             Create and publish your wedding experiences for travelers to discover and register.
@@ -236,7 +277,6 @@ export default async function CoupleListingsPage({
                   name="requiredGuests"
                   min="0"
                   defaultValue={editListing?.requiredGuests ?? 0}
-                  placeholder="Minimum guests wanted"
                   className="input-luxury w-full"
                 />
               </div>
@@ -249,7 +289,7 @@ export default async function CoupleListingsPage({
                   type="text"
                   name="theme"
                   defaultValue={editListing?.theme || ""}
-                  placeholder="e.g. Royal Heritage & Gold"
+                  placeholder="e.g. Royal Heritage"
                   className="input-luxury w-full"
                 />
               </div>
@@ -260,244 +300,472 @@ export default async function CoupleListingsPage({
                   type="text"
                   name="dressCode"
                   defaultValue={editListing?.dressCode || ""}
-                  placeholder="e.g. Traditional Indian / Festive"
+                  placeholder="e.g. Traditional Festive / Formal"
                   className="input-luxury w-full"
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-bold text-charcoal-700 uppercase tracking-wider">Ethnicity / Culture</label>
+                <label className="text-xs font-bold text-charcoal-700 uppercase tracking-wider">Ethnicity / Tradition</label>
                 <input
                   type="text"
                   name="ethnicity"
                   defaultValue={editListing?.ethnicity || ""}
-                  placeholder="e.g. Rajput, Punjabi, Tamil"
+                  placeholder="e.g. Marwari / North Indian"
                   className="input-luxury w-full"
                 />
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-charcoal-700 uppercase tracking-wider">Visibility Status</label>
-                <select
-                  name="status"
-                  defaultValue={editListing?.status || "PUBLISHED"}
-                  className="input-luxury w-full bg-white select-reset"
-                >
-                  <option value="PUBLISHED">Published (visible to travelers)</option>
-                  <option value="DRAFT">Draft (hidden)</option>
-                  <option value="COMPLETED">Completed</option>
-                </select>
-              </div>
-            </div>
-
             <div className="space-y-2">
-              <label className="text-xs font-bold text-charcoal-700 uppercase tracking-wider">Description</label>
+              <label className="text-xs font-bold text-charcoal-700 uppercase tracking-wider">Full Story &amp; Description</label>
               <textarea
                 name="description"
-                rows={5}
+                rows={4}
                 required
-                minLength={20}
                 defaultValue={editListing?.description || ""}
-                placeholder="Describe your wedding, the cultural richness, key traditions, and hospitality provided..."
-                className="input-luxury w-full p-4 h-auto"
+                placeholder="Share your wedding story, key ceremonies, and what guests can look forward to..."
+                className="input-luxury w-full resize-none"
               />
             </div>
 
-            <div className="flex gap-3 justify-end pt-4 border-t border-warm-100">
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-charcoal-700 uppercase tracking-wider">Listing Status</label>
+              <select
+                name="status"
+                defaultValue={editListing?.status || "PUBLISHED"}
+                className="input-luxury w-full bg-white select-reset"
+              >
+                <option value="DRAFT">Draft (Hidden)</option>
+                <option value="PUBLISHED">Published (Discoverable on Marketplace)</option>
+                <option value="COMPLETED">Completed / Past Event</option>
+              </select>
+            </div>
+
+            <div className="flex gap-4 pt-4 border-t border-warm-100">
+              <button
+                type="submit"
+                className="bg-[var(--color-brand-primary)] text-white text-xs font-bold uppercase tracking-wider px-6 py-3 rounded-xl hover:opacity-90 transition-opacity cursor-pointer"
+              >
+                {editListing ? "Save Changes" : "Publish Wedding"}
+              </button>
               <Link
                 href="/dashboard/listings"
-                className="px-5 py-2.5 rounded-xl border border-warm-200 text-charcoal-600 text-xs font-bold hover:bg-warm-50 transition-colors"
+                className="px-6 py-3 rounded-xl text-xs font-bold text-charcoal-500 hover:text-charcoal-700 hover:bg-warm-100 transition-colors"
               >
                 Cancel
               </Link>
-              <button
-                type="submit"
-                className="px-5 py-2.5 rounded-xl bg-[var(--color-brand-primary)] text-white text-xs font-bold uppercase tracking-wider hover:opacity-90 transition-opacity cursor-pointer"
-              >
-                Save Celebration
-              </button>
             </div>
           </form>
         </div>
       )}
 
-      {/* Celebrations Grid */}
-      <div className="bg-white border border-warm-200/50 p-6 rounded-[2rem] shadow-sm space-y-4">
-        <h3 className="font-display font-bold text-base text-charcoal-900 border-b border-warm-100 pb-3">
-          Your Weddings ({weddings.length})
-        </h3>
+      {/* Listings Collection */}
+      <div className="space-y-4">
         {weddings.length === 0 ? (
-          <div className="p-8 text-center text-xs text-charcoal-400 font-semibold">
-            You haven&apos;t listed any weddings yet. Click &ldquo;List a Wedding&rdquo; to create your first experience.
+          <div className="bg-white border border-warm-200/50 rounded-3xl p-12 text-center space-y-4">
+            <div className="w-12 h-12 rounded-full bg-warm-100 flex items-center justify-center mx-auto text-charcoal-400">
+              <CalendarIcon size={24} />
+            </div>
+            <div className="space-y-1">
+              <h3 className="font-display font-bold text-lg text-charcoal-900">No wedding listings yet</h3>
+              <p className="text-charcoal-500 text-xs max-w-sm mx-auto">
+                Create your first wedding experience to welcome verified international travelers.
+              </p>
+            </div>
+            <Link
+              href="/dashboard/listings?action=create"
+              className="inline-flex items-center gap-2 bg-[var(--color-brand-primary)] text-white text-xs font-bold uppercase tracking-wider px-5 py-2.5 rounded-xl hover:opacity-90 transition-opacity"
+            >
+              <Plus size={14} />
+              List Your Wedding
+            </Link>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {weddings.map((w) => (
-              <div key={w.id} className="border border-warm-200/60 rounded-2xl overflow-hidden flex flex-col justify-between hover:shadow-md transition-shadow bg-warm-50/10">
-                <div className="relative h-44 w-full bg-warm-200">
-                  <Image src={w.mainImageUrl} alt={w.title} fill className="object-cover" />
-                  <div className="absolute top-3 right-3 flex gap-1.5">
-                    {w.sponsored && (
-                      <span className="text-[0.5625rem] font-bold uppercase px-2 py-0.5 rounded bg-gradient-to-r from-amber-500 to-yellow-400 text-charcoal-950 flex items-center gap-1">
-                        <Sparkles size={9} />
-                        Sponsored
+            {weddings.map((w) => {
+              const req = w.latestSponsorshipRequest;
+              const isINR = req?.currency === "INR";
+              const symbol = isINR ? "₹" : "$";
+              const upiId = paymentConfig.upiId;
+              const upiPayLink = paymentConfig.upiPaymentLink || (upiId ? `upi://pay?pa=${upiId}&pn=${encodeURIComponent(paymentConfig.upiName || "WeddingWithIndia")}&cu=INR` : null);
+              const paypalLink = paymentConfig.paypalPaymentLink;
+
+              return (
+                <div key={w.id} className="border border-warm-200/60 rounded-3xl overflow-hidden flex flex-col justify-between hover:shadow-md transition-shadow bg-white">
+                  <div className="relative h-44 w-full bg-warm-200">
+                    <Image src={w.mainImageUrl} alt={w.title} fill className="object-cover" />
+                    <div className="absolute top-3 right-3 flex gap-1.5">
+                      {w.sponsored && (
+                        <span className="text-[0.5625rem] font-bold uppercase px-2 py-0.5 rounded bg-gradient-to-r from-amber-500 to-yellow-400 text-charcoal-950 flex items-center gap-1 shadow-xs">
+                          <Sparkles size={9} />
+                          Sponsored
+                        </span>
+                      )}
+                      {w.featured && !w.sponsored && (
+                        <span className="text-[0.5625rem] font-bold uppercase px-2 py-0.5 rounded bg-[var(--color-brand-primary)] text-white">
+                          Featured
+                        </span>
+                      )}
+                      <span className={`text-[0.625rem] font-bold uppercase px-2 py-0.5 rounded ${
+                        w.status === "PUBLISHED" ? "bg-emerald-500 text-white" : w.status === "COMPLETED" ? "bg-charcoal-500 text-white" : "bg-warm-500 text-white"
+                      }`}>
+                        {w.status}
                       </span>
-                    )}
-                    {w.featured && !w.sponsored && (
-                      <span className="text-[0.5625rem] font-bold uppercase px-2 py-0.5 rounded bg-[var(--color-brand-primary)] text-white">
-                        Featured
-                      </span>
-                    )}
-                    <span className={`text-[0.625rem] font-bold uppercase px-2 py-0.5 rounded ${
-                      w.status === "PUBLISHED" ? "bg-emerald-500 text-white" : w.status === "COMPLETED" ? "bg-charcoal-500 text-white" : "bg-warm-500 text-white"
-                    }`}>
-                      {w.status}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="p-5 flex-1 space-y-4 flex flex-col justify-between">
-                  <div className="space-y-2">
-                    <h4 className="font-display font-bold text-sm text-charcoal-900 line-clamp-1">{w.title}</h4>
-                    <p className="text-charcoal-500 text-xs line-clamp-2 leading-relaxed">{w.description}</p>
+                    </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[0.6875rem] text-charcoal-600 font-medium">
-                    <div className="flex items-center gap-1.5">
-                      <MapPin size={12} className="text-maroon-600" />
-                      <span className="line-clamp-1">{w.location}</span>
+                  <div className="p-5 flex-1 space-y-4 flex flex-col justify-between">
+                    <div className="space-y-1">
+                      <h4 className="font-display font-bold text-sm text-charcoal-900 line-clamp-1">{w.title}</h4>
+                      <p className="text-charcoal-500 text-xs line-clamp-2 leading-relaxed">{w.description}</p>
                     </div>
-                    <div className="flex items-center gap-1.5">
-                      <Tag size={12} className="text-maroon-600" />
-                      <span>{w.category}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <CalendarIcon size={12} className="text-maroon-600" />
-                      <span>{new Date(w.date).toLocaleDateString()}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <Users size={12} className="text-maroon-600" />
-                      <span>{w.confirmedGuests}/{w.capacity} guests</span>
-                    </div>
-                    {w.theme && (
+
+                    <div className="grid grid-cols-2 gap-2 text-[0.6875rem] text-charcoal-600 font-medium">
                       <div className="flex items-center gap-1.5">
-                        <Palette size={12} className="text-maroon-600" />
-                        <span className="line-clamp-1">{w.theme}</span>
+                        <MapPin size={12} className="text-maroon-600 flex-shrink-0" />
+                        <span className="line-clamp-1">{w.location}</span>
                       </div>
-                    )}
-                    {w.ethnicity && (
                       <div className="flex items-center gap-1.5">
-                        <Globe2 size={12} className="text-maroon-600" />
-                        <span className="line-clamp-1">{w.ethnicity}</span>
+                        <Tag size={12} className="text-maroon-600 flex-shrink-0" />
+                        <span>{w.category}</span>
                       </div>
-                    )}
-                  </div>
+                      <div className="flex items-center gap-1.5">
+                        <CalendarIcon size={12} className="text-maroon-600 flex-shrink-0" />
+                        <span>{new Date(w.date).toLocaleDateString()}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <Users size={12} className="text-maroon-600 flex-shrink-0" />
+                        <span>{w.confirmedGuests}/{w.capacity} guests</span>
+                      </div>
+                    </div>
 
-                  {/* Sponsorship Status Row */}
-                  {w.status === "PUBLISHED" && (
-                    <div className="pt-2 border-t border-warm-100">
-                      {w.sponsored ? (
-                        <div className="flex items-center gap-2 p-2 rounded-xl bg-amber-50 border border-amber-200">
-                          <Sparkles size={12} className="text-amber-600 flex-shrink-0" />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-[0.625rem] font-bold text-amber-800 uppercase tracking-wide">Sponsored Listing Active</p>
-                            {w.sponsorshipEnd && (
-                              <p className="text-[0.5625rem] text-amber-700">
-                                Expires {new Date(w.sponsorshipEnd).toLocaleDateString()}
+                    {/* Sponsorship & Promotion Section */}
+                    {w.status === "PUBLISHED" && (
+                      <div className="pt-3 border-t border-warm-100 space-y-2">
+                        {w.sponsored ? (
+                          /* ACTIVE SPONSORSHIP (#1) */
+                          <div className="flex items-center gap-2.5 p-3 rounded-2xl bg-amber-500/10 border border-amber-300 shadow-xs">
+                            <div className="p-1.5 rounded-xl bg-amber-500/20 text-amber-700">
+                              <Sparkles size={14} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-[0.6875rem] font-bold text-amber-950 uppercase tracking-wide">
+                                ✦ Sponsored Placement Active (#1)
+                              </p>
+                              {w.sponsorshipEnd && (
+                                <p className="text-[0.625rem] text-amber-800 font-medium mt-0.5">
+                                  Top priority through {new Date(w.sponsorshipEnd).toLocaleDateString()}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        ) : w.featured ? (
+                          /* ACTIVE FEATURED (#2) */
+                          <div className="flex items-center gap-2.5 p-3 rounded-2xl bg-rose-50 border border-rose-200 shadow-xs">
+                            <div className="p-1.5 rounded-xl bg-rose-100 text-[var(--color-brand-primary)]">
+                              <Zap size={14} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-[0.6875rem] font-bold text-rose-950 uppercase tracking-wide">
+                                ★ Featured Placement Active (#2)
+                              </p>
+                              <p className="text-[0.625rem] text-rose-700 font-medium mt-0.5">
+                                Highlighted placement above standard listings
+                              </p>
+                            </div>
+                          </div>
+                        ) : req?.paymentStatus === "PAYMENT_SUBMITTED" ? (
+                          /* PAYMENT SUBMITTED - PENDING ADMIN VERIFICATION */
+                          <div className="p-3.5 bg-amber-50 border border-amber-300 rounded-2xl space-y-2">
+                            <div className="flex items-center gap-2 text-amber-900">
+                              <Clock size={15} className="text-amber-600 animate-pulse flex-shrink-0" />
+                              <span className="text-xs font-bold">{req.promotionType || "SPONSORED"} Payment Under Verification</span>
+                            </div>
+                            <p className="text-[0.6875rem] text-amber-800 leading-relaxed">
+                              We received your transaction reference <code className="font-mono font-bold bg-white px-1.5 py-0.5 rounded border border-amber-200">{req.paymentReference}</code>. Our team will verify it shortly and activate your priority placement.
+                            </p>
+                          </div>
+                        ) : req?.status === "PAYMENT_PENDING" ? (
+                          /* PAYMENT PENDING - INSTRUCTIONS & SUBMISSION FORM */
+                          <div className="p-4 bg-warm-50 border border-warm-200/80 rounded-2xl space-y-3">
+                            <div className="flex items-start justify-between gap-2">
+                              <div>
+                                <span className="inline-flex items-center gap-1 text-[0.625rem] font-bold uppercase px-2 py-0.5 rounded bg-emerald-600 text-white">
+                                  {req.promotionType || "Sponsorship"} Approved
+                                </span>
+                                <p className="text-xs font-bold text-charcoal-900 mt-1">
+                                  {symbol}{req.amount?.toLocaleString()} for {req.durationDays} Days Priority
+                                </p>
+                              </div>
+                            </div>
+
+                            {req.adminNotes && (
+                              <p className="text-[0.6875rem] text-charcoal-600 italic bg-white p-2 rounded-xl border border-warm-200/50">
+                                &ldquo;{req.adminNotes}&rdquo;
                               </p>
                             )}
+
+                            {/* Payment Method Instructions */}
+                            {(req.paymentMethod === "UPI" || (!req.paymentMethod && isINR)) ? (
+                              <div className="space-y-2 bg-white p-3 rounded-xl border border-warm-200/70 text-xs">
+                                <div className="flex items-center justify-between font-bold text-charcoal-900 text-[0.6875rem] uppercase">
+                                  <span className="flex items-center gap-1">
+                                    <QrCode size={13} className="text-amber-600" /> Pay via UPI
+                                  </span>
+                                  <span className="text-emerald-700 font-extrabold">{symbol}{req.amount?.toLocaleString()}</span>
+                                </div>
+
+                                {upiId ? (
+                                  <>
+                                    {paymentConfig.upiQrImageUrl && (
+                                      <div className="flex justify-center my-2">
+                                        <Image
+                                          src={paymentConfig.upiQrImageUrl}
+                                          alt="UPI QR Code"
+                                          width={140}
+                                          height={140}
+                                          className="rounded-xl border border-warm-200"
+                                        />
+                                      </div>
+                                    )}
+
+                                    <div className="flex items-center justify-between p-2 rounded-lg bg-warm-50 border border-warm-200 text-[0.6875rem]">
+                                      <span className="text-charcoal-600 font-medium">UPI ID:</span>
+                                      <code className="font-mono font-bold text-charcoal-900 select-all">{upiId}</code>
+                                    </div>
+
+                                    {upiPayLink && (
+                                      <a
+                                        href={upiPayLink}
+                                        className="w-full inline-flex items-center justify-center gap-1.5 py-2 px-3 bg-emerald-600 text-white text-xs font-bold rounded-xl hover:bg-emerald-700 transition-colors"
+                                      >
+                                        <ExternalLink size={12} />
+                                        Open UPI App to Pay
+                                      </a>
+                                    )}
+                                  </>
+                                ) : (
+                                  <div className="p-2.5 rounded-lg bg-warm-50 border border-warm-200 text-[0.6875rem] text-charcoal-600 leading-relaxed">
+                                    Official UPI transfer instructions will be provided by your concierge. Once completed, submit your 12-digit UTR below.
+                                  </div>
+                                )}
+
+                                <p className="text-[0.625rem] text-charcoal-500 leading-tight">
+                                  {paymentConfig.upiInstructions || "Scan QR or transfer to UPI ID, then enter your 12-digit UTR below."}
+                                </p>
+                              </div>
+                            ) : req.paymentMethod === "PAYPAL" ? (
+                              <div className="space-y-2 bg-white p-3 rounded-xl border border-warm-200/70 text-xs">
+                                <div className="flex items-center justify-between font-bold text-charcoal-900 text-[0.6875rem] uppercase">
+                                  <span className="flex items-center gap-1">
+                                    <CreditCard size={13} className="text-blue-600" /> PayPal Payment
+                                  </span>
+                                  <span className="text-emerald-700 font-extrabold">{symbol}{req.amount?.toLocaleString()}</span>
+                                </div>
+
+                                {paypalLink ? (
+                                  <a
+                                    href={paypalLink}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="w-full inline-flex items-center justify-center gap-1.5 py-2 px-3 bg-blue-600 text-white text-xs font-bold rounded-xl hover:bg-blue-700 transition-colors"
+                                  >
+                                    <ExternalLink size={12} />
+                                    Pay Securely via PayPal
+                                  </a>
+                                ) : (
+                                  <div className="p-2.5 rounded-lg bg-warm-50 border border-warm-200 text-[0.6875rem] text-charcoal-600 leading-relaxed">
+                                    PayPal transfer instructions will be provided by your concierge. Once paid, submit your transaction ID below.
+                                  </div>
+                                )}
+
+                                <p className="text-[0.625rem] text-charcoal-500 leading-tight">
+                                  {paymentConfig.paypalInstructions || "Complete transfer on PayPal and submit your transaction ID below."}
+                                </p>
+                              </div>
+                            ) : (
+                              <div className="p-2.5 bg-white rounded-xl border border-warm-200 text-[0.6875rem] text-charcoal-700">
+                                {paymentConfig.bankTransferInstructions || "Please complete bank transfer and submit transaction reference below."}
+                              </div>
+                            )}
+
+                            {/* Payment Confirmation Submission Form */}
+                            <form action={handleHostSubmitProof} className="space-y-2 pt-2 border-t border-warm-200/60">
+                              <input type="hidden" name="sponsorshipId" value={req.id} />
+                              <div>
+                                <label className="text-[0.625rem] font-bold text-charcoal-700 uppercase block mb-1">
+                                  Transaction Reference / UTR Number *
+                                </label>
+                                <input
+                                  type="text"
+                                  name="transactionReference"
+                                  required
+                                  placeholder="e.g. 423981293812 or TXN-9812"
+                                  className="input-luxury w-full text-xs bg-white py-1.5"
+                                />
+                              </div>
+
+                              <div>
+                                <label className="text-[0.625rem] font-bold text-charcoal-700 uppercase block mb-1">
+                                  Payment Screenshot / Proof Link (Optional)
+                                </label>
+                                <input
+                                  type="text"
+                                  name="paymentProofUrl"
+                                  placeholder="https://... (optional receipt link)"
+                                  className="input-luxury w-full text-xs bg-white py-1.5"
+                                />
+                              </div>
+
+                              <div className="flex gap-2 pt-1">
+                                <button
+                                  type="submit"
+                                  className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 bg-gradient-to-r from-amber-500 to-yellow-400 text-charcoal-950 text-xs font-bold uppercase tracking-wider rounded-xl hover:opacity-90 shadow-xs transition-opacity cursor-pointer"
+                                >
+                                  <CheckCircle size={12} />
+                                  I&apos;ve Completed Payment
+                                </button>
+                              </div>
+                            </form>
+
+                            <form action={handleCancelSponsorshipRequest} className="text-right">
+                              <input type="hidden" name="requestId" value={req.id} />
+                              <button
+                                type="submit"
+                                className="text-[0.5625rem] font-semibold text-charcoal-400 hover:text-rose-600 underline cursor-pointer"
+                              >
+                                Cancel Request
+                              </button>
+                            </form>
                           </div>
-                        </div>
-                      ) : w.pendingSponsorshipRequest ? (
-                        <div className="space-y-1.5">
-                          <div className="flex items-center gap-2 p-2 rounded-xl bg-blue-50 border border-blue-200">
-                            <Clock size={12} className="text-blue-600 flex-shrink-0" />
-                            <p className="text-[0.625rem] font-bold text-blue-800">Sponsorship request pending review</p>
+                        ) : req?.status === "PENDING" ? (
+                          /* PENDING ADMIN REVIEW */
+                          <div className="space-y-1.5">
+                            <div className="flex items-center gap-2 p-3 rounded-2xl bg-blue-50 border border-blue-200 text-xs">
+                              <Clock size={14} className="text-blue-600 flex-shrink-0" />
+                              <div className="flex-1 min-w-0">
+                                <p className="font-bold text-blue-950 text-[0.6875rem]">{req.promotionType || "Sponsorship"} Review Pending</p>
+                                <p className="text-[0.5625rem] text-blue-700 mt-0.5">Admins will review your celebration and send payment instructions.</p>
+                              </div>
+                            </div>
+                            <form action={handleCancelSponsorshipRequest}>
+                              <input type="hidden" name="requestId" value={req.id} />
+                              <button
+                                type="submit"
+                                className="text-[0.5625rem] font-semibold text-charcoal-500 hover:text-rose-600 underline underline-offset-2 transition-colors w-full text-left cursor-pointer"
+                              >
+                                Cancel request
+                              </button>
+                            </form>
                           </div>
-                          <form action={handleCancelSponsorshipRequest}>
-                            <input type="hidden" name="requestId" value={w.pendingSponsorshipRequest.id} />
-                            <button
-                              type="submit"
-                              className="text-[0.5625rem] font-semibold text-charcoal-500 hover:text-rose-600 underline underline-offset-2 transition-colors w-full text-left cursor-pointer"
-                            >
-                              Cancel request
-                            </button>
-                          </form>
-                        </div>
-                      ) : (
-                        <details className="group">
-                          <summary className="flex items-center gap-1.5 cursor-pointer text-[0.625rem] font-bold text-[var(--color-brand-secondary)] hover:text-amber-600 transition-colors list-none">
-                            <Zap size={11} />
-                            Request marketplace sponsorship
-                          </summary>
-                          <form action={handleRequestSponsorship} className="mt-2 space-y-2">
-                            <input type="hidden" name="weddingId" value={w.id} />
-                            <textarea
-                              name="message"
-                              rows={2}
-                              placeholder="Why would sponsorship benefit your listing? (optional)"
-                              className="w-full text-[0.6875rem] border border-warm-200 rounded-xl px-3 py-2 text-charcoal-700 bg-white resize-none focus:outline-none focus:border-maroon-300"
-                            />
-                            <input
-                              type="text"
-                              name="budget"
-                              placeholder="Preferred sponsorship budget (optional)"
-                              className="w-full text-[0.6875rem] border border-warm-200 rounded-xl px-3 py-2 text-charcoal-700 bg-white focus:outline-none focus:border-maroon-300"
-                            />
-                            <button
-                              type="submit"
-                              className="w-full text-[0.625rem] font-bold uppercase tracking-wider bg-gradient-to-r from-amber-500 to-yellow-400 text-charcoal-950 py-2 rounded-xl hover:opacity-90 transition-opacity cursor-pointer"
-                            >
-                              Submit Request
-                            </button>
-                          </form>
-                        </details>
-                      )}
-                    </div>
-                  )}
+                        ) : (
+                          /* REQUEST PROMOTION ACCORDION */
+                          <details className="group">
+                            <summary className="flex items-center gap-1.5 cursor-pointer text-[0.6875rem] font-bold text-[var(--color-brand-secondary)] hover:text-amber-600 transition-colors list-none">
+                              <Zap size={12} />
+                              Promote This Wedding Experience
+                            </summary>
+                            <form action={handleRequestSponsorship} className="mt-2.5 space-y-2.5 p-3.5 bg-warm-50/70 rounded-2xl border border-warm-200/60">
+                              <input type="hidden" name="weddingId" value={w.id} />
 
-                  <div className="pt-3 border-t border-warm-150 flex items-center justify-between">
-                    <span className="font-display font-bold text-xs text-charcoal-900">
-                      ${w.pricePerGuest.toLocaleString()}/guest
-                    </span>
+                              <div className="space-y-1">
+                                <label className="text-[0.5625rem] font-bold text-charcoal-600 uppercase tracking-wide">
+                                  Promotion Type
+                                </label>
+                                <select
+                                  name="promotionType"
+                                  defaultValue="SPONSORED"
+                                  className="w-full text-xs border border-warm-200 rounded-xl px-2.5 py-1.5 text-charcoal-700 bg-white font-semibold"
+                                >
+                                  <option value="SPONSORED">✦ Sponsored Placement (#1 Top Priority &amp; Gold Animated Frame)</option>
+                                  <option value="FEATURED">★ Featured Placement (#2 Highlighted Ribbon Above Standard)</option>
+                                </select>
+                              </div>
 
-                    <div className="flex gap-1">
-                      {/* View public celebration */}
-                      <Link
-                        href={`/weddings/${w.slug}`}
-                        className="p-1.5 rounded-lg border border-warm-200 bg-white text-charcoal-600 hover:bg-warm-50"
-                        title="View public celebration"
-                      >
-                        <Eye size={13} />
-                      </Link>
+                              <div className="space-y-1">
+                                <label className="text-[0.5625rem] font-bold text-charcoal-600 uppercase tracking-wide">
+                                  Placement Duration
+                                </label>
+                                <select
+                                  name="requestedDurationDays"
+                                  defaultValue="14"
+                                  className="w-full text-xs border border-warm-200 rounded-xl px-2.5 py-1.5 text-charcoal-700 bg-white"
+                                >
+                                  <option value="7">7 Days Placement</option>
+                                  <option value="14">14 Days Placement (Recommended)</option>
+                                  <option value="30">30 Days Placement (Full Season)</option>
+                                </select>
+                              </div>
 
-                      {/* Edit */}
-                      <Link
-                        href={`/dashboard/listings?action=edit&id=${w.id}`}
-                        className="p-1.5 rounded-lg border border-warm-200 bg-white text-charcoal-600 hover:bg-warm-50"
-                        title="Edit celebration"
-                      >
-                        <Edit2 size={13} />
-                      </Link>
+                              <div className="space-y-1">
+                                <label className="text-[0.5625rem] font-bold text-charcoal-600 uppercase tracking-wide">
+                                  Proposed Budget / Amount (Optional)
+                                </label>
+                                <input
+                                  type="number"
+                                  name="proposedAmount"
+                                  placeholder="e.g. 5000 (INR) or 100 (USD)"
+                                  className="w-full text-xs border border-warm-200 rounded-xl px-2.5 py-1.5 text-charcoal-700 bg-white"
+                                />
+                              </div>
 
-                      {/* Delete */}
-                      <form action={handleDelete}>
-                        <input type="hidden" name="id" value={w.id} />
-                        <button
-                          type="submit"
-                          title="Delete celebration"
-                          className="p-1.5 rounded-lg border border-rose-100 bg-rose-50 text-rose-650 hover:bg-rose-500 hover:text-white cursor-pointer"
+                              <textarea
+                                name="message"
+                                rows={2}
+                                placeholder="Why would promotion benefit your celebration? (optional)"
+                                className="w-full text-xs border border-warm-200 rounded-xl px-2.5 py-1.5 text-charcoal-700 bg-white resize-none focus:outline-none focus:border-amber-400"
+                              />
+                              <button
+                                type="submit"
+                                className="w-full text-[0.625rem] font-bold uppercase tracking-wider bg-gradient-to-r from-amber-500 to-yellow-400 text-charcoal-950 py-2 rounded-xl hover:opacity-90 transition-opacity cursor-pointer shadow-xs"
+                              >
+                                Submit Promotion Request
+                              </button>
+                            </form>
+                          </details>
+                        )}
+                      </div>
+                    )}
+
+                    <div className="pt-3 border-t border-warm-150 flex items-center justify-between">
+                      <span className="font-display font-bold text-xs text-charcoal-900">
+                        ${w.pricePerGuest.toLocaleString()}/guest
+                      </span>
+
+                      <div className="flex gap-1">
+                        <Link
+                          href={`/weddings/${w.slug}`}
+                          className="p-1.5 rounded-lg border border-warm-200 bg-white text-charcoal-600 hover:bg-warm-50"
+                          title="View public celebration"
                         >
-                          <Trash2 size={13} />
-                        </button>
-                      </form>
+                          <Eye size={13} />
+                        </Link>
+
+                        <Link
+                          href={`/dashboard/listings?action=edit&id=${w.id}`}
+                          className="p-1.5 rounded-lg border border-warm-200 bg-white text-charcoal-600 hover:bg-warm-50"
+                          title="Edit celebration"
+                        >
+                          <Edit2 size={13} />
+                        </Link>
+
+                        <form action={handleDelete}>
+                          <input type="hidden" name="id" value={w.id} />
+                          <button
+                            type="submit"
+                            title="Delete celebration"
+                            className="p-1.5 rounded-lg border border-rose-100 bg-rose-50 text-rose-650 hover:bg-rose-500 hover:text-white cursor-pointer"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </form>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

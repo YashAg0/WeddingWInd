@@ -24,7 +24,7 @@ export function PlatformOverviewDiagram() {
             </div>
             <div>
               <h4 className="font-display font-bold text-sm text-charcoal-900">1. Guest Booking Payment</h4>
-              <p className="text-xs text-charcoal-500">Clean USD All-Inclusive Pass ($149 – $1,199 / guest)</p>
+              <p className="text-xs text-charcoal-500">Transparent USD Experience Pass ($149 – $1,199 / guest)</p>
             </div>
           </div>
           <span className="font-display font-bold text-lg text-charcoal-900">100% Core Value (USD)</span>
@@ -34,11 +34,11 @@ export function PlatformOverviewDiagram() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="bg-emerald-950 text-white p-5 rounded-2xl space-y-2">
             <div className="flex justify-between items-center">
-              <span className="text-xs font-bold uppercase tracking-wider text-white/70">Guaranteed Host Payout</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-white/70">Fixed Host Payout</span>
               <span className="font-display font-bold text-xl text-emerald-300">₹5,101 — ₹61,101</span>
             </div>
             <p className="text-xs text-white/70 leading-relaxed">
-              Guaranteed fixed INR payout per attending guest locked by experience tier and duration, disbursed post-ceremony.
+              Fixed INR payout per attending guest locked by experience tier and duration, disbursed post-ceremony.
             </p>
           </div>
 
@@ -48,7 +48,7 @@ export function PlatformOverviewDiagram() {
               <span className="font-display font-bold text-xl text-gradient-gold">WWI Operations</span>
             </div>
             <p className="text-xs text-white/70 leading-relaxed">
-              Covers payment processing, currency exchange, operating reserves, and 24/7 guest concierge.
+              Covers payment processing, currency exchange, operating reserves, and dedicated guest support.
             </p>
           </div>
         </div>

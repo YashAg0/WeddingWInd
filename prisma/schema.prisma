@@ -221,23 +221,79 @@ model Wedding {
 }
 
 model SponsorshipRequest {
-  id          String                   @id @default(uuid())
-  weddingId   String
-  coupleId    String
-  status      SponsorshipRequestStatus @default(PENDING)
-  message     String?
-  budget      String?
-  requestedAt DateTime                 @default(now())
-  reviewedAt  DateTime?
-  reviewedBy  String?
-  adminNotes  String?
-  wedding     Wedding                  @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  id                    String                   @id @default(uuid())
+  weddingId             String
+  coupleId              String
+  promotionType         String?                  @default("SPONSORED") // SPONSORED, FEATURED
+  status                SponsorshipRequestStatus @default(PENDING)
+  source                String?                  @default("HOST_REQUEST") // HOST_REQUEST, ADMIN_OUTREACH, PARTNER, MANUAL, OTHER
+  contactMethod         String?                  // WHATSAPP, PHONE, EMAIL, IN_PERSON, WEBSITE, OTHER
+  contactDate           DateTime?
+  contactNotes          String?
+  agreementNotes        String?
+  message               String?
+  budget                String?
+  proposedAmount        Float?
+  requestedDurationDays Int?                     @default(7)
+  amount                Float?
+  currency              String                   @default("USD")
+  durationDays          Int?                     @default(7)
+  startsAt              DateTime?
+  endsAt                DateTime?
+  approvedAt            DateTime?
+  approvedBy            String?
+  paymentRequired       Boolean                  @default(true)
+  paymentMethod         String?                  @default("UPI") // UPI, PAYPAL, BANK_TRANSFER, CASH, OTHER, WAIVED
+  paymentStatus         String?                  @default("PENDING") // NOT_REQUESTED, PAYMENT_REQUESTED, PAYMENT_SUBMITTED, PAYMENT_VERIFIED, REJECTED, WAIVED
+  paymentProvider       String?
+  paymentReference      String?                  // UTR number, PayPal txn ID, or Bank wire ref
+  paymentLink           String?                  // Configured official payment link or deep link
+  paymentProofUrl       String?                  // Secure uploaded payment receipt/screenshot
+  paymentProofUploadedAt DateTime?
+  paymentSubmittedAt    DateTime?
+  paymentVerifiedAt     DateTime?
+  paymentVerifiedBy     String?
+  paymentNotes          String?
+  checklist             Json?                    // Server-backed 10-step progress checklist with completedBy and completedAt
+  paidAt                DateTime?
+  activatedAt           DateTime?
+  revokedAt             DateTime?
+  revokedBy             String?
+  revocationReason      String?
+  rejectionReason       String?
+  adminNotes            String?
+  requestedAt           DateTime                 @default(now())
+  reviewedAt            DateTime?
+  reviewedBy            String?
+  createdAt             DateTime                 @default(now())
+  updatedAt             DateTime                 @default(now()) @updatedAt
+  wedding               Wedding                  @relation(fields: [weddingId], references: [id], onDelete: Restrict)
 
   @@index([weddingId, status])
   @@index([weddingId])
+  @@index([coupleId])
   @@index([status])
+  @@index([promotionType])
+  @@index([paymentStatus])
+  @@index([source])
   @@index([requestedAt])
+  @@index([startsAt, endsAt])
+}
 
+model SponsorshipPaymentConfig {
+  id                        String   @id @default("default")
+  upiId                     String?  @default("namaste@okhdfcbank")
+  upiName                   String?  @default("WeddingWithIndia")
+  upiQrImageUrl             String?
+  upiPaymentLink            String?
+  upiInstructions           String?  @default("Scan the QR code or pay to the UPI ID. Enter the 12-digit UTR/Reference number below.")
+  paypalPaymentLink         String?  @default("https://paypal.me/weddingwithindia")
+  paypalDisplayName         String?  @default("WeddingWithIndia")
+  paypalInstructions        String?  @default("Click the secure PayPal link to complete payment, then submit your transaction ID.")
+  bankTransferInstructions  String?  @default("Transfer to: WeddingWithIndia Experiences Pvt Ltd, HDFC Bank, A/C: 50200012345678, IFSC: HDFC0000123")
+  otherPaymentInstructions  String?
+  updatedAt                 DateTime @default(now()) @updatedAt
+  updatedBy                 String?
 }
 
 model WeddingGallery {
@@ -1739,7 +1795,12 @@ enum WeddingSide {
 enum SponsorshipRequestStatus {
   PENDING
   APPROVED
+  PAYMENT_PENDING
+  PAID
+  ACTIVE
   REJECTED
+  EXPIRED
+  REVOKED
   CANCELLED
 }
 

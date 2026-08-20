@@ -1,10 +1,6 @@
 import { UserRole, VerificationStatus, WeddingStatus } from "@prisma/client";
 import {
-  WeddingTier,
-  WeddingDurationDays,
   getHostPayoutPerGuestINR,
-  getCustomerPriceUSD,
-  calculateHostPotentialEarnings,
   calculateBookingPricing,
 } from "@/lib/services/pricing-engine";
 import { formatPsychologicalLakh } from "@/components/wedding/HostEarningsCalculator";

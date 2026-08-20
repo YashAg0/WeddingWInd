@@ -26,7 +26,7 @@ import { cn } from "@/lib/utils";
 import type { Stat } from "@/types";
 
 interface HeroProps {
-  stats: Stat[];
+  stats?: Stat[];
 }
 
 const fadeUp = {
@@ -38,12 +38,7 @@ const fadeUp = {
   }),
 };
 
-// AnimatedStatValue removed — Hero now uses qualitative TRUST_STATS
-// rather than animating numeric metrics that are 0 pre-launch.
-
-/** Floating ornament particles — each has a genuinely distinct size and blur,
- *  so nearer/larger particles read as closer and farther/smaller ones recede,
- *  giving real depth-of-field rather than four identical dots. */
+/** Floating ornament particles */
 const PARTICLES = [
   { top: "15%", left: "8%", delay: 0, duration: 7, drift: 14, size: 22, opacity: 0.35, blur: 0 },
   { top: "20%", right: "12%", delay: 0.8, duration: 8.5, drift: -10, size: 14, opacity: 0.22, blur: 1 },
@@ -51,10 +46,7 @@ const PARTICLES = [
   { top: "65%", right: "6%", delay: 0.4, duration: 9, drift: -16, size: 12, opacity: 0.2, blur: 1.5 },
 ] as const;
 
-/** Curated one-tap searches for the highest-intent destinations. Clicking one
- *  fills the "Where" field and carries focus to it, so the choice is visibly
- *  confirmed — a first-time visitor sees exactly what will be searched
- *  before committing, rather than a silent state change off-screen. */
+/** Curated one-tap searches */
 const TRENDING_SEARCHES = [
   "Rajasthan Royal Wedding",
   "Goa Beach Wedding",
@@ -62,9 +54,6 @@ const TRENDING_SEARCHES = [
   "South Indian Temple Wedding",
 ] as const;
 
-/** A select styled with `appearance-none` needs its own arrow — this restores
- *  a real, visible dropdown indicator instead of leaving the control looking
- *  like plain text with no affordance. */
 function FieldChevron() {
   return (
     <ChevronDown
@@ -75,12 +64,6 @@ function FieldChevron() {
   );
 }
 
-/** Pre-launch trust stats — qualitative trust signals rather than zeroes,
- *  so the hero reads as confident rather than empty. Rendered as a slim,
- *  single-line trust bar (icon + claim) rather than heavy cards — the goal
- *  is a quiet, editorial confirmation of credibility, not a second visual
- *  centerpiece competing with the search card. Once real metrics exist
- *  these should be replaced with live data from BUSINESS_METRICS. */
 const TRUST_STATS = [
   {
     icon: <ShieldCheck size={15} strokeWidth={2} aria-hidden="true" />,
@@ -102,8 +85,6 @@ const TRUST_STATS = [
   },
 ];
 
-/** This month in "YYYY-MM" form, for the date field's floor — a wedding
- *  search shouldn't let anyone pick a month that's already passed. */
 function currentMonthValue() {
   return new Date().toISOString().slice(0, 7);
 }
@@ -115,25 +96,13 @@ export function Hero({ stats: _stats }: HeroProps) {
   const prefersReducedMotion = useReducedMotion();
   const router = useRouter();
 
-  // Hydration guard: Framer Motion's `initial="hidden"` (opacity:0, y:32) is
-  // rendered by the server, but Framer Motion on the client immediately
-  // calculates the `animate="visible"` state before the first paint, causing
-  // React 19's strict hydration check to fail.
-  //
-  // Fix: render all motion elements with `initial={false}` on first paint
-  // (SSR HTML and first client HTML are identical — both show visible state).
-  // After hydration, `mounted` becomes true and subsequent renders use the
-  // real `initial="hidden"` so the animation plays on fresh page loads.
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); }, []);
   const isReducedMotion = mounted ? prefersReducedMotion : false;
 
-  // Helper: suppress initial variant before hydration to prevent SSR mismatch
   const motionInitial = (variantName: string) =>
     !mounted || isReducedMotion ? false : variantName;
 
-  // The search card builds a real query string using "destination" as the param name to
-  // match the SearchAction URL template declared in layout.tsx's WebSite JSON-LD.
   const searchHref = (() => {
     const params = new URLSearchParams();
     if (searchQuery.trim()) params.set("destination", searchQuery.trim());
@@ -143,10 +112,6 @@ export function Hero({ stats: _stats }: HeroProps) {
     return qs ? `/weddings?${qs}` : "/weddings";
   })();
 
-  // Pressing Enter in any field should search, matching the muscle memory
-  // every visitor already has from every other search bar on the web.
-  // The visible action stays a real <Link> (good for SEO/right-click/open
-  // in new tab); this just adds the keyboard shortcut on top of it.
   function handleFieldKeyDown(e: React.KeyboardEvent) {
     if (e.key === "Enter") {
       e.preventDefault();
@@ -170,12 +135,10 @@ export function Hero({ stats: _stats }: HeroProps) {
     offset: ["start start", "end start"],
   });
 
-  // Layered parallax: background drifts most, particles drift a little less
   const bgY = useTransform(scrollYProgress, [0, 1], ["0%", "14%"]);
   const particlesY = useTransform(scrollYProgress, [0, 1], ["0%", "8%"]);
   const contentY = useTransform(scrollYProgress, [0, 1], ["0%", "3%"]);
 
-  // Subtle, tasteful tilt on the search card only
   const cardRef = useRef<HTMLDivElement>(null);
   const [tiltEnabled, setTiltEnabled] = useState(false);
   const rawRotateX = useMotionValue(0);
@@ -216,14 +179,9 @@ export function Hero({ stats: _stats }: HeroProps) {
         style={{ y: isReducedMotion ? 0 : bgY }}
         aria-hidden="true"
       >
-        {/* Ambient Ken Burns drift — a slow, near-imperceptible 26s breathing
-            zoom that keeps the frame alive without ever calling attention to
-            itself. This is the one place continuous motion is justified: a
-            static hero photo behind a luxury travel brand reads as a stock
-            photo, a barely-moving one reads as a living moment. */}
         <motion.div
           className="absolute inset-0 z-0"
-          animate={isReducedMotion ? { scale: 1.1 } : { scale: [1.1, 1.17, 1.1] }}
+          animate={isReducedMotion ? { scale: 1.08 } : { scale: [1.08, 1.14, 1.08] }}
           transition={
             isReducedMotion
               ? { duration: 0 }
@@ -237,11 +195,19 @@ export function Hero({ stats: _stats }: HeroProps) {
             priority
             quality={90}
             sizes="100vw"
-            className="object-cover filter blur-[2px] opacity-75"
+            className="object-cover opacity-85"
           />
         </motion.div>
-        {/* Rich layered overlay: translucent dark at top for text legibility, maroon at bottom for brand warmth */}
-        <div className="absolute inset-0 z-10 bg-gradient-to-b from-charcoal-950/65 via-charcoal-950/45 to-maroon-950/70" />
+
+        {/* Localized layered overlay: translucent dark at top, subtle mid-tone, warm maroon-tint at bottom */}
+        <div
+          className="absolute inset-0 z-10"
+          style={{
+            background:
+              "linear-gradient(180deg, rgba(8,3,10,0.58) 0%, rgba(8,3,10,0.22) 32%, rgba(10,3,12,0.45) 68%, rgba(10,3,12,0.72) 100%)",
+          }}
+        />
+
         {/* Warm brand fade into the next section */}
         <div className="absolute bottom-0 left-0 right-0 z-20 h-32 bg-gradient-to-t from-[var(--color-warm-50)] via-[var(--color-warm-50)]/40 to-transparent" />
       </motion.div>
@@ -289,23 +255,23 @@ export function Hero({ stats: _stats }: HeroProps) {
         style={{ y: isReducedMotion ? 0 : contentY }}
         className="relative z-10 container-luxury pt-32 pb-20 flex flex-col items-center text-center will-change-transform"
       >
-        {/* Deterministic text scrim behind eyebrow + headline block */}
+        {/* Localized text scrim behind eyebrow + headline block for high contrast */}
         <div
           className="pointer-events-none absolute left-1/2 top-[8%] -translate-x-1/2 w-[min(56rem,92vw)] h-[26rem] sm:h-[30rem] -z-[1]"
           style={{
             background:
-              "radial-gradient(ellipse 70% 65% at 50% 40%, rgba(3,7,18,0.7) 0%, rgba(3,7,18,0.5) 45%, rgba(3,7,18,0) 78%)",
+              "radial-gradient(ellipse 72% 65% at 50% 40%, rgba(3,7,18,0.72) 0%, rgba(3,7,18,0.48) 45%, rgba(3,7,18,0) 80%)",
           }}
           aria-hidden="true"
         />
 
-        {/* EYEBROW — trust/category pill */}
+        {/* EYEBROW — category pill */}
         <motion.div
           custom={0}
           variants={fadeUp}
           initial={motionInitial("hidden")}
           animate="visible"
-          className="relative inline-flex items-center gap-2 bg-white/15 backdrop-blur-md border border-white/25 text-white text-xs font-semibold uppercase tracking-widest px-4 py-2 rounded-full mb-6"
+          className="relative inline-flex items-center gap-2 bg-black/40 backdrop-blur-md border border-white/25 text-white text-xs font-semibold uppercase tracking-widest px-4 py-2 rounded-full mb-6 shadow-sm"
         >
           <span className="relative flex h-1.5 w-1.5 flex-shrink-0" aria-hidden="true">
             <span
@@ -325,7 +291,7 @@ export function Hero({ stats: _stats }: HeroProps) {
           variants={fadeUp}
           initial={motionInitial("hidden")}
           animate="visible"
-          className="relative font-display font-bold leading-[1.06] tracking-tight mb-4 max-w-4xl [text-wrap:balance] drop-shadow-[0_3px_30px_rgba(0,0,0,0.65)]"
+          className="relative font-display font-bold leading-[1.06] tracking-tight mb-4 max-w-4xl [text-wrap:balance] drop-shadow-[0_4px_30px_rgba(0,0,0,0.80)]"
           style={{ fontSize: "clamp(2.75rem, 6.5vw, 5.5rem)" }}
         >
           <span
@@ -351,15 +317,12 @@ export function Hero({ stats: _stats }: HeroProps) {
           variants={fadeUp}
           initial={motionInitial("hidden")}
           animate="visible"
-          className="relative text-white/95 text-lg sm:text-xl leading-relaxed max-w-2xl mb-10 [text-wrap:balance] drop-shadow-[0_2px_16px_rgba(0,0,0,0.55)]"
+          className="relative text-white/95 text-base sm:text-lg lg:text-xl leading-relaxed max-w-2xl mb-10 [text-wrap:balance] drop-shadow-[0_2px_14px_rgba(0,0,0,0.70)]"
         >
-          Join Host Families in Rajasthan, Goa, and Kerala as an honored guest.
-          Beyond travel lies belonging — become part of the celebration.
+          Join Us & Feel Our Preserved Indian Cultures And Traditons
         </motion.p>
 
-        {/* SEARCH CARD — the single, focused path into the site. No competing
-            buttons above it: one confident action reads as more considered
-            than a wall of choices, and every field feeds it directly. */}
+        {/* SEARCH CARD */}
         <motion.div
           custom={2.6}
           variants={fadeUp}
@@ -368,9 +331,6 @@ export function Hero({ stats: _stats }: HeroProps) {
           className="relative w-full max-w-3xl mb-8"
           style={{ perspective: 1200 }}
         >
-          {/* Soft ambient glow behind the card — reads as a quiet spotlight
-              rather than a hard drop-shadow, reinforcing the card as the
-              hero's one deliberate focal point. */}
           <div
             className="pointer-events-none absolute -inset-4 -z-[1] rounded-[2rem] opacity-60 blur-2xl"
             style={{
@@ -390,9 +350,6 @@ export function Hero({ stats: _stats }: HeroProps) {
             }}
             className="relative overflow-hidden glass rounded-2xl p-2 flex flex-col sm:flex-row sm:items-stretch gap-2 shadow-[0_20px_70px_0_rgba(0,0,0,0.32)] border border-white/20"
           >
-            {/* One-time gleam across the glass on arrival — a single,
-                non-repeating reveal rather than a loop, so it reads as
-                "this card just unlocked" instead of a nervous tic. */}
             {!isReducedMotion && (
               <motion.div
                 className="pointer-events-none absolute inset-y-0 left-0 w-1/3 z-20"
@@ -525,9 +482,7 @@ export function Hero({ stats: _stats }: HeroProps) {
           ))}
         </motion.div>
 
-        {/* Hairline divider — draws itself in as a quiet transition from
-            "explore" content above to "trust" content below, without the
-            visual weight of another card or rule. */}
+        {/* Hairline divider */}
         <motion.div
           initial={!mounted || isReducedMotion ? false : { scaleX: 0, opacity: 0 }}
           animate={{ scaleX: 1, opacity: 1 }}
@@ -536,12 +491,7 @@ export function Hero({ stats: _stats }: HeroProps) {
           aria-hidden="true"
         />
 
-        {/* Trust bar — a slim, single-line row of credibility signals.
-            Deliberately not a second set of cards: three quiet claims in
-            one line read as an editorial footnote of confidence rather
-            than a competing visual block. Each claim settles in with a
-            slight stagger, echoing the deliberate pace of the rest of the
-            reveal rather than arriving as one flat block. */}
+        {/* Trust bar */}
         <div
           className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3"
           role="list"

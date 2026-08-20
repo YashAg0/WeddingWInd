@@ -6,7 +6,7 @@
  */
 
 import { toWeddingDTO, isSponsorshipActive } from "@/lib/wedding-dto";
-import { normalizeWeddingTier, normalizeDurationDays, getCustomerPriceUSD } from "@/lib/services/pricing-engine";
+import { normalizeWeddingTier, normalizeDurationDays } from "@/lib/services/pricing-engine";
 
 describe("Runtime Resilience & Error Boundary Prevention", () => {
   describe("toWeddingDTO Legacy & Edge Case Immunity", () => {

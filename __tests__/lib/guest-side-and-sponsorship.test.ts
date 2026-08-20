@@ -45,6 +45,7 @@ jest.mock("@/lib/prisma", () => {
     wedding: {
       findUnique: jest.fn(),
       update: jest.fn(),
+      updateMany: jest.fn(),
     },
     booking: {
       findUnique: jest.fn(),
@@ -59,6 +60,7 @@ jest.mock("@/lib/prisma", () => {
       findFirst: jest.fn(),
       findMany: jest.fn(),
       update: jest.fn(),
+      updateMany: jest.fn(),
     },
     auditLog: {
       create: jest.fn(),
@@ -89,6 +91,7 @@ describe("Guest Side Preference & Sponsorship Marketplace", () => {
       name: "John Traveler",
     };
     mockPrisma.user.findMany.mockResolvedValue([]);
+    mockPrisma.sponsorshipRequest.findFirst.mockResolvedValue(null);
   });
 
   describe("1. Attendance Side Preference (Bride / Groom / Open)", () => {
@@ -353,7 +356,8 @@ describe("Guest Side Preference & Sponsorship Marketplace", () => {
         "APPROVED",
         "Approved for global campaign",
         now.toISOString(),
-        nextMonth.toISOString()
+        nextMonth.toISOString(),
+        { paymentRequired: false }
       );
 
       expect(res.success).toBe(true);
@@ -961,7 +965,7 @@ describe("12. Full Sponsorship Flow: Host → Admin Approval → DB Active", () 
     mockPrisma.notification.create.mockResolvedValue({ id: "notif_1" });
 
     const res = await adminReviewSponsorshipRequestAction(
-      "sr_flow_1", "APPROVED", "Approved", now.toISOString(), campaignEnd.toISOString()
+      "sr_flow_1", "APPROVED", "Approved", now.toISOString(), campaignEnd.toISOString(), { paymentRequired: false }
     );
 
     expect(res.success).toBe(true);

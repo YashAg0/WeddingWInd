@@ -1,3 +1,4 @@
+import "server-only";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { prisma, withDbRetry } from "./prisma";
 import { UserRole, UserStatus } from "@prisma/client";

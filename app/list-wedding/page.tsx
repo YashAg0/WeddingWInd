@@ -4,23 +4,18 @@ import { useState, useEffect, useCallback, useTransition, useMemo } from "react"
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
-  Heart,
   ShieldCheck,
   CheckCircle2,
-  Clock,
   AlertCircle,
-  LogIn,
   RefreshCw,
   Plus,
   Trash2,
   ChevronDown,
   ChevronUp,
   Upload,
-  FileText,
   Calendar,
   Sparkles,
   Users,
-  MapPin,
   Save,
   Info,
   Minus,
@@ -287,7 +282,7 @@ export default function ListWeddingPage() {
         expectedInternationalGuests,
         requestedTier,
         story,
-        days: allDays.slice(0, durationDays),
+        days: allDays,
       });
 
       if (res.success) {
@@ -513,7 +508,7 @@ export default function ListWeddingPage() {
 
     setIsUploadingDocId(requestId);
     try {
-      const fakeUploadedUrl = `https://storage.weddingwithindia.com/docs/${requestId}-${Date.now()}-${file.name}`;
+      const fakeUploadedUrl = `https://storage.weddingwithindia.com/docs/${requestId}-${encodeURIComponent(file.name)}`;
 
       await uploadHostRequestedDocumentAction({
         requestId,

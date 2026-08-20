@@ -674,7 +674,7 @@ async function applyMasterSeedUpdate() {
 
   for (const wData of DEMO_WEDDINGS) {
     // 1. Locate existing wedding by id or slug
-    let wedding = await prisma.wedding.findFirst({
+    const wedding = await prisma.wedding.findFirst({
       where: {
         OR: [{ id: wData.id }, { slug: wData.slug }]
       }

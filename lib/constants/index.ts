@@ -10,6 +10,8 @@ import {
   formatSecondaryCurrency
 } from "./financial-model";
 
+import { LEGAL_CONFIG } from "./legal";
+
 export {
   BUSINESS_METRICS,
   FX_RATES,
@@ -19,7 +21,8 @@ export {
   COORDINATOR_MODEL,
   INVESTOR_PROJECTIONS,
   formatCurrencyINR,
-  formatSecondaryCurrency
+  formatSecondaryCurrency,
+  LEGAL_CONFIG,
 };
 
 export const SYSTEM_ROLE_PERMISSIONS = {

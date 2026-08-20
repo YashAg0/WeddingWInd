@@ -9,22 +9,17 @@ import {
   CheckCircle2,
   XCircle,
   ShieldCheck,
-  Clock,
-  User,
-  Heart,
   FileText,
   AlertCircle,
   RefreshCw,
   ExternalLink,
   Plus,
   Calendar,
-  MapPin,
-  Users,
-  Sparkles,
   ChevronDown,
   ChevronUp,
-  Download,
   Eye,
+  Sparkles,
+  Star,
 } from "lucide-react";
 import {
   adminGetHostApplicationByIdAction,
@@ -32,6 +27,7 @@ import {
   adminCreateDocumentRequestAction,
   adminReviewDocumentAction,
   adminReviewHostApplicationAction,
+  adminToggleWeddingFeaturedAction,
 } from "@/lib/actions/admin";
 import { formatDate, cn } from "@/lib/utils";
 import {
@@ -41,7 +37,6 @@ import {
   getHostPayoutPerGuestINR,
   getCustomerPriceUSD,
 } from "@/lib/services/pricing-engine";
-import { formatPsychologicalLakh } from "@/components/wedding/HostEarningsCalculator";
 
 const REQUEST_TYPES = [
   { key: "VENUE_PHOTO", label: "Venue Confirmation Photo" },
@@ -55,7 +50,7 @@ const REQUEST_TYPES = [
 
 export default function AdminHostDetailPage() {
   const params = useParams();
-  const router = useRouter();
+  const _router = useRouter();
   const id = params.id as string;
 
   const [loading, setLoading] = useState(true);
@@ -165,6 +160,18 @@ export default function AdminHostDetailPage() {
     });
   };
 
+  const handleToggleFeatured = async (targetWeddingId: string, currentFeatured: boolean) => {
+    startTransition(async () => {
+      try {
+        await adminToggleWeddingFeaturedAction(targetWeddingId, !currentFeatured);
+        toast.success(!currentFeatured ? "Listing marked as FEATURED (#2 Priority)!" : "Featured status removed.");
+        await loadDetail();
+      } catch (err: any) {
+        toast.error(err.message || "Failed to update featured status.");
+      }
+    });
+  };
+
   const handleReviewDoc = async (documentId: string, status: "APPROVED" | "REJECTED", feedback?: string) => {
     startTransition(async () => {
       try {
@@ -205,7 +212,7 @@ export default function AdminHostDetailPage() {
   }
 
   const app = data.hostApp || data.wedding;
-  const isHostApp = data.isHostApp;
+  const _isHostApp = data.isHostApp;
   const userRecord = app.user || app.hostCouple?.user;
   const currentStatus = app.status || "DRAFT";
 
@@ -537,6 +544,102 @@ export default function AdminHostDetailPage() {
 
         {/* Right Column: Authoritative Verification Controls & Payout Economics (4 Cols) */}
         <div className="lg:col-span-4 space-y-6 sticky top-28">
+          {/* Marketplace Visibility & Promotion Status Panel */}
+          {(() => {
+            const linkedWedding = data?.wedding || (!data?.isHostApp ? data : null);
+            const isLinkedSponsored = Boolean(linkedWedding?.sponsored && (!linkedWedding?.sponsorshipEnd || new Date(linkedWedding.sponsorshipEnd) > new Date()));
+            const isLinkedFeatured = !isLinkedSponsored && Boolean(linkedWedding?.featured);
+            const currentPriority = isLinkedSponsored ? "SPONSORED" : isLinkedFeatured ? "FEATURED" : "NORMAL";
+            const activePromotion = linkedWedding?.sponsorshipRequests?.[0];
+
+            return (
+              <div className="bg-white border border-warm-200/80 p-6 rounded-3xl shadow-sm space-y-4">
+                <div className="border-b border-warm-100 pb-3 flex items-center justify-between">
+                  <div>
+                    <span className="text-[0.625rem] font-bold uppercase tracking-wider text-amber-700 block">
+                      Discovery &amp; Ranking
+                    </span>
+                    <h3 className="font-display font-bold text-base text-charcoal-900">
+                      Marketplace Visibility
+                    </h3>
+                  </div>
+                  <span
+                    className={cn(
+                      "px-2.5 py-1 rounded-full text-[0.625rem] font-extrabold uppercase tracking-wider flex items-center gap-1",
+                      isLinkedSponsored
+                        ? "bg-[#180309] text-amber-300 border border-amber-500/40 shadow-xs"
+                        : isLinkedFeatured
+                        ? "bg-amber-100 text-amber-900 border border-amber-300"
+                        : "bg-warm-100 text-charcoal-600 border border-warm-200"
+                    )}
+                  >
+                    {isLinkedSponsored && <Sparkles size={10} className="text-amber-400" />}
+                    {isLinkedFeatured && <Star size={10} className="text-amber-600 fill-amber-500" />}
+                    {currentPriority} (#{currentPriority === "SPONSORED" ? "1" : currentPriority === "FEATURED" ? "2" : "3"})
+                  </span>
+                </div>
+
+                <p className="text-[0.6875rem] text-charcoal-500 leading-relaxed">
+                  <strong>Verification &amp; Publishing</strong> confirms commercial listing details. <strong>Promotions</strong> control search &amp; homepage discovery boost.
+                </p>
+
+                {linkedWedding ? (
+                  <div className="space-y-3 pt-1">
+                    {activePromotion && (
+                      <div className="p-3 bg-warm-50 rounded-xl border border-warm-100 text-[0.6875rem] space-y-1">
+                        <div className="flex justify-between font-bold text-charcoal-800">
+                          <span>Active Campaign:</span>
+                          <span className="text-[var(--color-brand-primary)] font-bold">{activePromotion.promotionType || "SPONSORED"} ({activePromotion.status})</span>
+                        </div>
+                        {activePromotion.startsAt && activePromotion.endsAt && (
+                          <div className="text-charcoal-500 flex justify-between">
+                            <span>Validity:</span>
+                            <span>{formatDate(activePromotion.startsAt)} — {formatDate(activePromotion.endsAt)}</span>
+                          </div>
+                        )}
+                        {activePromotion.amount !== undefined && activePromotion.amount !== null && (
+                          <div className="text-charcoal-500 flex justify-between">
+                            <span>Approved Fee:</span>
+                            <span className="font-semibold text-charcoal-800">{activePromotion.currency || "USD"} {activePromotion.amount}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleToggleFeatured(linkedWedding.id, Boolean(linkedWedding.featured))}
+                        disabled={isPending}
+                        className={cn(
+                          "flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 border",
+                          linkedWedding.featured
+                            ? "bg-amber-500 text-white border-amber-600 hover:bg-amber-600 shadow-xs"
+                            : "bg-white hover:bg-warm-100 text-charcoal-800 border-warm-300"
+                        )}
+                      >
+                        <Star size={12} className={linkedWedding.featured ? "fill-white" : ""} />
+                        {linkedWedding.featured ? "Featured (Toggle Off)" : "Set Featured (#2)"}
+                      </button>
+
+                      <Link
+                        href={`/dashboard/admin/weddings/sponsorship?weddingId=${linkedWedding.id}`}
+                        className="py-2 px-3 bg-[var(--color-brand-primary)] hover:bg-maroon-800 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1 whitespace-nowrap"
+                      >
+                        <Sparkles size={12} />
+                        Promotions CRM
+                      </Link>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-2.5 bg-amber-50 rounded-xl border border-amber-200 text-[0.6875rem] text-amber-800">
+                    Publish this wedding to enable promotional boost and placement controls.
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+
           {/* Authoritative Tier & Duration Override Panel */}
           <div className="bg-white border border-warm-200/80 p-6 rounded-3xl shadow-sm space-y-5">
             <div className="border-b border-warm-100 pb-3">

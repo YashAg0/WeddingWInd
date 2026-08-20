@@ -1,182 +1,299 @@
 import Image from "next/image";
 import Link from "next/link";
-import type { ReactNode } from "react";
 import {
   ArrowRight,
-  Crown,
   Sparkles,
-  Sparkle,
-  Flower2,
-  Waves,
-  Compass,
-  Flame,
+  ScrollText,
+  Utensils,
+  Music,
+  Shirt,
+  Users,
 } from "lucide-react";
-import { SectionHeader } from "@/components/ui/SectionHeader";
 import type { Category } from "@/types";
 
 interface CategoriesProps {
-  categories: Category[];
+  categories?: Category[];
 }
 
-// Hoisted to module scope so icons aren't rebuilt every render.
-const ICON_MAP: Record<string, ReactNode> = {
-  Crown: <Crown size={18} strokeWidth={1.75} className="text-white" />,
-  Sparkles: <Sparkles size={18} strokeWidth={1.75} className="text-white" />,
-  Flower2: <Flower2 size={18} strokeWidth={1.75} className="text-white" />,
-  Waves: <Waves size={18} strokeWidth={1.75} className="text-white" />,
-  Compass: <Compass size={18} strokeWidth={1.75} className="text-white" />,
-  Flame: <Flame size={18} strokeWidth={1.75} className="text-white" />,
-};
+const FEATURED_STYLES = [
+  {
+    id: "royal",
+    name: "Royal Heritage",
+    filterParam: "royal",
+    filterKey: "category",
+    count: 5,
+    tagline: "Palaces, heritage havelis & grand celebrations",
+    imageUrl:
+      "https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=800&q=80",
+    gradient: "from-amber-950/85 via-black/40 to-transparent",
+  },
+  {
+    id: "punjabi",
+    name: "Punjabi",
+    filterParam: "Punjab",
+    filterKey: "destinations",
+    count: 2,
+    tagline: "Music, family celebrations & vibrant traditions",
+    imageUrl:
+      "https://images.unsplash.com/photo-1571536802807-30451e3955d8?w=800&q=80",
+    gradient: "from-red-950/85 via-black/40 to-transparent",
+  },
+  {
+    id: "south-indian",
+    name: "South Indian",
+    filterParam: "Tamil Nadu",
+    filterKey: "destinations",
+    count: 3,
+    tagline: "Regional traditions, cuisine & beautiful ceremonies",
+    imageUrl:
+      "https://images.unsplash.com/photo-1582510003544-4d00b7f74220?w=800&q=80",
+    gradient: "from-emerald-950/85 via-black/40 to-transparent",
+  },
+  {
+    id: "muslim",
+    name: "Muslim / Nikah",
+    filterParam: "Muslim",
+    filterKey: "religions",
+    count: 2,
+    tagline: "Nikah, family gatherings & warm hospitality",
+    imageUrl:
+      "https://images.unsplash.com/photo-1519741497674-611481863552?w=800&q=80",
+    gradient: "from-teal-950/85 via-black/40 to-transparent",
+  },
+];
 
-const FALLBACK_ICON = (
-  <Sparkle size={18} strokeWidth={1.75} className="text-white" />
-);
+const EXPERIENCE_HIGHLIGHTS = [
+  {
+    icon: (
+      <ScrollText
+        size={16}
+        className="text-[var(--color-brand-primary)]"
+        aria-hidden="true"
+      />
+    ),
+    title: "Traditions & Rituals",
+    short: "Discover ceremonies, blessings, vows & customs",
+  },
+  {
+    icon: (
+      <Utensils
+        size={16}
+        className="text-[var(--color-brand-primary)]"
+        aria-hidden="true"
+      />
+    ),
+    title: "Regional Food",
+    short: "Taste local dishes, sweets & family favourites",
+  },
+  {
+    icon: (
+      <Music
+        size={16}
+        className="text-[var(--color-brand-primary)]"
+        aria-hidden="true"
+      />
+    ),
+    title: "Music & Dance",
+    short: "From Dhol beats to Sangeet celebrations",
+  },
+  {
+    icon: (
+      <Shirt
+        size={16}
+        className="text-[var(--color-brand-primary)]"
+        aria-hidden="true"
+      />
+    ),
+    title: "Attire Guidance",
+    short: "Simple tips on dress, colours & etiquette",
+  },
+  {
+    icon: (
+      <Users
+        size={16}
+        className="text-[var(--color-brand-primary)]"
+        aria-hidden="true"
+      />
+    ),
+    title: "Meet the Family",
+    short: "Share genuine moments with your host family",
+  },
+  {
+    icon: (
+      <Sparkles
+        size={16}
+        className="text-[var(--color-brand-primary)]"
+        aria-hidden="true"
+      />
+    ),
+    title: "Guest Support",
+    short: "Helpful guidance before and during your experience",
+  },
+];
 
-export function Categories({ categories }: CategoriesProps) {
+export function Categories({ categories: _categories }: CategoriesProps) {
   return (
-    <>
-      <section
-        id="categories"
-        className="relative section-padding overflow-hidden"
-        aria-labelledby="categories-heading"
-        style={{
-          background: "linear-gradient(180deg, var(--color-warm-50) 0%, #fff 100%)",
-        }}
-      >
-          {/* Faint dotted lattice texture — a quiet nod to palace jali screenwork */}
-          <div
-            className="pointer-events-none absolute inset-0 opacity-[0.05]"
-            style={{
-              backgroundImage:
-                "radial-gradient(circle at 1px 1px, var(--color-brand-primary) 1px, transparent 0)",
-              backgroundSize: "24px 24px",
-            }}
-            aria-hidden="true"
-          />
-
-          {/* One shared arch clip, referenced by every card (jharokha / palace-window silhouette) */}
-          <svg width="0" height="0" aria-hidden="true" focusable="false">
-            <defs>
-              <clipPath id="jharokha-arch" clipPathUnits="objectBoundingBox">
-                <path d="M0,1 L0,0.34 C0,0.13 0.22,0 0.5,0 C0.78,0 1,0.13 1,0.34 L1,1 Z" />
-              </clipPath>
-            </defs>
-          </svg>
-
-          <style>{`
-            @keyframes categoriesCardIn {
-              from { opacity: 0; transform: translateY(28px) scale(0.98); }
-              to { opacity: 1; transform: translateY(0) scale(1); }
-            }
-            .categories-card-reveal {
-              opacity: 0;
-              animation: categoriesCardIn 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-            }
-            @media (prefers-reduced-motion: reduce) {
-              .categories-card-reveal {
-                animation: none;
-                opacity: 1;
-                transform: none;
-              }
-            }
-          `}</style>
-
-          <div className="container-luxury relative">
-            <SectionHeader
-              id="categories-heading"
-              label="Wedding Styles"
-              title="Find your Perfect Celebration"
-              highlightedWord="Perfect Celebration"
-              description="From royal palaces to golden shores, choose the celebration that speaks to your soul."
-              className="mb-14"
-              theme="light"
-            />
-
-            <div
-              className="grid grid-cols-2 md:grid-cols-3 gap-5 sm:gap-6 lg:gap-8"
-              role="list"
-              aria-label="Wedding categories"
-            >
-              {categories.map((category, index) => (
-                <Link
-                  key={category.id}
-                  href={`/weddings?category=${category.name.toLowerCase().replace(/\s+/g, "-")}`}
-                  className="categories-card-reveal group relative block rounded-2xl transition-[filter] duration-500 ease-out hover:drop-shadow-[0_18px_32px_rgba(0,0,0,0.35)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-gold-300)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-warm-50)] motion-reduce:transition-none"
-                  role="listitem"
-                  aria-label={`${category.name} weddings — ${
-                    (category.weddingCount ?? category.count ?? 0) > 0
-                      ? `${category.weddingCount ?? category.count} celebrations`
-                      : "new destination"
-                  }`}
-                  style={{ animationDelay: `${Math.min(index, 9) * 90}ms` }}
-                >
-                  <div
-                    className="relative aspect-[4/5] sm:aspect-[3/4] overflow-hidden"
-                    style={{
-                      clipPath: "url(#jharokha-arch)",
-                      WebkitClipPath: "url(#jharokha-arch)",
-                    }}
-                  >
-                    <Image
-                      src={category.imageUrl || "https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=1200&q=80"}
-                      alt={`${category.name} wedding style`}
-                      fill
-                      sizes="(max-width: 640px) 50vw, 33vw"
-                      className="object-cover transition-transform duration-[1100ms] ease-out group-hover:scale-110 motion-reduce:transition-none"
-                      loading={index < 3 ? "eager" : "lazy"}
-                    />
-
-                    {/* Gradient for text legibility */}
-                    <div
-                      className="absolute inset-0 bg-gradient-to-t from-maroon-900/90 via-maroon-900/40 to-transparent transition-opacity duration-500 group-hover:opacity-80"
-                      aria-hidden="true"
-                    />
-
-                    {/* Maroon wash on hover, ties back to the brand color */}
-                    <div
-                      className="absolute inset-0 bg-[var(--color-brand-primary)]/0 transition-colors duration-500 group-hover:bg-[var(--color-brand-primary)]/20"
-                      aria-hidden="true"
-                    />
-
-                    {/* Content */}
-                    <div className="absolute inset-0 flex flex-col justify-end p-4 sm:p-5">
-                      <div
-                        className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-[var(--color-gold-300)] to-[#9c6f19] shadow-lg shadow-black/30 transition-transform duration-500 group-hover:-rotate-6 group-hover:scale-110 motion-reduce:transition-none"
-                        aria-hidden="true"
-                      >
-                        {(category.icon && ICON_MAP[category.icon]) ?? FALLBACK_ICON}
-                      </div>
-
-                      <h3 className="mb-1.5 font-display text-lg font-bold leading-tight text-white sm:text-xl">
-                        {category.name}
-                      </h3>
-
-                      <span
-                        className="mb-2 block h-px w-8 bg-[var(--color-gold-300)] transition-all duration-500 group-hover:w-14"
-                        aria-hidden="true"
-                      />
-
-                      <p className="mb-3 line-clamp-2 text-xs leading-snug text-white/70 transition-colors group-hover:text-white/90 sm:text-sm">
-                        {category.description || "Authentic Indian wedding celebration."}
-                      </p>
-
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-semibold tracking-wide text-[var(--color-gold-300)]">
-                          {(category.weddingCount ?? category.count ?? 0) > 0
-                            ? `${category.weddingCount ?? category.count} celebrations`
-                            : "Awaiting celebrations"}
-                        </span>
-                        <span className="flex h-7 w-7 translate-x-2 items-center justify-center rounded-full border border-white/20 bg-white/10 opacity-0 transition-all duration-300 group-hover:translate-x-0 group-hover:opacity-100">
-                          <ArrowRight size={12} className="text-white" aria-hidden="true" />
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-              ))}
+    <section
+      id="wedding-styles"
+      className="section-padding relative overflow-hidden bg-white border-t border-warm-200/50"
+      aria-labelledby="wedding-styles-heading"
+    >
+      <div className="container-luxury relative z-10 space-y-10 sm:space-y-12">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <div>
+            <div className="section-label mb-2" aria-hidden="true">
+              CULTURAL TRADITIONS
             </div>
+
+            <h2
+              id="wedding-styles-heading"
+              className="font-display font-bold text-2xl sm:text-3xl lg:text-4xl text-charcoal-900 tracking-tight leading-tight"
+            >
+              Explore by{" "}
+              <span className="text-gradient-brand">Wedding Style</span>
+            </h2>
+
+            <p className="text-sm sm:text-base text-charcoal-600 mt-1.5 max-w-xl leading-relaxed">
+              Discover weddings through different regions, traditions, food,
+              music, and family customs.
+            </p>
           </div>
-        </section>
-    </>
+
+          <Link
+            href="/weddings"
+            className="inline-flex items-center gap-1.5 text-sm sm:text-base font-bold text-[var(--color-brand-primary)] hover:text-maroon-700 transition-colors group flex-shrink-0 self-start md:self-end"
+            aria-label="View all wedding traditions"
+          >
+            <span>Explore All</span>
+            <ArrowRight
+              size={16}
+              className="group-hover:translate-x-0.5 transition-transform"
+              aria-hidden="true"
+            />
+          </Link>
+        </div>
+
+        {/* Featured Styles */}
+        <div
+          className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-5"
+          role="list"
+          aria-label="Featured wedding styles"
+        >
+          {FEATURED_STYLES.map((style) => (
+            <Link
+              key={style.id}
+              href={`/weddings?${style.filterKey}=${encodeURIComponent(
+                style.filterParam
+              )}`}
+              className="group relative flex flex-col justify-end overflow-hidden rounded-2xl bg-warm-900 aspect-[4/3] sm:aspect-[3/4] lg:aspect-[4/5] p-4 sm:p-5 shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
+              role="listitem"
+              aria-label={`${style.name} weddings, ${style.count} available ${
+                style.count === 1 ? "celebration" : "celebrations"
+              }`}
+            >
+              <Image
+                src={style.imageUrl}
+                alt={`${style.name} Indian wedding`}
+                fill
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                className="object-cover transition-transform duration-700 group-hover:scale-105"
+                loading="lazy"
+              />
+
+              <div
+                className={`absolute inset-0 bg-gradient-to-t ${style.gradient}`}
+              />
+
+              <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors" />
+
+              {/* Count Badge */}
+              <div className="absolute top-3 right-3 z-10">
+                <span className="bg-black/60 backdrop-blur-md text-amber-300 text-[0.6875rem] font-bold px-2.5 py-1 rounded-full border border-amber-400/30">
+                  {style.count}{" "}
+                  {style.count === 1 ? "celebration" : "celebrations"}
+                </span>
+              </div>
+
+              {/* Card Content */}
+              <div className="relative z-10 space-y-1 text-white">
+                <h3 className="font-display font-bold text-lg sm:text-xl text-white group-hover:text-amber-200 transition-colors leading-tight">
+                  {style.name}
+                </h3>
+
+                <p className="text-xs text-warm-100/90 line-clamp-2 leading-relaxed">
+                  {style.tagline}
+                </p>
+
+                <div className="pt-1.5 flex items-center gap-1 text-xs font-bold text-amber-300 group-hover:text-amber-200">
+                  <span>Explore</span>
+                  <ArrowRight
+                    size={12}
+                    className="group-hover:translate-x-1 transition-transform"
+                    aria-hidden="true"
+                  />
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+
+        {/* Experience Highlights */}
+        <div>
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-5">
+            <div>
+              <div className="text-xs font-bold text-[var(--color-brand-primary)] uppercase tracking-widest mb-1">
+                WHAT YOU CAN EXPERIENCE
+              </div>
+
+              <h3 className="font-display font-bold text-xl sm:text-2xl text-charcoal-900 leading-tight">
+                More than a ceremony.
+              </h3>
+
+              <p className="text-xs sm:text-sm text-charcoal-600 mt-1 max-w-lg leading-relaxed">
+                Every celebration is different, shaped by its family, region,
+                and traditions.
+              </p>
+            </div>
+
+            <Link
+              href="/weddings"
+              className="btn btn-primary text-xs sm:text-sm font-bold py-2.5 px-5 rounded-xl inline-flex items-center gap-1.5 shadow-xs flex-shrink-0 self-start sm:self-end"
+            >
+              <span>Explore Weddings</span>
+              <ArrowRight size={14} aria-hidden="true" />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+            {EXPERIENCE_HIGHLIGHTS.map((highlight, i) => (
+              <div
+                key={i}
+                className="flex items-start gap-3 bg-warm-50/70 border border-warm-200/60 rounded-xl p-4 hover:border-warm-300 hover:bg-white transition-all duration-200"
+              >
+                <div className="p-2 rounded-lg bg-white border border-warm-200/60 flex-shrink-0 shadow-xs">
+                  {highlight.icon}
+                </div>
+
+                <div className="min-w-0">
+                  <h4 className="font-display font-bold text-sm text-charcoal-900 leading-snug">
+                    {highlight.title}
+                  </h4>
+
+                  <p className="text-xs text-charcoal-600 mt-0.5 leading-relaxed">
+                    {highlight.short}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <p className="text-[0.6875rem] text-charcoal-400 italic mt-4">
+            Experiences, food, rituals, and schedules vary by celebration.
+            Details are provided before attendance.
+          </p>
+        </div>
+      </div>
+    </section>
   );
 }

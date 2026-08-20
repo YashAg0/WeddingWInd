@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import {
   ArrowRight,
   CheckCircle2,
@@ -13,7 +12,6 @@ import {
 } from "lucide-react";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import Link from "next/link";
-import { cn } from "@/lib/utils";
 
 const hostFAQs = [
   {

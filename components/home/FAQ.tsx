@@ -1,5 +1,4 @@
-import { MessageCircle, Phone, Mail } from "lucide-react";
-import { SectionHeader } from "@/components/ui/SectionHeader";
+import { MessageCircle, Phone, Mail, HelpCircle } from "lucide-react";
 import { FAQAccordion } from "@/components/home/FAQAccordion";
 import type { FAQItem } from "@/types";
 
@@ -11,150 +10,145 @@ export function FAQ({ items }: FAQProps) {
   return (
     <section
       id="faq"
-      className="section-padding relative overflow-hidden"
+      className="section-padding relative overflow-hidden bg-white border-t border-warm-200/50"
       aria-labelledby="faq-heading"
-      style={{
-        background:
-          "linear-gradient(180deg, #fff 0%, var(--color-warm-50) 100%)",
-      }}
     >
-      {/* Subtle gold accent */}
-      <div
-        className="pointer-events-none absolute left-0 right-0 top-0 h-px"
-        style={{
-          background:
-            "linear-gradient(90deg, transparent, var(--color-gold-200), transparent)",
-        }}
-        aria-hidden="true"
-      />
-
       <div className="container-luxury relative z-10">
-        <div className="grid grid-cols-1 gap-12 lg:grid-cols-5 lg:gap-16">
-          {/* Left — FAQ introduction + contact */}
-          <div className="lg:col-span-2">
-            <SectionHeader
-              id="faq-heading"
-              label="FAQ"
-              title="Questions About Experiencing an Indian Wedding?"
-              highlightedWord="Indian Wedding?"
-              description="Find answers about discovering weddings, booking an experience, preparing for your visit and taking part in an Indian celebration."
-              align="left"
-              theme="light"
-            />
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-5 lg:gap-10 items-start">
+          {/* FAQ Introduction */}
+          <div className="lg:col-span-2 space-y-4">
+            <div>
+              <div className="section-label mb-1" aria-hidden="true">
+                BEFORE YOU BOOK
+              </div>
 
-            <div className="mt-10 flex flex-col gap-4">
+              <h2
+                id="faq-heading"
+                className="font-display font-bold text-2xl sm:text-3xl text-charcoal-900 tracking-tight leading-tight"
+              >
+                Have Questions?
+                <span className="text-gradient-brand">
+                  {" "}
+                  You&apos;re Not Alone.
+                </span>
+              </h2>
+
+              <p className="text-xs sm:text-sm text-charcoal-600 mt-1 leading-relaxed">
+                Find quick answers about invitations, bookings, safety,
+                etiquette, what to expect, and your time with the host family.
+              </p>
+            </div>
+
+            {/* Contact Options */}
+            <div className="flex flex-col gap-2.5 pt-2">
               {/* Email */}
               <a
-                href="mailto:contact@weddingwithindia.com"
-                className="group flex items-center gap-4 rounded-2xl border border-warm-200 bg-white p-5 transition-all duration-200 hover:border-[var(--color-brand-primary)]/30 hover:shadow-[0_4px_24px_0_rgba(107,16,38,0.08)]"
-                aria-label="Email WeddingWithIndia at contact@weddingwithindia.com"
+                href="mailto:namaste@weddingwithindia.com"
+                className="flex items-center justify-between p-3 rounded-xl border border-warm-200/80 bg-warm-50/50 hover:bg-warm-100/60 hover:border-warm-300 transition-all group"
+                aria-label="Email the WeddingWithIndia guest experience team"
               >
-                <span
-                  className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl transition-colors duration-200 group-hover:bg-maroon-100"
-                  style={{
-                    background: "var(--color-warm-100)",
-                  }}
-                  aria-hidden="true"
-                >
-                  <Mail
-                    size={20}
-                    className="text-[var(--color-brand-primary)]"
-                  />
-                </span>
-
-                <div className="min-w-0">
-                  <div className="mb-0.5 text-sm font-semibold text-charcoal-800">
-                    Email us
+                <div className="flex items-center gap-2.5">
+                  <div className="p-1.5 rounded-lg bg-[var(--color-brand-primary)]/10 text-[var(--color-brand-primary)] group-hover:scale-105 transition-transform">
+                    <Mail size={15} aria-hidden="true" />
                   </div>
 
-                  <span className="break-all text-sm font-medium text-[var(--color-brand-primary)]">
-                    contact@weddingwithindia.com
-                  </span>
+                  <div>
+                    <div className="text-xs font-semibold text-charcoal-800">
+                      Guest Experience Team
+                    </div>
+
+                    <div className="text-[0.6875rem] text-charcoal-500">
+                      Typically replies within 4 hours
+                    </div>
+                  </div>
                 </div>
+
+                <span className="text-xs font-medium text-[var(--color-brand-primary)]">
+                  namaste@weddingwithindia.com
+                </span>
               </a>
 
-              {/* Phone */}
+              {/* WhatsApp / Phone */}
               <a
-                href="tel:+919116734675"
-                className="group flex items-center gap-4 rounded-2xl border border-warm-200 bg-white p-5 transition-all duration-200 hover:border-[var(--color-brand-primary)]/30 hover:shadow-[0_4px_24px_0_rgba(107,16,38,0.08)]"
-                aria-label="Call WeddingWithIndia at +91 91 1673 4675"
+                href="https://wa.me/919116734675"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-between p-3 rounded-xl border border-warm-200/80 bg-warm-50/50 hover:bg-warm-100/60 hover:border-warm-300 transition-all group"
+                aria-label="WhatsApp with WeddingWithIndia concierge"
               >
-                <span
-                  className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl transition-colors duration-200 group-hover:bg-maroon-100"
-                  style={{
-                    background: "var(--color-warm-100)",
-                  }}
-                  aria-hidden="true"
-                >
-                  <Phone
-                    size={20}
-                    className="text-[var(--color-brand-primary)]"
-                  />
-                </span>
-
-                <div>
-                  <div className="mb-0.5 text-sm font-semibold text-charcoal-800">
-                    Call us
+                <div className="flex items-center gap-2.5">
+                  <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 group-hover:scale-105 transition-transform">
+                    <Phone size={15} aria-hidden="true" />
                   </div>
 
-                  <span className="text-sm font-medium text-[var(--color-brand-primary)]">
-                    +91 91 1673 4675
-                  </span>
+                  <div>
+                    <div className="text-xs font-semibold text-charcoal-800">
+                      WhatsApp Concierge
+                    </div>
+
+                    <div className="text-[0.6875rem] text-charcoal-500">
+                      Available daily · 9 AM - 9 PM IST
+                    </div>
+                  </div>
                 </div>
+
+                <span className="text-xs font-medium text-[var(--color-brand-primary)]">
+                  +91 91 1673 4675
+                </span>
               </a>
 
-              {/* Support message */}
-              <div
-                className="flex items-center gap-4 rounded-2xl border p-5"
-                style={{
-                  background:
-                    "linear-gradient(135deg, var(--color-warm-50) 0%, var(--color-warm-100) 100%)",
-                  borderColor: "rgba(201,151,42,0.2)",
-                }}
-              >
-                <span
-                  className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl"
-                  style={{
-                    background: "rgba(201,151,42,0.12)",
-                  }}
-                  aria-hidden="true"
-                >
-                  <MessageCircle
-                    size={20}
-                    className="text-[var(--color-brand-secondary)]"
-                  />
-                </span>
-
-                <div>
-                  <div className="mb-0.5 text-sm font-semibold text-charcoal-800">
-                    Need help?
+              <div className="mt-4 pt-4 border-t border-warm-200/80">
+                <div className="flex items-start gap-2.5">
+                  <div className="p-1.5 rounded-lg bg-[var(--color-brand-primary)]/10 flex-shrink-0">
+                    <HelpCircle
+                      size={15}
+                      className="text-[var(--color-brand-primary)]"
+                      aria-hidden="true"
+                    />
                   </div>
 
-                  <span className="text-sm leading-relaxed text-charcoal-500">
-                    Our team is available to help with questions about
-                    weddings, bookings and your experience.
-                  </span>
+                  <div>
+                    <p className="text-xs font-semibold text-charcoal-800">
+                      Can&apos;t find your question?
+                    </p>
+
+                    <p className="text-[0.6875rem] text-charcoal-500 mt-0.5">
+                      Reach out anytime.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-3 flex items-start gap-2 bg-warm-100/70 p-2.5 rounded-lg border border-warm-200/60">
+                  <MessageCircle
+                    size={15}
+                    className="text-[var(--color-brand-primary)] mt-0.5 flex-shrink-0"
+                    aria-hidden="true"
+                  />
+
+                  <p className="text-[0.6875rem] text-charcoal-500 leading-relaxed">
+                    If you&apos;re unsure about anything, ask before booking. We&apos;d
+                    rather you feel comfortable with your decision.
+                  </p>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Right — FAQ accordion */}
+          {/* FAQ Accordion */}
           <div className="lg:col-span-3">
             {items.length > 0 ? (
               <FAQAccordion items={items} />
             ) : (
               <div
-                className="rounded-2xl border border-warm-200 bg-white p-8 text-center"
+                className="rounded-xl border border-warm-200 bg-white p-6 text-center"
                 role="status"
               >
-                <h3 className="mb-2 text-lg font-bold text-charcoal-900">
-                  Questions coming soon
+                <h3 className="mb-1 text-sm font-bold text-charcoal-900">
+                  We&apos;re updating the guest guide
                 </h3>
 
-                <p className="text-sm leading-relaxed text-charcoal-500">
-                  We are preparing answers to the most common questions about
-                  experiencing Indian weddings through WeddingWithIndia.
+                <p className="text-xs text-charcoal-500">
+                  Have a question? Contact us and we&apos;ll be happy to help.
                 </p>
               </div>
             )}

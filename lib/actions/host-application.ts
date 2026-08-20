@@ -467,11 +467,11 @@ export async function saveHostApplicationDraftAction(input: HostApplicationInput
       });
     }
 
-    // Save Day-by-Day schedule if provided
+    // Save Day-by-Day schedule if provided (persists all 1-5 days to preserve user draft data across duration toggling)
     if (input.days && Array.isArray(input.days) && input.days.length > 0) {
       // Upsert days for this application
       for (const dayInput of input.days) {
-        if (dayInput.dayNumber > durationDays) continue;
+        if (!dayInput.dayNumber || dayInput.dayNumber < 1 || dayInput.dayNumber > 5) continue;
 
         const dayDate = dayInput.date
           ? new Date(dayInput.date)

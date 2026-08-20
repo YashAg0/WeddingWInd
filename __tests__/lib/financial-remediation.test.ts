@@ -25,17 +25,11 @@ jest.mock("@/lib/prisma", () => ({
 }));
 
 import {
-  CUSTOMER_PRICE_MATRIX_USD,
-  HOST_PAYOUT_MATRIX_INR,
-  AGENT_PAYOUT_MATRIX_INR,
   calculateBookingPricing,
   calculateHostPotentialEarnings,
   calculateAgentPotentialEarnings,
-  getCustomerPriceUSD,
-  getHostPayoutPerGuestINR,
-  getAgentPayoutPerGuestINR,
 } from "@/lib/services/pricing-engine";
-import { calculatePaymentBreakdown, createOrUpdatePaymentRequestAtomic } from "@/lib/services/payments";
+import { createOrUpdatePaymentRequestAtomic } from "@/lib/services/payments";
 
 describe("WeddingWithIndia — Final Financial Remediation Test Suite", () => {
   // ─────────────────────────────────────────────────────────────────────────

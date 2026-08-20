@@ -7,6 +7,8 @@ import { FilterSidebar } from "@/components/wedding/FilterSidebar";
 import { Flower2 } from "lucide-react";
 import { SortSelect } from "./SortSelect";
 import { CANONICAL_RELIGIONS, normalizeReligion } from "@/lib/culture";
+import { sortWeddingsByDiscoveryPriority } from "@/lib/wedding-dto";
+import { Wedding } from "@/types";
 
 export const metadata: Metadata = {
   title: "Explore Indian Wedding Celebrations | WeddingWithIndia",
@@ -67,7 +69,7 @@ export default async function WeddingsPage({ searchParams }: PageProps) {
   let minPriceInSystem = 999999;
   let maxPriceInSystem = 0;
 
-  weddings.forEach((w) => {
+  weddings.forEach((w: Wedding) => {
     // Duration
     const d = w.durationDays || 1;
     if (durationCounts[d] !== undefined) {
@@ -125,7 +127,7 @@ export default async function WeddingsPage({ searchParams }: PageProps) {
   const sort = resolvedParams.sort || "featured";
 
   // 3. Filter Listings
-  const filteredWeddings = weddings.filter((wedding) => {
+  const filteredWeddings: Wedding[] = weddings.filter((wedding: Wedding) => {
     // A. Destination (Search bar text + Checkboxes)
     if (destinationQuery) {
       const matchLoc = (wedding.location || "").toLowerCase().includes(destinationQuery);
@@ -183,26 +185,8 @@ export default async function WeddingsPage({ searchParams }: PageProps) {
     return true;
   });
 
-  // 4. Sort listings
-  const getTier = (w: { sponsored: boolean; featured: boolean }) =>
-    w.sponsored ? 2 : w.featured ? 1 : 0;
-
-  const sortedWeddings = [...filteredWeddings].sort((a, b) => {
-    // 1. Sponsorship tier is always the primary sort key
-    const tierDiff = getTier(b) - getTier(a);
-    if (tierDiff !== 0) return tierDiff;
-
-    // 2. Secondary sort criteria
-    if (sort === "price_asc") return a.pricePerGuest - b.pricePerGuest;
-    if (sort === "price_desc") return b.pricePerGuest - a.pricePerGuest;
-    if (sort === "duration_desc") return b.durationDays - a.durationDays;
-    if (sort === "duration_asc") return a.durationDays - b.durationDays;
-    if (sort === "date_asc") return new Date(a.date).getTime() - new Date(b.date).getTime();
-
-    // Default ("featured"): featured priority then deterministic by duration & id
-    if (b.durationDays !== a.durationDays) return b.durationDays - a.durationDays;
-    return a.id.localeCompare(b.id);
-  });
+  // 4. Sort listings via Single Source of Truth Discovery Ranking
+  const sortedWeddings: Wedding[] = sortWeddingsByDiscoveryPriority<Wedding>(filteredWeddings, sort);
 
   return (
     <div className="min-h-screen bg-warm-50 pt-28 pb-20">

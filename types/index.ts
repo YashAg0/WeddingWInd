@@ -93,6 +93,9 @@ export interface DemoWedding {
   languages: string[];
   isVerified: boolean;
   isCurated: boolean;
+  isVerifiedRealMedia?: boolean;
+  coverImageType?: "representative" | "host_uploaded";
+  experienceCompleted?: boolean;
   gallery: string[];
   story: string;
   coupleBio: string;
@@ -115,6 +118,8 @@ export interface DemoWedding {
   guestRules?: string;
   etiquetteNotes?: string;
   curatedBadge?: string;
+  imageMeta?: any;
+  objectPosition?: string;
 }
 
 export type WeddingCategory =

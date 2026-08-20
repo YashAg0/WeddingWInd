@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath, revalidateTag } from "next/cache";
+import { revalidatePath } from "next/cache";
 import { prisma, withDbRetry } from "../prisma";
 import { requireAuth, syncAndGetDbUser } from "../auth";
 export { syncAndGetDbUser };
@@ -24,6 +24,7 @@ import {
 import { unstable_cache } from "next/cache";
 import { env } from "../env";
 import { toWeddingDTO } from "../wedding-dto";
+import { sortWeddingsByDiscoveryPriority } from "../marketplace/ranking";
 import {
   CAPACITY_HOLDING_BOOKING_STATUSES,
   ACTIVE_RESERVATION_STATUSES,
@@ -434,36 +435,67 @@ export async function getMyWeddings() {
         select: { guestsCount: true }
       },
       sponsorshipRequests: {
-        where: { status: "PENDING" },
-        select: { id: true, status: true, requestedAt: true }
+        orderBy: { createdAt: "desc" },
+        take: 3,
+        select: {
+          id: true,
+          promotionType: true,
+          proposedAmount: true,
+          status: true,
+          amount: true,
+          currency: true,
+          durationDays: true,
+          paymentRequired: true,
+          paymentMethod: true,
+          paymentStatus: true,
+          paymentReference: true,
+          paymentProofUrl: true,
+          paymentSubmittedAt: true,
+          paymentLink: true,
+          startsAt: true,
+          endsAt: true,
+          adminNotes: true,
+          rejectionReason: true,
+          requestedAt: true,
+          paidAt: true,
+          activatedAt: true,
+        }
       }
     }
   });
 
-  return weddings.map((w) => ({
-    id: w.id,
-    slug: w.slug,
-    title: w.title,
-    description: w.description,
-    location: w.location,
-    category: w.category,
-    date: w.date.toISOString(),
-    pricePerGuest: w.pricePerGuest,
-    capacity: w.capacity,
-    requiredGuests: w.requiredGuests,
-    theme: w.theme,
-    dressCode: w.dressCode,
-    ethnicity: w.ethnicity,
-    mainImageUrl: w.mainImageUrl,
-    status: w.status,
-    featured: w.featured,
-    sponsored: w.sponsored,
-    sponsorshipStart: w.sponsorshipStart?.toISOString() || null,
-    sponsorshipEnd: w.sponsorshipEnd?.toISOString() || null,
-    totalBookings: w._count.bookings,
-    confirmedGuests: w.bookings.reduce((sum, b) => sum + b.guestsCount, 0),
-    pendingSponsorshipRequest: w.sponsorshipRequests[0] || null,
-  }));
+  const { isSponsorshipCurrentlyActive } = await import("../services/sponsorship");
+
+  return weddings.map((w) => {
+    const isCurrentlyActive = isSponsorshipCurrentlyActive(w);
+    const latestReq = w.sponsorshipRequests[0] || null;
+
+    return {
+      id: w.id,
+      slug: w.slug,
+      title: w.title,
+      description: w.description,
+      location: w.location,
+      category: w.category,
+      date: w.date.toISOString(),
+      pricePerGuest: w.pricePerGuest,
+      capacity: w.capacity,
+      requiredGuests: w.requiredGuests,
+      theme: w.theme,
+      dressCode: w.dressCode,
+      ethnicity: w.ethnicity,
+      mainImageUrl: w.mainImageUrl,
+      status: w.status,
+      featured: w.featured,
+      sponsored: isCurrentlyActive,
+      sponsorshipStart: w.sponsorshipStart?.toISOString() || null,
+      sponsorshipEnd: w.sponsorshipEnd?.toISOString() || null,
+      totalBookings: w._count.bookings,
+      confirmedGuests: w.bookings.reduce((sum, b) => sum + b.guestsCount, 0),
+      pendingSponsorshipRequest: latestReq && (latestReq.status === "PENDING" || latestReq.status === "PAYMENT_PENDING") ? latestReq : null,
+      latestSponsorshipRequest: latestReq,
+    };
+  });
 }
 
 
@@ -1504,6 +1536,21 @@ export const getWeddings = unstable_cache(
               gallery: true,
               events: true,
               traditions: true,
+              sponsorshipRequests: {
+                where: {
+                  status: { in: ["ACTIVE", "PAID"] },
+                },
+                select: {
+                  id: true,
+                  status: true,
+                  promotionType: true,
+                  paymentRequired: true,
+                  paymentStatus: true,
+                  startsAt: true,
+                  endsAt: true,
+                  revokedAt: true,
+                },
+              },
               _count: {
                 select: {
                   bookings: {
@@ -1523,7 +1570,7 @@ export const getWeddings = unstable_cache(
       if (!weddings || weddings.length === 0) {
         console.info("[getWeddings] No weddings in database. Serving static fallback featured weddings.");
         const { featuredWeddings } = await import("../data");
-        return featuredWeddings;
+        return sortWeddingsByDiscoveryPriority(featuredWeddings);
       }
 
       const weddingIds = weddings.map((w) => w.id);
@@ -1539,20 +1586,11 @@ export const getWeddings = unstable_cache(
         });
       });
 
-      // Sort with time-aware sponsored priority and duration diversity
-      results.sort((a, b) => {
-        const tierA = a.sponsored ? 2 : a.featured ? 1 : 0;
-        const tierB = b.sponsored ? 2 : b.featured ? 1 : 0;
-        if (tierB !== tierA) return tierB - tierA;
-        if (b.durationDays !== a.durationDays) return b.durationDays - a.durationDays;
-        return a.id.localeCompare(b.id);
-      });
-
-      return results;
+      return sortWeddingsByDiscoveryPriority(results);
     } catch (err) {
       console.warn("[getWeddings] Database unreachable or uninitialized. Serving static fallback featured weddings.", err);
       const { featuredWeddings } = await import("../data");
-      return featuredWeddings;
+      return sortWeddingsByDiscoveryPriority(featuredWeddings);
     }
   },
   ["published-weddings"],
@@ -1572,12 +1610,9 @@ export const getHomepageWeddings = unstable_cache(
               deletedAt: null,
               date: { gte: now },
             },
-            take: limit,
+            take: limit * 2, // Fetch slightly wider candidate pool so Priority 1/2 sort correctly before slicing
             orderBy: [
               // DB-level hint: sponsored listings first, then featured.
-              // This ensures the DB LIMIT slice biases toward sponsored rows.
-              // We do a time-aware in-memory re-sort after DTO conversion
-              // so expired/future campaigns are correctly demoted.
               { sponsored: "desc" },
               { featured: "desc" },
               { createdAt: "desc" },
@@ -1589,6 +1624,21 @@ export const getHomepageWeddings = unstable_cache(
               gallery: true,
               events: true,
               traditions: true,
+              sponsorshipRequests: {
+                where: {
+                  status: { in: ["ACTIVE", "PAID"] },
+                },
+                select: {
+                  id: true,
+                  status: true,
+                  promotionType: true,
+                  paymentRequired: true,
+                  paymentStatus: true,
+                  startsAt: true,
+                  endsAt: true,
+                  revokedAt: true,
+                },
+              },
               _count: {
                 select: {
                   bookings: {
@@ -1608,7 +1658,7 @@ export const getHomepageWeddings = unstable_cache(
       if (!weddings || weddings.length === 0) {
         console.info("[getHomepageWeddings] No weddings in database. Serving static fallback.");
         const { featuredWeddings } = await import("../data");
-        return featuredWeddings.slice(0, limit);
+        return sortWeddingsByDiscoveryPriority(featuredWeddings).slice(0, limit);
       }
 
       const weddingIds = weddings.map((w) => w.id);
@@ -1624,20 +1674,11 @@ export const getHomepageWeddings = unstable_cache(
         });
       });
 
-      // Sort with time-aware sponsored priority and duration diversity
-      results.sort((a, b) => {
-        const tierA = a.sponsored ? 2 : a.featured ? 1 : 0;
-        const tierB = b.sponsored ? 2 : b.featured ? 1 : 0;
-        if (tierB !== tierA) return tierB - tierA;
-        if (b.durationDays !== a.durationDays) return b.durationDays - a.durationDays;
-        return a.id.localeCompare(b.id);
-      });
-
-      return results;
+      return sortWeddingsByDiscoveryPriority(results).slice(0, limit);
     } catch (err) {
       console.warn("[getHomepageWeddings] Database unreachable. Serving static fallback.", err);
       const { featuredWeddings } = await import("../data");
-      return featuredWeddings.slice(0, limit);
+      return sortWeddingsByDiscoveryPriority(featuredWeddings).slice(0, limit);
     }
   },
   ["homepage-featured-weddings"],
@@ -1658,9 +1699,10 @@ export async function getRelatedWeddings(category: string, excludeWeddingId: str
             deletedAt: null,
             id: { not: excludeWeddingId },
           },
-          take: limit,
+          take: limit * 2,
           orderBy: [
             { category: category ? "asc" : "desc" },
+            { sponsored: "desc" },
             { featured: "desc" },
             { createdAt: "desc" },
           ],
@@ -1669,6 +1711,21 @@ export async function getRelatedWeddings(category: string, excludeWeddingId: str
             gallery: true,
             events: true,
             traditions: true,
+            sponsorshipRequests: {
+              where: {
+                status: { in: ["ACTIVE", "PAID"] },
+              },
+              select: {
+                id: true,
+                status: true,
+                promotionType: true,
+                paymentRequired: true,
+                paymentStatus: true,
+                startsAt: true,
+                endsAt: true,
+                revokedAt: true,
+              },
+            },
             _count: {
               select: {
                 bookings: {
@@ -1687,13 +1744,13 @@ export async function getRelatedWeddings(category: string, excludeWeddingId: str
 
     if (!weddings || weddings.length === 0) {
       const { featuredWeddings } = await import("../data");
-      return featuredWeddings.filter((w) => w.id !== excludeWeddingId).slice(0, limit);
+      return sortWeddingsByDiscoveryPriority(featuredWeddings.filter((w) => w.id !== excludeWeddingId)).slice(0, limit);
     }
 
     const weddingIds = weddings.map((w) => w.id);
     const ratingsMap = await getBatchWeddingRatingAggregates(weddingIds);
 
-    return weddings.map((w) => {
+    const mapped = weddings.map((w) => {
       const ratings = ratingsMap.get(w.id) || { bayesianRating: 0, reviewCount: 0 };
       return toWeddingDTO({
         ...w,
@@ -1702,10 +1759,12 @@ export async function getRelatedWeddings(category: string, excludeWeddingId: str
         guestsBooked: w._count.bookings,
       });
     });
+
+    return sortWeddingsByDiscoveryPriority(mapped).slice(0, limit);
   } catch (err) {
     console.warn("[getRelatedWeddings] DB query failed, falling back to static:", err);
     const { featuredWeddings } = await import("../data");
-    return featuredWeddings.filter((w) => w.id !== excludeWeddingId).slice(0, limit);
+    return sortWeddingsByDiscoveryPriority(featuredWeddings.filter((w) => w.id !== excludeWeddingId)).slice(0, limit);
   }
 }
 
@@ -1758,11 +1817,23 @@ function mapToPublicReviewDTO(review: any) {
   };
 }
 
+const SLUG_ALIASES: Record<string, string> = {
+  "rajasthan-royal-family-celebration": "grand-maharaja-wedding",
+  "shimla-himalayan-meadow-celebration": "shimla-himalayan-pine-royal-wedding",
+  "punjabi-sikh-anand-karaj-experience": "punjabi-amritsar-golden-wedding",
+  "kerala-coastal-christian-celebration": "kerala-coastal-christian-matrimony",
+  "goa-coastal-family-wedding": "goan-sunset-beach-nuptials",
+  "gujarat-jain-family-matrimony": "ahmedabad-heritage-pol-wedding",
+  "delhi-interfaith-multicultural-celebration": "mughal-garden-wedding-agra",
+  "chennai-coastal-temple-wedding": "tamil-brahmin-wedding-madurai",
+};
+
 export const getWeddingBySlug = unstable_cache(
   async (slug: string) => {
   try {
-    const w = await prisma.wedding.findUnique({
-      where: { slug },
+    const effectiveSlug = SLUG_ALIASES[slug] || slug;
+    let w = await prisma.wedding.findUnique({
+      where: { slug: effectiveSlug },
       include: {
         hostCouple: {
           include: { user: true }
@@ -1773,13 +1844,27 @@ export const getWeddingBySlug = unstable_cache(
       }
     });
 
+    if (!w && effectiveSlug !== slug) {
+      w = await prisma.wedding.findUnique({
+        where: { slug },
+        include: {
+          hostCouple: {
+            include: { user: true }
+          },
+          gallery: true,
+          events: true,
+          traditions: true
+        }
+      });
+    }
+
     if (w && Boolean(w.deletedAt)) {
       return null;
     }
 
     if (!w) {
       const { featuredWeddings } = await import("../data");
-      return featuredWeddings.find((fw) => fw.slug === slug) || null;
+      return featuredWeddings.find((fw) => fw.slug === effectiveSlug || fw.slug === slug) || null;
     }
 
     if (w.status && w.status !== WeddingStatus.PUBLISHED && (w.status as string) !== "PUBLISHED") {
@@ -1901,7 +1986,8 @@ export const getWeddingBySlug = unstable_cache(
   } catch (err) {
     console.warn(`[getWeddingBySlug] Database query failed for slug '${slug}'. Serving static fallback.`, err);
     const { featuredWeddings } = await import("../data");
-    return featuredWeddings.find((fw) => fw.slug === slug) || null;
+    const effectiveSlug = SLUG_ALIASES[slug] || slug;
+    return featuredWeddings.find((fw) => fw.slug === effectiveSlug || fw.slug === slug) || null;
   }
 }, ["wedding-by-slug"], { revalidate: 3600, tags: ["weddings"] });
 
@@ -1909,102 +1995,56 @@ export const getWeddingBySlug = unstable_cache(
 
 /**
  * Host couple requests marketplace sponsorship for one of their weddings.
- * One active request per wedding is enforced by the unique constraint on (weddingId, status=PENDING).
  */
 export async function requestSponsorshipAction(data: {
   weddingId: string;
+  promotionType?: "SPONSORED" | "FEATURED";
+  proposedAmount?: number;
   message?: string;
   budget?: string;
+  requestedDurationDays?: number;
 }) {
-  const user = await requireAuth();
-  if (user.role !== UserRole.COUPLE) {
-    throw new Error("Only host couples can request sponsorship for their weddings.");
-  }
-
-  const couple = await prisma.coupleProfile.findUnique({ where: { userId: user.id } });
-  if (!couple) throw new Error("Couple profile not found.");
-
-  // Verify wedding ownership
-  const wedding = await prisma.wedding.findUnique({
-    where: { id: data.weddingId },
-    select: { id: true, title: true, hostCoupleId: true, status: true, sponsored: true }
-  });
-  if (!wedding) throw new Error("Wedding not found.");
-  if (wedding.hostCoupleId !== couple.id) throw new Error("Forbidden: You do not own this wedding.");
-  if (wedding.status !== WeddingStatus.PUBLISHED) {
-    throw new Error("Only published weddings can be submitted for sponsorship.");
-  }
-  if (wedding.sponsored) throw new Error("This wedding is already sponsored.");
-
-  // Check for an existing pending request (unique constraint on weddingId + PENDING status)
-  const existing = await prisma.sponsorshipRequest.findFirst({
-    where: { weddingId: data.weddingId, status: "PENDING" }
-  });
-  if (existing) {
-    throw new Error("A sponsorship request for this wedding is already pending admin review.");
-  }
-
-  await prisma.sponsorshipRequest.create({
-    data: {
-      weddingId: data.weddingId,
-      coupleId: couple.id,
-      message: data.message || null,
-      budget: data.budget || null,
-      status: "PENDING",
-    }
-  });
-
-  // Notify admins — find all ADMIN users
-  const admins = await prisma.user.findMany({
-    where: { role: UserRole.ADMIN, deletedAt: null },
-    select: { id: true }
-  });
-  if (admins.length > 0) {
-    await prisma.notification.createMany({
-      data: admins.map((a) => ({
-        userId: a.id,
-        title: "Sponsorship Request",
-        message: `A host couple has requested marketplace sponsorship for "${wedding.title}". Review in the admin dashboard.`,
-        type: "REQUEST" as const,
-      }))
-    });
-  }
-
-  revalidatePath("/dashboard/listings");
-  revalidateTag("weddings", "max");
-  revalidateTag("homepage", "max");
-  return { success: true };
+  const { requestSponsorship } = await import("../services/sponsorship");
+  return requestSponsorship(data);
 }
 
 /**
  * Host couple cancels their pending sponsorship request.
  */
 export async function cancelSponsorshipRequestAction(requestId: string) {
-  const user = await requireAuth();
-  if (user.role !== UserRole.COUPLE) {
-    throw new Error("Only host couples can cancel their sponsorship requests.");
-  }
-
-  const couple = await prisma.coupleProfile.findUnique({ where: { userId: user.id } });
-  if (!couple) throw new Error("Couple profile not found.");
-
-  const request = await prisma.sponsorshipRequest.findUnique({
-    where: { id: requestId },
-    include: { wedding: { select: { hostCoupleId: true, title: true } } }
-  });
-  if (!request) throw new Error("Sponsorship request not found.");
-  if (request.wedding.hostCoupleId !== couple.id) {
-    throw new Error("Forbidden: You do not own the wedding linked to this request.");
-  }
-  if (request.status !== "PENDING") {
-    throw new Error("Only pending sponsorship requests can be cancelled.");
-  }
-
-  await prisma.sponsorshipRequest.update({
-    where: { id: requestId },
-    data: { status: "CANCELLED", reviewedAt: new Date() }
-  });
-
-  revalidatePath("/dashboard/listings");
-  return { success: true };
+  const { cancelSponsorshipRequest } = await import("../services/sponsorship");
+  return cancelSponsorshipRequest(requestId);
 }
+
+/**
+ * Host couple gets payment instructions (UPI QR/ID and PayPal links) for approved sponsorship.
+ */
+export async function getSponsorshipPaymentInstructionsAction(sponsorshipId: string) {
+  const { getSponsorshipPaymentInstructions } = await import("../services/sponsorship");
+  return getSponsorshipPaymentInstructions(sponsorshipId);
+}
+
+export const getSponsorshipPaymentOptionsAction = getSponsorshipPaymentInstructionsAction;
+export const createSponsorshipCheckoutSessionAction = getSponsorshipPaymentInstructionsAction;
+
+/**
+ * Host couple submits UTR / transaction reference and optional payment proof after completing external payment.
+ */
+export async function submitHostPaymentProofAction(data: {
+  sponsorshipId: string;
+  transactionReference: string;
+  paymentProofUrl?: string;
+  paymentNotes?: string;
+}) {
+  const { submitHostPaymentProof } = await import("../services/sponsorship");
+  return submitHostPaymentProof(data);
+}
+
+/**
+ * Get public payment configuration for sponsorship (UPI QR/ID and PayPal links).
+ */
+export async function getSponsorshipPaymentConfigAction() {
+  const { getSponsorshipPaymentConfig } = await import("../services/sponsorship");
+  return getSponsorshipPaymentConfig();
+}
+

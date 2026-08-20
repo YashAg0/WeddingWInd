@@ -56,8 +56,8 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               // Fonts
               "font-src 'self' https://fonts.gstatic.com",
-              // Images: self + Unsplash + Pravatar + Clerk avatars + UploadThing
-              "img-src 'self' data: blob: https://images.unsplash.com https://i.pravatar.cc https://img.clerk.com https://*.clerk.com https://uploadthing.com https://utfs.io https://www.google-analytics.com",
+              // Images: self + Unsplash + Pravatar + Clerk avatars + UploadThing + QRServer + Google Analytics
+              "img-src 'self' data: blob: https://images.unsplash.com https://plus.unsplash.com https://i.pravatar.cc https://img.clerk.com https://*.clerk.com https://uploadthing.com https://utfs.io https://api.qrserver.com https://www.google-analytics.com",
               // Connections: API + Clerk + Stripe + UploadThing + WebSockets (HMR)
               "connect-src 'self' ws: wss: https://api.clerk.com https://*.clerk.accounts.dev https://*.clerk.com https://clerk.com https://clerk.weddingwithindia.com https://api.stripe.com https://uploadthing.com https://www.google-analytics.com https://analytics.google.com",
               // Frames: Stripe embedded elements + Clerk
@@ -102,10 +102,62 @@ const nextConfig: NextConfig = {
     ];
   },
 
+  // ─── Canonical Redirects for Common Marketing Aliases ─────────────────────
+  async redirects() {
+    return [
+      {
+        source: "/signin",
+        destination: "/login",
+        permanent: true,
+      },
+      {
+        source: "/host",
+        destination: "/list-wedding",
+        permanent: true,
+      },
+      {
+        source: "/attend",
+        destination: "/weddings",
+        permanent: true,
+      },
+      {
+        source: "/destinations",
+        destination: "/weddings",
+        permanent: true,
+      },
+      {
+        source: "/about-us",
+        destination: "/about",
+        permanent: true,
+      },
+      {
+        source: "/contact-us",
+        destination: "/contact",
+        permanent: true,
+      },
+      {
+        source: "/terms-of-service",
+        destination: "/terms",
+        permanent: true,
+      },
+      {
+        source: "/privacy-policy",
+        destination: "/privacy",
+        permanent: true,
+      },
+      {
+        source: "/faq",
+        destination: "/how-it-works",
+        permanent: true,
+      },
+    ];
+  },
+
   // ─── Performance & Experience Tree-Shaking ──────────────────────────────────
   compress: true,
   experimental: {
     optimizePackageImports: ["lucide-react", "framer-motion", "date-fns"],
+    cpus: 1,
   },
 
   // ─── Images ──────────────────────────────────────────────────────────────
@@ -119,6 +171,11 @@ const nextConfig: NextConfig = {
       {
         protocol: "https",
         hostname: "images.unsplash.com",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "plus.unsplash.com",
         pathname: "/**",
       },
       {
@@ -139,6 +196,11 @@ const nextConfig: NextConfig = {
       {
         protocol: "https",
         hostname: "uploadthing.com",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "api.qrserver.com",
         pathname: "/**",
       },
     ],

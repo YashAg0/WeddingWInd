@@ -6,26 +6,12 @@ import Image from "next/image";
 import Link from "next/link";
 import {
   Sparkles,
-  Calendar,
-  Clock,
-  MapPin,
-  ShieldCheck,
-  Building2,
-  Users,
-  Camera,
-  Flame,
-  Globe,
   Plus,
   Trash2,
   Eye,
   ChevronDown,
   ChevronUp,
   DollarSign,
-  Layers,
-  FileCheck,
-  CheckCircle2,
-  AlertCircle,
-  HelpCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import {

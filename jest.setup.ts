@@ -25,3 +25,6 @@ for (const [key, value] of Object.entries(testFixtures)) {
     process.env[key] = value;
   }
 }
+
+// Mock 'server-only' in Jest test environment so server-only modules can be tested in Node/JSDOM test runners
+jest.mock("server-only", () => ({}));

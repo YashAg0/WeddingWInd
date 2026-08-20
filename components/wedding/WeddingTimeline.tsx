@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Palette, Music, Utensils, HeartHandshake, Camera, PartyPopper, Clock, MapPin, Shirt, Users, Info } from "lucide-react";
+import { Sparkles, Palette, Music, Utensils, HeartHandshake, Camera, PartyPopper, Clock, Users, Info } from "lucide-react";
 import type { WeddingEvent } from "@/types";
 import { cn } from "@/lib/utils";
 

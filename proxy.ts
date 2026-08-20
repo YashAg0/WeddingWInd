@@ -3,7 +3,7 @@ import { NextResponse, NextRequest, NextFetchEvent } from "next/server";
 import { isE2ETestAuthEnabled, verifyE2ETestSessionToken } from "@/lib/test-auth";
 
 // Public routes accessible without authentication
-const _isPublicRoute = createRouteMatcher([
+const isPublicRoute = createRouteMatcher([
   "/",
   "/weddings(.*)",
   "/list-wedding(.*)",
@@ -13,12 +13,29 @@ const _isPublicRoute = createRouteMatcher([
   "/contact",
   "/privacy",
   "/terms",
+  "/cookies",
+  "/cancellation-policy",
+  "/refund-policy",
+  "/safety",
+  "/dpdp",
+  "/gdpr",
+  "/host-agreement",
+  "/traveler-agreement",
+  "/agent-agreement",
+  "/coordinator-agreement",
+  "/copyright",
+  "/trademark",
+  "/coordinators",
+  "/coordinators/apply",
+  "/founder(.*)",
   "/login(.*)",
   "/signup(.*)",
   "/wishlist/shared(.*)",
   "/offline",
   "/manifest.webmanifest",
   "/api/health",
+  "/api/ready",
+  "/api/readiness",
   "/api/webhooks(.*)",
   "/sitemap.xml",
   "/robots.txt",
@@ -49,7 +66,7 @@ const clerkHandler = clerkMiddleware(async (auth, req) => {
   }
 });
 
-export default async function middleware(req: NextRequest, event: NextFetchEvent) {
+export async function proxy(req: NextRequest, event: NextFetchEvent) {
   // 1. E2E Testing Authenticated Session Handling (Local/Test environments ONLY)
   if (isE2ETestAuthEnabled()) {
     const e2eCookie = req.cookies.get("__wwi_e2e_session")?.value;
@@ -139,9 +156,24 @@ export default async function middleware(req: NextRequest, event: NextFetchEvent
       return NextResponse.next();
     }
 
+    // Fail-safe: If an error occurs on a public marketing route, do NOT block or 404 the page
+    if (!isProtectedRoute(req) && !isAdminRoute(req)) {
+      console.warn(`[Proxy] Non-fatal auth provider error on public route ${pathname}:`, err?.message || err);
+      return NextResponse.next();
+    }
+
+    // For protected routes, redirect unauthenticated browser users to /login
+    if (isUnauthenticated) {
+      const signInUrl = new URL("/login", req.url);
+      signInUrl.searchParams.set("redirect_url", req.url);
+      return NextResponse.redirect(signInUrl);
+    }
+
     throw err;
   }
 }
+
+export default proxy;
 
 export const config = {
   matcher: [

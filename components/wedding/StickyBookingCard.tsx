@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { toast } from "sonner";
-import { ShieldCheck, Calendar, X, Check } from "lucide-react";
+import { X, Check } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Wedding } from "@/types";
 import { useAuth } from "@/context/AuthContext";

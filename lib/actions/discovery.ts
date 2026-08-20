@@ -125,6 +125,21 @@ export async function searchWeddingsAction(
           },
         },
         bookings: true,
+        sponsorshipRequests: {
+          where: {
+            status: { in: ["ACTIVE", "PAID"] },
+          },
+          select: {
+            id: true,
+            status: true,
+            promotionType: true,
+            paymentRequired: true,
+            paymentStatus: true,
+            startsAt: true,
+            endsAt: true,
+            revokedAt: true,
+          },
+        },
       },
     });
   } catch (err) {
@@ -231,18 +246,27 @@ export async function searchWeddingsAction(
   // Filter out any safety excluded celebrations (nulls)
   const weddingsWithReviews = mappedWeddings.filter((item): item is NonNullable<typeof item> => item !== null);
 
-  // Apply sorting with deterministic tie-breakers on id
-  if (sort === "relevance") {
-    weddingsWithReviews.sort((a, b) => (b.relevanceScore - a.relevanceScore) || a.id.localeCompare(b.id));
-  } else if (sort === "price_asc") {
-    weddingsWithReviews.sort((a, b) => (a.pricePerGuest - b.pricePerGuest) || a.id.localeCompare(b.id));
-  } else if (sort === "price_desc") {
-    weddingsWithReviews.sort((a, b) => (b.pricePerGuest - a.pricePerGuest) || a.id.localeCompare(b.id));
-  } else if (sort === "date_asc") {
-    weddingsWithReviews.sort((a, b) => (a.date.getTime() - b.date.getTime()) || a.id.localeCompare(b.id));
-  } else if (sort === "rating_desc") {
-    weddingsWithReviews.sort((a, b) => (b.avgRating - a.avgRating) || a.id.localeCompare(b.id));
-  }
+  const { getWeddingDiscoveryPriority } = await import("../marketplace/ranking");
+
+  // Apply canonical priority tier sorting first (Sponsored > Featured > Normal), then secondary sort
+  weddingsWithReviews.sort((a, b) => {
+    const priorityA = getWeddingDiscoveryPriority(a);
+    const priorityB = getWeddingDiscoveryPriority(b);
+    if (priorityB !== priorityA) return priorityB - priorityA;
+
+    if (sort === "relevance") {
+      return (b.relevanceScore - a.relevanceScore) || a.id.localeCompare(b.id);
+    } else if (sort === "price_asc") {
+      return (a.pricePerGuest - b.pricePerGuest) || a.id.localeCompare(b.id);
+    } else if (sort === "price_desc") {
+      return (b.pricePerGuest - a.pricePerGuest) || a.id.localeCompare(b.id);
+    } else if (sort === "date_asc") {
+      return (new Date(a.date).getTime() - new Date(b.date).getTime()) || a.id.localeCompare(b.id);
+    } else if (sort === "rating_desc") {
+      return (b.avgRating - a.avgRating) || a.id.localeCompare(b.id);
+    }
+    return a.id.localeCompare(b.id);
+  });
 
   // Track search analytics asynchronously
   if (filters.query || Object.keys(filters).length > 1) {

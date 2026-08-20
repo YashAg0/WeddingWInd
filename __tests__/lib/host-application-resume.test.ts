@@ -305,4 +305,69 @@ describe("Host Application Resume & Duplicate Protection Lifecycle", () => {
       })
     );
   });
+
+  it("9. Toggling duration from 5 days to 3 days and saving preserves Day 4 and Day 5 draft data without loss", async () => {
+    // Setup host application mock with 5 days
+    const mockAppRecord = {
+      id: "host-app-multi-day-123",
+      userId: mockUser.id,
+      coupleProfileId: "cp-123",
+      durationDays: 3, // Toggled down to 3 days
+    };
+
+    mockPrisma.hostApplication = {
+      findFirst: jest.fn().mockResolvedValue(mockAppRecord),
+      update: jest.fn().mockResolvedValue(mockAppRecord),
+      create: jest.fn().mockResolvedValue(mockAppRecord),
+    };
+
+    mockPrisma.hostApplicationDay = {
+      upsert: jest.fn().mockImplementation(({ create }) => Promise.resolve({ id: `day-rec-${create.dayNumber}`, ...create })),
+    };
+
+    mockPrisma.hostApplicationEvent = {
+      deleteMany: jest.fn().mockResolvedValue({ count: 1 }),
+      create: jest.fn().mockResolvedValue({ id: "ev-1" }),
+    };
+
+    const { saveHostApplicationDraftAction } = require("@/lib/actions/host-application");
+
+    const daysInput = [
+      { dayNumber: 1, title: "Day 1 Welcome", date: "2027-01-01" },
+      { dayNumber: 2, title: "Day 2 Music", date: "2027-01-02" },
+      { dayNumber: 3, title: "Day 3 Vows", date: "2027-01-03" },
+      { dayNumber: 4, title: "Day 4 Reception", date: "2027-01-04" },
+      { dayNumber: 5, title: "Day 5 Farewell Gala", date: "2027-01-05" },
+    ];
+
+    const result = await saveHostApplicationDraftAction({
+      applicationId: "host-app-multi-day-123",
+      hostName: mockUser.name,
+      email: mockUser.email,
+      coupleNames: "Rajesh & Sunita",
+      city: "Jaipur",
+      weddingDate: "2027-01-01",
+      durationDays: 3, // Active commercial duration is 3
+      days: daysInput, // All 5 days provided
+    });
+
+    expect(result.success).toBe(true);
+
+    // Verify all 5 days were upserted and Day 5 was NOT dropped
+    expect(mockPrisma.hostApplicationDay.upsert).toHaveBeenCalledTimes(5);
+    expect(mockPrisma.hostApplicationDay.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          applicationId_dayNumber: {
+            applicationId: "host-app-multi-day-123",
+            dayNumber: 5,
+          },
+        },
+        create: expect.objectContaining({
+          dayNumber: 5,
+          title: "Day 5 Farewell Gala",
+        }),
+      })
+    );
+  });
 });

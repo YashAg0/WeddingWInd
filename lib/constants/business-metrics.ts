@@ -3,7 +3,7 @@
  * All metrics across marketing pages, headers, footers, dashboards, and metadata MUST be imported from here.
  */
 
-import { COMMISSION_MODEL, PRICING_TIERS, WEIGHTED_AVERAGE_BOOKING } from "./financial-model";
+import { PRICING_TIERS } from "./financial-model";
 
 export const BUSINESS_METRICS = {
   WEDDINGS_HOSTED: "Awaiting first verified celebration",
