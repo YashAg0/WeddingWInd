@@ -1,272 +1,383 @@
 import { MetadataRoute } from "next";
 
 const baseUrl = "https://weddingwithindia.com";
+const STATIC_PAGE_LASTMOD = new Date("2026-08-20T00:00:00.000Z");
 
 /**
  * app/sitemap.ts
  *
- * Dynamic sitemap — includes all public Our Indian Weddings.
- * Regenerated on each deployment (static export at build time).
- * If DB is offline at build time, falls back to static routes only.
+ * Master XML Sitemap Generator for WeddingWithIndia.
+ * Includes:
+ * - Core discovery & conversion routes
+ * - Full regional destination clusters (/destinations/*)
+ * - Authoritative educational & answer guides (/learn/*)
+ * - Verified published Indian wedding experiences (with authentic database updatedAt timestamps)
+ * - Legal, Trust, and Safety resources
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  // Static canonical public routes
   const staticRoutes: MetadataRoute.Sitemap = [
+    // Core Homepage & Discovery
     {
       url: baseUrl,
-      lastModified: new Date(),
+      lastModified: STATIC_PAGE_LASTMOD,
       changeFrequency: "daily",
       priority: 1.0,
     },
     {
       url: `${baseUrl}/weddings`,
-      lastModified: new Date(),
-      changeFrequency: "hourly",
+      lastModified: STATIC_PAGE_LASTMOD,
+      changeFrequency: "daily",
       priority: 0.9,
     },
     {
       url: `${baseUrl}/weddings/map`,
-      lastModified: new Date(),
+      lastModified: STATIC_PAGE_LASTMOD,
+      changeFrequency: "weekly",
+      priority: 0.8,
+    },
+
+    // Destination Clusters
+    {
+      url: `${baseUrl}/destinations`,
+      lastModified: STATIC_PAGE_LASTMOD,
+      changeFrequency: "weekly",
+      priority: 0.85,
+    },
+    {
+      url: `${baseUrl}/destinations/rajasthan`,
+      lastModified: STATIC_PAGE_LASTMOD,
+      changeFrequency: "weekly",
+      priority: 0.85,
+    },
+    {
+      url: `${baseUrl}/destinations/goa`,
+      lastModified: STATIC_PAGE_LASTMOD,
+      changeFrequency: "weekly",
+      priority: 0.85,
+    },
+    {
+      url: `${baseUrl}/destinations/punjab`,
+      lastModified: STATIC_PAGE_LASTMOD,
+      changeFrequency: "weekly",
+      priority: 0.85,
+    },
+    {
+      url: `${baseUrl}/destinations/kerala`,
+      lastModified: STATIC_PAGE_LASTMOD,
+      changeFrequency: "weekly",
+      priority: 0.85,
+    },
+    {
+      url: `${baseUrl}/destinations/delhi-ncr`,
+      lastModified: STATIC_PAGE_LASTMOD,
       changeFrequency: "weekly",
       priority: 0.8,
     },
     {
-      url: `${baseUrl}/how-it-works`,
-      lastModified: new Date(),
+      url: `${baseUrl}/destinations/mumbai`,
+      lastModified: STATIC_PAGE_LASTMOD,
+      changeFrequency: "weekly",
+      priority: 0.8,
+    },
+
+    // Educational Guides & AI Answer Hub (/learn/*)
+    {
+      url: `${baseUrl}/learn`,
+      lastModified: STATIC_PAGE_LASTMOD,
+      changeFrequency: "weekly",
+      priority: 0.85,
+    },
+    {
+      url: `${baseUrl}/learn/can-foreigners-attend-indian-weddings`,
+      lastModified: STATIC_PAGE_LASTMOD,
       changeFrequency: "monthly",
-      priority: 0.7,
+      priority: 0.85,
+    },
+    {
+      url: `${baseUrl}/learn/how-to-attend-an-indian-wedding`,
+      lastModified: STATIC_PAGE_LASTMOD,
+      changeFrequency: "monthly",
+      priority: 0.85,
+    },
+    {
+      url: `${baseUrl}/learn/indian-wedding-etiquette-for-foreigners`,
+      lastModified: STATIC_PAGE_LASTMOD,
+      changeFrequency: "monthly",
+      priority: 0.85,
+    },
+    {
+      url: `${baseUrl}/learn/what-to-wear-to-an-indian-wedding`,
+      lastModified: STATIC_PAGE_LASTMOD,
+      changeFrequency: "monthly",
+      priority: 0.85,
+    },
+    {
+      url: `${baseUrl}/learn/indian-wedding-rituals-explained`,
+      lastModified: STATIC_PAGE_LASTMOD,
+      changeFrequency: "monthly",
+      priority: 0.85,
+    },
+    {
+      url: `${baseUrl}/learn/indian-wedding-food-guide`,
+      lastModified: STATIC_PAGE_LASTMOD,
+      changeFrequency: "monthly",
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/learn/indian-wedding-tourism`,
+      lastModified: STATIC_PAGE_LASTMOD,
+      changeFrequency: "monthly",
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/learn/indian-wedding-experience-cost`,
+      lastModified: STATIC_PAGE_LASTMOD,
+      changeFrequency: "monthly",
+      priority: 0.8,
+    },
+
+    // Platform User Guides & Portals
+    {
+      url: `${baseUrl}/how-it-works`,
+      lastModified: STATIC_PAGE_LASTMOD,
+      changeFrequency: "monthly",
+      priority: 0.75,
     },
     {
       url: `${baseUrl}/for-travelers`,
-      lastModified: new Date(),
+      lastModified: STATIC_PAGE_LASTMOD,
       changeFrequency: "monthly",
-      priority: 0.7,
+      priority: 0.75,
     },
     {
       url: `${baseUrl}/for-couples`,
-      lastModified: new Date(),
+      lastModified: STATIC_PAGE_LASTMOD,
       changeFrequency: "monthly",
-      priority: 0.7,
+      priority: 0.75,
     },
     {
       url: `${baseUrl}/for-agents`,
-      lastModified: new Date(),
+      lastModified: STATIC_PAGE_LASTMOD,
       changeFrequency: "monthly",
-      priority: 0.6,
+      priority: 0.65,
     },
     {
       url: `${baseUrl}/for-agents/apply`,
-      lastModified: new Date(),
+      lastModified: STATIC_PAGE_LASTMOD,
       changeFrequency: "monthly",
-      priority: 0.5,
-    },
-    {
-      url: `${baseUrl}/about`,
-      lastModified: new Date(),
-      changeFrequency: "monthly",
-      priority: 0.6,
-    },
-    {
-      url: `${baseUrl}/founder/tanishq-gupta`,
-      lastModified: new Date(),
-      changeFrequency: "monthly",
-      priority: 0.7,
+      priority: 0.55,
     },
     {
       url: `${baseUrl}/coordinators`,
-      lastModified: new Date(),
+      lastModified: STATIC_PAGE_LASTMOD,
       changeFrequency: "monthly",
-      priority: 0.6,
+      priority: 0.65,
     },
     {
       url: `${baseUrl}/coordinators/apply`,
-      lastModified: new Date(),
+      lastModified: STATIC_PAGE_LASTMOD,
       changeFrequency: "monthly",
-      priority: 0.5,
+      priority: 0.55,
     },
     {
       url: `${baseUrl}/list-wedding`,
-      lastModified: new Date(),
+      lastModified: STATIC_PAGE_LASTMOD,
+      changeFrequency: "monthly",
+      priority: 0.75,
+    },
+    {
+      url: `${baseUrl}/about`,
+      lastModified: STATIC_PAGE_LASTMOD,
+      changeFrequency: "monthly",
+      priority: 0.65,
+    },
+    {
+      url: `${baseUrl}/founder/tanishq-gupta`,
+      lastModified: STATIC_PAGE_LASTMOD,
+      changeFrequency: "monthly",
+      priority: 0.75,
+    },
+    {
+      url: `${baseUrl}/contact`,
+      lastModified: STATIC_PAGE_LASTMOD,
+      changeFrequency: "monthly",
+      priority: 0.55,
+    },
+
+    // Safety & Trust Standards
+    {
+      url: `${baseUrl}/safety`,
+      lastModified: STATIC_PAGE_LASTMOD,
       changeFrequency: "monthly",
       priority: 0.7,
     },
     {
-      url: `${baseUrl}/contact`,
-      lastModified: new Date(),
+      url: `${baseUrl}/guest-safety`,
+      lastModified: STATIC_PAGE_LASTMOD,
+      changeFrequency: "monthly",
+      priority: 0.65,
+    },
+    {
+      url: `${baseUrl}/host-safety`,
+      lastModified: STATIC_PAGE_LASTMOD,
+      changeFrequency: "monthly",
+      priority: 0.65,
+    },
+    {
+      url: `${baseUrl}/community-guidelines`,
+      lastModified: STATIC_PAGE_LASTMOD,
       changeFrequency: "monthly",
       priority: 0.5,
     },
     {
+      url: `${baseUrl}/travel-visa`,
+      lastModified: STATIC_PAGE_LASTMOD,
+      changeFrequency: "monthly",
+      priority: 0.6,
+    },
+    {
+      url: `${baseUrl}/insurance`,
+      lastModified: STATIC_PAGE_LASTMOD,
+      changeFrequency: "monthly",
+      priority: 0.6,
+    },
+
+    // Legal, Compliance & Privacy
+    {
       url: `${baseUrl}/privacy`,
-      lastModified: new Date(),
+      lastModified: STATIC_PAGE_LASTMOD,
       changeFrequency: "yearly",
       priority: 0.3,
     },
     {
       url: `${baseUrl}/terms`,
-      lastModified: new Date(),
+      lastModified: STATIC_PAGE_LASTMOD,
       changeFrequency: "yearly",
       priority: 0.3,
     },
     {
       url: `${baseUrl}/cookies`,
-      lastModified: new Date(),
+      lastModified: STATIC_PAGE_LASTMOD,
       changeFrequency: "yearly",
       priority: 0.3,
     },
     {
       url: `${baseUrl}/cancellation-policy`,
-      lastModified: new Date(),
+      lastModified: STATIC_PAGE_LASTMOD,
       changeFrequency: "yearly",
-      priority: 0.3,
+      priority: 0.35,
     },
     {
       url: `${baseUrl}/refund-policy`,
-      lastModified: new Date(),
+      lastModified: STATIC_PAGE_LASTMOD,
       changeFrequency: "yearly",
-      priority: 0.3,
+      priority: 0.35,
     },
     {
       url: `${baseUrl}/traveler-agreement`,
-      lastModified: new Date(),
+      lastModified: STATIC_PAGE_LASTMOD,
       changeFrequency: "yearly",
       priority: 0.3,
     },
     {
       url: `${baseUrl}/host-agreement`,
-      lastModified: new Date(),
+      lastModified: STATIC_PAGE_LASTMOD,
       changeFrequency: "yearly",
       priority: 0.3,
     },
     {
       url: `${baseUrl}/agent-agreement`,
-      lastModified: new Date(),
+      lastModified: STATIC_PAGE_LASTMOD,
       changeFrequency: "yearly",
       priority: 0.3,
     },
     {
       url: `${baseUrl}/coordinator-agreement`,
-      lastModified: new Date(),
+      lastModified: STATIC_PAGE_LASTMOD,
       changeFrequency: "yearly",
       priority: 0.3,
     },
     {
       url: `${baseUrl}/copyright`,
-      lastModified: new Date(),
+      lastModified: STATIC_PAGE_LASTMOD,
       changeFrequency: "yearly",
       priority: 0.3,
     },
     {
       url: `${baseUrl}/trademark`,
-      lastModified: new Date(),
+      lastModified: STATIC_PAGE_LASTMOD,
       changeFrequency: "yearly",
       priority: 0.3,
     },
     {
       url: `${baseUrl}/dpdp`,
-      lastModified: new Date(),
+      lastModified: STATIC_PAGE_LASTMOD,
       changeFrequency: "yearly",
       priority: 0.3,
     },
     {
       url: `${baseUrl}/gdpr`,
-      lastModified: new Date(),
+      lastModified: STATIC_PAGE_LASTMOD,
       changeFrequency: "yearly",
       priority: 0.3,
     },
     {
-      url: `${baseUrl}/safety`,
-      lastModified: new Date(),
-      changeFrequency: "yearly",
-      priority: 0.4,
-    },
-    {
-      url: `${baseUrl}/guest-safety`,
-      lastModified: new Date(),
-      changeFrequency: "yearly",
-      priority: 0.4,
-    },
-    {
-      url: `${baseUrl}/host-safety`,
-      lastModified: new Date(),
-      changeFrequency: "yearly",
-      priority: 0.4,
-    },
-    {
-      url: `${baseUrl}/community-guidelines`,
-      lastModified: new Date(),
-      changeFrequency: "yearly",
-      priority: 0.4,
-    },
-    {
       url: `${baseUrl}/acceptable-use`,
-      lastModified: new Date(),
+      lastModified: STATIC_PAGE_LASTMOD,
       changeFrequency: "yearly",
       priority: 0.3,
     },
     {
       url: `${baseUrl}/content-policy`,
-      lastModified: new Date(),
+      lastModified: STATIC_PAGE_LASTMOD,
       changeFrequency: "yearly",
       priority: 0.3,
     },
     {
       url: `${baseUrl}/photo-video-consent`,
-      lastModified: new Date(),
+      lastModified: STATIC_PAGE_LASTMOD,
       changeFrequency: "yearly",
-      priority: 0.4,
+      priority: 0.35,
     },
     {
       url: `${baseUrl}/incident-report`,
-      lastModified: new Date(),
+      lastModified: STATIC_PAGE_LASTMOD,
       changeFrequency: "yearly",
-      priority: 0.4,
+      priority: 0.35,
     },
     {
       url: `${baseUrl}/complaints`,
-      lastModified: new Date(),
+      lastModified: STATIC_PAGE_LASTMOD,
       changeFrequency: "yearly",
       priority: 0.3,
     },
     {
       url: `${baseUrl}/grievance`,
-      lastModified: new Date(),
+      lastModified: STATIC_PAGE_LASTMOD,
       changeFrequency: "yearly",
-      priority: 0.4,
+      priority: 0.35,
     },
     {
       url: `${baseUrl}/accessibility`,
-      lastModified: new Date(),
+      lastModified: STATIC_PAGE_LASTMOD,
       changeFrequency: "yearly",
-      priority: 0.4,
-    },
-    {
-      url: `${baseUrl}/travel-visa`,
-      lastModified: new Date(),
-      changeFrequency: "yearly",
-      priority: 0.5,
-    },
-    {
-      url: `${baseUrl}/insurance`,
-      lastModified: new Date(),
-      changeFrequency: "yearly",
-      priority: 0.5,
+      priority: 0.35,
     },
     {
       url: `${baseUrl}/payment-terms`,
-      lastModified: new Date(),
+      lastModified: STATIC_PAGE_LASTMOD,
       changeFrequency: "yearly",
       priority: 0.3,
     },
     {
       url: `${baseUrl}/booking-terms`,
-      lastModified: new Date(),
+      lastModified: STATIC_PAGE_LASTMOD,
       changeFrequency: "yearly",
       priority: 0.3,
     },
   ];
 
-  // Dynamic Indian Wedding Experience routes
+  // Dynamic Published Wedding Experience routes
   let weddingRoutes: MetadataRoute.Sitemap = [];
   try {
     const { prisma, withDbRetry } = await import("@/lib/prisma");
@@ -281,7 +392,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     if (weddings && weddings.length > 0) {
       weddingRoutes = weddings.map((wedding) => ({
         url: `${baseUrl}/weddings/${wedding.slug}`,
-        lastModified: wedding.updatedAt,
+        lastModified: wedding.updatedAt || STATIC_PAGE_LASTMOD,
         changeFrequency: "weekly" as const,
         priority: 0.8,
       }));
@@ -289,7 +400,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       const { featuredWeddings } = await import("@/lib/data");
       weddingRoutes = featuredWeddings.map((w) => ({
         url: `${baseUrl}/weddings/${w.slug}`,
-        lastModified: new Date(),
+        lastModified: STATIC_PAGE_LASTMOD,
         changeFrequency: "weekly" as const,
         priority: 0.8,
       }));
@@ -298,7 +409,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const { featuredWeddings } = await import("@/lib/data");
     weddingRoutes = featuredWeddings.map((w) => ({
       url: `${baseUrl}/weddings/${w.slug}`,
-      lastModified: new Date(),
+      lastModified: STATIC_PAGE_LASTMOD,
       changeFrequency: "weekly" as const,
       priority: 0.8,
     }));

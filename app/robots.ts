@@ -3,60 +3,57 @@ import { MetadataRoute } from "next";
 /**
  * app/robots.ts
  *
- * Generates /robots.txt.
- * Blocks crawling of auth, dashboard, API, and onboarding routes.
- * Allows all public pages.
+ * Master Robots Policy for WeddingWithIndia.
+ * Explicitly configures crawl permissions for primary search engines and AI discovery engines:
+ * - Google (Googlebot)
+ * - Bing (Bingbot)
+ * - OpenAI (OAI-SearchBot, OAI-AdsBot)
+ * - Anthropic (ClaudeBot, Claude-SearchBot, Claude-User)
+ * - Perplexity (PerplexityBot, Perplexity-User)
+ *
+ * Allows all public discoverable content, educational guides (/learn/*), and destination clusters (/destinations/*).
+ * Strictly disallows private dashboards, admin portals, onboarding, account state, and APIs.
  */
 export default function robots(): MetadataRoute.Robots {
+  const privateDisallows = [
+    "/dashboard/",
+    "/admin/",
+    "/account/",
+    "/onboarding/",
+    "/for-agents/dashboard",
+    "/coordinators/dashboard",
+    "/wishlist/",
+    "/offline",
+    "/api/",
+    "/login",
+    "/signup",
+    "/_next/",
+  ];
+
+  const searchAndAiBots = [
+    "Googlebot",
+    "Bingbot",
+    "OAI-SearchBot",
+    "OAI-AdsBot",
+    "ClaudeBot",
+    "Claude-SearchBot",
+    "Claude-User",
+    "PerplexityBot",
+    "Perplexity-User",
+  ];
+
   return {
     rules: [
       {
         userAgent: "*",
-        allow: [
-          "/",
-          "/weddings",
-          "/weddings/",
-          "/how-it-works",
-          "/for-travelers",
-          "/for-couples",
-          "/for-agents",
-          "/for-agents/apply",
-          "/coordinators",
-          "/coordinators/apply",
-          "/about",
-          "/founder/tanishq-gupta",
-          "/contact",
-          "/list-wedding",
-          "/safety",
-          "/terms",
-          "/privacy",
-          "/cookies",
-          "/cancellation-policy",
-          "/refund-policy",
-          "/traveler-agreement",
-          "/host-agreement",
-          "/agent-agreement",
-          "/coordinator-agreement",
-          "/copyright",
-          "/trademark",
-          "/dpdp",
-          "/gdpr",
-        ],
-        disallow: [
-          "/dashboard/",
-          "/admin/",
-          "/account/",
-          "/onboarding/",
-          "/for-agents/dashboard",
-          "/coordinators/dashboard",
-          "/wishlist/",
-          "/offline",
-          "/api/",
-          "/login",
-          "/signup",
-          "/_next/",
-        ],
+        allow: "/",
+        disallow: privateDisallows,
       },
+      ...searchAndAiBots.map((bot) => ({
+        userAgent: bot,
+        allow: "/",
+        disallow: privateDisallows,
+      })),
     ],
     sitemap: "https://weddingwithindia.com/sitemap.xml",
     host: "https://weddingwithindia.com",

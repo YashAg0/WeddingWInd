@@ -58,16 +58,26 @@ export default function FounderPage() {
   const personJsonLd = {
     "@context": "https://schema.org",
     "@type": "Person",
+    "@id": "https://weddingwithindia.com/founder/tanishq-gupta#person",
     name: "Tanishq Gupta",
     jobTitle: "Founder",
     image: "https://weddingwithindia.com/images/founder/founder.png",
     worksFor: {
       "@type": "Organization",
+      "@id": "https://weddingwithindia.com/#organization",
       name: "WeddingWithIndia",
       url: "https://weddingwithindia.com",
       logo: "https://weddingwithindia.com/images/logos/logo.png",
     },
     url: "https://weddingwithindia.com/founder/tanishq-gupta",
+    sameAs: [
+      "https://www.linkedin.com/in/tanishqgupta-",
+      "https://twitter.com/tanishqgupta",
+    ],
+    mainEntityOfPage: {
+      "@type": "ProfilePage",
+      "@id": "https://weddingwithindia.com/founder/tanishq-gupta",
+    },
     description:
       "Founder of WeddingWithIndia, technology builder, creator of BigTechJournals, and guest speaker at MNIT Jaipur.",
     knowsAbout: [
@@ -75,6 +85,7 @@ export default function FounderPage() {
       "Digital Platforms",
       "Cultural Tourism",
       "Technology Management",
+      "Indian Wedding Tourism",
     ],
   };
 

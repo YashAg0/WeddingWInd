@@ -33,18 +33,21 @@ export const metadata: Metadata = {
     template: "%s | WeddingWithIndia",
   },
   description:
-    "The world's first marketplace to attend authentic Indian weddings. Join authentic celebrations in Rajasthan, Goa, Punjab, and Kerala as an honoured guest. Reserve your seat today.",
+    "WeddingWithIndia is a platform connecting travelers with authentic Indian wedding experiences and participating hosts across India. Join celebrations in Rajasthan, Goa, Punjab, Kerala, and across India as an honoured guest.",
   keywords: [
     "Indian wedding tourism",
     "attend Indian wedding",
     "Indian wedding experience",
-    "Rajasthan wedding",
+    "attend Indian wedding as a foreigner",
+    "Rajasthan wedding experience",
     "destination wedding India",
     "cultural travel India",
-    "wedding guest experience",
+    "wedding guest experience India",
+    "authentic Indian wedding traditions",
   ],
-  authors: [{ name: "WeddingWithIndia" }],
+  authors: [{ name: "WeddingWithIndia", url: APP_URL }],
   creator: "WeddingWithIndia",
+  publisher: "WeddingWithIndia",
   openGraph: {
     type: "website",
     locale: "en_US",
@@ -52,7 +55,7 @@ export const metadata: Metadata = {
     siteName: "WeddingWithIndia",
     title: "WeddingWithIndia — Attend Authentic Indian Weddings",
     description:
-      "Experience the magic of authentic Indian weddings as an honoured guest. Browse our handpicked collection of verified cultural wedding celebrations across India.",
+      "Connect with participating Indian host families to attend authentic cultural wedding celebrations across Rajasthan, Goa, Punjab, Kerala, and India.",
     images: [
       {
         url: "/og-image.jpg",
@@ -66,7 +69,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "WeddingWithIndia — Attend Authentic Indian Weddings",
     description:
-      "Experience the magic of authentic Indian weddings. Browse our exclusive collection of verified celebrations across India.",
+      "Connect with participating Indian host families to attend authentic cultural wedding celebrations across India.",
     images: ["/og-image.jpg"],
     creator: "@weddingwithindia",
   },
@@ -104,23 +107,48 @@ export const metadata: Metadata = {
   },
 };
 
-// JSON-LD: Organization structured data
+// JSON-LD: Organization structured data (Authoritative Knowledge Graph Entity)
 const organizationJsonLd = {
   "@context": "https://schema.org",
   "@type": "Organization",
+  "@id": `${APP_URL}/#organization`,
   name: "WeddingWithIndia",
+  alternateName: ["Wedding With India"],
   url: APP_URL,
   logo: `${APP_URL}/images/logos/logo.png`,
+  image: `${APP_URL}/og-image.jpg`,
   description:
-    "The world's first marketplace to attend authentic Indian weddings as an honoured guest.",
+    "WeddingWithIndia is a platform connecting international travelers with authentic Indian wedding experiences and participating host families across India.",
+  founder: {
+    "@type": "Person",
+    "@id": `${APP_URL}/founder/tanishq-gupta#person`,
+    name: "Tanishq Gupta",
+    url: `${APP_URL}/founder/tanishq-gupta`,
+  },
+  areaServed: {
+    "@type": "Country",
+    name: "India",
+  },
+  knowsAbout: [
+    "Indian Weddings",
+    "Indian Wedding Traditions",
+    "Indian Wedding Tourism",
+    "Cultural Immersion Travel",
+    "Rajasthan Palace Weddings",
+    "Goa Beach Weddings",
+    "Punjabi Anand Karaj Celebrations",
+    "Kerala Traditional Weddings",
+    "Guest Etiquette at Indian Weddings",
+  ],
   sameAs: [
     "https://www.instagram.com/weddingwithindia",
     "https://www.facebook.com/weddingwithindia",
     "https://twitter.com/weddingwithindia",
+    "https://www.linkedin.com/company/weddingwithindia",
   ],
   contactPoint: {
     "@type": "ContactPoint",
-    contactType: "guest support",
+    contactType: "customer support",
     email: "contact@weddingwithindia.com",
     availableLanguage: ["English", "Hindi"],
   },
@@ -130,8 +158,15 @@ const organizationJsonLd = {
 const websiteJsonLd = {
   "@context": "https://schema.org",
   "@type": "WebSite",
+  "@id": `${APP_URL}/#website`,
   name: "WeddingWithIndia",
+  alternateName: ["Wedding With India"],
   url: APP_URL,
+  publisher: {
+    "@id": `${APP_URL}/#organization`,
+  },
+  description:
+    "Discover and attend authentic Indian wedding celebrations as an honoured guest with participating host families across India.",
   potentialAction: {
     "@type": "SearchAction",
     target: {

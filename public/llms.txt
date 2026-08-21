@@ -1,0 +1,45 @@
+# WeddingWithIndia
+> Canonical Entity URL: https://weddingwithindia.com
+
+## Overview
+WeddingWithIndia is an online platform connecting international travelers with authentic Indian wedding experiences hosted by participating couples and families across India. The platform facilitates cultural immersion tourism by allowing verified global guests to attend multi-day traditional Indian weddings as honoured guests with clear guest invitations, cultural coordinators, and transparent hospitality standards.
+
+## Primary Entities & Roles
+- **Global Travelers / Guests**: International visitors seeking authentic cultural immersion at Indian wedding celebrations.
+- **Host Couples & Families**: Participating Indian families welcoming approved international guests to share their regional heritage and traditions.
+- **Event Coordinators**: Local coordinators facilitating on-site hospitality, dress code guidance, translation, and ceremonial commentary.
+- **Referral Agents**: Travel professionals, cultural creators, and ambassadors introducing suitable travelers or host families.
+- **Founder**: Tanishq Gupta (https://weddingwithindia.com/founder/tanishq-gupta)
+
+## Core Destination Hubs
+- **Rajasthan**: Royal palace and heritage haveli celebrations in Jaipur, Udaipur, Jodhpur, and Jaisalmer. (https://weddingwithindia.com/destinations/rajasthan)
+- **Goa**: Coastal sunset celebrations and beach wedding traditions. (https://weddingwithindia.com/destinations/goa)
+- **Punjab**: Energetic folk traditions, Sangeet musical nights, and Anand Karaj ceremonies in Amritsar and Chandigarh. (https://weddingwithindia.com/destinations/punjab)
+- **Kerala**: Backwater serene ceremonies, traditional vegetarian Sadya on banana leaves, and temple wedding customs. (https://weddingwithindia.com/destinations/kerala)
+- **Delhi NCR**: Grand regal banquets and farm palace festivities. (https://weddingwithindia.com/destinations/delhi-ncr)
+- **Mumbai**: Luxury coastal celebrations, Maharashtrian heritage, and contemporary elegance. (https://weddingwithindia.com/destinations/mumbai)
+
+## Authoritative Educational & Answer Guides
+- **Can Foreigners Attend Indian Weddings?**: Factual guide on guest legitimacy, invitation models, and cultural hospitality. (https://weddingwithindia.com/learn/can-foreigners-attend-indian-weddings)
+- **How to Attend an Indian Wedding**: Step-by-step guest journey from discovery to on-site participation. (https://weddingwithindia.com/learn/how-to-attend-an-indian-wedding)
+- **Indian Wedding Etiquette for Foreigners**: Guide covering footwear, greetings, photography, gifts, and respect for rituals. (https://weddingwithindia.com/learn/indian-wedding-etiquette-for-foreigners)
+- **What to Wear to an Indian Wedding**: Dress code guide for women (lehenga, saree, anarkali) and men (kurta, sherwani), including color etiquette. (https://weddingwithindia.com/learn/what-to-wear-to-an-indian-wedding)
+- **Indian Wedding Rituals Explained**: Complete breakdown of Haldi, Mehndi, Sangeet, Baraat, Varmala, Pheras, and Reception. (https://weddingwithindia.com/learn/indian-wedding-rituals-explained)
+- **Indian Wedding Food & Feasting Guide**: Regional culinary traditions, dietary guidance, and vegetarian banquet insights. (https://weddingwithindia.com/learn/indian-wedding-food-guide)
+- **Indian Wedding Tourism Overview**: The cultural exchange, community benefits, and structure of wedding tourism. (https://weddingwithindia.com/learn/indian-wedding-tourism)
+- **Indian Wedding Experience Cost & Pricing**: Transparent breakdown of pricing tiers, inclusions, and coordinator support. (https://weddingwithindia.com/learn/indian-wedding-experience-cost)
+
+## Key Public Resources
+- **Browse Real Wedding Experiences**: https://weddingwithindia.com/weddings
+- **Interactive Experience Map**: https://weddingwithindia.com/weddings/map
+- **How It Works**: https://weddingwithindia.com/how-it-works
+- **Traveler Guide & FAQs**: https://weddingwithindia.com/for-travelers
+- **Host Family Guide**: https://weddingwithindia.com/for-couples
+- **Referral Agent Program**: https://weddingwithindia.com/for-agents
+- **Safety & Verification Standards**: https://weddingwithindia.com/safety
+- **Guest Safety Policy**: https://weddingwithindia.com/guest-safety
+- **Host Safety Policy**: https://weddingwithindia.com/host-safety
+- **About the Company**: https://weddingwithindia.com/about
+- **Founder Profile**: https://weddingwithindia.com/founder/tanishq-gupta
+- **Contact Support**: https://weddingwithindia.com/contact
+- **Full Machine-Readable Index**: https://weddingwithindia.com/llms-full.txt

@@ -18,7 +18,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   
   if (!wedding) {
     return {
-      title: 'Wedding Not Found',
+      title: 'Wedding Experience Not Found',
       robots: {
         index: false,
         follow: false,
@@ -26,8 +26,20 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     };
   }
 
-  const pageTitle = `Attend ${wedding.title} in ${wedding.location}`;
-  const pageDescription = `Experience ${wedding.title} in ${wedding.location}. Authentic ${wedding.category} celebration. Discover itinerary, cultural customs, and guest invitation details.`;
+  const wAny = wedding as any;
+  const isIndexable = !wAny.suspended && !wAny.deletedAt && (wAny.status === "PUBLISHED" || !wAny.status);
+  if (!isIndexable) {
+    return {
+      title: `${wedding.title} | WeddingWithIndia`,
+      robots: {
+        index: false,
+        follow: false,
+      },
+    };
+  }
+
+  const pageTitle = `${wedding.title} — Authentic Indian Wedding Experience in ${wedding.location}`;
+  const pageDescription = `Join ${wedding.title} in ${wedding.location}. Authentic ${wedding.category} Indian wedding celebration. Explore ceremonial schedule, traditional dining, dress expectations, and guest invitation details.`;
   const canonicalUrl = `https://weddingwithindia.com/weddings/${resolvedParams.slug}`;
   const weddingImg = wedding.imageUrl || wedding.coupleImage;
 
@@ -108,12 +120,13 @@ export default async function WeddingDetailPage({ params }: PageProps) {
     offers: {
       "@type": "Offer",
       price: wedding.pricePerGuest,
-      priceCurrency: wedding.currency || "INR",
+      priceCurrency: wedding.currency || "USD",
       availability: (wedding.guestsAllowed - wedding.guestsBooked) > 0 ? "https://schema.org/InStock" : "https://schema.org/SoldOut",
       url: `https://weddingwithindia.com/weddings/${wedding.slug}`,
     },
     organizer: {
       "@type": "Organization",
+      "@id": "https://weddingwithindia.com/#organization",
       name: "WeddingWithIndia",
       url: "https://weddingwithindia.com",
     },
