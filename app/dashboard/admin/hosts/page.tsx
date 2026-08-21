@@ -202,6 +202,19 @@ export default function AdminHostsPage() {
         </button>
       </div>
 
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-2xl p-4 flex items-center gap-3 text-red-800 text-sm">
+          <AlertCircle size={18} className="flex-shrink-0 text-red-600" />
+          <span className="flex-1">{error}</span>
+          <button
+            onClick={loadApplications}
+            className="text-xs font-bold underline hover:text-red-950"
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
       {/* Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
         <div className="bg-white border border-warm-200/70 p-6 rounded-3xl shadow-xs space-y-2">

@@ -1,5 +1,3 @@
-const http = require('http');
-
 const BASE_URL = process.env.TEST_BASE_URL || 'http://localhost:3005';
 
 async function fetchRoute(path, options = {}) {

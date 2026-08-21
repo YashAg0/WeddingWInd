@@ -125,7 +125,7 @@ async function runVerification() {
     const coexisting = allWeddings.filter((w) => w.featured && isSponsorshipActive(w));
 
     console.log(`  - Active Sponsored Listings: ${activeSponsored.length}`);
-    console.log(`  - Featured Listings: ${allWeddings.filter((w) => w.featured).length}`);
+    console.log(`  - Featured Listings: ${allWeddings.filter((w) => w.featured).length} (Featured Only: ${featuredOnly.length})`);
     console.log(`  - Both Featured & Sponsored: ${coexisting.length}`);
 
     assert(

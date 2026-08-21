@@ -729,7 +729,7 @@ async function runE2EProductionLifecycleAudit() {
       if (demoWedding && demoWedding.isDemo) {
         throw new Error("This is a demonstration wedding experience and cannot be booked.");
       }
-    } catch (e) {
+    } catch {
       demoBookingBlocked = true;
     }
 
@@ -755,7 +755,7 @@ async function runE2EProductionLifecycleAudit() {
       if (suspendedWedding.suspended) {
         throw new Error("This wedding experience is currently suspended and cannot accept new bookings.");
       }
-    } catch (e) {
+    } catch {
       suspendedBookingBlocked = true;
     }
 

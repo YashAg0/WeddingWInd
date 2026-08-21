@@ -141,7 +141,7 @@ async function verifySponsoredListings() {
         where: { status: "PUBLISHED", suspended: false, deletedAt: null },
       });
       break;
-    } catch (err) {
+    } catch {
       if (attempt === 3) {
         console.warn("⚠️ Remote database offline — auditing static database fallback.");
         weddings = [

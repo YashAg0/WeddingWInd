@@ -7,7 +7,7 @@
  * across Guest, Host, Admin, Coordinator, and Agent boundaries.
  */
 
-const { PrismaClient, UserRole, BookingStatus, WeddingStatus, WeddingSide, CommissionStatus, ReviewType } = require("@prisma/client");
+const { PrismaClient, UserRole, BookingStatus, WeddingStatus, WeddingSide, CommissionStatus } = require("@prisma/client");
 const prisma = new PrismaClient();
 
 const RESULTS = {

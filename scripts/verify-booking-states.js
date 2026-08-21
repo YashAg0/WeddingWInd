@@ -39,7 +39,7 @@ async function auditBookingStates() {
         include: { bookings: true },
       });
       break;
-    } catch (err) {
+    } catch {
       if (attempt === 3) {
         console.warn("⚠️ Remote database offline — auditing static database fallback.");
         weddings = [

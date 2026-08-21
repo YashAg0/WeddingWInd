@@ -16,14 +16,10 @@ import {
   sortWeddingsByDiscoveryPriority,
   requestSponsorship,
   adminReviewSponsorshipRequest,
-  adminDirectAddSponsorship,
-  adminVerifyAndActivatePayment,
-  adminRevokeSponsorship,
   adminUpdatePromotionParameters,
 } from "@/lib/services/sponsorship";
 import { toWeddingDTO } from "@/lib/wedding-dto";
 import { prisma } from "@/lib/prisma";
-import { UserRole } from "@prisma/client";
 
 jest.mock("next/cache", () => ({
   revalidatePath: jest.fn(),

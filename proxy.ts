@@ -2,46 +2,6 @@ import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse, NextRequest, NextFetchEvent } from "next/server";
 import { isE2ETestAuthEnabled, verifyE2ETestSessionToken } from "@/lib/test-auth";
 
-// Public routes accessible without authentication
-const isPublicRoute = createRouteMatcher([
-  "/",
-  "/weddings(.*)",
-  "/list-wedding(.*)",
-  "/for-(.*)",
-  "/how-it-works",
-  "/about",
-  "/contact",
-  "/privacy",
-  "/terms",
-  "/cookies",
-  "/cancellation-policy",
-  "/refund-policy",
-  "/safety",
-  "/dpdp",
-  "/gdpr",
-  "/host-agreement",
-  "/traveler-agreement",
-  "/agent-agreement",
-  "/coordinator-agreement",
-  "/copyright",
-  "/trademark",
-  "/coordinators",
-  "/coordinators/apply",
-  "/founder(.*)",
-  "/login(.*)",
-  "/signup(.*)",
-  "/wishlist/shared(.*)",
-  "/offline",
-  "/manifest.webmanifest",
-  "/api/health",
-  "/api/ready",
-  "/api/readiness",
-  "/api/webhooks(.*)",
-  "/sitemap.xml",
-  "/robots.txt",
-  "/api/test(.*)"
-]);
-
 // Admin-only routes
 const isAdminRoute = createRouteMatcher([
   "/dashboard/admin(.*)",

@@ -63,7 +63,7 @@ export default function ForAgentsPage() {
                 Guest-Side Referral
               </span>
               <h3 className="font-display font-bold text-2xl text-charcoal-900">
-                ₹511 to ₹2,511 / Guest
+                ₹{minAgentPayoutINR.toLocaleString("en-IN")} to ₹{maxAgentPayoutINR.toLocaleString("en-IN")} / Guest
               </h3>
               <p className="text-charcoal-600 text-xs sm:text-sm leading-relaxed">
                 Refer international guests who reserve any celebration tier. Earn fixed INR payouts per eligible attending guest: Standard (₹511), Enhanced (₹1,011), Grand (₹1,511), Royal (₹2,011), Signature Royal (₹2,511).
@@ -82,7 +82,9 @@ export default function ForAgentsPage() {
 
             <div className="bg-warm-50 border border-warm-200 p-4 rounded-xl text-center">
               <span className="text-[0.6875rem] font-bold text-charcoal-500 uppercase tracking-wider block">Guest Referral Payout Range</span>
-              <span className="font-display font-bold text-xl text-[var(--color-brand-primary)]">₹511 — ₹2,511 / guest</span>
+              <span className="font-display font-bold text-xl text-[var(--color-brand-primary)]">
+                ₹{minAgentPayoutINR.toLocaleString("en-IN")} — ₹{maxAgentPayoutINR.toLocaleString("en-IN")} / guest
+              </span>
             </div>
           </div>
 

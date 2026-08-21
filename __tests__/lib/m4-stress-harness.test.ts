@@ -92,8 +92,6 @@ jest.mock("@/lib/email", () => ({
   sendRefundConfirmationEmail: jest.fn().mockResolvedValue(undefined),
 }));
 
-const { prisma } = jest.requireMock("@/lib/prisma");
-
 describe("M4 Empirical Verification 1: Manual Refund Limit Bounds & Precision", () => {
   beforeEach(() => {
     jest.clearAllMocks();

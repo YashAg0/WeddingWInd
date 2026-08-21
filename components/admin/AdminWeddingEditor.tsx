@@ -248,6 +248,8 @@ export function AdminWeddingEditor({ wedding, couples, isEdit = false }: AdminWe
       title,
       description,
       location,
+      city: city || null,
+      state: stateName || null,
       category,
       religion: religion === "Other" ? (customTradition || "Other") : religion,
       tier,
@@ -269,8 +271,8 @@ export function AdminWeddingEditor({ wedding, couples, isEdit = false }: AdminWe
       sponsorshipStart: sponsorshipStart || null,
       sponsorshipEnd: sponsorshipEnd || null,
       isDemo,
-      foodContext,
-      dressExpectations,
+      foodContext: foodContext || null,
+      dressExpectations: dressExpectations || null,
       guestRules,
       etiquetteNotes,
       events,
@@ -438,6 +440,34 @@ export function AdminWeddingEditor({ wedding, couples, isEdit = false }: AdminWe
                   />
                 </div>
 
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-charcoal-700 uppercase tracking-wider">
+                    City
+                  </label>
+                  <input
+                    type="text"
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    placeholder="e.g. Jodhpur"
+                    className="input-luxury w-full text-sm"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-charcoal-700 uppercase tracking-wider">
+                    State / Region
+                  </label>
+                  <input
+                    type="text"
+                    value={stateName}
+                    onChange={(e) => setStateName(e.target.value)}
+                    placeholder="e.g. Rajasthan"
+                    className="input-luxury w-full text-sm"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-charcoal-700 uppercase tracking-wider">
                     Category *
@@ -667,6 +697,35 @@ export function AdminWeddingEditor({ wedding, couples, isEdit = false }: AdminWe
                   placeholder="Describe the wedding's unique cultural atmosphere, family welcome, and what international guests will experience..."
                   className="input-luxury w-full text-sm p-4 h-auto"
                 />
+              </div>
+
+              {/* Cultural Context Details */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-charcoal-700 uppercase tracking-wider">
+                    Culinary &amp; Food Context
+                  </label>
+                  <input
+                    type="text"
+                    value={foodContext}
+                    onChange={(e) => setFoodContext(e.target.value)}
+                    placeholder="e.g. Pure Vegetarian Rajasthani Thali, Royal Marwari feast"
+                    className="input-luxury w-full text-sm"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-charcoal-700 uppercase tracking-wider">
+                    Dress Code Expectations
+                  </label>
+                  <input
+                    type="text"
+                    value={dressExpectations}
+                    onChange={(e) => setDressExpectations(e.target.value)}
+                    placeholder="e.g. Traditional Indian festive attire (Kurta / Lehenga)"
+                    className="input-luxury w-full text-sm"
+                  />
+                </div>
               </div>
             </div>
           )}

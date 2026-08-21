@@ -235,7 +235,7 @@ describe("Wedding Visual Profile & Canonical Image Consistency", () => {
     expect(allowedHosts.has("plus.unsplash.com")).toBe(true);
 
     // Verify all canonical images in CURATED_WEDDING_IMAGES belong to configured hosts
-    for (const [slug, profile] of Object.entries(CURATED_WEDDING_IMAGES)) {
+    for (const profile of Object.values(CURATED_WEDDING_IMAGES)) {
       const url = new URL(profile.imageUrl);
       expect(allowedHosts.has(url.hostname)).toBe(true);
     }

@@ -61,7 +61,7 @@ async function verifyHomepageInventory() {
         ],
       });
       break;
-    } catch (err) {
+    } catch {
       if (attempt === 3) {
         console.warn("⚠️  Remote database offline — falling back to static database inventory snapshot.");
         homepageWeddingsRaw = FALLBACK_WEDDINGS;

@@ -98,7 +98,7 @@ async function auditAuthenticity() {
         include: { events: true, traditions: true },
       });
       break;
-    } catch (err) {
+    } catch {
       if (attempt === 3) {
         console.warn("⚠️ Remote database offline — auditing static database fallback.");
         weddings = [

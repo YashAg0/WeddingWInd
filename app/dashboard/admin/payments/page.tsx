@@ -122,8 +122,10 @@ export default async function AdminPaymentsPage() {
             <CreditCard size={22} />
           </div>
           <div>
-            <span className="text-[0.6875rem] font-bold text-charcoal-400 uppercase tracking-widest block">Logged Transactions</span>
-            <span className="font-display font-bold text-xl text-charcoal-900">{data.transactions.length} Records</span>
+            <span className="text-[0.6875rem] font-bold text-charcoal-400 uppercase tracking-widest block">Gross Volume</span>
+            <span className="font-display font-bold text-lg text-emerald-700">
+              ${totalGrossVolumeUSD.toLocaleString("en-US")} USD
+            </span>
           </div>
         </div>
 

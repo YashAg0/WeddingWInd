@@ -219,7 +219,6 @@ async function runAcceptance() {
     const body = res.body;
 
     const hasSponsoredText = body.includes("Sponsored Experience") || body.includes("Sponsored");
-    const hasSponsoredRing = body.includes("sponsored-ring-anim") || body.includes("group/sponsored");
     const hasTitle = body.includes("WeddingWithIndia") || body.includes("Indian Weddings");
 
     record(
@@ -275,7 +274,7 @@ async function runAcceptance() {
 
     record(
       "7. Map & Discovery Showcase Inclusion",
-      is200 && showcaseCount > 0,
+      is200 && hasContent && showcaseCount > 0,
       "None",
       "Showcase listings available in discovery",
       `Map HTTP ${res.statusCode}, ${showcaseCount} showcase listings in public discovery inventory`

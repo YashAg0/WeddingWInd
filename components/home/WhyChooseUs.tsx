@@ -123,7 +123,7 @@ export function WhyChooseUs() {
 
         {/* Value Proposition Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6">
-          {VALUE_PROPOSITIONS.map((prop, i) => (
+          {VALUE_PROPOSITIONS.map((prop) => (
             <div
               key={prop.title}
               className="group relative flex flex-col justify-between bg-warm-50/70 border border-warm-200/80 rounded-2xl p-6 sm:p-7 shadow-xs hover:shadow-lg hover:border-amber-300 hover:bg-white transition-all duration-300 transform hover:-translate-y-1"

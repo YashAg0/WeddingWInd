@@ -2,8 +2,6 @@ import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { UserRole, WeddingStatus } from "@prisma/client";
 import {
-  adminCreateWeddingAction,
-  adminUpdateWeddingAction,
   adminDeleteWeddingAction,
   adminToggleWeddingStatusAction,
   adminToggleWeddingFeaturedAction,
@@ -130,62 +128,6 @@ export default async function AdminWeddingsPage({
   const countActiveSponsored = weddings.filter((w) => isSponsorshipActive(w)).length;
   const countExpiredSponsored = weddings.filter((w) => w.sponsored && !isSponsorshipActive(w)).length;
   const countDraft = weddings.filter((w) => w.status === WeddingStatus.DRAFT).length;
-
-  // 3. Define Server Actions for Form Submissions in Server Component
-  async function handleSubmit(formData: FormData) {
-    "use server";
-    const wId = formData.get("id") as string;
-    const title = formData.get("title") as string;
-    const description = formData.get("description") as string;
-    const location = formData.get("location") as string;
-    const category = formData.get("category") as string;
-    const religion = (formData.get("religion") as string) || "Hindu";
-    const tier = (formData.get("tier") as string) || "STANDARD";
-    const durationDays = parseInt(formData.get("durationDays") as string) || 3;
-    const ceremoniesCount = parseInt(formData.get("ceremoniesCount") as string) || 3;
-    const experienceIntensity = (formData.get("experienceIntensity") as string) || "TRADITIONAL";
-    const weddingScale = (formData.get("weddingScale") as string) || "MEDIUM";
-    const date = formData.get("date") as string;
-    const pricePerGuest = parseFloat(formData.get("pricePerGuest") as string) || 0;
-    const capacity = parseInt(formData.get("capacity") as string);
-    const mainImageUrl = formData.get("mainImageUrl") as string;
-    const hostCoupleId = formData.get("hostCoupleId") as string;
-    const status = formData.get("status") as WeddingStatus;
-    const featured = formData.get("featured") === "true";
-    const sponsored = formData.get("sponsored") === "true";
-    const sponsorshipStart = formData.get("sponsorshipStart") as string;
-    const sponsorshipEnd = formData.get("sponsorshipEnd") as string;
-
-    const payload = {
-      title,
-      description,
-      location,
-      category,
-      religion,
-      tier,
-      durationDays,
-      ceremoniesCount,
-      experienceIntensity,
-      weddingScale,
-      date,
-      pricePerGuest,
-      capacity,
-      mainImageUrl,
-      hostCoupleId,
-      status,
-      featured,
-      sponsored,
-      sponsorshipStart: sponsorshipStart ? sponsorshipStart : null,
-      sponsorshipEnd: sponsorshipEnd ? sponsorshipEnd : null,
-    };
-
-    if (wId) {
-      await adminUpdateWeddingAction(wId, payload);
-    } else {
-      await adminCreateWeddingAction(payload);
-    }
-    redirect("/dashboard/admin/weddings");
-  }
 
   async function handleDelete(formData: FormData) {
     "use server";

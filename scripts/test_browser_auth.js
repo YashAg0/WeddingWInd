@@ -15,7 +15,7 @@ async function run() {
 
   // 2. Hit /dashboard/admin/weddings with this cookie
   const pageRes = await new Promise((resolve) => {
-    const req = http.get("http://localhost:3000/dashboard/admin/weddings", {
+    http.get("http://localhost:3000/dashboard/admin/weddings", {
       headers: {
         Cookie: cookieVal
       }

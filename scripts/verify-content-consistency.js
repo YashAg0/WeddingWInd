@@ -45,7 +45,7 @@ async function auditContentConsistency() {
         },
       });
       break;
-    } catch (err) {
+    } catch {
       if (attempt === 3) {
         console.warn("⚠️ Remote database offline — auditing static database fallback.");
         weddings = [

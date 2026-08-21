@@ -28,7 +28,6 @@ export function BookingSidebar({ wedding }: BookingSidebarProps) {
   const [attendanceSide, setAttendanceSide] = useState<WeddingSideValue>("BRIDE_SIDE");
   const [isSaved, setIsSaved] = useState(false);
   const [isShared, setIsShared] = useState(false);
-  const [isBooked, setIsBooked] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const availableSlots = Math.max(0, wedding.guestsAllowed - wedding.guestsBooked);
@@ -102,7 +101,8 @@ export function BookingSidebar({ wedding }: BookingSidebarProps) {
         attendanceSide,
         status: "pending"
       });
-      setIsBooked(true);
+      toast.success("Booking reservation submitted successfully!");
+      router.push("/dashboard/bookings");
     } catch (err: any) {
       setErrorMessage(err.message || "Failed to submit booking request. Please try again.");
     }

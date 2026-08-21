@@ -19,8 +19,6 @@ const ICONS_DIR = path.join(ROOT_DIR, "public", "icons");
 const APP_DIR = path.join(ROOT_DIR, "app");
 
 const BRAND_MAROON = { r: 107, g: 16, b: 38, alpha: 1 }; // #6b1026
-const BRAND_GOLD = { r: 201, g: 151, b: 42, alpha: 1 }; // #c9972a
-const BRAND_WARM_IVORY = { r: 250, g: 247, b: 242, alpha: 1 }; // #FAF7F2
 
 async function generate() {
   console.log("🎨 [PWA Icon Generator] Starting icon generation...");

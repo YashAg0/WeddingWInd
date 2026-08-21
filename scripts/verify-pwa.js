@@ -42,11 +42,11 @@ function runAudit() {
         manifestValid = false;
       }
     }
-    if (content.includes('name: "WeddingWithIndia"') && content.includes('short_name: "WeddingWithIndia"')) {
+    if (manifestValid && content.includes('name: "WeddingWithIndia"') && content.includes('short_name: "WeddingWithIndia"')) {
       console.log("✅ Manifest: app/manifest.ts contains all required PWA metadata & correct WeddingWithIndia brand identity.");
       checksPassed++;
     } else {
-      console.error("❌ FAILED: Manifest does not have correct WeddingWithIndia name/short_name.");
+      console.error("❌ FAILED: Manifest does not have correct WeddingWithIndia name/short_name or required metadata.");
       errors++;
     }
   }

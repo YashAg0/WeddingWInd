@@ -5,7 +5,7 @@ import { NextRequest } from "next/server";
 jest.mock("stripe", () => {
   return jest.fn().mockImplementation(() => ({
     webhooks: {
-      constructEvent: jest.fn((rawBody: string, signature: string, secret: string) => {
+      constructEvent: jest.fn((rawBody: string, signature: string, _secret: string) => {
         if (signature === "invalid_signature") {
           throw new Error("Signature verification failed");
         }

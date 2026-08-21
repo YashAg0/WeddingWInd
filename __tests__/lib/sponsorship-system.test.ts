@@ -349,7 +349,6 @@ describe("WeddingWithIndia — Final God-Level Sponsored Placement, External Pay
     });
 
     it("admin verifies host UTR payment and activates placement with PostgreSQL advisory lock", async () => {
-      const now = new Date();
       mockPrisma.sponsorshipRequest.findUnique.mockResolvedValue({
         id: "sreq_submitted",
         weddingId: "wedding_1",

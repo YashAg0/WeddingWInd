@@ -84,7 +84,7 @@ const TIER_DESCRIPTIONS: Record<WeddingTier, { title: string; subtitle: string }
 
 export default function ListWeddingPage() {
   const router = useRouter();
-  const { user, loading } = useAuth();
+  const { user } = useAuth();
   const [isPending, startTransition] = useTransition();
 
   // Active Application Server State
@@ -560,7 +560,9 @@ export default function ListWeddingPage() {
               )}
             />
             <span className="text-xs font-semibold text-charcoal-600">
-              {autosaveState === "saving"
+              {isLoadingActiveApp
+                ? "Loading active application from database..."
+                : autosaveState === "saving"
                 ? "Saving draft to server..."
                 : autosaveState === "saved"
                 ? `Draft saved to server ${lastSavedTime ? `at ${lastSavedTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}` : "just now"}`
