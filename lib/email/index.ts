@@ -317,4 +317,32 @@ export async function sendUnreadConversationReminderEmail(to: string, userName: 
   return sendEmail({ to, subject: `Unread Messages (${count})`, html });
 }
 
+export async function sendWeddingPreparationReminderEmail(
+  to: string,
+  guestName: string,
+  weddingTitle: string,
+  timeframe: string
+) {
+  const html = `
+    <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; padding: 30px; color: #1c1917; max-width: 600px; margin: auto; border: 1px solid #f3f4f6; border-radius: 16px; background-color: #ffffff;">
+      <h2 style="color: #6b1026; font-size: 22px; font-weight: 700; margin-bottom: 16px;">Celebration Reminder (${timeframe})</h2>
+      <p style="line-height: 1.6; color: #44403c;">Dear ${guestName},</p>
+      <p style="line-height: 1.6; color: #44403c;">Your upcoming wedding celebration <strong>${weddingTitle}</strong> is scheduled in <strong>${timeframe}</strong>!</p>
+      <div style="background-color: #fafaf9; border: 1px solid #f5f5f4; padding: 20px; border-radius: 12px; margin: 24px 0;">
+        <p style="margin: 0 0 10px 0; font-weight: 600; color: #1c1917;">Pre-Celebration Checklist:</p>
+        <ul style="margin: 0; padding-left: 20px; color: #44403c; line-height: 1.6; font-size: 14px;">
+          <li>Review the cultural etiquette and dress code guidelines in your dashboard.</li>
+          <li>Save your encrypted Guest Pass QR code for quick check-in at the venue.</li>
+          <li>Confirm your dietary preferences with the host liaison team if needed.</li>
+        </ul>
+      </div>
+      <div style="margin: 28px 0; text-align: center;">
+        <a href="${process.env.NEXT_PUBLIC_APP_URL || "https://weddingwithindia.com"}/dashboard/bookings" style="background-color: #6b1026; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 600; display: inline-block;">View Guest Pass & Details</a>
+      </div>
+      <p style="margin-top: 24px; font-size: 13px; color: #78716c;">If you need on-site concierge assistance, reply to this email or contact your city coordinator.</p>
+    </div>
+  `;
+  return sendEmail({ to, subject: `Upcoming Celebration Reminder: ${weddingTitle} (${timeframe})`, html });
+}
+
 export { resend };

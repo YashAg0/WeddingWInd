@@ -47,6 +47,12 @@ export async function PATCH(req: NextRequest) {
 
     const targetStatus = status as BookingStatus;
 
+    if (targetStatus === BookingStatus.PAID || targetStatus === BookingStatus.CONFIRMED) {
+      return NextResponse.json({
+        error: "Direct status change to PAID or CONFIRMED is prohibited via raw status patch. Use the authoritative payment verification workflow (adminMarkPaymentPaidAction) to atomically confirm payments and issue guest passes."
+      }, { status: 400 });
+    }
+
     const updated = await prisma.$transaction(async (tx) => {
       const b = await tx.booking.update({
         where: { id: bookingId },

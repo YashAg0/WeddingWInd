@@ -960,7 +960,7 @@ export default function DashboardOverviewPage() {
             System Administration Overview
           </h1>
           <p className="text-charcoal-500 text-xs sm:text-sm">
-            Real-time operations center tracking Stripe payments, identity verification audits, and active listings.
+            Real-time operations center tracking guest payments, identity verification audits, and active listings.
           </p>
         </div>
 
@@ -972,11 +972,11 @@ export default function DashboardOverviewPage() {
           <StatCard label="Active Weddings" value={weddings.filter((w: any) => w.status === "PUBLISHED" || !w.status).length} icon={Calendar} />
         </div>
 
-        {/* Stripe statistics */}
+        {/* Payment settlement statistics */}
         <div className="bg-white border border-warm-200/50 p-6 rounded-[2rem] shadow-sm space-y-4">
           <h3 className="font-display font-bold text-base text-charcoal-900 border-b border-warm-100 pb-3 flex items-center gap-2">
             <Coins size={18} className="text-maroon-600" />
-            Stripe Settlement Statistics
+            Payment Settlement Statistics
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs">
             <div className="bg-warm-50/50 border border-warm-200/40 p-4 rounded-2xl space-y-1">
@@ -984,7 +984,7 @@ export default function DashboardOverviewPage() {
               <span className="font-display font-bold text-lg text-charcoal-900">${totalVolume.toLocaleString()} USD</span>
             </div>
             <div className="bg-warm-50/50 border border-warm-200/40 p-4 rounded-2xl space-y-1">
-              <span className="text-[0.6875rem] font-bold text-charcoal-400 uppercase tracking-wider block">Stripe Processing Fees (2.9% + 30¢)</span>
+              <span className="text-[0.6875rem] font-bold text-charcoal-400 uppercase tracking-wider block">Estimated Gateway Fees (2.9% + 30¢)</span>
               <span className="font-display font-bold text-lg text-charcoal-900">${stripeFees.toLocaleString(undefined, { maximumFractionDigits: 2 })} USD</span>
             </div>
             <div className="bg-warm-50/50 border border-warm-200/40 p-4 rounded-2xl space-y-1">

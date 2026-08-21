@@ -36,6 +36,12 @@ const envSchema = z.object({
     { message: "NEXT_PUBLIC_APP_URL cannot be localhost in production" }
   ),
 
+  // Background Crons
+  CRON_SECRET: z.string().optional(),
+
+  // Super Admin Configuration (optional)
+  SUPERADMIN_EMAIL: z.string().email().optional(),
+
   // Analytics (optional)
   NEXT_PUBLIC_GA_ID: z.string().optional(),
   
@@ -60,6 +66,8 @@ function getRawProcessEnv() {
     UPLOADTHING_APP_ID: process.env.UPLOADTHING_APP_ID,
     GUEST_PASS_ENCRYPTION_KEY: process.env.GUEST_PASS_ENCRYPTION_KEY,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+    CRON_SECRET: process.env.CRON_SECRET,
+    SUPERADMIN_EMAIL: process.env.SUPERADMIN_EMAIL,
     NEXT_PUBLIC_GA_ID: process.env.NEXT_PUBLIC_GA_ID,
     SENTRY_DSN: process.env.SENTRY_DSN,
     NODE_ENV: process.env.NODE_ENV,

@@ -138,12 +138,19 @@ export const ROLE_PERMISSIONS: Record<ExtendedRole, Permission[]> = {
  */
 export function resolveUserRole(user: any): ExtendedRole {
   if (!user) return "GUEST";
-  if (user.email === "superadmin@weddingwithindia.com" || user.clerkUserId === "user_superadmin_seed") {
-    return "SUPER_ADMIN";
-  }
+
+  // SuperAdmin requires active ADMIN role in the database
   if (user.role === UserRole.ADMIN) {
+    const isSuperAdminEmail = user.email && (
+      user.email.toLowerCase() === (process.env.SUPERADMIN_EMAIL?.toLowerCase() || "superadmin@weddingwithindia.com")
+    );
+    const isSuperAdminSeed = user.clerkUserId === "user_superadmin_seed";
+    if (isSuperAdminEmail || isSuperAdminSeed) {
+      return "SUPER_ADMIN";
+    }
     return "ADMIN";
   }
+
   if (user.role === UserRole.COORDINATOR) return "COORDINATOR";
   if (user.role === UserRole.COUPLE) return "COUPLE";
   if (user.role === UserRole.AGENT) return "AGENT";

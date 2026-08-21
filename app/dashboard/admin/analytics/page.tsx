@@ -82,7 +82,7 @@ export default async function AdminAnalyticsPage() {
             <div className="space-y-3 text-xs leading-relaxed text-charcoal-500 font-medium">
               <div className="p-3 bg-gold-50/50 border border-gold-100 rounded-xl">
                 <strong className="text-gold-700 block mb-0.5">TRAVELER Role</strong>
-                Can browse weddings, join waitlists, request reservations, pay Stripe invoices, and submit identity verification docs.
+                Can browse weddings, join waitlists, request reservations, complete payments, and submit identity verification docs.
               </div>
               <div className="p-3 bg-rose-50/50 border border-rose-100 rounded-xl">
                 <strong className="text-rose-700 block mb-0.5">COUPLE Role</strong>
@@ -94,7 +94,7 @@ export default async function AdminAnalyticsPage() {
               </div>
               <div className="p-3 bg-maroon-50/50 border border-maroon-100 rounded-xl">
                 <strong className="text-maroon-800 block mb-0.5">ADMIN Role</strong>
-                Holds super-user access. Can force override booking registers, issue Stripe refunds, review document queues, and edit site CMS.
+                Holds operations lead access. Can verify payment submissions, issue authorized refunds, review document queues, and triage safety cases.
               </div>
             </div>
           </div>

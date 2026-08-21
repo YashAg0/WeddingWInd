@@ -232,10 +232,6 @@ CREATE UNIQUE INDEX "QualityBadge_key_key" ON "QualityBadge"("key");
 CREATE INDEX "UserQualityBadge_userId_idx" ON "UserQualityBadge"("userId");
 
 -- CreateIndex
--- AlterTable
-ALTER TABLE "Wedding" ADD COLUMN     "suspended" BOOLEAN NOT NULL DEFAULT false;
-
--- CreateIndex
 CREATE INDEX "UserQualityBadge_badgeId_idx" ON "UserQualityBadge"("badgeId");
 
 -- CreateIndex

@@ -25,32 +25,25 @@ export async function POST(req: NextRequest) {
 
   let event: Stripe.Event;
 
-  // 1. Official Stripe Webhook Signature Verification
-  if (webhookSecret) {
-    if (!signature) {
-      console.error("[Stripe Webhook] Missing stripe-signature header.");
-      return NextResponse.json({ error: "Missing stripe-signature header" }, { status: 400 });
-    }
+  // 1. Check if webhook secret is configured
+  if (!webhookSecret) {
+    return NextResponse.json({
+      received: true,
+      activeProvider: "MANUAL_PAYPAL",
+      message: "Stripe webhook is inactive. Production payments are processed via manual PayPal verification."
+    }, { status: 200 });
+  }
 
-    try {
-      event = stripe.webhooks.constructEvent(rawBody, signature, webhookSecret);
-    } catch (err: any) {
-      console.error("[Stripe Webhook] Signature verification failed:", err.message);
-      return NextResponse.json({ error: `Webhook signature verification failed: ${err.message}` }, { status: 400 });
-    }
-  } else {
-    if (process.env.NODE_ENV === "production") {
-      console.error("[Stripe Webhook] STRIPE_WEBHOOK_SECRET is required in production environment.");
-      return NextResponse.json({ error: "Webhook secret unconfigured" }, { status: 500 });
-    }
+  // 2. Stripe Webhook Signature Verification
+  if (!signature) {
+    return NextResponse.json({ error: "Missing stripe-signature header" }, { status: 400 });
+  }
 
-    // Development / test fallback when webhook secret is not explicitly configured
-    try {
-      event = JSON.parse(rawBody);
-    } catch (err: any) {
-      console.error("[Stripe Webhook] Malformed JSON payload:", err.message);
-      return NextResponse.json({ error: "Malformed JSON payload" }, { status: 400 });
-    }
+  try {
+    event = stripe.webhooks.constructEvent(rawBody, signature, webhookSecret);
+  } catch (err: any) {
+    console.error("[Stripe Webhook] Signature verification failed:", err.message);
+    return NextResponse.json({ error: `Webhook signature verification failed: ${err.message}` }, { status: 400 });
   }
 
   if (!event || !event.id || !event.type) {

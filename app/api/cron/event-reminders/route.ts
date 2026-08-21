@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { BookingStatus } from "@prisma/client";
 import { logger } from "@/lib/logger";
+import { sendWeddingPreparationReminderEmail } from "@/lib/email";
 
 export const dynamic = "force-dynamic";
 
@@ -21,12 +22,16 @@ export async function GET(req: Request) {
     const now = new Date();
 
     // Check 1: Weddings starting in 7 days (checklists reminder)
-    const sevenDaysFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const sevenDaysStart = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+    sevenDaysStart.setHours(0, 0, 0, 0);
+    const sevenDaysEnd = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+    sevenDaysEnd.setHours(23, 59, 59, 999);
+
     const weddings7Days = await prisma.wedding.findMany({
       where: {
         date: {
-          gte: new Date(sevenDaysFromNow.setHours(0, 0, 0, 0)),
-          lte: new Date(sevenDaysFromNow.setHours(23, 59, 59, 999)),
+          gte: sevenDaysStart,
+          lte: sevenDaysEnd,
         },
       },
       include: {
@@ -40,13 +45,14 @@ export async function GET(req: Request) {
     for (const w of weddings7Days) {
       for (const b of w.bookings) {
         try {
-          const { sendWeddingPreparationReminderEmail } = require("@/lib/email");
-          await sendWeddingPreparationReminderEmail(
-            b.traveler.user.email,
-            b.traveler.fullName,
-            w.title,
-            "7 days"
-          );
+          if (b.traveler?.user?.email) {
+            await sendWeddingPreparationReminderEmail(
+              b.traveler.user.email,
+              b.traveler.fullName || "Guest",
+              w.title,
+              "7 days"
+            );
+          }
         } catch (emailErr) {
           logger.error("[cron/reminders] Failed sending 7-day email", {}, emailErr);
         }
@@ -54,12 +60,16 @@ export async function GET(req: Request) {
     }
 
     // Check 2: Weddings starting in 24 hours (gate passes reminder)
-    const oneDayFromNow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+    const oneDayStart = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+    oneDayStart.setHours(0, 0, 0, 0);
+    const oneDayEnd = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+    oneDayEnd.setHours(23, 59, 59, 999);
+
     const weddings24Hours = await prisma.wedding.findMany({
       where: {
         date: {
-          gte: new Date(oneDayFromNow.setHours(0, 0, 0, 0)),
-          lte: new Date(oneDayFromNow.setHours(23, 59, 59, 999)),
+          gte: oneDayStart,
+          lte: oneDayEnd,
         },
       },
       include: {
@@ -73,13 +83,14 @@ export async function GET(req: Request) {
     for (const w of weddings24Hours) {
       for (const b of w.bookings) {
         try {
-          const { sendWeddingPreparationReminderEmail } = require("@/lib/email");
-          await sendWeddingPreparationReminderEmail(
-            b.traveler.user.email,
-            b.traveler.fullName,
-            w.title,
-            "24 hours"
-          );
+          if (b.traveler?.user?.email) {
+            await sendWeddingPreparationReminderEmail(
+              b.traveler.user.email,
+              b.traveler.fullName || "Guest",
+              w.title,
+              "24 hours"
+            );
+          }
         } catch (emailErr) {
           logger.error("[cron/reminders] Failed sending 24-hour email", {}, emailErr);
         }
