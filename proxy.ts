@@ -8,7 +8,7 @@ const isAdminRoute = createRouteMatcher([
   "/api/admin(.*)"
 ]);
 
-// Protected user routes
+// Protected user routes (require authentication)
 const isProtectedRoute = createRouteMatcher([
   "/dashboard(.*)",
   "/onboarding(.*)",
@@ -20,6 +20,7 @@ const isProtectedRoute = createRouteMatcher([
   "/api/agent-application(.*)"
 ]);
 
+// Clerk handler — only used for protected/admin routes
 const clerkHandler = clerkMiddleware(async (auth, req) => {
   if (isProtectedRoute(req) || isAdminRoute(req)) {
     await auth.protect();
@@ -46,19 +47,17 @@ export async function proxy(req: NextRequest, event: NextFetchEvent) {
     }
   }
 
-  try {
-    const clerkRes = await clerkHandler(req, event);
-    const response = clerkRes instanceof NextResponse
-      ? clerkRes
-      : clerkRes
-      ? new NextResponse(clerkRes.body, clerkRes)
-      : NextResponse.next();
+  // 2. For PUBLIC routes (not protected, not admin), skip Clerk entirely.
+  // This prevents Clerk's token handshake from blocking public marketing pages
+  // when running with development/mock keys in production-mode servers.
+  const isPublicRoute = !isProtectedRoute(req) && !isAdminRoute(req);
 
-    // Ingest affiliate referral tracking from ?ref= query parameter
+  if (isPublicRoute) {
+    // Handle affiliate referral tracking for public routes
+    const response = NextResponse.next();
     const rawRefCode = req.nextUrl?.searchParams?.get("ref");
     if (rawRefCode) {
       const cleanRefCode = rawRefCode.trim().toUpperCase();
-      // Strict alphanumeric validation [A-Z0-9_-] with length bounds [3, 50]
       if (/^[A-Z0-9_-]{3,50}$/.test(cleanRefCode)) {
         const existingCookie = req.cookies.get("wwi_ref");
         if (!existingCookie) {
@@ -82,10 +81,21 @@ export async function proxy(req: NextRequest, event: NextFetchEvent) {
         }
       }
     }
-
     return response;
+  }
+
+  // 3. Protected/Admin routes — invoke Clerk
+  let response = NextResponse.next();
+  try {
+    const clerkRes = await clerkHandler(req, event);
+    response = clerkRes instanceof NextResponse
+      ? clerkRes
+      : clerkRes
+      ? new NextResponse(clerkRes.body, clerkRes)
+      : NextResponse.next();
   } catch (err: any) {
     const pathname = req.nextUrl?.pathname || new URL(req.url).pathname;
+
     const isUnauthenticated =
       err?.message?.includes("Unauthenticated") ||
       err?.message?.includes("auth.protect") ||
@@ -102,24 +112,16 @@ export async function proxy(req: NextRequest, event: NextFetchEvent) {
       process.env.NODE_ENV === "test" ||
       err?.message?.includes("secret-key-invalid") ||
       err?.message?.includes("Secret Key is invalid") ||
-      err?.message?.includes("Handshake token verification failed");
+      err?.message?.includes("Handshake token verification failed") ||
+      err?.message?.includes("infinite redirect");
 
     if (isMockOrTest) {
-      if (isAdminRoute(req) || isProtectedRoute(req)) {
-        if (pathname.startsWith("/api/")) {
-          return NextResponse.json({ error: "UNAUTHORIZED" }, { status: 401 });
-        }
-        const signInUrl = new URL("/login", req.url);
-        signInUrl.searchParams.set("redirect_url", req.url);
-        return NextResponse.redirect(signInUrl);
+      if (pathname.startsWith("/api/")) {
+        return NextResponse.json({ error: "UNAUTHORIZED" }, { status: 401 });
       }
-      return NextResponse.next();
-    }
-
-    // Fail-safe: If an error occurs on a public marketing route, do NOT block or 404 the page
-    if (!isProtectedRoute(req) && !isAdminRoute(req)) {
-      console.warn(`[Proxy] Non-fatal auth provider error on public route ${pathname}:`, err?.message || err);
-      return NextResponse.next();
+      const signInUrl = new URL("/login", req.url);
+      signInUrl.searchParams.set("redirect_url", req.url);
+      return NextResponse.redirect(signInUrl);
     }
 
     // For protected routes, redirect unauthenticated browser users to /login
@@ -131,6 +133,36 @@ export async function proxy(req: NextRequest, event: NextFetchEvent) {
 
     throw err;
   }
+
+  // Ingest affiliate referral tracking for authenticated routes too
+  const rawRefCode = req.nextUrl?.searchParams?.get("ref");
+  if (rawRefCode) {
+    const cleanRefCode = rawRefCode.trim().toUpperCase();
+    if (/^[A-Z0-9_-]{3,50}$/.test(cleanRefCode)) {
+      const existingCookie = req.cookies.get("wwi_ref");
+      if (!existingCookie) {
+        const attributionPayload = JSON.stringify({
+          referralCode: cleanRefCode,
+          visitorId: Math.random().toString(36).substring(2, 15),
+          source: req.nextUrl.searchParams.get("utm_source")?.substring(0, 100) || undefined,
+          medium: req.nextUrl.searchParams.get("utm_medium")?.substring(0, 100) || undefined,
+          campaign: req.nextUrl.searchParams.get("utm_campaign")?.substring(0, 100) || undefined,
+          landingPage: req.nextUrl.pathname.substring(0, 200),
+          firstTouchAt: new Date().toISOString(),
+          lastTouchAt: new Date().toISOString(),
+        });
+        response.cookies.set("wwi_ref", attributionPayload, {
+          maxAge: 30 * 24 * 60 * 60,
+          path: "/",
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+        });
+      }
+    }
+  }
+
+  return response;
 }
 
 export default proxy;

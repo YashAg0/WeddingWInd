@@ -14,6 +14,13 @@
  * - Australian Privacy Principles & Australian Consumer Law
  */
 
+export const CONTACT_EMAILS = {
+  FOUNDER: "founder@weddingwithindia.com",
+  CONTACT: "contact@weddingwithindia.com",
+  BOOKINGS: "bookings@weddingwithindia.com",
+  CAREERS: "careers@weddingwithindia.com",
+} as const;
+
 export const LEGAL_CONFIG = {
   // Platform & Entity Identification
   PLATFORM_NAME: "WeddingWithIndia",
@@ -22,10 +29,10 @@ export const LEGAL_CONFIG = {
   OPERATING_COUNTRY: "India",
   OPERATING_REGION: "Jaipur, Rajasthan, India",
   PRIMARY_DOMAIN: "weddingwithindia.com",
-  PRIMARY_SUPPORT_EMAIL: "contact@weddingwithindia.com",
-  CONCIERGE_EMAIL: "concierge@weddingwithindia.com",
-  SAFETY_EMAIL: "safety@weddingwithindia.com",
-  PRESS_EMAIL: "press@weddingwithindia.com",
+  PRIMARY_SUPPORT_EMAIL: CONTACT_EMAILS.CONTACT,
+  CONCIERGE_EMAIL: CONTACT_EMAILS.CONTACT,
+  SAFETY_EMAIL: CONTACT_EMAILS.CONTACT,
+  PRESS_EMAIL: CONTACT_EMAILS.CONTACT,
   SUPPORT_PHONE: "+91 91 1673 4675",
 
   // Business Structure & Intermediary Disclosure
@@ -38,7 +45,7 @@ export const LEGAL_CONFIG = {
     DEPARTMENT: "Trust, Safety & Grievance Redressal Cell",
     ORGANIZATION: "WeddingWithIndia",
     ADDRESS: "C-Scheme / Civil Lines, Jaipur, Rajasthan 302001, India",
-    EMAIL: "grievance@weddingwithindia.com",
+    EMAIL: CONTACT_EMAILS.CONTACT,
     ACKNOWLEDGMENT_TIMEFRAME_HOURS: 24, // As mandated by IT Rules 2021
     RESOLUTION_TIMEFRAME_DAYS: 15, // As mandated by IT Rules 2021
   },
@@ -46,10 +53,10 @@ export const LEGAL_CONFIG = {
   // Privacy & Data Protection Contact (DPDP Act 2023 & GDPR)
   DATA_PROTECTION: {
     CONTACT_NAME: "Data Protection & Privacy Lead",
-    EMAIL: "privacy@weddingwithindia.com",
-    DPO_EMAIL: "dpo@weddingwithindia.com",
-    DPDP_NODAL_EMAIL: "dpdp@weddingwithindia.com",
-    EU_PRIVACY_EMAIL: "privacy@weddingwithindia.com",
+    EMAIL: CONTACT_EMAILS.CONTACT,
+    DPO_EMAIL: CONTACT_EMAILS.CONTACT,
+    DPDP_NODAL_EMAIL: CONTACT_EMAILS.CONTACT,
+    EU_PRIVACY_EMAIL: CONTACT_EMAILS.CONTACT,
   },
 
   // Emergency & Official Tourist Helplines in India (Public Official Sources)
@@ -97,7 +104,7 @@ export const LEGAL_CONFIG = {
       "Commercial monetization, unauthorized stock photography, unauthorized livestreaming of private rituals, harassment, or commercial advertising without explicit prior written consent from the host family.",
     SACRED_RITUAL_RULE:
       "Guests must respect photography restrictions during solemn religious moments as indicated by the host family or coordinator.",
-    TAKEDOWN_EMAIL: "privacy@weddingwithindia.com",
+    TAKEDOWN_EMAIL: CONTACT_EMAILS.CONTACT,
   },
 
   // Non-Excludable Statutory Consumer Guarantees

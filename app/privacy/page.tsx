@@ -153,10 +153,10 @@ export default function PrivacyPage() {
 
             <p>
               <a
-                href="mailto:privacy@weddingwithindia.com"
+                href="mailto:contact@weddingwithindia.com"
                 className="text-[var(--color-brand-primary)] hover:underline font-semibold"
               >
-                privacy@weddingwithindia.com
+                contact@weddingwithindia.com
               </a>
             </p>
           </section>
@@ -1008,10 +1008,10 @@ export default function PrivacyPage() {
 
             <p>
               <a
-                href="mailto:privacy@weddingwithindia.com"
+                href="mailto:contact@weddingwithindia.com"
                 className="text-[var(--color-brand-primary)] hover:underline font-semibold"
               >
-                privacy@weddingwithindia.com
+                contact@weddingwithindia.com
               </a>
             </p>
 
@@ -1147,10 +1147,10 @@ export default function PrivacyPage() {
               Last updated: August 13, 2026. For privacy questions or requests,
               contact{" "}
               <a
-                href="mailto:privacy@weddingwithindia.com"
+                href="mailto:contact@weddingwithindia.com"
                 className="text-[var(--color-brand-primary)] hover:underline font-semibold"
               >
-                privacy@weddingwithindia.com
+                contact@weddingwithindia.com
               </a>
               .
             </p>

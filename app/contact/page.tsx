@@ -5,15 +5,16 @@ import Link from "next/link";
 import {
   ArrowRight,
   Check,
-  Compass,
   HelpCircle,
   Mail,
   MapPin,
   Send,
-  ShieldCheck,
   Users,
+  Briefcase,
+  Crown,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { CONTACT_EMAILS } from "@/lib/constants";
 
 type FormState = {
   name: string;
@@ -89,27 +90,9 @@ export default function ContactPage() {
     setIsSubmitting(true);
 
     try {
-      /*
-       * This endpoint must be implemented server-side.
-       *
-       * Recommended production flow:
-       * Browser
-       *   ↓
-       * POST /api/contact
-       *   ↓
-       * Server validation + rate limiting
-       *   ↓
-       * Database / support inbox
-       *   ↓
-       * Confirmation response
-       *
-       * Do NOT send email credentials or private API keys from the browser.
-       */
-      const response = await fetch("/api/contact", {
+      const res = await fetch("/api/contact", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: formData.name.trim(),
           email: formData.email.trim(),
@@ -120,128 +103,139 @@ export default function ContactPage() {
         }),
       });
 
-      const result = await response.json().catch(() => null);
+      const data = await res.json();
 
-      if (!response.ok) {
-        throw new Error(
-          result?.message ||
-            "We could not submit your message. Please try again."
-        );
+      if (!res.ok) {
+        throw new Error(data.message || "Something went wrong. Please try again.");
       }
 
       setIsSuccess(true);
       setFormData(INITIAL_FORM);
-    } catch (error) {
-      console.error("Contact form submission failed:", error);
-
-      setErrorMessage(
-        error instanceof Error
-          ? error.message
-          : "We could not submit your message. Please try again."
-      );
+    } catch (err: any) {
+      setErrorMessage(err.message || "Failed to send message. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <main className="min-h-screen bg-warm-50 pt-28 pb-20">
-      {/* Hero */}
-      <section
-        className="container-luxury text-center max-w-3xl mb-16 space-y-4"
-        aria-labelledby="contact-heading"
-      >
-        <div className="inline-flex items-center gap-2 bg-maroon-50 text-[var(--color-brand-primary)] text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-full border border-maroon-100/50">
+    <main className="min-h-screen bg-[var(--color-warm-50)] pt-28 pb-20">
+      {/* Header */}
+      <section className="container-luxury text-center max-w-2xl mx-auto space-y-4 mb-16">
+        <div className="inline-flex items-center gap-2 bg-maroon-50 text-[var(--color-brand-primary)] text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full border border-maroon-100/50">
           <Mail size={12} aria-hidden="true" />
-          Contact Wedding With India
+          Get in Touch
         </div>
 
-        <h1
-          id="contact-heading"
-          className="font-display font-bold text-4xl sm:text-5xl text-charcoal-900 leading-tight"
-        >
-          We&apos;re here to{" "}
-          <span className="text-gradient-brand">help</span>
+        <h1 className="font-display font-bold text-3xl md:text-5xl text-charcoal-900 leading-tight">
+          How Can We Help You?
         </h1>
 
-        <p className="text-charcoal-500 text-sm sm:text-base leading-relaxed max-w-2xl mx-auto">
-          Have a question about an Indian wedding experience, hosting,
-          partnerships, verification or your account? Contact the appropriate
+        <p className="text-charcoal-500 text-sm md:text-base leading-relaxed">
+          Whether you are an international traveler planning your experience, a
+          participating host family, or exploring career opportunities, choose the right
           team below or send us a message.
         </p>
       </section>
 
       {/* Contact channels */}
       <section
-        className="container-luxury grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 mb-16"
+        className="container-luxury grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 lg:gap-6 mb-16"
         aria-label="Contact channels"
       >
         {/* General */}
-        <div className="bg-white border border-warm-200/50 p-6 rounded-[2rem] shadow-sm space-y-3">
-          <div className="w-10 h-10 rounded-xl bg-maroon-50 text-[var(--color-brand-primary)] flex items-center justify-center">
-            <Mail size={18} aria-hidden="true" />
+        <div className="bg-white border border-warm-200/50 p-6 rounded-[2rem] shadow-sm space-y-3 flex flex-col justify-between">
+          <div className="space-y-3">
+            <div className="w-10 h-10 rounded-xl bg-maroon-50 text-[var(--color-brand-primary)] flex items-center justify-center">
+              <Mail size={18} aria-hidden="true" />
+            </div>
+
+            <h2 className="font-display font-bold text-base text-charcoal-900">
+              General & Support
+            </h2>
+
+            <p className="text-charcoal-500 text-xs sm:text-sm leading-relaxed">
+              General enquiries, platform support, and partnership questions.
+            </p>
           </div>
 
-          <h2 className="font-display font-bold text-base text-charcoal-900">
-            General Questions
-          </h2>
-
-          <p className="text-charcoal-500 text-xs sm:text-sm leading-relaxed">
-            General enquiries, media questions and information about Wedding
-            With India.
-          </p>
-
           <a
-            href="mailto:contact@weddingwithindia.com"
-            className="text-sm font-semibold text-[var(--color-brand-primary)] hover:underline break-all"
+            href={`mailto:${CONTACT_EMAILS.CONTACT}`}
+            className="text-xs sm:text-sm font-semibold text-[var(--color-brand-primary)] hover:underline break-all pt-2 border-t border-warm-100"
           >
-            contact@weddingwithindia.com
+            {CONTACT_EMAILS.CONTACT}
           </a>
         </div>
 
         {/* Booking */}
-        <div className="bg-white border border-warm-200/50 p-6 rounded-[2rem] shadow-sm space-y-3">
-          <div className="w-10 h-10 rounded-xl bg-maroon-50 text-[var(--color-brand-primary)] flex items-center justify-center">
-            <Users size={18} aria-hidden="true" />
+        <div className="bg-white border border-warm-200/50 p-6 rounded-[2rem] shadow-sm space-y-3 flex flex-col justify-between">
+          <div className="space-y-3">
+            <div className="w-10 h-10 rounded-xl bg-maroon-50 text-[var(--color-brand-primary)] flex items-center justify-center">
+              <Users size={18} aria-hidden="true" />
+            </div>
+
+            <h2 className="font-display font-bold text-base text-charcoal-900">
+              Booking Support
+            </h2>
+
+            <p className="text-charcoal-500 text-xs sm:text-sm leading-relaxed">
+              Assistance with reservations, verification, payment instructions, and refunds.
+            </p>
           </div>
 
-          <h2 className="font-display font-bold text-base text-charcoal-900">
-            Booking Support
-          </h2>
-
-          <p className="text-charcoal-500 text-xs sm:text-sm leading-relaxed">
-            Help with an existing booking, verification status, cancellation
-            or payment-related question.
-          </p>
-
           <a
-            href="mailto:bookings@weddingwithindia.com"
-            className="text-sm font-semibold text-[var(--color-brand-primary)] hover:underline break-all"
+            href={`mailto:${CONTACT_EMAILS.BOOKINGS}`}
+            className="text-xs sm:text-sm font-semibold text-[var(--color-brand-primary)] hover:underline break-all pt-2 border-t border-warm-100"
           >
-            bookings@weddingwithindia.com
+            {CONTACT_EMAILS.BOOKINGS}
           </a>
         </div>
 
-        {/* Partnerships */}
-        <div className="bg-white border border-warm-200/50 p-6 rounded-[2rem] shadow-sm space-y-3">
-          <div className="w-10 h-10 rounded-xl bg-maroon-50 text-[var(--color-brand-primary)] flex items-center justify-center">
-            <Compass size={18} aria-hidden="true" />
+        {/* Careers */}
+        <div className="bg-white border border-warm-200/50 p-6 rounded-[2rem] shadow-sm space-y-3 flex flex-col justify-between">
+          <div className="space-y-3">
+            <div className="w-10 h-10 rounded-xl bg-maroon-50 text-[var(--color-brand-primary)] flex items-center justify-center">
+              <Briefcase size={18} aria-hidden="true" />
+            </div>
+
+            <h2 className="font-display font-bold text-base text-charcoal-900">
+              Careers & Talent
+            </h2>
+
+            <p className="text-charcoal-500 text-xs sm:text-sm leading-relaxed">
+              Explore open coordinator, operational, and engineering roles at WeddingWithIndia.
+            </p>
           </div>
 
-          <h2 className="font-display font-bold text-base text-charcoal-900">
-            Partnerships
-          </h2>
+          <a
+            href={`mailto:${CONTACT_EMAILS.CAREERS}`}
+            className="text-xs sm:text-sm font-semibold text-[var(--color-brand-primary)] hover:underline break-all pt-2 border-t border-warm-100"
+          >
+            {CONTACT_EMAILS.CAREERS}
+          </a>
+        </div>
 
-          <p className="text-charcoal-500 text-xs sm:text-sm leading-relaxed">
-            Travel professionals, creators, referral partners and other
-            business enquiries.
-          </p>
+        {/* Founder / Executive */}
+        <div className="bg-white border border-warm-200/50 p-6 rounded-[2rem] shadow-sm space-y-3 flex flex-col justify-between">
+          <div className="space-y-3">
+            <div className="w-10 h-10 rounded-xl bg-maroon-50 text-[var(--color-brand-primary)] flex items-center justify-center">
+              <Crown size={18} aria-hidden="true" />
+            </div>
+
+            <h2 className="font-display font-bold text-base text-charcoal-900">
+              Founder & Executive
+            </h2>
+
+            <p className="text-charcoal-500 text-xs sm:text-sm leading-relaxed">
+              Direct executive liaison and strategic institutional inquiries.
+            </p>
+          </div>
 
           <a
-            href="mailto:partners@weddingwithindia.com"
-            className="text-sm font-semibold text-[var(--color-brand-primary)] hover:underline break-all"
+            href={`mailto:${CONTACT_EMAILS.FOUNDER}`}
+            className="text-xs sm:text-sm font-semibold text-[var(--color-brand-primary)] hover:underline break-all pt-2 border-t border-warm-100"
           >
-            partners@weddingwithindia.com
+            {CONTACT_EMAILS.FOUNDER}
           </a>
         </div>
       </section>
@@ -568,14 +562,14 @@ export default function ContactPage() {
 
                 <div>
                   <div className="font-bold text-charcoal-800 text-xs sm:text-sm">
-                    General
+                    General & Support
                   </div>
 
                   <a
-                    href="mailto:contact@weddingwithindia.com"
+                    href={`mailto:${CONTACT_EMAILS.CONTACT}`}
                     className="text-xs sm:text-sm text-charcoal-600 hover:text-[var(--color-brand-primary)] break-all"
                   >
-                    contact@weddingwithindia.com
+                    {CONTACT_EMAILS.CONTACT}
                   </a>
                 </div>
               </div>
@@ -589,20 +583,20 @@ export default function ContactPage() {
 
                 <div>
                   <div className="font-bold text-charcoal-800 text-xs sm:text-sm">
-                    Bookings
+                    Bookings & Payments
                   </div>
 
                   <a
-                    href="mailto:bookings@weddingwithindia.com"
+                    href={`mailto:${CONTACT_EMAILS.BOOKINGS}`}
                     className="text-xs sm:text-sm text-charcoal-600 hover:text-[var(--color-brand-primary)] break-all"
                   >
-                    bookings@weddingwithindia.com
+                    {CONTACT_EMAILS.BOOKINGS}
                   </a>
                 </div>
               </div>
 
               <div className="flex items-start gap-3">
-                <Compass
+                <Briefcase
                   size={16}
                   className="text-[var(--color-brand-primary)] mt-0.5 flex-shrink-0"
                   aria-hidden="true"
@@ -610,20 +604,20 @@ export default function ContactPage() {
 
                 <div>
                   <div className="font-bold text-charcoal-800 text-xs sm:text-sm">
-                    Partnerships
+                    Careers & Talent
                   </div>
 
                   <a
-                    href="mailto:partners@weddingwithindia.com"
+                    href={`mailto:${CONTACT_EMAILS.CAREERS}`}
                     className="text-xs sm:text-sm text-charcoal-600 hover:text-[var(--color-brand-primary)] break-all"
                   >
-                    partners@weddingwithindia.com
+                    {CONTACT_EMAILS.CAREERS}
                   </a>
                 </div>
               </div>
 
               <div className="flex items-start gap-3">
-                <ShieldCheck
+                <Crown
                   size={16}
                   className="text-[var(--color-brand-primary)] mt-0.5 flex-shrink-0"
                   aria-hidden="true"
@@ -631,14 +625,14 @@ export default function ContactPage() {
 
                 <div>
                   <div className="font-bold text-charcoal-800 text-xs sm:text-sm">
-                    Privacy
+                    Founder Office
                   </div>
 
                   <a
-                    href="mailto:privacy@weddingwithindia.com"
+                    href={`mailto:${CONTACT_EMAILS.FOUNDER}`}
                     className="text-xs sm:text-sm text-charcoal-600 hover:text-[var(--color-brand-primary)] break-all"
                   >
-                    privacy@weddingwithindia.com
+                    {CONTACT_EMAILS.FOUNDER}
                   </a>
                 </div>
               </div>

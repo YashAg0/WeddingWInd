@@ -1,11 +1,8 @@
-"use client";
-
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { WeddingCard } from "@/components/wedding/WeddingCard";
 import type { Wedding } from "@/types";
 import { sortWeddingsByDiscoveryPriority } from "@/lib/wedding-dto";
-import { useRef } from "react";
 
 interface FeaturedWeddingsProps {
   weddings: Wedding[];
@@ -14,7 +11,6 @@ interface FeaturedWeddingsProps {
 export function FeaturedWeddings({ weddings }: FeaturedWeddingsProps) {
   const sortedWeddings = sortWeddingsByDiscoveryPriority(weddings);
   const displayWeddings = sortedWeddings.slice(0, 4);
-  const scrollRef = useRef<HTMLDivElement>(null);
 
   return (
     <section
@@ -76,12 +72,7 @@ export function FeaturedWeddings({ weddings }: FeaturedWeddingsProps) {
           </Link>
         </div>
 
-        {/* ── Cards
-            Desktop (≥1280px): 4 columns
-            Laptop (1024–1279px): 2 columns
-            Tablet (640–1023px): 2 columns
-            Mobile (<640px): horizontal snap carousel
-        */}
+        {/* ── Cards */}
         {weddings.length === 0 ? (
           <div className="text-center py-16 bg-white/60 rounded-2xl border border-warm-200/60">
             <h3 className="font-display font-bold text-lg text-charcoal-900 mb-1">
@@ -96,12 +87,8 @@ export function FeaturedWeddings({ weddings }: FeaturedWeddingsProps) {
           </div>
         ) : (
           <>
-            {/*
-              Mobile: horizontal snap scroll (shows ~1.15 cards, indicating
-              there is more to scroll). Hidden on sm+ where grid takes over.
-            */}
+            {/* Mobile: horizontal snap scroll */}
             <div
-              ref={scrollRef}
               className="flex sm:hidden gap-4 overflow-x-auto snap-x snap-mandatory pb-3 -mx-5 px-5 scrollbar-none"
               role="list"
               aria-label="Featured wedding listings"
@@ -116,7 +103,6 @@ export function FeaturedWeddings({ weddings }: FeaturedWeddingsProps) {
                   <WeddingCard wedding={wedding} hidePrice />
                 </div>
               ))}
-              {/* Peek sentinel — fades out, signals more content */}
               <div className="flex-none w-4 flex-shrink-0" aria-hidden="true" />
             </div>
 

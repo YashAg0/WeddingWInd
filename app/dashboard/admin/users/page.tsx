@@ -431,7 +431,7 @@ export default function AdminUsersPage() {
                 <input
                   type="email"
                   required
-                  placeholder="admin@weddingwithindia.com"
+                  placeholder="staff@example.com"
                   value={inviteEmail}
                   onChange={(e) => setInviteEmail(e.target.value)}
                   className="input-luxury w-full text-xs"

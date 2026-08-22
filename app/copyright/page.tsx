@@ -513,11 +513,11 @@ export default function CopyrightPage() {
             </p>
 
             <a
-              href="mailto:copyright@weddingwithindia.com"
+              href="mailto:contact@weddingwithindia.com"
               className="inline-flex items-center gap-2 text-[var(--color-brand-primary)] hover:underline font-semibold"
             >
               <Mail size={17} aria-hidden="true" />
-              copyright@weddingwithindia.com
+              contact@weddingwithindia.com
             </a>
 
             <p className="text-sm text-charcoal-500">
@@ -636,7 +636,7 @@ export default function CopyrightPage() {
                 </p>
 
                 <a
-                  href="mailto:copyright@weddingwithindia.com?subject=Copyright%20Complaint"
+                  href="mailto:contact@weddingwithindia.com?subject=Copyright%20Complaint"
                   className="btn btn-primary inline-flex items-center gap-2"
                 >
                   Submit Copyright Complaint

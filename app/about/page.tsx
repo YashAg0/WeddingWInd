@@ -1,6 +1,3 @@
-"use client";
-
-import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -21,39 +18,24 @@ export default function AboutPage() {
           HERO
       ========================================================= */}
       <section className="container-luxury text-center max-w-4xl mb-20 space-y-6">
-        <motion.div
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="inline-flex items-center gap-2 bg-maroon-50 text-[var(--color-brand-primary)] text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-full border border-maroon-100/50"
-        >
+        <div className="inline-flex items-center gap-2 bg-maroon-50 text-[var(--color-brand-primary)] text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-full border border-maroon-100/50">
           <Compass size={13} aria-hidden="true" />
           About WeddingWithIndia
-        </motion.div>
+        </div>
 
-        <motion.h1
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.1 }}
-          className="font-display font-bold text-4xl sm:text-5xl lg:text-6xl text-charcoal-900 leading-tight"
-        >
+        <h1 className="font-display font-bold text-4xl sm:text-5xl lg:text-6xl text-charcoal-900 leading-tight">
           Experience India
           <br />
           <span className="text-gradient-brand">
             beyond the usual itinerary.
           </span>
-        </motion.h1>
+        </h1>
 
-        <motion.p
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          className="text-charcoal-500 text-base sm:text-lg leading-relaxed max-w-2xl mx-auto"
-        >
+        <p className="text-charcoal-500 text-base sm:text-lg leading-relaxed max-w-2xl mx-auto">
           WeddingWithIndia is building a platform for international
           travelers who want to experience Indian weddings and culture through
           genuine, respectful connections with host families.
-        </motion.p>
+        </p>
       </section>
 
       {/* =========================================================

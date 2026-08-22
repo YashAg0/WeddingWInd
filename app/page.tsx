@@ -18,10 +18,10 @@ import {
   heroStats,
 } from "@/lib/data";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 export const metadata: Metadata = {
-  title: "Indian Weddings for International Guests | WeddingWithIndia",
+  title: "Indian Weddings for International Guests",
   description:
     "The premier platform to attend authentic Indian weddings. Join genuine cultural celebrations in Rajasthan, Goa, Punjab, and Kerala as an honoured guest.",
   alternates: {

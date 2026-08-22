@@ -1,0 +1,503 @@
+{
+  "performanceTable": [
+    {
+      "route": "/",
+      "name": "Homepage",
+      "status": 200,
+      "ttfbMs": 253,
+      "fcpMs": 4800,
+      "durationMs": 5339,
+      "totalRequests": 40,
+      "totalBytesKb": "3008.7",
+      "jsBytesKb": "1329.9",
+      "imgBytesKb": "905.7",
+      "docSizeKb": "437.1"
+    },
+    {
+      "route": "/weddings",
+      "name": "Discovery / Marketplace",
+      "status": 200,
+      "ttfbMs": 558,
+      "fcpMs": 1564,
+      "durationMs": 3000,
+      "totalRequests": 52,
+      "totalBytesKb": "3366.6",
+      "jsBytesKb": "1459.5",
+      "imgBytesKb": "1115.6",
+      "docSizeKb": "455.4"
+    },
+    {
+      "route": "/destinations/rajasthan",
+      "name": "Rajasthan Destination",
+      "status": 200,
+      "ttfbMs": 214,
+      "fcpMs": 2804,
+      "durationMs": 2848,
+      "totalRequests": 29,
+      "totalBytesKb": "1774.9",
+      "jsBytesKb": "1316.7",
+      "imgBytesKb": "132.9",
+      "docSizeKb": "156.9"
+    },
+    {
+      "route": "/how-it-works",
+      "name": "How It Works",
+      "status": 200,
+      "ttfbMs": 44,
+      "fcpMs": 1284,
+      "durationMs": 2426,
+      "totalRequests": 29,
+      "totalBytesKb": "1741.5",
+      "jsBytesKb": "1308.5",
+      "imgBytesKb": "1.1",
+      "docSizeKb": "95.8"
+    },
+    {
+      "route": "/about",
+      "name": "About Us",
+      "status": 200,
+      "ttfbMs": 37,
+      "fcpMs": 1928,
+      "durationMs": 2344,
+      "totalRequests": 29,
+      "totalBytesKb": "1172.6",
+      "jsBytesKb": "849.0",
+      "imgBytesKb": "32.6",
+      "docSizeKb": "121.9"
+    },
+    {
+      "route": "/contact",
+      "name": "Contact Us",
+      "status": 200,
+      "ttfbMs": 31,
+      "fcpMs": 1064,
+      "durationMs": 1558,
+      "totalRequests": 30,
+      "totalBytesKb": "1850.7",
+      "jsBytesKb": "1423.5",
+      "imgBytesKb": "1.1",
+      "docSizeKb": "90.1"
+    },
+    {
+      "route": "/safety",
+      "name": "Safety & Trust",
+      "status": 200,
+      "ttfbMs": 53,
+      "fcpMs": 1028,
+      "durationMs": 1602,
+      "totalRequests": 28,
+      "totalBytesKb": "1709.4",
+      "jsBytesKb": "1282.4",
+      "imgBytesKb": "1.1",
+      "docSizeKb": "127.3"
+    },
+    {
+      "route": "/weddings/royal-rajasthani-palace-wedding",
+      "name": "Wedding Detail Page",
+      "status": 200,
+      "ttfbMs": 424,
+      "fcpMs": 1540,
+      "durationMs": 2131,
+      "totalRequests": 32,
+      "totalBytesKb": "1980.0",
+      "jsBytesKb": "1550.3",
+      "imgBytesKb": "1.1",
+      "docSizeKb": "92.6"
+    }
+  ],
+  "coldVsWarm": {
+    "coldDurationMs": 773,
+    "coldTtfbMs": 144,
+    "warmDurationMs": 940,
+    "warmTtfbMs": 144
+  },
+  "weddingCardTest": {
+    "cardNavigations": [
+      {
+        "test": "Card 1 Image Click",
+        "expectedHref": "/weddings/grand-maharaja-wedding",
+        "actualUrl": "http://127.0.0.1:3005/weddings/grand-maharaja-wedding",
+        "passed": true
+      },
+      {
+        "test": "Card 2 Title Click",
+        "expectedHref": "/weddings/shimla-himalayan-pine-royal-wedding",
+        "actualUrl": "http://127.0.0.1:3005/weddings/shimla-himalayan-pine-royal-wedding",
+        "passed": true
+      },
+      {
+        "test": "Card 3 Story / Description Click",
+        "expectedHref": "/weddings/hyderabad-nizam-wedding",
+        "actualUrl": "http://127.0.0.1:3005/weddings/hyderabad-nizam-wedding",
+        "passed": true
+      },
+      {
+        "test": "Card 4 Metadata Click",
+        "expectedHref": "/weddings/ladakh-monastery-mountain-wedding",
+        "actualUrl": "http://127.0.0.1:3005/weddings/ladakh-monastery-mountain-wedding",
+        "passed": true
+      },
+      {
+        "test": "Card 5 View CTA Button Click",
+        "expectedHref": "/weddings/punjabi-amritsar-golden-wedding",
+        "actualUrl": "http://127.0.0.1:3005/weddings/punjabi-amritsar-golden-wedding",
+        "passed": true
+      }
+    ],
+    "heartIsolationPassed": true,
+    "keyboardAccessible": false
+  },
+  "perimeterVisualTest": [
+    {
+      "cardIdx": 0,
+      "tier": "SPONSORED",
+      "outerPadding": "3.5px",
+      "outerBorderRadius": "24px",
+      "innerBorderRadius": "13px",
+      "outerWidth": 285.328125,
+      "outerHeight": 421.703125,
+      "innerWidth": 278.328125,
+      "innerHeight": 414.703125,
+      "topOffset": 3.5,
+      "leftOffset": 3.5,
+      "has360Perimeter": true
+    },
+    {
+      "cardIdx": 1,
+      "tier": "FEATURED",
+      "outerPadding": "1.5px",
+      "outerBorderRadius": "24px",
+      "innerBorderRadius": "14.5px",
+      "outerWidth": 285.328125,
+      "outerHeight": 421.703125,
+      "innerWidth": 282.328125,
+      "innerHeight": 418.703125,
+      "topOffset": 1.5,
+      "leftOffset": 1.5,
+      "has360Perimeter": true
+    },
+    {
+      "cardIdx": 2,
+      "tier": "FEATURED",
+      "outerPadding": "1.5px",
+      "outerBorderRadius": "24px",
+      "innerBorderRadius": "14.5px",
+      "outerWidth": 285.34375,
+      "outerHeight": 421.703125,
+      "innerWidth": 282.34375,
+      "innerHeight": 418.703125,
+      "topOffset": 1.5,
+      "leftOffset": 1.5,
+      "has360Perimeter": true
+    },
+    {
+      "cardIdx": 3,
+      "tier": "FEATURED",
+      "outerPadding": "1.5px",
+      "outerBorderRadius": "24px",
+      "innerBorderRadius": "14.5px",
+      "outerWidth": 285.328125,
+      "outerHeight": 404.203125,
+      "innerWidth": 282.328125,
+      "innerHeight": 401.203125,
+      "topOffset": 1.5,
+      "leftOffset": 1.5,
+      "has360Perimeter": true
+    },
+    {
+      "cardIdx": 4,
+      "tier": "FEATURED",
+      "outerPadding": "1.5px",
+      "outerBorderRadius": "24px",
+      "innerBorderRadius": "14.5px",
+      "outerWidth": 285.328125,
+      "outerHeight": 404.203125,
+      "innerWidth": 282.328125,
+      "innerHeight": 401.203125,
+      "topOffset": 1.5,
+      "leftOffset": 1.5,
+      "has360Perimeter": true
+    },
+    {
+      "cardIdx": 5,
+      "tier": "FEATURED",
+      "outerPadding": "1.5px",
+      "outerBorderRadius": "24px",
+      "innerBorderRadius": "14.5px",
+      "outerWidth": 285.34375,
+      "outerHeight": 404.203125,
+      "innerWidth": 282.34375,
+      "innerHeight": 401.203125,
+      "topOffset": 1.5,
+      "leftOffset": 1.5,
+      "has360Perimeter": true
+    },
+    {
+      "cardIdx": 6,
+      "tier": "FEATURED",
+      "outerPadding": "1.5px",
+      "outerBorderRadius": "24px",
+      "innerBorderRadius": "14.5px",
+      "outerWidth": 285.328125,
+      "outerHeight": 382.203125,
+      "innerWidth": 282.328125,
+      "innerHeight": 379.203125,
+      "topOffset": 1.5,
+      "leftOffset": 1.5,
+      "has360Perimeter": true
+    },
+    {
+      "cardIdx": 7,
+      "tier": "FEATURED",
+      "outerPadding": "1.5px",
+      "outerBorderRadius": "24px",
+      "innerBorderRadius": "14.5px",
+      "outerWidth": 285.328125,
+      "outerHeight": 382.203125,
+      "innerWidth": 282.328125,
+      "innerHeight": 379.203125,
+      "topOffset": 1.5,
+      "leftOffset": 1.5,
+      "has360Perimeter": true
+    }
+  ],
+  "mobileTest": [
+    {
+      "viewport": "360px (Compact Mobile)",
+      "width": 360,
+      "scrollWidth": 360,
+      "clientWidth": 360,
+      "hasHorizontalOverflow": false,
+      "cardsVisible": 22,
+      "passed": true
+    },
+    {
+      "viewport": "390px (iPhone 14)",
+      "width": 390,
+      "scrollWidth": 390,
+      "clientWidth": 390,
+      "hasHorizontalOverflow": false,
+      "cardsVisible": 22,
+      "passed": true
+    },
+    {
+      "viewport": "412px (Pixel / Samsung)",
+      "width": 412,
+      "scrollWidth": 412,
+      "clientWidth": 412,
+      "hasHorizontalOverflow": false,
+      "cardsVisible": 22,
+      "passed": true
+    },
+    {
+      "viewport": "768px (Tablet)",
+      "width": 768,
+      "scrollWidth": 768,
+      "clientWidth": 768,
+      "hasHorizontalOverflow": false,
+      "cardsVisible": 22,
+      "passed": true
+    },
+    {
+      "viewport": "1280px (Desktop)",
+      "width": 1280,
+      "scrollWidth": 1280,
+      "clientWidth": 1280,
+      "hasHorizontalOverflow": false,
+      "cardsVisible": 22,
+      "passed": true
+    }
+  ],
+  "throttledNetworkTest": [
+    {
+      "profile": "Fast 4G",
+      "status": 200,
+      "durationMs": 2617,
+      "titleAvailable": true
+    },
+    {
+      "profile": "Slow 4G",
+      "status": 200,
+      "durationMs": 6494,
+      "titleAvailable": true
+    },
+    {
+      "profile": "Regular 3G",
+      "status": 200,
+      "durationMs": 8517,
+      "titleAvailable": true
+    }
+  ],
+  "errorHandlingTest": {
+    "missingWeddingHandled": true,
+    "generic404Handled": true
+  },
+  "seoTest": {
+    "title": "Explore Indian Wedding Celebrations | WeddingWithIndia",
+    "metaDesc": "Explore authentic multi-day Indian wedding celebrations across Rajasthan, Goa, Punjab, and Kerala. Filter by duration (1–5 days), destination, and cultural tradition.",
+    "canonical": "https://weddingwithindia.com/weddings",
+    "ogTitle": "Explore Indian Wedding Celebrations | WeddingWithIndia",
+    "jsonLdCount": 2,
+    "hasStructuredData": true
+  },
+  "imageAudit": [
+    {
+      "index": 0,
+      "src": "http://127.0.0.1:3005/_next/image?url=%2Fimages%2Flogos%2Flogo.png&w=48&q=75",
+      "renderedWidth": 40,
+      "renderedHeight": 40,
+      "naturalWidth": 48,
+      "naturalHeight": 48,
+      "hasExplicitAspectRatio": true,
+      "loading": "eager"
+    },
+    {
+      "index": 1,
+      "src": "http://127.0.0.1:3005/_next/image?url=%2Fimages%2Flogos%2Flogo.png&w=64&q=75",
+      "renderedWidth": 0,
+      "renderedHeight": 0,
+      "naturalWidth": 0,
+      "naturalHeight": 0,
+      "hasExplicitAspectRatio": false,
+      "loading": "lazy"
+    },
+    {
+      "index": 2,
+      "src": "http://127.0.0.1:3005/_next/image?url=https%3A%2F%2Fplus.unsplash.com%2Fpremium_photo-1691030255435-c1f4c3f5542e%3Fq%3D80%26w%3D687%26auto%3Dformat%26fit%3Dcrop%26ixlib%3Drb-4.1.0%26ixid%3DM3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%253D%253D&w=1920&q=75",
+      "renderedWidth": 276,
+      "renderedHeight": 173,
+      "naturalWidth": 0,
+      "naturalHeight": 0,
+      "hasExplicitAspectRatio": true,
+      "loading": "lazy"
+    },
+    {
+      "index": 3,
+      "src": "http://127.0.0.1:3005/_next/image?url=https%3A%2F%2Fimages.unsplash.com%2Fphoto-1694712282503-0d6dc921cfdd%3Fq%3D80%26w%3D687%26auto%3Dformat%26fit%3Dcrop%26ixlib%3Drb-4.1.0%26ixid%3DM3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%253D%253D&w=1920&q=75",
+      "renderedWidth": 280,
+      "renderedHeight": 175,
+      "naturalWidth": 0,
+      "naturalHeight": 0,
+      "hasExplicitAspectRatio": true,
+      "loading": "lazy"
+    },
+    {
+      "index": 4,
+      "src": "http://127.0.0.1:3005/_next/image?url=https%3A%2F%2Fimages.unsplash.com%2Fphoto-1726694064556-c9565e8e81c9%3Fq%3D80%26w%3D696%26auto%3Dformat%26fit%3Dcrop%26ixlib%3Drb-4.1.0%26ixid%3DM3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%253D%253D&w=1920&q=75",
+      "renderedWidth": 280,
+      "renderedHeight": 175,
+      "naturalWidth": 0,
+      "naturalHeight": 0,
+      "hasExplicitAspectRatio": true,
+      "loading": "lazy"
+    },
+    {
+      "index": 5,
+      "src": "http://127.0.0.1:3005/_next/image?url=https%3A%2F%2Fimages.unsplash.com%2Fphoto-1781015878406-39a0008389b7%3Fw%3D1200%26q%3D80%26auto%3Dformat%26fit%3Dcrop&w=1920&q=75",
+      "renderedWidth": 280,
+      "renderedHeight": 175,
+      "naturalWidth": 0,
+      "naturalHeight": 0,
+      "hasExplicitAspectRatio": true,
+      "loading": "lazy"
+    },
+    {
+      "index": 6,
+      "src": "http://127.0.0.1:3005/_next/image?url=https%3A%2F%2Fimages.unsplash.com%2Fphoto-1671531776382-f32dff368120%3Fq%3D80%26w%3D734%26auto%3Dformat%26fit%3Dcrop%26ixlib%3Drb-4.1.0%26ixid%3DM3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%253D%253D&w=1920&q=75",
+      "renderedWidth": 280,
+      "renderedHeight": 175,
+      "naturalWidth": 0,
+      "naturalHeight": 0,
+      "hasExplicitAspectRatio": true,
+      "loading": "lazy"
+    },
+    {
+      "index": 7,
+      "src": "http://127.0.0.1:3005/_next/image?url=https%3A%2F%2Fimages.unsplash.com%2Fphoto-1598875206191-5f88198c0a35%3Fw%3D1200%26q%3D80%26auto%3Dformat%26fit%3Dcrop&w=1920&q=75",
+      "renderedWidth": 280,
+      "renderedHeight": 175,
+      "naturalWidth": 0,
+      "naturalHeight": 0,
+      "hasExplicitAspectRatio": true,
+      "loading": "lazy"
+    },
+    {
+      "index": 8,
+      "src": "http://127.0.0.1:3005/_next/image?url=https%3A%2F%2Fimages.unsplash.com%2Fphoto-1581704723043-70c2216277de%3Fq%3D80%26w%3D1172%26auto%3Dformat%26fit%3Dcrop%26ixlib%3Drb-4.1.0%26ixid%3DM3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%253D%253D&w=1920&q=75",
+      "renderedWidth": 280,
+      "renderedHeight": 175,
+      "naturalWidth": 0,
+      "naturalHeight": 0,
+      "hasExplicitAspectRatio": true,
+      "loading": "lazy"
+    },
+    {
+      "index": 9,
+      "src": "http://127.0.0.1:3005/_next/image?url=https%3A%2F%2Fimages.unsplash.com%2Fphoto-1728348471845-c7ffa602161a%3Fq%3D80%26w%3D687%26auto%3Dformat%26fit%3Dcrop%26ixlib%3Drb-4.1.0%26ixid%3DM3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%253D%253D&w=1920&q=75",
+      "renderedWidth": 280,
+      "renderedHeight": 175,
+      "naturalWidth": 0,
+      "naturalHeight": 0,
+      "hasExplicitAspectRatio": true,
+      "loading": "lazy"
+    }
+  ],
+  "topSlowestResources": [],
+  "emailAudit": {
+    "customerFacingCount": 31,
+    "internalTechnicalCount": 2,
+    "testSeedCount": 100,
+    "deprecatedIncorrectCount": 0,
+    "customerFacingList": [
+      "contact@weddingwithindia.com (in app\\agent-agreement\\page.tsx)",
+      "contact@weddingwithindia.com (in app\\api\\contact\\route.ts)",
+      "bookings@weddingwithindia.com (in app\\api\\invoice\\[bookingId]\\route.ts)",
+      "bookings@weddingwithindia.com (in app\\cancellation-policy\\page.tsx)",
+      "contact@weddingwithindia.com (in app\\cookies\\page.tsx)",
+      "contact@weddingwithindia.com (in app\\coordinator-agreement\\page.tsx)",
+      "contact@weddingwithindia.com (in app\\copyright\\page.tsx)",
+      "founder@weddingwithindia.com (in app\\dashboard\\admin\\users\\page.tsx)",
+      "contact@weddingwithindia.com (in app\\dpdp\\page.tsx)",
+      "contact@weddingwithindia.com (in app\\gdpr\\page.tsx)",
+      "contact@weddingwithindia.com (in app\\layout.tsx)",
+      "contact@weddingwithindia.com (in app\\privacy\\page.tsx)",
+      "contact@weddingwithindia.com (in components\\dashboard\\FounderControlPanel.tsx)",
+      "founder@weddingwithindia.com (in lib\\actions\\admin.ts)",
+      "founder@weddingwithindia.com (in lib\\constants\\legal.ts)",
+      "contact@weddingwithindia.com (in lib\\constants\\legal.ts)",
+      "bookings@weddingwithindia.com (in lib\\constants\\legal.ts)",
+      "careers@weddingwithindia.com (in lib\\constants\\legal.ts)",
+      "founder@weddingwithindia.com (in scripts\\test-db.ts)",
+      "founder@weddingwithindia.com (in scripts\\test-sync.ts)",
+      "founder@weddingwithindia.com (in scripts\\test_browser_auth.js)",
+      "contact@weddingwithindia.com (in scripts\\test_browser_auth.js)",
+      "bookings@weddingwithindia.com (in scripts\\test_browser_auth.js)",
+      "careers@weddingwithindia.com (in scripts\\test_browser_auth.js)",
+      "founder@weddingwithindia.com (in scripts\\verify-founder.js)",
+      "founder@weddingwithindia.com (in __tests__\\lib\\admin-control-center.test.ts)",
+      "founder@weddingwithindia.com (in __tests__\\lib\\auth-challenger-stress.test.ts)",
+      "founder@weddingwithindia.com (in __tests__\\lib\\auth-db-availability.test.ts)",
+      "founder@weddingwithindia.com (in __tests__\\lib\\auth-founder-empirical.test.ts)",
+      "founder@weddingwithindia.com (in __tests__\\lib\\auth-reconciliation.test.ts)",
+      "founder@weddingwithindia.com (in __tests__\\lib\\m3-admin-verification.test.ts)"
+    ],
+    "deprecatedIncorrectList": []
+  },
+  "consoleErrors": [
+    {
+      "route": "/weddings",
+      "type": "warning",
+      "text": "Clerk: Clerk has been loaded with development keys. Development instances have strict usage limits and should not be used when deploying your application to production. Learn more: https://clerk.com/docs/deployments/overview"
+    },
+    {
+      "route": "/weddings",
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "route": "/safety",
+      "type": "warning",
+      "text": "Clerk: Clerk has been loaded with development keys. Development instances have strict usage limits and should not be used when deploying your application to production. Learn more: https://clerk.com/docs/deployments/overview"
+    }
+  ]
+}

@@ -1,6 +1,3 @@
-"use client";
-
-import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -31,12 +28,8 @@ const LEDGER_ITEMS = [
 
 const CTA_IMAGE_PRIMARY =
   "https://images.unsplash.com/photo-1735052712489-f45220126a0c?w=1920&q=85&auto=format&fit=crop";
-const CTA_IMAGE_FALLBACK =
-  "https://images.unsplash.com/photo-1671531776382-f32dff368120?w=1920&q=85&auto=format&fit=crop";
 
 export function CTASection() {
-  const [imgSrc, setImgSrc] = useState(CTA_IMAGE_PRIMARY);
-
   return (
     <section
       id="cta"
@@ -47,15 +40,12 @@ export function CTASection() {
       {/* Warm celebration photographic background with visible Indian wedding couple */}
       <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
         <Image
-          src={imgSrc}
+          src={CTA_IMAGE_PRIMARY}
           alt="Authentic Indian wedding couple embracing under traditional floral decorations"
           fill
           sizes="100vw"
           className="object-cover object-[center_30%] opacity-80 scale-105 transition-transform duration-1000"
           loading="lazy"
-          onError={() => {
-            if (imgSrc !== CTA_IMAGE_FALLBACK) setImgSrc(CTA_IMAGE_FALLBACK);
-          }}
           aria-hidden="true"
         />
 
@@ -100,62 +90,70 @@ export function CTASection() {
                 WebkitTextFillColor: "transparent",
               }}
             >
-              Leave with a Story.
+              Leave with Cherished Memories.
             </span>
           </h2>
 
-          {/* Supporting Text */}
-          <p className="text-white/95 text-sm sm:text-base md:text-lg leading-relaxed mb-8 max-w-xl mx-auto drop-shadow-sm font-medium">
-            Discover Indian weddings, meet welcoming families, and experience
-            age-old traditions with clarity and confidence.
+          {/* Description */}
+          <p className="text-white/80 text-sm sm:text-base leading-relaxed mb-6 sm:mb-8 max-w-xl mx-auto font-normal">
+            Whether it&apos;s a grand royal celebration in Rajasthan or a serene beach
+            mandap in Goa, find the celebration that speaks to you.
           </p>
 
-          {/* CTAs */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 mb-10 w-full max-w-md mx-auto">
+          {/* Action Button */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mb-10">
             <Link
               href="/weddings"
-              className="btn btn-primary btn-md group w-full sm:w-auto font-bold px-7 py-3 rounded-xl shadow-lg shadow-maroon-950/60 justify-center text-sm sm:text-base"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 font-bold px-7 py-3.5 rounded-full text-charcoal-900 transition-all duration-300 shadow-xl hover:shadow-2xl hover:scale-[1.02] active:scale-[0.98] text-sm"
+              style={{
+                background:
+                  "linear-gradient(135deg, #fcd34d 0%, #f59e0b 50%, #d97706 100%)",
+              }}
+              aria-label="Explore upcoming Indian wedding celebrations"
             >
-              <Heart size={16} aria-hidden="true" />
-              <span>Explore Weddings</span>
-              <ArrowRight
-                size={15}
-                className="group-hover:translate-x-0.5 transition-transform"
-                aria-hidden="true"
-              />
+              <span>Explore Celebrations</span>
+              <ArrowRight size={16} aria-hidden="true" />
             </Link>
 
             <Link
               href="/how-it-works"
-              className="btn btn-ghost-white btn-md w-full sm:w-auto font-bold px-6 py-3 rounded-xl justify-center text-sm sm:text-base bg-white/15 hover:bg-white/25 border border-white/25 backdrop-blur-xs"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 font-bold px-6 py-3.5 rounded-full text-white/90 hover:text-white border border-white/25 hover:border-white/50 bg-white/10 hover:bg-white/15 backdrop-blur-sm transition-all duration-200 text-sm"
             >
               <span>How It Works</span>
             </Link>
           </div>
 
-          {/* Trust Ledger */}
+          {/* 3 Value Pillars */}
           <div
-            className="grid grid-cols-1 sm:grid-cols-3 gap-5 sm:gap-4 pt-6 border-t border-white/20"
-            aria-label="Guest experience information"
+            className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 pt-6 border-t border-white/15 text-left"
+            role="list"
+            aria-label="WeddingWithIndia commitments"
           >
             {LEDGER_ITEMS.map((item) => (
               <div
                 key={item.value}
-                className="flex flex-col items-center text-center px-2"
+                className="flex items-start gap-2.5 bg-black/25 backdrop-blur-sm border border-white/10 rounded-xl p-3"
+                role="listitem"
               >
-                <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-white/15 border border-white/25 text-amber-300 mb-1.5 shadow-xs">
+                <span className="text-amber-400 flex-shrink-0 mt-0.5" aria-hidden="true">
                   {item.icon}
                 </span>
-
-                <span className="font-display text-white text-xs sm:text-sm font-bold tracking-wide drop-shadow-xs">
-                  {item.value}
-                </span>
-
-                <span className="text-white/80 text-[0.6875rem] mt-0.5 font-medium">
-                  {item.label}
-                </span>
+                <div>
+                  <div className="text-white text-xs font-bold leading-tight">
+                    {item.value}
+                  </div>
+                  <div className="text-white/60 text-[0.6875rem] leading-tight mt-0.5">
+                    {item.label}
+                  </div>
+                </div>
               </div>
             ))}
+          </div>
+
+          <div className="mt-8 flex items-center justify-center gap-1.5 text-white/40 text-[0.6875rem]">
+            <span>Crafted with</span>
+            <Heart size={11} className="text-red-400 fill-red-400" aria-hidden="true" />
+            <span>for authentic cultural discovery across India</span>
           </div>
         </div>
       </div>

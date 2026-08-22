@@ -815,10 +815,10 @@ export default function AgentAgreementPage() {
                 </p>
 
                 <a
-                  href="mailto:partners@weddingwithindia.com"
+                  href="mailto:contact@weddingwithindia.com"
                   className="text-[var(--color-brand-primary)] hover:underline font-semibold"
                 >
-                  partners@weddingwithindia.com
+                  contact@weddingwithindia.com
                 </a>
               </div>
             </div>

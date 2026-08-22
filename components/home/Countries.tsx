@@ -1,6 +1,3 @@
-"use client";
-
-import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, MapPin } from "lucide-react";
@@ -16,7 +13,6 @@ const FEATURED_DESTINATIONS = [
     name: "Rajasthan",
     weddingCount: 5,
     imageUrl: "https://images.unsplash.com/photo-1603262110263-fb0112e7cc33?q=80&w=1171&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-    fallbackUrl: "https://images.unsplash.com/photo-1603262110263-fb0112e7cc33?q=80&w=1171&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
     description: "Palaces, grand havelis, and regal desert celebrations in Jodhpur, Jaipur & Udaipur.",
   },
   {
@@ -24,7 +20,6 @@ const FEATURED_DESTINATIONS = [
     name: "Goa",
     weddingCount: 3,
     imageUrl: "https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?w=800&q=80",
-    fallbackUrl: "https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?w=800&q=80",
     description: "Oceanfront sunset mandaps, coastal music, and tropical beach celebrations.",
   },
   {
@@ -32,7 +27,6 @@ const FEATURED_DESTINATIONS = [
     name: "Kerala",
     weddingCount: 3,
     imageUrl: "https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?w=800&q=80",
-    fallbackUrl: "https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?w=800&q=80",
     description: "Backwater houseboats, palm-shaded rituals, and traditional banana leaf Sadya feasts.",
   },
   {
@@ -40,14 +34,11 @@ const FEATURED_DESTINATIONS = [
     name: "Himachal Pradesh",
     weddingCount: 2,
     imageUrl: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80",
-    fallbackUrl: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80",
     description: "Pine forest mountain ceremonies, acoustic folk songs, and serene Himalayan vistas.",
   },
 ];
 
 function DestinationCard({ dest }: { dest: typeof FEATURED_DESTINATIONS[0] }) {
-  const [imgSrc, setImgSrc] = useState(dest.imageUrl);
-
   return (
     <Link
       href={`/weddings?destinations=${encodeURIComponent(dest.name.split(" ")[0])}`}
@@ -56,17 +47,12 @@ function DestinationCard({ dest }: { dest: typeof FEATURED_DESTINATIONS[0] }) {
       aria-label={`Weddings in ${dest.name} — ${dest.weddingCount} celebrations`}
     >
       <Image
-        src={imgSrc}
+        src={dest.imageUrl}
         alt={`${dest.name} wedding destination`}
         fill
         sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
         className="object-cover transition-transform duration-700 group-hover:scale-105"
         loading="lazy"
-        onError={() => {
-          if (imgSrc !== dest.fallbackUrl) {
-            setImgSrc(dest.fallbackUrl);
-          }
-        }}
       />
 
       <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-transparent" />

@@ -607,10 +607,10 @@ export default function CookiesPage() {
                 </p>
 
                 <a
-                  href="mailto:privacy@weddingwithindia.com"
+                  href="mailto:contact@weddingwithindia.com"
                   className="inline-flex items-center text-[var(--color-brand-primary)] hover:underline font-semibold"
                 >
-                  privacy@weddingwithindia.com
+                  contact@weddingwithindia.com
                 </a>
               </div>
             </div>

@@ -1,6 +1,7 @@
 import { MessageCircle, Phone, Mail, HelpCircle } from "lucide-react";
 import { FAQAccordion } from "@/components/home/FAQAccordion";
 import type { FAQItem } from "@/types";
+import { CONTACT_EMAILS } from "@/lib/constants";
 
 interface FAQProps {
   items: FAQItem[];
@@ -43,7 +44,7 @@ export function FAQ({ items }: FAQProps) {
             <div className="flex flex-col gap-2.5 pt-2">
               {/* Email */}
               <a
-                href="mailto:namaste@weddingwithindia.com"
+                href={`mailto:${CONTACT_EMAILS.CONTACT}`}
                 className="flex items-center justify-between p-3 rounded-xl border border-warm-200/80 bg-warm-50/50 hover:bg-warm-100/60 hover:border-warm-300 transition-all group"
                 aria-label="Email the WeddingWithIndia guest experience team"
               >
@@ -64,7 +65,7 @@ export function FAQ({ items }: FAQProps) {
                 </div>
 
                 <span className="text-xs font-medium text-[var(--color-brand-primary)]">
-                  namaste@weddingwithindia.com
+                  {CONTACT_EMAILS.CONTACT}
                 </span>
               </a>
 

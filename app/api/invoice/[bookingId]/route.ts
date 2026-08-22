@@ -135,7 +135,7 @@ export async function GET(
         </table>
 
         <div class="footer">
-          <p>Thank you for celebrating with us. For inquiries, email concierge@weddingwithindia.com</p>
+          <p>Thank you for celebrating with us. For inquiries, email bookings@weddingwithindia.com</p>
           <button onclick="window.print()" style="padding: 10px 20px; background: #6b1026; color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; margin-top: 10px;">Print / Save PDF</button>
         </div>
       </div>

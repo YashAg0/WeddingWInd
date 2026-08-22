@@ -136,7 +136,7 @@ export function WeddingCard({ wedding, className, hidePrice = false }: WeddingCa
             src={imgSrc}
             alt={visualProfile.altText || `Authentic ${wedding.title} wedding celebration in ${locationDisplay}`}
             fill
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
             className="object-cover transition-transform duration-700 group-hover/card:scale-105"
             style={{ objectPosition }}
             loading="lazy"
@@ -152,21 +152,23 @@ export function WeddingCard({ wedding, className, hidePrice = false }: WeddingCa
           />
 
           {/* ── ROW 1 (TOP BAR): Left = Duration, Right = Wishlist ──────────── */}
-          <div className="absolute top-3 left-3 right-3 flex items-center justify-between z-10 pointer-events-none">
-            {/* Top-Left: Duration Pill */}
-            <span className="inline-flex items-center gap-1 bg-black/75 backdrop-blur-md text-amber-300 text-[0.6875rem] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md border border-amber-400/30 shadow-xs pointer-events-auto">
+          <div className="absolute top-3 left-3 right-3 flex items-center justify-between z-20 pointer-events-none">
+            {/* Top-Left: Duration Pill (Non-interactive informational badge) */}
+            <span className="inline-flex items-center gap-1 bg-black/75 backdrop-blur-md text-amber-300 text-[0.6875rem] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md border border-amber-400/30 shadow-xs pointer-events-none">
               <Calendar size={11} className="text-amber-300 flex-shrink-0" aria-hidden="true" />
               <span>{durationDays} {durationDays === 1 ? "Day" : "Days"}</span>
             </span>
 
-            {/* Top-Right: Wishlist Heart */}
+            {/* Top-Right: Wishlist Heart (Independent Click Control on z-20) */}
             <button
+              type="button"
               onClick={(e) => {
                 e.preventDefault();
+                e.stopPropagation();
                 toggleWishlist(wedding.id);
               }}
-              className="p-1.5 rounded-full bg-black/45 backdrop-blur-md text-white hover:bg-black/65 transition-colors pointer-events-auto border border-white/15"
-              aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
+              className="relative z-20 p-1.5 rounded-full bg-black/45 backdrop-blur-md text-white hover:bg-black/70 hover:scale-110 active:scale-95 transition-all pointer-events-auto border border-white/15 focus:outline-none focus:ring-2 focus:ring-amber-400 cursor-pointer"
+              aria-label={isWishlisted ? `Remove ${wedding.title} from wishlist` : `Add ${wedding.title} to wishlist`}
             >
               <Heart
                 size={14}
@@ -205,7 +207,7 @@ export function WeddingCard({ wedding, className, hidePrice = false }: WeddingCa
                 {locationDisplay}
               </span>
             </div>
-            <div className="flex items-center gap-1.5 flex-shrink-0 pointer-events-auto">
+            <div className="flex items-center gap-1.5 flex-shrink-0 pointer-events-none">
               {isSoldOut && (
                 <span className="inline-flex items-center bg-black/75 backdrop-blur-md text-amber-200 text-[0.6125rem] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border border-amber-400/30 whitespace-nowrap">
                   Fully Booked
@@ -214,6 +216,13 @@ export function WeddingCard({ wedding, className, hidePrice = false }: WeddingCa
             </div>
           </div>
         </div>
+
+        {/* ── STRETCHED PRIMARY CARD LINK (Overlays card body and image) ─────── */}
+        <Link
+          href={`/weddings/${wedding.slug}`}
+          className="absolute inset-0 z-10 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)] focus:ring-offset-2"
+          aria-label={`View ${wedding.title} celebration in ${locationDisplay}`}
+        />
 
         {/* ── CARD BODY ────────────────────────────────────────────────────── */}
         <div className="p-4 flex flex-col flex-1 gap-3">
@@ -275,14 +284,13 @@ export function WeddingCard({ wedding, className, hidePrice = false }: WeddingCa
                     {traditionDisplay}
                   </span>
                 </div>
-                <Link
-                  href={`/weddings/${wedding.slug}`}
-                  className="btn btn-primary w-full text-xs font-bold py-2 rounded-xl transition-all inline-flex items-center justify-center gap-1.5 shadow-xs group/btn"
-                  aria-label={`Explore ${wedding.title}`}
+                <div
+                  className="btn btn-primary w-full text-xs font-bold py-2 rounded-xl transition-all inline-flex items-center justify-center gap-1.5 shadow-xs group/btn pointer-events-none group-hover/card:bg-maroon-800"
+                  aria-hidden="true"
                 >
                   <span>Explore Celebration</span>
                   <ArrowRight size={12} className="group-hover/btn:translate-x-0.5 transition-transform" aria-hidden="true" />
-                </Link>
+                </div>
               </div>
             ) : (
               // Marketplace: price + CTA side by side
@@ -296,14 +304,13 @@ export function WeddingCard({ wedding, className, hidePrice = false }: WeddingCa
                   </div>
                   <div className="text-[0.625rem] text-charcoal-400">Experience Pass</div>
                 </div>
-                <Link
-                  href={`/weddings/${wedding.slug}`}
-                  className="btn btn-primary text-xs font-bold py-2 px-4 rounded-xl transition-all inline-flex items-center gap-1.5 shadow-xs group/btn flex-shrink-0 whitespace-nowrap"
-                  aria-label={`View ${wedding.title}`}
+                <div
+                  className="btn btn-primary text-xs font-bold py-2 px-4 rounded-xl transition-all inline-flex items-center gap-1.5 shadow-xs group/btn flex-shrink-0 whitespace-nowrap pointer-events-none group-hover/card:bg-maroon-800"
+                  aria-hidden="true"
                 >
                   <span>View</span>
                   <ArrowRight size={12} className="group-hover/btn:translate-x-0.5 transition-transform" aria-hidden="true" />
-                </Link>
+                </div>
               </div>
             )}
           </div>

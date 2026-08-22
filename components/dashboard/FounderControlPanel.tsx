@@ -555,7 +555,7 @@ export default function FounderControlPanel({ initialConfig, initialCMS, initial
               <label className="text-[0.6875rem] font-bold text-charcoal-600 uppercase tracking-wider block">Concierge Support Email</label>
               <input
                 type="email"
-                value={cms.supportContactEmail || "concierge@weddingwithindia.com"}
+                value={cms.supportContactEmail || "contact@weddingwithindia.com"}
                 onChange={(e) => setCms({ ...cms, supportContactEmail: e.target.value })}
                 className="input-luxury text-xs"
               />

@@ -754,10 +754,10 @@ export default function CoordinatorAgreementPage() {
                 <p className="text-sm text-charcoal-500">
                   For privacy-related questions, contact{" "}
                   <a
-                    href="mailto:privacy@weddingwithindia.com"
+                    href="mailto:contact@weddingwithindia.com"
                     className="text-[var(--color-brand-primary)] hover:underline font-semibold"
                   >
-                    privacy@weddingwithindia.com
+                    contact@weddingwithindia.com
                   </a>
                   .
                 </p>

@@ -471,11 +471,11 @@ export default function DPDPPage() {
             </p>
 
             <a
-              href="mailto:privacy@weddingwithindia.com"
+              href="mailto:contact@weddingwithindia.com"
               className="inline-flex items-center gap-2 text-[var(--color-brand-primary)] hover:underline font-semibold"
             >
               <Mail size={17} aria-hidden="true" />
-              privacy@weddingwithindia.com
+              contact@weddingwithindia.com
             </a>
 
             <p>
@@ -739,10 +739,10 @@ export default function DPDPPage() {
                 </p>
 
                 <a
-                  href="mailto:privacy@weddingwithindia.com"
+                  href="mailto:contact@weddingwithindia.com"
                   className="inline-flex items-center gap-2 text-[var(--color-brand-primary)] hover:underline font-semibold"
                 >
-                  privacy@weddingwithindia.com
+                  contact@weddingwithindia.com
                 </a>
               </div>
             </div>

@@ -352,10 +352,10 @@ export default function GDPRPage() {
               />
 
               <a
-                href="mailto:privacy@weddingwithindia.com"
+                href="mailto:contact@weddingwithindia.com"
                 className="text-[var(--color-brand-primary)] hover:underline font-semibold"
               >
-                privacy@weddingwithindia.com
+                contact@weddingwithindia.com
               </a>
             </div>
 
@@ -494,11 +494,11 @@ export default function GDPRPage() {
             </p>
 
             <a
-              href="mailto:privacy@weddingwithindia.com"
+              href="mailto:contact@weddingwithindia.com"
               className="inline-flex items-center gap-2 text-[var(--color-brand-primary)] hover:underline font-semibold"
             >
               <Mail size={16} aria-hidden="true" />
-              privacy@weddingwithindia.com
+              contact@weddingwithindia.com
             </a>
           </section>
 
@@ -692,10 +692,10 @@ export default function GDPRPage() {
                 </p>
 
                 <a
-                  href="mailto:privacy@weddingwithindia.com"
+                  href="mailto:contact@weddingwithindia.com"
                   className="inline-flex items-center gap-2 text-[var(--color-brand-primary)] hover:underline font-semibold"
                 >
-                  privacy@weddingwithindia.com
+                  contact@weddingwithindia.com
                   <span aria-hidden="true">→</span>
                 </a>
               </div>
@@ -743,10 +743,10 @@ export default function GDPRPage() {
             <p className="text-xs sm:text-sm text-charcoal-500">
               Last updated: August 13, 2026. For privacy requests, contact{" "}
               <a
-                href="mailto:privacy@weddingwithindia.com"
+                href="mailto:contact@weddingwithindia.com"
                 className="text-[var(--color-brand-primary)] hover:underline font-semibold"
               >
-                privacy@weddingwithindia.com
+                contact@weddingwithindia.com
               </a>
               .
             </p>

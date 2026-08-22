@@ -11,7 +11,7 @@ import { sortWeddingsByDiscoveryPriority } from "@/lib/wedding-dto";
 import { Wedding } from "@/types";
 
 export const metadata: Metadata = {
-  title: "Explore Indian Wedding Celebrations | WeddingWithIndia",
+  title: "Explore Indian Wedding Celebrations",
   description:
     "Explore authentic multi-day Indian wedding celebrations across Rajasthan, Goa, Punjab, and Kerala. Filter by duration (1–5 days), destination, and cultural tradition.",
   alternates: {

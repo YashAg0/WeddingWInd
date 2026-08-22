@@ -42,7 +42,7 @@ const results = {
 // ============================================================================
 const ALGORITHM = "aes-256-gcm";
 const IV_BYTES = 12;
-const KEY_BYTES = 32;
+const _KEY_BYTES = 32;
 const rawKey = process.env.GUEST_PASS_ENCRYPTION_KEY || "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
 const ENCRYPTION_KEY = Buffer.from(rawKey, "hex");
 
@@ -302,7 +302,7 @@ async function testRLSAndClientAccess() {
   await logSection("CHALLENGE 3: RLS & Client-Side Key / Direct Supabase Access Investigation");
   
   const srcDirs = ["app", "components", "lib", "hooks"];
-  let directSupabaseUsage = [];
+  const directSupabaseUsage = [];
   
   function scanDir(dir) {
     const fullDir = path.join(__dirname, "..", dir);
@@ -602,7 +602,7 @@ async function testManualPayPalFullFlowAndAtomicity() {
           });
         }, { maxWait: 15000, timeout: 30000 });
         concSuccess++;
-      } catch (err) {
+      } catch (_err) {
         concFailed++;
       }
     };
@@ -875,8 +875,8 @@ async function testQualityAudit() {
   const testDir = path.join(__dirname, "..", "__tests__", "lib");
   const files = fs.readdirSync(testDir).filter(f => f.endsWith(".test.ts") || f.endsWith(".test.js"));
 
-  let totalTestFiles = files.length;
-  let testCategories = {
+  const totalTestFiles = files.length;
+  const testCategories = {
     payment_and_financial: 0,
     security_and_auth: 0,
     concurrency_and_locking: 0,

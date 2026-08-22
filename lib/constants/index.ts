@@ -10,7 +10,7 @@ import {
   formatSecondaryCurrency
 } from "./financial-model";
 
-import { LEGAL_CONFIG } from "./legal";
+import { LEGAL_CONFIG, CONTACT_EMAILS } from "./legal";
 
 export {
   BUSINESS_METRICS,
@@ -23,6 +23,7 @@ export {
   formatCurrencyINR,
   formatSecondaryCurrency,
   LEGAL_CONFIG,
+  CONTACT_EMAILS,
 };
 
 export const SYSTEM_ROLE_PERMISSIONS = {

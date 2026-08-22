@@ -86,7 +86,7 @@ export async function POST(req: Request) {
   } catch (error) {
     console.error("Error handling contact submission:", error);
     return NextResponse.json(
-      { message: "Failed to save message. Please try again or email support@weddingwithindia.com." },
+      { message: "Failed to save message. Please try again or email contact@weddingwithindia.com." },
       { status: 500 }
     );
   }
