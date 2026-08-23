@@ -1,40 +1,60 @@
 import { z } from "zod";
 
+// Only validate required env vars at runtime, not during build
+const isBuildTime = process.env.npm_lifecycle_event === "build" || 
+                    (typeof process.env.VERCEL === "string" && process.env.VERCEL === "1" && !process.env.DATABASE_URL);
+
 const envSchema = z.object({
   // Database
-  DATABASE_URL: z.string().url().min(1, "DATABASE_URL is required").refine(
-    (url) => process.env.NODE_ENV !== "production" || url.includes("pgbouncer=true") || url.includes("pool_timeout="),
-    "DATABASE_URL must use connection pooling (pgbouncer=true) in production"
-  ),
+  DATABASE_URL: isBuildTime 
+    ? z.string().optional() 
+    : z.string().url().min(1, "DATABASE_URL is required").refine(
+        (url) => process.env.NODE_ENV !== "production" || url.includes("pgbouncer=true") || url.includes("pool_timeout="),
+        "DATABASE_URL must use connection pooling (pgbouncer=true) in production"
+      ),
 
   // Clerk Authentication
-  NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string().min(1, "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY is required"),
-  CLERK_SECRET_KEY: z.string().min(1, "CLERK_SECRET_KEY is required"),
+  NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: isBuildTime 
+    ? z.string().optional() 
+    : z.string().min(1, "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY is required"),
+  CLERK_SECRET_KEY: isBuildTime 
+    ? z.string().optional() 
+    : z.string().min(1, "CLERK_SECRET_KEY is required"),
 
   // PayPal Payment Configuration (optional override)
   PAYPAL_DOMAIN_ALLOWLIST: z.string().default("paypal.com,paypal.me"),
 
   // Resend Email
-  RESEND_API_KEY: z.string().min(1, "RESEND_API_KEY is required"),
+  RESEND_API_KEY: isBuildTime 
+    ? z.string().optional() 
+    : z.string().min(1, "RESEND_API_KEY is required"),
 
   // UploadThing
-  UPLOADTHING_SECRET: z.string().min(1, "UPLOADTHING_SECRET is required"),
-  UPLOADTHING_APP_ID: z.string().min(1, "UPLOADTHING_APP_ID is required"),
+  UPLOADTHING_SECRET: isBuildTime 
+    ? z.string().optional() 
+    : z.string().min(1, "UPLOADTHING_SECRET is required"),
+  UPLOADTHING_APP_ID: isBuildTime 
+    ? z.string().optional() 
+    : z.string().min(1, "UPLOADTHING_APP_ID is required"),
 
   // Security
-  GUEST_PASS_ENCRYPTION_KEY: z.string().length(64, "GUEST_PASS_ENCRYPTION_KEY must be exactly 64 hex characters"),
+  GUEST_PASS_ENCRYPTION_KEY: isBuildTime 
+    ? z.string().optional() 
+    : z.string().length(64, "GUEST_PASS_ENCRYPTION_KEY must be exactly 64 hex characters"),
   
   // App URL
-  NEXT_PUBLIC_APP_URL: z.string().url().min(1, "NEXT_PUBLIC_APP_URL is required").refine(
-    (url) => {
-      // In deployed production (e.g. Vercel), do not allow localhost
-      if (process.env.VERCEL_ENV === "production") {
-        return !url.includes("localhost") && !url.includes("127.0.0.1");
-      }
-      return true;
-    },
-    { message: "NEXT_PUBLIC_APP_URL cannot be localhost in production" }
-  ),
+  NEXT_PUBLIC_APP_URL: isBuildTime 
+    ? z.string().optional() 
+    : z.string().url().min(1, "NEXT_PUBLIC_APP_URL is required").refine(
+        (url) => {
+          // In deployed production (e.g. Vercel), do not allow localhost
+          if (process.env.VERCEL_ENV === "production") {
+            return !url.includes("localhost") && !url.includes("127.0.0.1");
+          }
+          return true;
+        },
+        { message: "NEXT_PUBLIC_APP_URL cannot be localhost in production" }
+      ),
 
   // Background Crons
   CRON_SECRET: z.string().optional(),
