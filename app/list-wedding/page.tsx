@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback, useTransition, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useCallback, useTransition, useMemo, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import {
   ShieldCheck,
@@ -38,6 +38,16 @@ import {
   HostDayInput,
 } from "@/lib/actions/host-application";
 import { formatPsychologicalLakh } from "@/components/wedding/HostEarningsCalculator";
+import {
+  saveLocalWeddingDraft,
+  getLocalWeddingDraft,
+  clearLocalWeddingDraft,
+  setAutoSubmitIntent,
+  hasAutoSubmitIntent,
+  HostDraftPayload,
+} from "@/lib/storage/wedding-draft";
+import { updateUserRoleAction } from "@/lib/actions";
+import { UserRole } from "@prisma/client";
 
 const TRADITION_OPTIONS = [
   "Hindu",
@@ -82,8 +92,10 @@ const TIER_DESCRIPTIONS: Record<WeddingTier, { title: string; subtitle: string }
   },
 };
 
-export default function ListWeddingPage() {
+function ListWeddingContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isResuming = searchParams?.get("resume") === "true";
   const { user } = useAuth();
   const [isPending, startTransition] = useTransition();
 
@@ -96,6 +108,7 @@ export default function ListWeddingPage() {
   const [isLoadingActiveApp, setIsLoadingActiveApp] = useState(false);
   const [autosaveState, setAutosaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [lastSavedTime, setLastSavedTime] = useState<Date | null>(null);
+  const [hasAutoSubmitted, setHasAutoSubmitted] = useState(false);
 
   // Authoritative Calculator State (Primary source of truth for Duration, Guests, Tier)
   const [durationDays, setDurationDays] = useState<WeddingDurationDays>(3);
@@ -148,6 +161,71 @@ export default function ListWeddingPage() {
       setCoupleNames(`${brideName} & ${groomName} Celebration`);
     }
   }, [brideName, groomName, coupleNames]);
+
+  // Helper to populate form fields from a saved draft
+  const populateFieldsFromDraft = useCallback((draft: HostDraftPayload) => {
+    if (draft.hostName) setHostName(draft.hostName);
+    if (draft.email) setEmail(draft.email);
+    if (draft.phone) setPhone(draft.phone);
+    if (draft.preferredContactMethod) setPreferredContactMethod(draft.preferredContactMethod);
+    if (draft.brideName) setBrideName(draft.brideName);
+    if (draft.groomName) setGroomName(draft.groomName);
+    if (draft.coupleNames) setCoupleNames(draft.coupleNames);
+    if (draft.city) setCity(draft.city);
+    if (draft.state) setStateName(draft.state);
+    if (draft.venueName) setVenueName(draft.venueName);
+    if (draft.weddingDate) setWeddingDate(draft.weddingDate);
+    if (draft.durationDays) setDurationDays(draft.durationDays);
+    if (draft.tradition) {
+      if (TRADITION_OPTIONS.includes(draft.tradition)) {
+        setTradition(draft.tradition);
+        setCustomTradition("");
+      } else {
+        setTradition("Other");
+        setCustomTradition(draft.tradition);
+      }
+    }
+    if (draft.customTradition) {
+      setTradition("Other");
+      setCustomTradition(draft.customTradition);
+    }
+    if (draft.weddingScale) setWeddingScale(draft.weddingScale);
+    if (draft.expectedTotalGuests) setExpectedTotalGuests(draft.expectedTotalGuests);
+    if (draft.expectedInternationalGuests) setExpectedInternationalGuests(draft.expectedInternationalGuests);
+    if (draft.requestedTier) setRequestedTier(draft.requestedTier);
+    if (draft.story) setStory(draft.story);
+    if (draft.days && draft.days.length > 0) {
+      setAllDays((prev) => {
+        const next = [...prev];
+        draft.days.forEach((d) => {
+          const idx = d.dayNumber - 1;
+          if (idx >= 0 && idx < 5) {
+            next[idx] = {
+              dayNumber: d.dayNumber,
+              date: d.date || "",
+              title: d.title || `Day ${d.dayNumber}`,
+              description: d.description || "",
+              expectedInternationalGuests: d.expectedInternationalGuests || draft.expectedInternationalGuests || 20,
+              guestExperience: d.guestExperience || "",
+              foodExperience: d.foodExperience || "",
+              dressCode: d.dressCode || "",
+              specialActivities: d.specialActivities || "",
+              events: d.events && Array.isArray(d.events) ? d.events : [],
+            };
+          }
+        });
+        return next;
+      });
+    }
+  }, []);
+
+  // Hydrate from localStorage on initial mount (works for both guests and authenticated users)
+  useEffect(() => {
+    const localDraft = getLocalWeddingDraft();
+    if (localDraft && !applicationId) {
+      populateFieldsFromDraft(localDraft);
+    }
+  }, [applicationId, populateFieldsFromDraft]);
 
   // Authoritative financial calculations from central pricing engine
   const fixedPayoutPerGuestINR = getHostPayoutPerGuestINR(requestedTier, durationDays);
@@ -254,41 +332,71 @@ export default function ListWeddingPage() {
     }
   }, [user, fetchActiveApplication]);
 
-  // Debounced Autosave Trigger
+  // Debounced Autosave Trigger (Server sync if logged in, localStorage otherwise)
   const triggerAutosave = useCallback(async () => {
-    if (!user || !city || !coupleNames) return;
+    if (!city || !coupleNames) return;
 
     setAutosaveState("saving");
     try {
       const finalTraditionValue = tradition === "Other" ? (customTradition || "Other") : tradition;
 
-      const res = await saveHostApplicationDraftAction({
-        applicationId: applicationId || undefined,
-        hostName: hostName || user.name || "Host",
-        email: user.email,
-        phone,
-        preferredContactMethod,
-        brideName,
-        groomName,
-        coupleNames,
-        city,
-        state: stateName,
-        venueName,
-        weddingDate,
-        durationDays,
-        tradition: finalTraditionValue || undefined,
-        weddingScale,
-        expectedTotalGuests,
-        expectedInternationalGuests,
-        requestedTier,
-        story,
-        days: allDays,
-      });
+      // If user is authenticated, save to server
+      if (user) {
+        const res = await saveHostApplicationDraftAction({
+          applicationId: applicationId || undefined,
+          hostName: hostName || user.name || "Host",
+          email: user.email,
+          phone,
+          preferredContactMethod,
+          brideName,
+          groomName,
+          coupleNames,
+          city,
+          state: stateName,
+          venueName,
+          weddingDate,
+          durationDays,
+          tradition: finalTraditionValue || undefined,
+          weddingScale,
+          expectedTotalGuests,
+          expectedInternationalGuests,
+          requestedTier,
+          story,
+          days: allDays,
+        });
 
-      if (res.success) {
-        if (!applicationId && res.applicationId) {
-          setApplicationId(res.applicationId);
+        if (res.success) {
+          if (!applicationId && res.applicationId) {
+            setApplicationId(res.applicationId);
+          }
+          setAutosaveState("saved");
+          setLastSavedTime(new Date());
         }
+      } else {
+        // For unauthenticated users, save to localStorage
+        const draft: HostDraftPayload = {
+          hostName,
+          email,
+          phone,
+          preferredContactMethod,
+          brideName,
+          groomName,
+          coupleNames,
+          city,
+          state: stateName,
+          venueName,
+          weddingDate,
+          durationDays,
+          tradition: finalTraditionValue || undefined,
+          customTradition,
+          weddingScale,
+          expectedTotalGuests,
+          expectedInternationalGuests,
+          requestedTier,
+          story,
+          days: allDays,
+        };
+        saveLocalWeddingDraft(draft);
         setAutosaveState("saved");
         setLastSavedTime(new Date());
       }
@@ -1586,5 +1694,25 @@ export default function ListWeddingPage() {
         </form>
       </div>
     </div>
+  );
+}
+
+// Export wrapped with Suspense for useSearchParams
+export default function ListWeddingPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-warm-50 pt-28 pb-20 flex items-center justify-center">
+          <div className="text-center space-y-3">
+            <div className="w-8 h-8 rounded-full border-4 border-maroon-100 border-t-maroon-800 animate-spin mx-auto" />
+            <p className="text-xs font-bold text-charcoal-500 uppercase tracking-widest">
+              Loading celebration intake form...
+            </p>
+          </div>
+        </div>
+      }
+    >
+      <ListWeddingContent />
+    </Suspense>
   );
 }
