@@ -379,9 +379,8 @@ export async function resolveHostApplicationState(targetUserId?: string): Promis
 export async function saveHostApplicationDraftAction(input: HostApplicationInput) {
   const user = await requireAuth();
 
-  if (input.email && input.email.trim().toLowerCase() !== user.email.trim().toLowerCase()) {
-    throw new Error("Use the email on your signed-in account.");
-  }
+  // Authoritatively use the authenticated user's email
+  const userEmail = user.email.trim().toLowerCase();
 
   // Ensure couple profile exists
   let coupleProfile = await prisma.coupleProfile.findUnique({

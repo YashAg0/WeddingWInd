@@ -57,6 +57,8 @@ function OnboardingContent() {
           ? `/login?redirect_url=${encodeURIComponent(redirectUrl)}`
           : "/login";
         router.replace(loginTarget);
+      } else if (redirectUrl && redirectUrl.includes("/list-wedding")) {
+        router.replace(redirectUrl);
       } else if (user.onboarded) {
         router.replace(redirectUrl || "/dashboard");
       }

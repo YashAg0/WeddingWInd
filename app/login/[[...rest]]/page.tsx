@@ -19,8 +19,12 @@ function LoginContent() {
   React.useEffect(() => {
     if (!loading && user) {
       if (!user.onboarded) {
-        const onboardingTarget = `/onboarding?redirect_url=${encodeURIComponent(redirectTarget)}`;
-        router.replace(onboardingTarget);
+        if (redirectTarget.includes("/list-wedding")) {
+          router.replace(redirectTarget);
+        } else {
+          const onboardingTarget = `/onboarding?redirect_url=${encodeURIComponent(redirectTarget)}`;
+          router.replace(onboardingTarget);
+        }
       } else {
         router.replace(redirectTarget);
       }

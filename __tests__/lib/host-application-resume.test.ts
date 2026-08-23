@@ -30,6 +30,7 @@ const mockPrisma = {
   },
   user: {
     findUnique: jest.fn(),
+    findMany: jest.fn().mockResolvedValue([]),
     update: jest.fn(),
   },
   auditLog: {
