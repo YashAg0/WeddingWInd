@@ -27,8 +27,8 @@ const envSchema = z.object({
   // App URL
   NEXT_PUBLIC_APP_URL: z.string().url().min(1, "NEXT_PUBLIC_APP_URL is required").refine(
     (url) => {
-      // In production, do not allow localhost
-      if (process.env.NODE_ENV === "production") {
+      // In deployed production (e.g. Vercel), do not allow localhost
+      if (process.env.VERCEL_ENV === "production") {
         return !url.includes("localhost") && !url.includes("127.0.0.1");
       }
       return true;

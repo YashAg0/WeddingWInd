@@ -556,70 +556,79 @@ export async function submitHostApplicationAction(input: HostApplicationInput) {
     throw new Error("Missing required celebration information.");
   }
 
-  // 3. Upgrade user role to COUPLE
-  if (user.role === UserRole.TRAVELER) {
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { role: UserRole.COUPLE },
-    });
-  }
+  // 3. Atomically persist user role upgrade, HostApplication submission, audit log, and Verification status
+  const txResult = await prisma.$transaction(async (tx) => {
+    // 3a. Upgrade user role to COUPLE
+    if (user.role === UserRole.TRAVELER) {
+      await tx.user.update({
+        where: { id: user.id },
+        data: { role: UserRole.COUPLE },
+      });
+    }
 
-  // 4. Update HostApplication status to SUBMITTED if model available
-  let updatedApp: any = { id: draftResult.applicationId };
-  if (prisma.hostApplication) {
-    updatedApp = await prisma.hostApplication.update({
-      where: { id: draftResult.applicationId },
-      data: {
-        status: "SUBMITTED",
-        submittedAt: new Date(),
+    // 3b. Update HostApplication status to SUBMITTED if model available
+    let updatedApp: any = { id: draftResult.applicationId };
+    if (tx.hostApplication) {
+      updatedApp = await tx.hostApplication.update({
+        where: { id: draftResult.applicationId },
+        data: {
+          status: "SUBMITTED",
+          submittedAt: new Date(),
+        },
+      });
+
+      // Audit Log
+      if (tx.hostApplicationAuditLog) {
+        await tx.hostApplicationAuditLog.create({
+          data: {
+            applicationId: updatedApp.id,
+            action: "APPLICATION_SUBMITTED",
+            actorId: user.id,
+            actorRole: "COUPLE",
+            details: `Host submitted application for ${input.coupleNames} (${input.durationDays} days, ${input.requestedTier} requested).`,
+          },
+        });
+      }
+    }
+
+    // 3c. Update Verification record
+    await tx.verification.upsert({
+      where: { userId: user.id },
+      create: {
+        userId: user.id,
+        status: VerificationStatus.PENDING,
+        submissionDate: new Date(),
+        notes: `Host submitted celebration application for ${input.coupleNames} in ${input.city}. Duration: ${input.durationDays} days.`,
+      },
+      update: {
+        status: VerificationStatus.PENDING,
+        submissionDate: new Date(),
+        notes: `Host submitted celebration application for ${input.coupleNames} in ${input.city}. Duration: ${input.durationDays} days.`,
       },
     });
 
-    // Audit Log
-    if (prisma.hostApplicationAuditLog) {
-      await prisma.hostApplicationAuditLog.create({
+    return updatedApp;
+  });
+
+  // 4. Notify Admins (non-blocking for core transaction)
+  try {
+    const adminUsers = await prisma.user.findMany({
+      where: { role: UserRole.ADMIN },
+      select: { id: true },
+    });
+
+    for (const admin of adminUsers) {
+      await prisma.notification.create({
         data: {
-          applicationId: updatedApp.id,
-          action: "APPLICATION_SUBMITTED",
-          actorId: user.id,
-          actorRole: "COUPLE",
-          details: `Host submitted application for ${input.coupleNames} (${input.durationDays} days, ${input.requestedTier} requested).`,
+          userId: admin.id,
+          title: "New Host Application Submitted",
+          message: `${input.hostName} submitted an application for ${input.coupleNames} in ${input.city}.`,
+          type: "INFO",
         },
       });
     }
-  }
-
-  // 5. Update Verification record
-  await prisma.verification.upsert({
-    where: { userId: user.id },
-    create: {
-      userId: user.id,
-      status: VerificationStatus.PENDING,
-      submissionDate: new Date(),
-      notes: `Host submitted celebration application for ${input.coupleNames} in ${input.city}. Duration: ${input.durationDays} days.`,
-    },
-    update: {
-      status: VerificationStatus.PENDING,
-      submissionDate: new Date(),
-      notes: `Host submitted celebration application for ${input.coupleNames} in ${input.city}. Duration: ${input.durationDays} days.`,
-    },
-  });
-
-  // 6. Notify Admins
-  const adminUsers = await prisma.user.findMany({
-    where: { role: UserRole.ADMIN },
-    select: { id: true },
-  });
-
-  for (const admin of adminUsers) {
-    await prisma.notification.create({
-      data: {
-        userId: admin.id,
-        title: "New Host Application Submitted",
-        message: `${input.hostName} submitted an application for ${input.coupleNames} in ${input.city}.`,
-        type: "INFO",
-      },
-    });
+  } catch (notifErr) {
+    console.warn("Failed to dispatch admin notification on host application submit:", notifErr);
   }
 
   revalidatePath("/dashboard");
@@ -627,8 +636,8 @@ export async function submitHostApplicationAction(input: HostApplicationInput) {
 
   return {
     success: true,
-    applicationId: updatedApp.id,
-    status: updatedApp.status,
+    applicationId: txResult.id,
+    status: txResult.status,
   };
 }
 
@@ -658,56 +667,60 @@ export async function uploadHostRequestedDocumentAction(data: {
     throw new Error("Forbidden: You cannot upload documents for another user's request.");
   }
 
-  // Create Document record
-  const doc = await prisma.hostDocument.create({
-    data: {
-      requestId: reqRecord.id,
-      applicationId: reqRecord.applicationId,
-      userId: user.id,
-      fileUrl: data.fileUrl,
-      fileKey: data.fileKey || null,
-      fileName: data.fileName,
-      fileSize: data.fileSize || 0,
-      mimeType: data.mimeType || "application/octet-stream",
-      status: "SUBMITTED",
-    },
-  });
-
-  // Mark request fulfilled
-  await prisma.hostDocumentRequest.update({
-    where: { id: reqRecord.id },
-    data: {
-      status: "FULFILLED",
-      fulfilledAt: new Date(),
-    },
-  });
-
-  // Check if any remaining pending required requests
-  const pendingRequired = await prisma.hostDocumentRequest.findMany({
-    where: {
-      applicationId: reqRecord.applicationId,
-      isRequired: true,
-      status: "PENDING",
-    },
-  });
-
-  if (pendingRequired.length === 0) {
-    // Transition application status back to UNDER_REVIEW
-    await prisma.hostApplication.update({
-      where: { id: reqRecord.applicationId },
-      data: { status: "UNDER_REVIEW" },
+  const doc = await prisma.$transaction(async (tx) => {
+    // 1. Create Document record
+    const createdDoc = await tx.hostDocument.create({
+      data: {
+        requestId: reqRecord.id,
+        applicationId: reqRecord.applicationId,
+        userId: user.id,
+        fileUrl: data.fileUrl,
+        fileKey: data.fileKey || null,
+        fileName: data.fileName,
+        fileSize: data.fileSize || 0,
+        mimeType: data.mimeType || "application/octet-stream",
+        status: "SUBMITTED",
+      },
     });
-  }
 
-  // Audit Log
-  await prisma.hostApplicationAuditLog.create({
-    data: {
-      applicationId: reqRecord.applicationId,
-      action: "DOCUMENT_UPLOADED",
-      actorId: user.id,
-      actorRole: "COUPLE",
-      details: `Host uploaded document '${data.fileName}' for request '${reqRecord.title}'.`,
-    },
+    // 2. Mark request fulfilled
+    await tx.hostDocumentRequest.update({
+      where: { id: reqRecord.id },
+      data: {
+        status: "FULFILLED",
+        fulfilledAt: new Date(),
+      },
+    });
+
+    // 3. Check if any remaining pending required requests
+    const pendingRequired = await tx.hostDocumentRequest.findMany({
+      where: {
+        applicationId: reqRecord.applicationId,
+        isRequired: true,
+        status: "PENDING",
+      },
+    });
+
+    if (pendingRequired.length === 0) {
+      // Transition application status back to UNDER_REVIEW
+      await tx.hostApplication.update({
+        where: { id: reqRecord.applicationId },
+        data: { status: "UNDER_REVIEW" },
+      });
+    }
+
+    // 4. Audit Log
+    await tx.hostApplicationAuditLog.create({
+      data: {
+        applicationId: reqRecord.applicationId,
+        action: "DOCUMENT_UPLOADED",
+        actorId: user.id,
+        actorRole: "COUPLE",
+        details: `Host uploaded document '${data.fileName}' for request '${reqRecord.title}'.`,
+      },
+    });
+
+    return createdDoc;
   });
 
   revalidatePath("/dashboard");

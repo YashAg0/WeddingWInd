@@ -1277,17 +1277,22 @@ export async function fetchDashboardDataAction() {
 
     bookings = travelerBookings;
     wishlist = wishEntries.map((w: any) => w.wedding.slug);
-  } else if (dbUser.role === UserRole.COUPLE && dbUser.coupleProfile) {
-    const [coupleBookings, hosted] = await Promise.all([
+  } else if (dbUser.role === UserRole.COUPLE) {
+    let coupleProfileId = dbUser.coupleProfile?.id;
+    if (!coupleProfileId) {
+      const cp = await prisma.coupleProfile.findUnique({ where: { userId: dbUser.id } });
+      coupleProfileId = cp?.id;
+    }
+    const [coupleBookings, hosted] = coupleProfileId ? await Promise.all([
       withDbRetry(() => prisma.booking.findMany({
-        where: { wedding: { hostCoupleId: dbUser.coupleProfile!.id } },
+        where: { wedding: { hostCoupleId: coupleProfileId } },
         include: { wedding: true, traveler: { include: { user: true } }, payments: true },
         orderBy: { createdAt: "desc" },
       }), { label: "fetchDash:coupleBookings" }).catch(() => []),
       withDbRetry(() => prisma.wedding.findFirst({
-        where: { hostCoupleId: dbUser.coupleProfile!.id },
+        where: { hostCoupleId: coupleProfileId },
       }), { label: "fetchDash:hosted" }).catch(() => null),
-    ]);
+    ]) : [[], null];
 
     const { getHostPayoutPerGuestINR, normalizeWeddingTier, normalizeDurationDays } = require("../services/pricing-engine");
 

@@ -2,9 +2,12 @@ import { defineConfig, devices } from "@playwright/test";
 import module from "module";
 import path from "path";
 
-// Register @/ path alias resolver for Playwright runner
+// Register @/ path alias and mock server-only for Playwright runner
 const originalResolveFilename = (module as any)._resolveFilename;
 (module as any)._resolveFilename = function (request: string, parent: any, isMain: boolean, options: any) {
+  if (request === "server-only") {
+    return path.resolve(__dirname, "scripts/noop.js");
+  }
   if (request.startsWith("@/")) {
     request = path.resolve(__dirname, request.slice(2));
   }

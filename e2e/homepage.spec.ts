@@ -41,7 +41,7 @@ test.describe("Phase 3: Homepage Verification", () => {
 
   test("SEO and Meta elements are correct", async ({ page }) => {
     // Verify title
-    await expect(page).toHaveTitle(/Wedding With India/i);
+    await expect(page).toHaveTitle(/WeddingWithIndia|Wedding With India|Indian Weddings/i);
     
     // Verify meta description
     const metaDescription = page.locator("meta[name='description']");

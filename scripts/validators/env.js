@@ -3,6 +3,25 @@
  * Validates required and optional environment variables for development and production.
  */
 
+const fs = require("fs");
+const path = require("path");
+
+const envPath = path.resolve(__dirname, "../../.env");
+if (fs.existsSync(envPath)) {
+  const content = fs.readFileSync(envPath, "utf8");
+  for (const line of content.split("\n")) {
+    const trimmed = line.trim();
+    if (trimmed && !trimmed.startsWith("#") && trimmed.includes("=")) {
+      const idx = trimmed.indexOf("=");
+      const key = trimmed.slice(0, idx).trim();
+      const val = trimmed.slice(idx + 1).trim().replace(/^["']|["']$/g, "");
+      if (!process.env[key]) {
+        process.env[key] = val;
+      }
+    }
+  }
+}
+
 const requiredVars = [
   { name: "DATABASE_URL", description: "PostgreSQL Database connection string", example: "postgresql://user:pass@localhost:5432/wwi_db" },
   { name: "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY", description: "Clerk Authentication publishable key", example: "pk_test_..." },

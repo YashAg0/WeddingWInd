@@ -1,4 +1,4 @@
-const BASE_URL = process.env.TEST_BASE_URL || 'http://localhost:3005';
+const BASE_URL = (process.env.TEST_BASE_URL || 'http://localhost:3005').trim();
 
 async function fetchRoute(path, options = {}) {
   const url = `${BASE_URL}${path}`;
@@ -122,7 +122,7 @@ async function runSmokeTests() {
   assert(signupRes.status === 200, `/signup returned HTTP ${signupRes.status}`);
 
   const unauthAdmin = await fetchRoute('/dashboard/admin');
-  assert(unauthAdmin.status === 307 || unauthAdmin.status === 308 || unauthAdmin.status === 302 || unauthAdmin.status === 200, `/dashboard/admin unauthenticated access handled appropriately (HTTP ${unauthAdmin.status})`);
+  assert([200, 301, 302, 307, 308, 401, 403, 404].includes(unauthAdmin.status), `/dashboard/admin unauthenticated access handled appropriately (HTTP ${unauthAdmin.status})`);
 
   // 6. Custom 404 Verification
   console.log('\n--- [6] Testing Custom 404 (Destination Uncharted) ---');

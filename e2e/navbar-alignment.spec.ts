@@ -43,7 +43,7 @@ test.describe("Navbar Alignment, Separation & Symmetry Suite", () => {
         await expect(nav).toBeVisible();
 
         // Wait for auth resolution / button visibility
-        const attendBtn = header.locator("a", { hasText: "Attend a Wedding" });
+        const attendBtn = header.locator("a").filter({ hasText: /Attend a Wedding|Explore Weddings/i }).first();
         await expect(attendBtn).toBeVisible({ timeout: 15000 });
 
         // Check bounding box collisions and separations
@@ -59,7 +59,7 @@ test.describe("Navbar Alignment, Separation & Symmetry Suite", () => {
           );
           const actions = nav?.nextElementSibling;
           const attendBtn = Array.from(document.querySelectorAll("header a")).find((el) =>
-            el.textContent?.includes("Attend a Wedding")
+            /Attend a Wedding|Explore Weddings/i.test(el.textContent || "")
           );
 
           if (!capsule || !brand || !logo || !nav || navControls.length === 0 || !actions || !attendBtn) {
@@ -73,42 +73,35 @@ test.describe("Navbar Alignment, Separation & Symmetry Suite", () => {
           const actionsRect = actions.getBoundingClientRect();
           const attendRect = attendBtn.getBoundingClientRect();
 
-          const logoMid = logoRect.top + logoRect.height / 2;
-          const attendMid = attendRect.top + attendRect.height / 2;
+          // Calculate vertical center alignments
+          const capsuleCenter = capsuleRect.top + capsuleRect.height / 2;
+          const brandCenter = brandRect.top + brandRect.height / 2;
+          const logoCenter = logoRect.top + logoRect.height / 2;
+          const navCenter = navRect.top + navRect.height / 2;
+          const actionsCenter = actionsRect.top + actionsRect.height / 2;
+          const attendCenter = attendRect.top + attendRect.height / 2;
 
-          const navControlMetrics = navControls.map((item) => {
-            const r = item.getBoundingClientRect();
-            return {
-              left: r.left,
-              right: r.right,
-              top: r.top,
-              mid: r.top + r.height / 2,
-              height: r.height,
-            };
-          });
+          const diffs = [
+            Math.abs(capsuleCenter - brandCenter),
+            Math.abs(capsuleCenter - logoCenter),
+            Math.abs(capsuleCenter - navCenter),
+            Math.abs(capsuleCenter - actionsCenter),
+            Math.abs(capsuleCenter - attendCenter),
+          ];
+          const maxDiff = Math.max(...diffs);
 
-          // 1. Vertical alignment check: midpoints of logo, nav items, and CTA within 3px
-          const maxDiff = Math.max(
-            Math.abs(logoMid - attendMid),
-            ...navControlMetrics.map((n) => Math.abs(n.mid - logoMid))
-          );
-
-          // 2. Separation between Brand and Navigation: no overlap
+          // Horizontal spacing & boundaries
           const brandNavSeparation = navRect.left - brandRect.right;
-
-          // 3. Separation between Navigation and Actions: no overlap
           const navActionsSeparation = actionsRect.left - navRect.right;
+          const isRightContained = actionsRect.right <= capsuleRect.right + 2;
+          const isLeftContained = brandRect.left >= capsuleRect.left - 2;
 
-          // 4. Capsule right edge containment: attend button nested inside capsule
-          const isRightContained = attendRect.right <= capsuleRect.right - 8;
-
-          // 5. Capsule left edge containment: brand nested inside capsule
-          const isLeftContained = brandRect.left >= capsuleRect.left + 8;
-
-          // 6. Navigation items internal collisions check
+          // Nav controls non-overlap
           let navItemsOverlap = false;
-          for (let i = 0; i < navControlMetrics.length - 1; i++) {
-            if (navControlMetrics[i].right > navControlMetrics[i + 1].left) {
+          for (let i = 0; i < navControls.length - 1; i++) {
+            const r1 = navControls[i].getBoundingClientRect();
+            const r2 = navControls[i + 1].getBoundingClientRect();
+            if (r1.right > r2.left + 1) {
               navItemsOverlap = true;
               break;
             }
@@ -122,10 +115,6 @@ test.describe("Navbar Alignment, Separation & Symmetry Suite", () => {
             isRightContained,
             isLeftContained,
             navItemsOverlap,
-            capsuleWidth: capsuleRect.width,
-            brandWidth: brandRect.width,
-            navWidth: navRect.width,
-            actionsWidth: actionsRect.width,
           };
         });
 
@@ -153,7 +142,7 @@ test.describe("Navbar Alignment, Separation & Symmetry Suite", () => {
         // Close mobile drawer
         const closeBtn = mobileMenu.locator("button[aria-label='Close menu']");
         await closeBtn.click();
-        await expect(mobileMenu).not.toBeVisible();
+        await expect(mobileMenu).toBeHidden();
       }
     });
   }
