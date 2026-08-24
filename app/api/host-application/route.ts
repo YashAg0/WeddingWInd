@@ -65,17 +65,17 @@ export async function POST(req: NextRequest) {
       isDraft,
     } = body;
 
-    const resolvedEmail = email || user.email;
-    const resolvedHostName = hostName || user.name || "Host";
-    const resolvedCoupleNames = coupleNames || (brideName && groomName ? `${brideName} & ${groomName}` : "Our Wedding");
-    const resolvedCity = city || "City";
+    const resolvedEmail = (email || user.email).trim().toLowerCase();
+    const resolvedHostName = hostName?.trim() || user.name || "Host";
+    const resolvedCoupleNames = coupleNames?.trim() || (brideName && groomName ? `${brideName.trim()} & ${groomName.trim()}` : "Our Wedding");
+    const resolvedCity = city?.trim() || "City";
     const resolvedDate = weddingDate || new Date().toISOString().split("T")[0];
 
-    if (!resolvedHostName || !resolvedEmail || !resolvedCoupleNames || !resolvedCity || !resolvedDate) {
+    if (!resolvedHostName || !resolvedCoupleNames || !resolvedCity) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    if (resolvedEmail.trim().toLowerCase() !== user.email.trim().toLowerCase()) {
+    if (email && email.trim().toLowerCase() !== user.email.trim().toLowerCase()) {
       return NextResponse.json({ error: "Use the email on your signed-in account." }, { status: 400 });
     }
 

@@ -474,16 +474,19 @@ function ListWeddingContent() {
 
   const buildLocalDraft = useCallback((): HostDraftPayload => {
     const finalTraditionValue = tradition === "Other" ? (customTradition || "Other") : tradition;
+    const resolvedCoupleNames =
+      coupleNames?.trim() ||
+      (brideName && groomName ? `${brideName.trim()} & ${groomName.trim()} Celebration` : brideName?.trim() || hostName?.trim() || "Our Celebration");
 
     return {
-      hostName,
-      email: email || user?.email,
+      hostName: hostName?.trim() || authenticatedName || "Host",
+      email: email?.trim() || authenticatedEmail,
       phone,
       preferredContactMethod,
       brideName,
       groomName,
-      coupleNames,
-      city,
+      coupleNames: resolvedCoupleNames,
+      city: city?.trim() || "",
       state: stateName,
       venueName,
       weddingDate,
@@ -500,8 +503,9 @@ function ListWeddingContent() {
     };
   }, [
     hostName,
+    authenticatedName,
     email,
-    user?.email,
+    authenticatedEmail,
     phone,
     preferredContactMethod,
     brideName,
@@ -601,7 +605,7 @@ function ListWeddingContent() {
           ...draft,
           hostName: draft.hostName || authenticatedName,
           email: authenticatedEmail,
-          days: draft.days.slice(0, draft.durationDays),
+          days: (draft.days || []).slice(0, draft.durationDays || 3),
         });
 
         if (res.success) {
@@ -623,7 +627,7 @@ function ListWeddingContent() {
 
     if (isResuming || hasAutoSubmitIntent()) {
       const draft = getLocalWeddingDraft();
-      if (draft && draft.coupleNames && draft.city && draft.weddingDate) {
+      if (draft && (draft.coupleNames || draft.brideName || draft.hostName) && (draft.city || draft.venueName)) {
         setHasAutoSubmitted(true);
         populateFieldsFromDraft(draft);
 
@@ -638,27 +642,33 @@ function ListWeddingContent() {
               console.warn("Role update during resume:", roleErr);
             }
 
+            const resolvedCoupleNames =
+              draft.coupleNames ||
+              (draft.brideName && draft.groomName ? `${draft.brideName} & ${draft.groomName} Celebration` : draft.brideName || draft.hostName || "Our Celebration");
+            const resolvedHostName = draft.hostName || authenticatedName || "Host";
+            const resolvedDate = draft.weddingDate || new Date().toISOString().split("T")[0];
+
             const res = await submitHostApplicationAction({
               applicationId: applicationId || undefined,
-              hostName: draft.hostName || authenticatedName,
+              hostName: resolvedHostName,
               email: authenticatedEmail,
               phone: draft.phone,
-              preferredContactMethod: draft.preferredContactMethod,
+              preferredContactMethod: draft.preferredContactMethod || "WHATSAPP",
               brideName: draft.brideName,
               groomName: draft.groomName,
-              coupleNames: draft.coupleNames,
-              city: draft.city,
+              coupleNames: resolvedCoupleNames,
+              city: draft.city || "India",
               state: draft.state,
               venueName: draft.venueName,
-              weddingDate: draft.weddingDate,
-              durationDays: draft.durationDays,
+              weddingDate: resolvedDate,
+              durationDays: draft.durationDays || 3,
               tradition: draft.tradition || "Traditional / Cultural",
-              weddingScale: draft.weddingScale,
-              expectedTotalGuests: draft.expectedTotalGuests,
-              expectedInternationalGuests: draft.expectedInternationalGuests,
-              requestedTier: draft.requestedTier,
-              story: draft.story,
-              days: draft.days.slice(0, draft.durationDays),
+              weddingScale: draft.weddingScale || "MEDIUM",
+              expectedTotalGuests: draft.expectedTotalGuests || 200,
+              expectedInternationalGuests: draft.expectedInternationalGuests || 20,
+              requestedTier: draft.requestedTier || "SIGNATURE_ROYAL",
+              story: draft.story || "",
+              days: (draft.days || []).slice(0, draft.durationDays || 3),
             });
 
             if (res.success) {
@@ -770,6 +780,35 @@ function ListWeddingContent() {
             </button>
           </div>
         </div>
+
+        {/* Celebration Application Submitted Confirmation Banner */}
+        {(appStatus === "SUBMITTED" || verificationStatus === "PENDING" || appStatus === "UNDER_REVIEW") && (
+          <div className="bg-emerald-50/90 border border-emerald-300/80 rounded-3xl p-6 sm:p-8 space-y-4 shadow-xs animate-fade-in">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center shrink-0">
+                <CheckCircle2 size={26} className="text-emerald-700" />
+              </div>
+              <div className="space-y-1.5 flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-[0.625rem] font-bold uppercase tracking-widest bg-emerald-200 text-emerald-900 px-3 py-1 rounded-full border border-emerald-300">
+                    Application Submitted &amp; Under Verification
+                  </span>
+                  {applicationId && (
+                    <span className="text-[0.6875rem] font-mono text-emerald-800 font-semibold">
+                      App ID: #{applicationId.slice(-6).toUpperCase()}
+                    </span>
+                  )}
+                </div>
+                <h3 className="font-display font-bold text-xl text-charcoal-900">
+                  Your Celebration is Being Verified
+                </h3>
+                <p className="text-xs text-charcoal-600 leading-relaxed">
+                  Our team is reviewing your celebration details. Once verified, your celebration will be listed on WeddingWithIndia and open for bookings from verified international guests.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Action Required Banner (Post-Submission Document Requests from Admin) */}
         {(appStatus === "ACTION_REQUIRED" || verificationStatus === "NEED_MORE_DOCUMENTS" || documentRequests.length > 0) && (

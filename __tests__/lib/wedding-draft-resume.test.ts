@@ -278,5 +278,195 @@ describe("Wedding Draft Storage & Zero-Loss Sign-In Resumption Suite", () => {
         })
       );
     });
+
+    it("rejects unauthenticated submission attempts at the server boundary", async () => {
+      requireAuth.mockRejectedValueOnce(new Error("UNAUTHORIZED: Authentication required"));
+
+      await expect(
+        submitHostApplicationAction({
+          hostName: "Aarav Sharma",
+          coupleNames: "Ananya & Aarav Celebration",
+          city: "Udaipur",
+          weddingDate: "2026-11-20",
+          durationDays: 3,
+        })
+      ).rejects.toThrow("UNAUTHORIZED");
+    });
+
+    it("derives user identity authoritatively from authenticated session", async () => {
+      mockPrisma.coupleProfile.findUnique.mockResolvedValue({ id: "couple-prof-1", userId: mockUser.id });
+      mockPrisma.hostApplication.findFirst.mockResolvedValue({ id: "app-draft-1" });
+      mockPrisma.hostApplication.update.mockResolvedValue({
+        id: "app-draft-1",
+        status: "SUBMITTED",
+        submittedAt: new Date(),
+      });
+      mockPrisma.verification.upsert.mockResolvedValue({ id: "v1" });
+
+      await submitHostApplicationAction({
+        hostName: "Aarav Sharma",
+        email: "spoofed.client.email@hack.com", // Client attempts to provide different email
+        coupleNames: "Ananya & Aarav Celebration",
+        city: "Udaipur",
+        weddingDate: "2026-11-20",
+        durationDays: 3,
+      });
+
+      // Verification and application must strictly use authenticated user's ID and email
+      expect(mockPrisma.verification.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { userId: mockUser.id },
+        })
+      );
+      expect(mockPrisma.hostApplication.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            userId: mockUser.id,
+            email: mockUser.email,
+          }),
+        })
+      );
+    });
+
+    it("guarantees idempotency on duplicate submission clicks or multiple resumes", async () => {
+      const existingApp = { id: "existing-app-1", userId: mockUser.id, status: "DRAFT" };
+      mockPrisma.coupleProfile.findUnique.mockResolvedValue({ id: "couple-prof-1", userId: mockUser.id });
+      mockPrisma.hostApplication.findFirst.mockResolvedValue(existingApp);
+      mockPrisma.hostApplication.update.mockResolvedValue({
+        ...existingApp,
+        status: "SUBMITTED",
+      });
+      mockPrisma.verification.upsert.mockResolvedValue({ id: "v1" });
+
+      const payload = {
+        applicationId: "existing-app-1",
+        hostName: "Aarav Sharma",
+        coupleNames: "Ananya & Aarav Celebration",
+        city: "Udaipur",
+        weddingDate: "2026-11-20",
+        durationDays: 3,
+      };
+
+      // Submit first time
+      const res1 = await submitHostApplicationAction(payload);
+      expect(res1.success).toBe(true);
+
+      // Submit second time (duplicate click)
+      const res2 = await submitHostApplicationAction(payload);
+      expect(res2.success).toBe(true);
+
+      // Database should update the existing application in place, never create a duplicate row
+      expect(mockPrisma.hostApplication.create).not.toHaveBeenCalled();
+      expect(mockPrisma.hostApplication.update).toHaveBeenCalledTimes(4); // 2 drafts + 2 submits on existingApp.id
+    });
+
+    it("ensures all comprehensive form fields survive draft persistence and database commit", async () => {
+      mockPrisma.coupleProfile.findUnique.mockResolvedValue({ id: "couple-prof-1", userId: mockUser.id });
+      mockPrisma.hostApplication.findFirst.mockResolvedValue(null);
+      mockPrisma.hostApplication.create.mockResolvedValue({
+        id: "full-app-1",
+        userId: mockUser.id,
+        lastSavedAt: new Date(),
+      });
+
+      const fullDraft: HostDraftPayload = {
+        hostName: "Priya Sharma",
+        email: "priya@example.com",
+        phone: "+91 9876543210",
+        preferredContactMethod: "PHONE",
+        brideName: "Priya",
+        groomName: "Rahul",
+        coupleNames: "Priya & Rahul Royal Wedding",
+        city: "Jaipur",
+        state: "Rajasthan",
+        venueName: "Rambagh Palace",
+        weddingDate: "2026-12-25",
+        durationDays: 4,
+        tradition: "Rajasthani Traditional",
+        customTradition: "Royal Marwari",
+        weddingScale: "GRAND",
+        expectedTotalGuests: 800,
+        expectedInternationalGuests: 50,
+        requestedTier: "SIGNATURE_ROYAL",
+        story: "A royal multi-day celebration welcoming travelers into our heritage.",
+        days: [
+          {
+            dayNumber: 1,
+            date: "2026-12-25",
+            title: "Royal Welcome & Mehndi",
+            description: "Traditional folk music and henna ceremonies.",
+            expectedInternationalGuests: 50,
+            guestExperience: "Floral greeting and turbans",
+            foodExperience: "Authentic Rajasthani thali",
+            dressCode: "Festive Indian traditional",
+            specialActivities: "Puppet show and folk dancers",
+            events: [
+              {
+                name: "Mehndi Ceremony",
+                startTime: "16:00",
+                endTime: "20:00",
+                location: "Palace Gardens",
+                description: "Henna artist stations and welcome snacks",
+              },
+            ],
+          },
+          {
+            dayNumber: 2,
+            date: "2026-12-26",
+            title: "Sangeet Night",
+            description: "High energy musical and dance night.",
+            expectedInternationalGuests: 50,
+            guestExperience: "Interactive dance performances",
+            foodExperience: "Live counter gourmet feast",
+            dressCode: "Indo-Western or Glitzy Indian",
+            specialActivities: "Choreographed family performances",
+            events: [
+              {
+                name: "Grand Sangeet",
+                startTime: "19:00",
+                endTime: "00:00",
+                location: "Grand Ballroom",
+                description: "Performances, DJ, and dinner",
+              },
+            ],
+          },
+        ],
+        savedAt: Date.now(),
+      };
+
+      // 1. Client persistence test
+      saveLocalWeddingDraft(fullDraft);
+      const restored = getLocalWeddingDraft();
+      expect(restored).toEqual(fullDraft);
+
+      // 2. Server Action execution test
+      const res = await saveHostApplicationDraftAction(restored!);
+      expect(res.success).toBe(true);
+
+      // 3. Verify Prisma was called with complete structure
+      expect(mockPrisma.hostApplication.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            userId: mockUser.id,
+            hostName: "Priya Sharma",
+            coupleNames: "Priya & Rahul Royal Wedding",
+            city: "Jaipur",
+            state: "Rajasthan",
+            venueName: "Rambagh Palace",
+            durationDays: 4,
+            tradition: "Rajasthani Traditional",
+            weddingScale: "GRAND",
+            expectedTotalGuests: 800,
+            expectedInternationalGuests: 50,
+            requestedTier: "SIGNATURE_ROYAL",
+            story: "A royal multi-day celebration welcoming travelers into our heritage.",
+          }),
+        })
+      );
+
+      // Verify Day-by-day and events were upserted
+      expect(mockPrisma.hostApplicationDay.upsert).toHaveBeenCalledTimes(2);
+      expect(mockPrisma.hostApplicationEvent.create).toHaveBeenCalledTimes(2);
+    });
   });
 });

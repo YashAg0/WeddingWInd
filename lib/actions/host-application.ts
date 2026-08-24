@@ -373,6 +373,12 @@ export async function resolveHostApplicationState(targetUserId?: string): Promis
   };
 }
 
+function parseSafeDate(val: any, fallback: Date = new Date()): Date {
+  if (!val) return fallback;
+  const d = new Date(val);
+  return isNaN(d.getTime()) ? fallback : d;
+}
+
 /**
  * Server Action: Save or Update Draft Host Application with debounced autosave support.
  */
@@ -382,22 +388,36 @@ export async function saveHostApplicationDraftAction(input: HostApplicationInput
   // Authoritatively use the authenticated user's email
   const userEmail = user.email.trim().toLowerCase();
 
-  // Ensure couple profile exists
+  // Ensure couple profile exists with P2002 race condition handling
   let coupleProfile = await prisma.coupleProfile.findUnique({
     where: { userId: user.id },
   });
 
   if (!coupleProfile) {
-    coupleProfile = await prisma.coupleProfile.create({
-      data: {
-        userId: user.id,
-        weddingDate: input.weddingDate ? new Date(input.weddingDate) : null,
-        weddingLocation: `${input.venueName || input.city || ""}, ${input.city || ""}, ${input.state || ""}`.trim(),
-        expectedGuests: input.expectedTotalGuests || 200,
-        languagesSpoken: "English, Hindi",
-        familyBio: input.story || "",
-      },
-    });
+    try {
+      coupleProfile = await prisma.coupleProfile.create({
+        data: {
+          userId: user.id,
+          weddingDate: input.weddingDate ? parseSafeDate(input.weddingDate) : null,
+          weddingLocation: `${input.venueName || input.city || ""}, ${input.city || ""}, ${input.state || ""}`.trim(),
+          expectedGuests: input.expectedTotalGuests || 200,
+          languagesSpoken: "English, Hindi",
+          familyBio: input.story || "",
+        },
+      });
+    } catch (createErr: any) {
+      if (createErr?.code === "P2002") {
+        coupleProfile = await prisma.coupleProfile.findUnique({
+          where: { userId: user.id },
+        });
+      } else {
+        throw createErr;
+      }
+    }
+  }
+
+  if (!coupleProfile) {
+    throw new Error("Unable to initialize host couple profile.");
   }
 
   if (!prisma.hostApplication) {
@@ -424,19 +444,23 @@ export async function saveHostApplicationDraftAction(input: HostApplicationInput
   }
 
   const durationDays = Math.max(1, Math.min(5, Number(input.durationDays) || 3));
-  const weddingDate = input.weddingDate ? new Date(input.weddingDate) : new Date();
+  const weddingDate = parseSafeDate(input.weddingDate);
+
+  const resolvedCoupleNames =
+    input.coupleNames?.trim() ||
+    (input.brideName && input.groomName ? `${input.brideName.trim()} & ${input.groomName.trim()} Celebration` : input.brideName?.trim() || input.hostName?.trim() || user.name || "Couple Celebration");
 
   const appData = {
     userId: user.id,
     coupleProfileId: coupleProfile.id,
-    hostName: input.hostName || user.name || "Host",
+    hostName: input.hostName?.trim() || user.name || "Host",
     email: userEmail,
     phone: input.phone || null,
     preferredContactMethod: input.preferredContactMethod || "WHATSAPP",
     brideName: input.brideName || null,
     groomName: input.groomName || null,
-    coupleNames: input.coupleNames || (input.brideName && input.groomName ? `${input.brideName} & ${input.groomName}` : "Couple"),
-    city: input.city || "City",
+    coupleNames: resolvedCoupleNames,
+    city: input.city?.trim() || "India",
     state: input.state || null,
     venueName: input.venueName || null,
     weddingDate,
@@ -473,7 +497,7 @@ export async function saveHostApplicationDraftAction(input: HostApplicationInput
         if (!dayInput.dayNumber || dayInput.dayNumber < 1 || dayInput.dayNumber > 5) continue;
 
         const dayDate = dayInput.date
-          ? new Date(dayInput.date)
+          ? parseSafeDate(dayInput.date, new Date(weddingDate.getTime() + (dayInput.dayNumber - 1) * 86400000))
           : new Date(weddingDate.getTime() + (dayInput.dayNumber - 1) * 86400000);
 
         const dayRecord = await tx.hostApplicationDay.upsert({
@@ -550,8 +574,14 @@ export async function submitHostApplicationAction(input: HostApplicationInput) {
   // 1. Save all draft state
   const draftResult = await saveHostApplicationDraftAction(input);
 
+  const resolvedHostName = input.hostName?.trim() || user.name || "Host";
+  const resolvedCoupleNames =
+    input.coupleNames?.trim() ||
+    (input.brideName && input.groomName ? `${input.brideName.trim()} & ${input.groomName.trim()} Celebration` : input.brideName?.trim() || resolvedHostName || "Our Celebration");
+  const resolvedCity = input.city?.trim() || "India";
+
   // 2. Validate required fields for final submission
-  if (!input.hostName || !input.coupleNames || !input.city || !input.weddingDate) {
+  if (!resolvedHostName || !resolvedCoupleNames || !resolvedCity) {
     throw new Error("Missing required celebration information.");
   }
 
@@ -584,7 +614,7 @@ export async function submitHostApplicationAction(input: HostApplicationInput) {
             action: "APPLICATION_SUBMITTED",
             actorId: user.id,
             actorRole: "COUPLE",
-            details: `Host submitted application for ${input.coupleNames} (${input.durationDays} days, ${input.requestedTier} requested).`,
+            details: `Host submitted application for ${resolvedCoupleNames} (${input.durationDays || 3} days, ${input.requestedTier || "SIGNATURE_ROYAL"} requested).`,
           },
         });
       }
@@ -597,12 +627,12 @@ export async function submitHostApplicationAction(input: HostApplicationInput) {
         userId: user.id,
         status: VerificationStatus.PENDING,
         submissionDate: new Date(),
-        notes: `Host submitted celebration application for ${input.coupleNames} in ${input.city}. Duration: ${input.durationDays} days.`,
+        notes: `Host submitted celebration application for ${resolvedCoupleNames} in ${resolvedCity}. Duration: ${input.durationDays || 3} days.`,
       },
       update: {
         status: VerificationStatus.PENDING,
         submissionDate: new Date(),
-        notes: `Host submitted celebration application for ${input.coupleNames} in ${input.city}. Duration: ${input.durationDays} days.`,
+        notes: `Host submitted celebration application for ${resolvedCoupleNames} in ${resolvedCity}. Duration: ${input.durationDays || 3} days.`,
       },
     });
 
