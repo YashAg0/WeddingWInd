@@ -461,6 +461,150 @@ function ListWeddingContent() {
     user,
   ]);
 
+  const buildLocalDraft = useCallback((): HostDraftPayload => {
+    const finalTraditionValue = tradition === "Other" ? (customTradition || "Other") : tradition;
+
+    return {
+      hostName,
+      email: email || user?.email,
+      phone,
+      preferredContactMethod,
+      brideName,
+      groomName,
+      coupleNames,
+      city,
+      state: stateName,
+      venueName,
+      weddingDate,
+      durationDays,
+      tradition: finalTraditionValue || undefined,
+      customTradition,
+      weddingScale,
+      expectedTotalGuests,
+      expectedInternationalGuests,
+      requestedTier,
+      story,
+      days: allDays,
+      savedAt: Date.now(),
+    };
+  }, [
+    hostName,
+    email,
+    user?.email,
+    phone,
+    preferredContactMethod,
+    brideName,
+    groomName,
+    coupleNames,
+    city,
+    stateName,
+    venueName,
+    weddingDate,
+    durationDays,
+    tradition,
+    customTradition,
+    weddingScale,
+    expectedTotalGuests,
+    expectedInternationalGuests,
+    requestedTier,
+    story,
+    allDays,
+  ]);
+
+  const handleDurationChange = useCallback((nextDuration: WeddingDurationDays) => {
+    setDurationDays(nextDuration);
+    setExpandedDay((currentDay) => currentDay > nextDuration ? 1 : currentDay);
+  }, []);
+
+  const handleGuestCountChange = useCallback((nextCount: number) => {
+    setExpectedInternationalGuests(Math.max(1, Math.min(100, nextCount || 1)));
+  }, []);
+
+  const handleUpdateDay = useCallback((dayIndex: number, field: keyof HostDayInput, value: string | number) => {
+    setAllDays((days) => days.map((day, index) => index === dayIndex ? { ...day, [field]: value } : day));
+  }, []);
+
+  const handleAddEvent = useCallback((dayIndex: number) => {
+    setAllDays((days) => days.map((day, index) => {
+      if (index !== dayIndex) return day;
+      return {
+        ...day,
+        events: [...(day.events || []), {
+          name: "",
+          startTime: "17:00",
+          endTime: "22:00",
+          location: "",
+          description: "",
+        }],
+      };
+    }));
+  }, []);
+
+  const handleUpdateEvent = useCallback((dayIndex: number, eventIndex: number, field: keyof NonNullable<HostDayInput["events"]>[number], value: string) => {
+    setAllDays((days) => days.map((day, index) => {
+      if (index !== dayIndex) return day;
+      return {
+        ...day,
+        events: (day.events || []).map((event, currentIndex) => currentIndex === eventIndex ? { ...event, [field]: value } : event),
+      };
+    }));
+  }, []);
+
+  const handleRemoveEvent = useCallback((dayIndex: number, eventIndex: number) => {
+    setAllDays((days) => days.map((day, index) => {
+      if (index !== dayIndex) return day;
+      return { ...day, events: (day.events || []).filter((_, currentIndex) => currentIndex !== eventIndex) };
+    }));
+  }, []);
+
+  const handleManualSave = useCallback(async () => {
+    saveLocalWeddingDraft(buildLocalDraft());
+    setLastSavedTime(new Date());
+
+    if (!user || !coupleNames || !city) {
+      setAutosaveState("saved");
+      toast.success("Your celebration draft is saved on this device.");
+      return;
+    }
+
+    await triggerAutosave();
+    toast.success("Your celebration draft has been saved.");
+  }, [buildLocalDraft, user, coupleNames, city, triggerAutosave]);
+
+  const handleSubmit = useCallback((event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const draft = buildLocalDraft();
+    saveLocalWeddingDraft(draft);
+
+    if (!user) {
+      setAutoSubmitIntent(true);
+      toast.info("Sign in to submit your celebration. Your details are saved and will be restored automatically.");
+      router.push(`/login?redirect_url=${encodeURIComponent("/list-wedding?resume=true")}`);
+      return;
+    }
+
+    startTransition(async () => {
+      try {
+        const res = await submitHostApplicationAction({
+          applicationId: applicationId || undefined,
+          ...draft,
+          email: user.email,
+          days: draft.days.slice(0, draft.durationDays),
+        });
+
+        if (res.success) {
+          clearLocalWeddingDraft();
+          setAppStatus("SUBMITTED");
+          setVerificationStatus("PENDING");
+          toast.success("Your celebration has been submitted for verification.");
+          router.replace("/dashboard");
+        }
+      } catch (err: any) {
+        toast.error(err.message || "Submission failed. Your draft is still saved.");
+      }
+    });
+  }, [buildLocalDraft, user, router, applicationId]);
+
   // AUTO-RESUME & SUBMIT HOOK: Triggers when returning from Clerk login/signup
   useEffect(() => {
     if (!user || hasAutoSubmitted) return;
