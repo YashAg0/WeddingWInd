@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useTransition, useMemo, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useUser } from "@clerk/nextjs";
 import { toast } from "sonner";
 import {
   ShieldCheck,
@@ -96,7 +97,11 @@ function ListWeddingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const isResuming = searchParams?.get("resume") === "true";
-  const { user } = useAuth();
+  const { user, refreshData } = useAuth();
+  const { user: clerkUser, isLoaded: clerkLoaded, isSignedIn } = useUser();
+  const isAuthenticated = Boolean(user || (clerkLoaded && isSignedIn));
+  const authenticatedEmail = user?.email || clerkUser?.primaryEmailAddress?.emailAddress || "";
+  const authenticatedName = user?.name || clerkUser?.fullName || clerkUser?.firstName || "Host";
   const [isPending, startTransition] = useTransition();
 
   // Active Application Server State
@@ -331,6 +336,12 @@ function ListWeddingContent() {
       fetchActiveApplication();
     }
   }, [user, fetchActiveApplication]);
+
+  useEffect(() => {
+    if (clerkLoaded && isSignedIn && !user) {
+      refreshData();
+    }
+  }, [clerkLoaded, isSignedIn, user, refreshData]);
 
   // Debounced Autosave Trigger (Server sync if logged in)
   const triggerAutosave = useCallback(async () => {
@@ -576,7 +587,7 @@ function ListWeddingContent() {
     const draft = buildLocalDraft();
     saveLocalWeddingDraft(draft);
 
-    if (!user) {
+    if (!isAuthenticated) {
       setAutoSubmitIntent(true);
       toast.info("Sign in to submit your celebration. Your details are saved and will be restored automatically.");
       router.push(`/login?redirect_url=${encodeURIComponent("/list-wedding?resume=true")}`);
@@ -588,7 +599,8 @@ function ListWeddingContent() {
         const res = await submitHostApplicationAction({
           applicationId: applicationId || undefined,
           ...draft,
-          email: user.email,
+          hostName: draft.hostName || authenticatedName,
+          email: authenticatedEmail,
           days: draft.days.slice(0, draft.durationDays),
         });
 
@@ -603,11 +615,11 @@ function ListWeddingContent() {
         toast.error(err.message || "Submission failed. Your draft is still saved.");
       }
     });
-  }, [buildLocalDraft, user, router, applicationId]);
+  }, [buildLocalDraft, isAuthenticated, authenticatedEmail, authenticatedName, router, applicationId]);
 
   // AUTO-RESUME & SUBMIT HOOK: Triggers when returning from Clerk login/signup
   useEffect(() => {
-    if (!user || hasAutoSubmitted) return;
+    if (!isAuthenticated || hasAutoSubmitted) return;
 
     if (isResuming || hasAutoSubmitIntent()) {
       const draft = getLocalWeddingDraft();
@@ -628,8 +640,8 @@ function ListWeddingContent() {
 
             const res = await submitHostApplicationAction({
               applicationId: applicationId || undefined,
-              hostName: draft.hostName || user.name || "Host",
-              email: user.email,
+              hostName: draft.hostName || authenticatedName,
+              email: authenticatedEmail,
               phone: draft.phone,
               preferredContactMethod: draft.preferredContactMethod,
               brideName: draft.brideName,
@@ -666,7 +678,7 @@ function ListWeddingContent() {
         });
       }
     }
-  }, [user, isResuming, hasAutoSubmitted, applicationId, router, populateFieldsFromDraft]);
+  }, [isAuthenticated, authenticatedEmail, authenticatedName, isResuming, hasAutoSubmitted, applicationId, router, populateFieldsFromDraft]);
 
 
   // Document Upload Handler for Post-Submission Action Required slots
