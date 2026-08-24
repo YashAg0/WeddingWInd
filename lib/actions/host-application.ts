@@ -430,7 +430,7 @@ export async function saveHostApplicationDraftAction(input: HostApplicationInput
     userId: user.id,
     coupleProfileId: coupleProfile.id,
     hostName: input.hostName || user.name || "Host",
-    email: user.email,
+    email: userEmail,
     phone: input.phone || null,
     preferredContactMethod: input.preferredContactMethod || "WHATSAPP",
     brideName: input.brideName || null,

@@ -103,7 +103,7 @@ export function hasAutoSubmitIntent(): boolean {
   if (typeof localStorage === "undefined") return false;
   try {
     return localStorage.getItem(INTENT_STORAGE_KEY) === "true";
-  } catch (e) {
+  } catch {
     return false;
   }
 }
