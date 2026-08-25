@@ -42,7 +42,21 @@ export interface HostDraftPayload {
 export function saveLocalWeddingDraft(data: HostDraftPayload): void {
   if (typeof localStorage === "undefined") return;
   try {
-    localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(data));
+    const raw = localStorage.getItem(DRAFT_STORAGE_KEY);
+    const merged = { ...data };
+    if (raw) {
+      try {
+        const existing = JSON.parse(raw);
+        if (existing && typeof existing === "object") {
+          for (const key of Object.keys(existing) as Array<keyof HostDraftPayload>) {
+            if (!merged[key] && existing[key]) {
+              (merged as any)[key] = existing[key];
+            }
+          }
+        }
+      } catch {}
+    }
+    localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(merged));
   } catch (e) {
     console.warn("[wedding-draft-storage] Unable to save draft to localStorage:", e);
   }

@@ -47,8 +47,6 @@ import {
   hasAutoSubmitIntent,
   HostDraftPayload,
 } from "@/lib/storage/wedding-draft";
-import { updateUserRoleAction } from "@/lib/actions";
-import { UserRole } from "@prisma/client";
 
 const TRADITION_OPTIONS = [
   "Hindu",
@@ -97,7 +95,7 @@ function ListWeddingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const isResuming = searchParams?.get("resume") === "true";
-  const { user, refreshData } = useAuth();
+  const { user, loading: authLoading, refreshData } = useAuth();
   const { user: clerkUser, isLoaded: clerkLoaded, isSignedIn } = useUser();
   const isAuthenticated = Boolean(user || (clerkLoaded && isSignedIn));
   const authenticatedEmail = user?.email || clerkUser?.primaryEmailAddress?.emailAddress || "";
@@ -134,8 +132,12 @@ function ListWeddingContent() {
   const [city, setCity] = useState("");
   const [stateName, setStateName] = useState("");
   const [venueName, setVenueName] = useState("");
-  const [weddingDate, setWeddingDate] = useState("");
-  const [tradition, setTradition] = useState("");
+  const [weddingDate, setWeddingDate] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 90);
+    return d.toISOString().split("T")[0];
+  });
+  const [tradition, setTradition] = useState("Traditional / Cultural");
   const [customTradition, setCustomTradition] = useState("");
   const [weddingScale, setWeddingScale] = useState<"INTIMATE" | "SMALL" | "MEDIUM" | "LARGE" | "GRAND">("MEDIUM");
   const [expectedTotalGuests, setExpectedTotalGuests] = useState<number>(250);
@@ -321,31 +323,25 @@ function ListWeddingContent() {
           setDocumentRequests(app.documentRequests);
         }
       } else {
-        if (!hostName && user.name) setHostName(user.name);
-        if (!email && user.email) setEmail(user.email);
+        setHostName((prev) => prev || user.name || "");
+        setEmail((prev) => prev || user.email || "");
       }
     } catch (err: any) {
       console.warn("Failed to load active host application:", err);
     } finally {
       setIsLoadingActiveApp(false);
     }
-  }, [user, hostName, email]);
+  }, [user?.id, user?.name, user?.email]);
 
   useEffect(() => {
     if (user) {
       fetchActiveApplication();
     }
-  }, [user, fetchActiveApplication]);
-
-  useEffect(() => {
-    if (clerkLoaded && isSignedIn && !user) {
-      refreshData();
-    }
-  }, [clerkLoaded, isSignedIn, user, refreshData]);
+  }, [user?.id, fetchActiveApplication]);
 
   // Debounced Autosave Trigger (Server sync if logged in)
   const triggerAutosave = useCallback(async () => {
-    if (!user || !city || !coupleNames) return;
+    if (!user || !city || !coupleNames || hasAutoSubmitted || appStatus === "SUBMITTED") return;
 
     setAutosaveState("saving");
     try {
@@ -409,87 +405,57 @@ function ListWeddingContent() {
     allDays,
   ]);
 
-  // Continuous local auto-save & debounced server sync
-  useEffect(() => {
-    const finalTraditionValue = tradition === "Other" ? (customTradition || "Other") : tradition;
-    const timer = setTimeout(() => {
-      if (coupleNames || city || hostName) {
-        saveLocalWeddingDraft({
-          hostName,
-          email: email || user?.email,
-          phone,
-          preferredContactMethod,
-          brideName,
-          groomName,
-          coupleNames,
-          city,
-          state: stateName,
-          venueName,
-          weddingDate,
-          durationDays,
-          tradition: finalTraditionValue || undefined,
-          customTradition,
-          weddingScale,
-          expectedTotalGuests,
-          expectedInternationalGuests,
-          requestedTier,
-          story,
-          days: allDays,
-          savedAt: Date.now(),
-        });
-
-        if (user && coupleNames && city) {
-          triggerAutosave();
-        } else {
-          setAutosaveState("saved");
-          setLastSavedTime(new Date());
+  const buildLocalDraft = useCallback((formEl?: HTMLFormElement | null): HostDraftPayload => {
+    const formValues: Record<string, string> = {};
+    if (typeof document !== "undefined") {
+      try {
+        const root = formEl || document.querySelector("form");
+        if (root && root instanceof HTMLFormElement) {
+          const formData = new FormData(root);
+          formData.forEach((value, key) => {
+            if (typeof value === "string" && value.trim()) {
+              formValues[key] = value.trim();
+            }
+          });
         }
-      }
-    }, 1500);
-    return () => clearTimeout(timer);
-  }, [
-    hostName,
-    email,
-    phone,
-    preferredContactMethod,
-    brideName,
-    groomName,
-    coupleNames,
-    city,
-    stateName,
-    venueName,
-    weddingDate,
-    durationDays,
-    tradition,
-    customTradition,
-    weddingScale,
-    expectedTotalGuests,
-    expectedInternationalGuests,
-    requestedTier,
-    story,
-    allDays,
-    triggerAutosave,
-    user,
-  ]);
+        const allInputs = (root || document).querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>("input, textarea, select");
+        allInputs.forEach((el) => {
+          const name = el.name || el.getAttribute("name") || el.id;
+          if (name && el.value !== undefined && el.value !== null) {
+            const val = String(el.value).trim();
+            if (val && !formValues[name]) {
+              formValues[name] = val;
+            }
+          }
+        });
+      } catch {}
+    }
 
-  const buildLocalDraft = useCallback((): HostDraftPayload => {
+    const finalHostName = formValues.hostName || hostName?.trim() || (authenticatedName && authenticatedName !== "Host" ? authenticatedName : "");
+    const finalEmail = formValues.email || email?.trim() || authenticatedEmail;
+    const finalPhone = formValues.phone || phone?.trim() || "";
+    const finalBrideName = formValues.brideName || brideName?.trim() || "";
+    const finalGroomName = formValues.groomName || groomName?.trim() || "";
+    const finalCoupleNames = formValues.coupleNames || coupleNames?.trim() || (finalBrideName && finalGroomName ? `${finalBrideName} & ${finalGroomName} Celebration` : finalBrideName || "");
+    const finalCity = formValues.city || city?.trim() || "";
+    const finalState = formValues.state || stateName?.trim() || "";
+    const finalVenue = formValues.venueName || venueName?.trim() || "";
+    const finalDate = formValues.weddingDate || weddingDate;
+    const finalStory = formValues.story || story?.trim() || "";
     const finalTraditionValue = tradition === "Other" ? (customTradition || "Other") : tradition;
-    const resolvedCoupleNames =
-      coupleNames?.trim() ||
-      (brideName && groomName ? `${brideName.trim()} & ${groomName.trim()} Celebration` : brideName?.trim() || hostName?.trim() || "Our Celebration");
 
     return {
-      hostName: hostName?.trim() || authenticatedName || "Host",
-      email: email?.trim() || authenticatedEmail,
-      phone,
+      hostName: finalHostName,
+      email: finalEmail,
+      phone: finalPhone,
       preferredContactMethod,
-      brideName,
-      groomName,
-      coupleNames: resolvedCoupleNames,
-      city: city?.trim() || "",
-      state: stateName,
-      venueName,
-      weddingDate,
+      brideName: finalBrideName,
+      groomName: finalGroomName,
+      coupleNames: finalCoupleNames,
+      city: finalCity,
+      state: finalState,
+      venueName: finalVenue,
+      weddingDate: finalDate,
       durationDays,
       tradition: finalTraditionValue || undefined,
       customTradition,
@@ -497,7 +463,7 @@ function ListWeddingContent() {
       expectedTotalGuests,
       expectedInternationalGuests,
       requestedTier,
-      story,
+      story: finalStory,
       days: allDays,
       savedAt: Date.now(),
     };
@@ -524,6 +490,28 @@ function ListWeddingContent() {
     requestedTier,
     story,
     allDays,
+  ]);
+
+  // Continuous local auto-save & debounced server sync
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const liveDraft = buildLocalDraft();
+      if ((liveDraft.city || liveDraft.venueName) && (liveDraft.coupleNames || liveDraft.brideName || liveDraft.groomName || liveDraft.hostName)) {
+        saveLocalWeddingDraft(liveDraft);
+
+        if (user && liveDraft.coupleNames && liveDraft.city) {
+          triggerAutosave();
+        } else {
+          setAutosaveState("saved");
+          setLastSavedTime(new Date());
+        }
+      }
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [
+    buildLocalDraft,
+    triggerAutosave,
+    user,
   ]);
 
   const handleDurationChange = useCallback((nextDuration: WeddingDurationDays) => {
@@ -586,20 +574,28 @@ function ListWeddingContent() {
     toast.success("Your celebration draft has been saved.");
   }, [buildLocalDraft, user, coupleNames, city, triggerAutosave]);
 
-  const handleSubmit = useCallback((event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const draft = buildLocalDraft();
+  const handleSubmit = useCallback((event?: React.FormEvent<HTMLFormElement> | React.MouseEvent) => {
+    if (event) {
+      event.preventDefault();
+    }
+    const formEl = (event && "currentTarget" in event && event.currentTarget instanceof HTMLFormElement)
+      ? event.currentTarget
+      : (document.querySelector("form") as HTMLFormElement | null);
+
+    const draft = buildLocalDraft(formEl);
     saveLocalWeddingDraft(draft);
+    console.log("[list-wedding] handleSubmit called. isAuthenticated:", isAuthenticated, "user:", user?.id, "draft city:", draft.city);
 
     if (!isAuthenticated) {
       setAutoSubmitIntent(true);
       toast.info("Sign in to submit your celebration. Your details are saved and will be restored automatically.");
-      router.push(`/login?redirect_url=${encodeURIComponent("/list-wedding?resume=true")}`);
+      window.location.assign(`/login?redirect_url=${encodeURIComponent("/list-wedding?resume=true")}`);
       return;
     }
 
     startTransition(async () => {
       try {
+        console.log("[list-wedding] Submitting direct host application action with draft:", draft.city, draft.coupleNames);
         const res = await submitHostApplicationAction({
           applicationId: applicationId || undefined,
           ...draft,
@@ -607,26 +603,32 @@ function ListWeddingContent() {
           email: authenticatedEmail,
           days: (draft.days || []).slice(0, draft.durationDays || 3),
         });
+        console.log("[list-wedding] submitHostApplicationAction response:", res);
 
         if (res.success) {
           clearLocalWeddingDraft();
           setAppStatus("SUBMITTED");
           setVerificationStatus("PENDING");
           toast.success("Your celebration has been submitted for verification.");
-          router.replace("/dashboard");
+          router.push("/dashboard");
         }
       } catch (err: any) {
+        console.error("[list-wedding] submitHostApplicationAction error:", err);
         toast.error(err.message || "Submission failed. Your draft is still saved.");
       }
     });
-  }, [buildLocalDraft, isAuthenticated, authenticatedEmail, authenticatedName, router, applicationId]);
+  }, [buildLocalDraft, isAuthenticated, authenticatedEmail, authenticatedName, router, applicationId, user]);
 
   // AUTO-RESUME & SUBMIT HOOK: Triggers when returning from Clerk login/signup
   useEffect(() => {
+    const resumeParam = searchParams?.get("resume") === "true";
+    const autoIntent = hasAutoSubmitIntent();
+    console.log("[list-wedding] Auto-resume effect check. isAuthenticated:", isAuthenticated, "hasAutoSubmitted:", hasAutoSubmitted, "resumeParam:", resumeParam, "autoIntent:", autoIntent);
     if (!isAuthenticated || hasAutoSubmitted) return;
 
-    if (isResuming || hasAutoSubmitIntent()) {
+    if (resumeParam || autoIntent || isResuming) {
       const draft = getLocalWeddingDraft();
+      console.log("[list-wedding] Found draft for auto-resume:", draft?.city, draft?.coupleNames);
       if (draft && (draft.coupleNames || draft.brideName || draft.hostName) && (draft.city || draft.venueName)) {
         setHasAutoSubmitted(true);
         populateFieldsFromDraft(draft);
@@ -634,13 +636,6 @@ function ListWeddingContent() {
         startTransition(async () => {
           try {
             toast.loading("Submitting your saved celebration details...", { id: "resume-submit" });
-
-            // Upgrade role to COUPLE automatically
-            try {
-              await updateUserRoleAction(UserRole.COUPLE);
-            } catch (roleErr) {
-              console.warn("Role update during resume:", roleErr);
-            }
 
             const resolvedCoupleNames =
               draft.coupleNames ||
@@ -670,6 +665,7 @@ function ListWeddingContent() {
               story: draft.story || "",
               days: (draft.days || []).slice(0, draft.durationDays || 3),
             });
+            console.log("[list-wedding] auto-resume res:", res);
 
             if (res.success) {
               clearLocalWeddingDraft();
@@ -678,9 +674,10 @@ function ListWeddingContent() {
               toast.success("Welcome! Your wedding details have been successfully submitted for verification.", {
                 id: "resume-submit",
               });
-              router.replace("/dashboard");
+              router.push("/dashboard");
             }
           } catch (err: any) {
+            console.error("[list-wedding] auto-resume error:", err);
             toast.error(err.message || "Failed to auto-submit saved details. Please review and click Submit.", {
               id: "resume-submit",
             });
@@ -688,7 +685,7 @@ function ListWeddingContent() {
         });
       }
     }
-  }, [isAuthenticated, authenticatedEmail, authenticatedName, isResuming, hasAutoSubmitted, applicationId, router, populateFieldsFromDraft]);
+  }, [isAuthenticated, authenticatedEmail, authenticatedName, isResuming, hasAutoSubmitted, applicationId, router, populateFieldsFromDraft, searchParams]);
 
 
   // Document Upload Handler for Post-Submission Action Required slots
@@ -1207,7 +1204,7 @@ function ListWeddingContent() {
           MAIN APPLICATION FORM (Host Details, Wedding Overview, Day-by-Day, Story)
           ========================================================================
         */}
-        <form onSubmit={handleSubmit} className="space-y-8">
+        <form noValidate onSubmit={handleSubmit} className="space-y-8">
           {/* SECTION 1: Host & Contact Details */}
           <div className="bg-white border border-warm-200/80 rounded-3xl p-6 sm:p-10 shadow-sm space-y-6">
             <div className="border-b border-warm-100 pb-4">
@@ -1229,6 +1226,7 @@ function ListWeddingContent() {
                 </label>
                 <input
                   type="text"
+                  name="hostName"
                   required
                   value={hostName}
                   onChange={(e) => setHostName(e.target.value)}
@@ -1243,6 +1241,7 @@ function ListWeddingContent() {
                 </label>
                 <input
                   type="email"
+                  name="email"
                   required
                   value={email || user?.email || ""}
                   onChange={(e) => setEmail(e.target.value)}
@@ -1257,6 +1256,7 @@ function ListWeddingContent() {
                 </label>
                 <input
                   type="tel"
+                  name="phone"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="+91 98765 43210"
@@ -1293,6 +1293,7 @@ function ListWeddingContent() {
                 </label>
                 <input
                   type="text"
+                  name="brideName"
                   value={brideName}
                   onChange={(e) => setBrideName(e.target.value)}
                   placeholder="e.g. Ananya"
@@ -1306,6 +1307,7 @@ function ListWeddingContent() {
                 </label>
                 <input
                   type="text"
+                  name="groomName"
                   value={groomName}
                   onChange={(e) => setGroomName(e.target.value)}
                   placeholder="e.g. Kabir"
@@ -1319,6 +1321,7 @@ function ListWeddingContent() {
                 </label>
                 <input
                   type="text"
+                  name="coupleNames"
                   required
                   value={coupleNames}
                   onChange={(e) => setCoupleNames(e.target.value)}
@@ -1362,6 +1365,7 @@ function ListWeddingContent() {
                 </label>
                 <input
                   type="text"
+                  name="city"
                   required
                   value={city}
                   onChange={(e) => setCity(e.target.value)}
@@ -1376,6 +1380,7 @@ function ListWeddingContent() {
                 </label>
                 <input
                   type="text"
+                  name="state"
                   value={stateName}
                   onChange={(e) => setStateName(e.target.value)}
                   placeholder="e.g. Rajasthan"
@@ -1389,6 +1394,7 @@ function ListWeddingContent() {
                 </label>
                 <input
                   type="text"
+                  name="venueName"
                   value={venueName}
                   onChange={(e) => setVenueName(e.target.value)}
                   placeholder="e.g. Heritage Resort / City Lawn"
@@ -1402,6 +1408,7 @@ function ListWeddingContent() {
                 </label>
                 <input
                   type="date"
+                  name="weddingDate"
                   required
                   value={weddingDate}
                   onChange={(e) => setWeddingDate(e.target.value)}
@@ -1416,13 +1423,10 @@ function ListWeddingContent() {
                 </label>
                 <select
                   required
-                  value={tradition}
+                  value={tradition || "Traditional / Cultural"}
                   onChange={(e) => setTradition(e.target.value)}
                   className="w-full px-4 py-3 bg-warm-50/50 border border-warm-200 rounded-xl text-xs text-charcoal-900 font-medium focus:bg-white focus:outline-none focus:border-maroon-600 transition-all"
                 >
-                  <option value="" disabled>
-                    Select your tradition / cultural style
-                  </option>
                   {TRADITION_OPTIONS.map((t) => (
                     <option key={t} value={t}>
                       {t}
@@ -1763,6 +1767,7 @@ function ListWeddingContent() {
               Share a short message to international travelers about your celebration and what they will experience.
             </p>
             <textarea
+              name="story"
               rows={4}
               value={story}
               onChange={(e) => setStory(e.target.value)}

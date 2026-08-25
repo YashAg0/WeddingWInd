@@ -2,7 +2,7 @@
 
 import { prisma } from "../prisma";
 import { requireAuth } from "../auth";
-import { UserRole, VerificationStatus, WeddingStatus } from "@prisma/client";
+import { HostApplicationStatus, UserRole, VerificationStatus, WeddingStatus } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 
 export interface HostDayInput {
@@ -109,16 +109,15 @@ export interface HostApplicationState {
  * Resolves the authenticated user's database identity -> HostApplication (or legacy CoupleProfile -> Wedding).
  */
 export async function resolveHostApplicationState(targetUserId?: string): Promise<HostApplicationState> {
-  let userId = targetUserId;
-  if (!userId) {
-    const user = await requireAuth();
-    userId = user.id;
+  let user: any = null;
+  if (!targetUserId) {
+    user = await requireAuth();
+  } else {
+    user = await prisma.user.findUnique({
+      where: { id: targetUserId },
+      select: { id: true, name: true, email: true, role: true, status: true },
+    });
   }
-
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { id: true, name: true, email: true, role: true, status: true },
-  });
 
   if (!user) {
     throw new Error("UNAUTHORIZED: User identity not found in database.");
@@ -382,13 +381,14 @@ function parseSafeDate(val: any, fallback: Date = new Date()): Date {
 /**
  * Server Action: Save or Update Draft Host Application with debounced autosave support.
  */
-export async function saveHostApplicationDraftAction(input: HostApplicationInput) {
+export async function saveHostApplicationDraftAction(
+  input: HostApplicationInput,
+  options?: { status?: "DRAFT" | "SUBMITTED" }
+) {
+  const isSubmission = options?.status === "SUBMITTED";
   const user = await requireAuth();
+  const userEmail = user.email || input.email;
 
-  // Authoritatively use the authenticated user's email
-  const userEmail = user.email.trim().toLowerCase();
-
-  // Ensure couple profile exists with P2002 race condition handling
   let coupleProfile = await prisma.coupleProfile.findUnique({
     where: { userId: user.id },
   });
@@ -398,34 +398,23 @@ export async function saveHostApplicationDraftAction(input: HostApplicationInput
       coupleProfile = await prisma.coupleProfile.create({
         data: {
           userId: user.id,
+          weddingLocation: input.city?.trim() || "India",
           weddingDate: input.weddingDate ? parseSafeDate(input.weddingDate) : null,
-          weddingLocation: `${input.venueName || input.city || ""}, ${input.city || ""}, ${input.state || ""}`.trim(),
           expectedGuests: input.expectedTotalGuests || 200,
+          traditions: input.tradition || "Traditional / Cultural",
           languagesSpoken: "English, Hindi",
-          familyBio: input.story || "",
+          familyBio: input.story || null,
         },
       });
-    } catch (createErr: any) {
-      if (createErr?.code === "P2002") {
-        coupleProfile = await prisma.coupleProfile.findUnique({
-          where: { userId: user.id },
-        });
-      } else {
-        throw createErr;
-      }
+    } catch {
+      coupleProfile = await prisma.coupleProfile.findUnique({
+        where: { userId: user.id },
+      });
     }
   }
 
   if (!coupleProfile) {
     throw new Error("Unable to initialize host couple profile.");
-  }
-
-  if (!prisma.hostApplication) {
-    return {
-      success: true,
-      applicationId: input.applicationId || "draft-app-id",
-      lastSavedAt: new Date(),
-    };
   }
 
   // Find existing application by ID or by userId
@@ -472,96 +461,138 @@ export async function saveHostApplicationDraftAction(input: HostApplicationInput
     requestedTier: input.requestedTier || "SIGNATURE_ROYAL",
     story: input.story || null,
     lastSavedAt: new Date(),
+    status: isSubmission ? HostApplicationStatus.SUBMITTED : HostApplicationStatus.DRAFT,
+    ...(isSubmission ? { submittedAt: new Date() } : {}),
   };
 
-  const savedApp = await prisma.$transaction(async (tx) => {
-    let appRecord;
-    if (hostApp) {
-      appRecord = await tx.hostApplication.update({
-        where: { id: hostApp.id },
+  const existingApp = hostApp;
+
+  let appRecord;
+  if (existingApp) {
+    appRecord = await prisma.hostApplication.update({
+      where: { id: existingApp.id },
+      data: appData,
+    });
+  } else {
+    try {
+      appRecord = await prisma.hostApplication.create({
         data: appData,
       });
-    } else {
-      appRecord = await tx.hostApplication.create({
-        data: {
-          ...appData,
-          status: "DRAFT",
-        },
+    } catch (createAppErr: any) {
+      // Handle concurrent creation race condition
+      const existing = await prisma.hostApplication.findFirst({
+        where: { userId: user.id },
+        orderBy: { updatedAt: "desc" },
       });
+      if (existing) {
+        appRecord = await prisma.hostApplication.update({
+          where: { id: existing.id },
+          data: appData,
+        });
+      } else {
+        throw createAppErr;
+      }
     }
+  }
 
-    // Save Day-by-Day schedule if provided (persists all 1-5 days to preserve user draft data across duration toggling)
-    if (input.days && Array.isArray(input.days) && input.days.length > 0) {
-      // Upsert days for this application
-      for (const dayInput of input.days) {
-        if (!dayInput.dayNumber || dayInput.dayNumber < 1 || dayInput.dayNumber > 5) continue;
+  // Save Day-by-Day schedule if provided
+  if (input.days && Array.isArray(input.days) && input.days.length > 0) {
+    for (const dayInput of input.days) {
+      if (!dayInput.dayNumber || dayInput.dayNumber < 1 || dayInput.dayNumber > 5) continue;
 
-        const dayDate = dayInput.date
-          ? parseSafeDate(dayInput.date, new Date(weddingDate.getTime() + (dayInput.dayNumber - 1) * 86400000))
-          : new Date(weddingDate.getTime() + (dayInput.dayNumber - 1) * 86400000);
+      const dayDate = dayInput.date
+        ? parseSafeDate(dayInput.date, new Date(weddingDate.getTime() + (dayInput.dayNumber - 1) * 86400000))
+        : new Date(weddingDate.getTime() + (dayInput.dayNumber - 1) * 86400000);
 
-        const dayRecord = await tx.hostApplicationDay.upsert({
-          where: {
-            applicationId_dayNumber: {
-              applicationId: appRecord.id,
-              dayNumber: dayInput.dayNumber,
-            },
-          },
-          create: {
+      const dayRecord = await prisma.hostApplicationDay.upsert({
+        where: {
+          applicationId_dayNumber: {
             applicationId: appRecord.id,
             dayNumber: dayInput.dayNumber,
-            date: dayDate,
-            title: dayInput.title || `Day ${dayInput.dayNumber}`,
-            description: dayInput.description || null,
-            expectedInternationalGuests: dayInput.expectedInternationalGuests || input.expectedInternationalGuests || 20,
-            guestExperience: dayInput.guestExperience || null,
-            foodExperience: dayInput.foodExperience || null,
-            dressCode: dayInput.dressCode || null,
-            specialActivities: dayInput.specialActivities || null,
           },
-          update: {
-            date: dayDate,
-            title: dayInput.title || `Day ${dayInput.dayNumber}`,
-            description: dayInput.description || null,
-            expectedInternationalGuests: dayInput.expectedInternationalGuests || input.expectedInternationalGuests || 20,
-            guestExperience: dayInput.guestExperience || null,
-            foodExperience: dayInput.foodExperience || null,
-            dressCode: dayInput.dressCode || null,
-            specialActivities: dayInput.specialActivities || null,
-          },
+        },
+        create: {
+          applicationId: appRecord.id,
+          dayNumber: dayInput.dayNumber,
+          date: dayDate,
+          title: dayInput.title || `Day ${dayInput.dayNumber}`,
+          description: dayInput.description || null,
+          expectedInternationalGuests: dayInput.expectedInternationalGuests || input.expectedInternationalGuests || 20,
+          guestExperience: dayInput.guestExperience || null,
+          foodExperience: dayInput.foodExperience || null,
+          dressCode: dayInput.dressCode || null,
+          specialActivities: dayInput.specialActivities || null,
+        },
+        update: {
+          date: dayDate,
+          title: dayInput.title || `Day ${dayInput.dayNumber}`,
+          description: dayInput.description || null,
+          expectedInternationalGuests: dayInput.expectedInternationalGuests || input.expectedInternationalGuests || 20,
+          guestExperience: dayInput.guestExperience || null,
+          foodExperience: dayInput.foodExperience || null,
+          dressCode: dayInput.dressCode || null,
+          specialActivities: dayInput.specialActivities || null,
+        },
+      });
+
+      // Save events for this day
+      if (dayInput.events && Array.isArray(dayInput.events) && dayInput.events.length > 0) {
+        await prisma.hostApplicationEvent.deleteMany({
+          where: { dayId: dayRecord.id },
         });
 
-        // Save events for this day
-        if (dayInput.events && Array.isArray(dayInput.events)) {
-          // Clear previous events for day and recreate
-          await tx.hostApplicationEvent.deleteMany({
-            where: { dayId: dayRecord.id },
+        for (const ev of dayInput.events) {
+          if (!ev.name) continue;
+          await prisma.hostApplicationEvent.create({
+            data: {
+              dayId: dayRecord.id,
+              name: ev.name,
+              startTime: ev.startTime || "17:00",
+              endTime: ev.endTime || "22:00",
+              location: ev.location || null,
+              description: ev.description || null,
+            },
           });
-
-          for (const ev of dayInput.events) {
-            if (!ev.name) continue;
-            await tx.hostApplicationEvent.create({
-              data: {
-                dayId: dayRecord.id,
-                name: ev.name,
-                startTime: ev.startTime || "17:00",
-                endTime: ev.endTime || "22:00",
-                location: ev.location || null,
-                description: ev.description || null,
-              },
-            });
-          }
         }
       }
     }
+  }
 
-    return appRecord;
-  });
+  if (isSubmission) {
+    // 1. Upgrade user role to COUPLE
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { role: UserRole.COUPLE },
+    });
+
+
+
+    // 3. Update Verification record (non-blocking)
+    try {
+      await prisma.verification.upsert({
+        where: { userId: user.id },
+        create: {
+          userId: user.id,
+          status: VerificationStatus.PENDING,
+          submissionDate: new Date(),
+          notes: `Host submitted celebration application for ${resolvedCoupleNames} in ${appData.city}. Duration: ${durationDays} days.`,
+        },
+        update: {
+          status: VerificationStatus.PENDING,
+          submissionDate: new Date(),
+          notes: `Host submitted celebration application for ${resolvedCoupleNames} in ${appData.city}. Duration: ${durationDays} days.`,
+        },
+      });
+    } catch (verifErr) {
+      console.warn("[host-application] Verification record notice:", verifErr);
+    }
+  }
 
   return {
     success: true,
-    applicationId: savedApp.id,
-    lastSavedAt: savedApp.lastSavedAt,
+    applicationId: appRecord.id,
+    lastSavedAt: appRecord.lastSavedAt,
+    status: appRecord.status,
   };
 }
 
@@ -569,95 +600,66 @@ export async function saveHostApplicationDraftAction(input: HostApplicationInput
  * Server Action: Submit Host Application for Admin Verification.
  */
 export async function submitHostApplicationAction(input: HostApplicationInput) {
-  const user = await requireAuth();
+  const result = await saveHostApplicationDraftAction(input);
 
-  // 1. Save all draft state
-  const draftResult = await saveHostApplicationDraftAction(input);
-
-  const resolvedHostName = input.hostName?.trim() || user.name || "Host";
-  const resolvedCoupleNames =
-    input.coupleNames?.trim() ||
-    (input.brideName && input.groomName ? `${input.brideName.trim()} & ${input.groomName.trim()} Celebration` : input.brideName?.trim() || resolvedHostName || "Our Celebration");
-  const resolvedCity = input.city?.trim() || "India";
-
-  // 2. Validate required fields for final submission
-  if (!resolvedHostName || !resolvedCoupleNames || !resolvedCity) {
-    throw new Error("Missing required celebration information.");
-  }
-
-  // 3. Atomically persist user role upgrade, HostApplication submission, audit log, and Verification status
-  const txResult = await prisma.$transaction(async (tx) => {
-    // 3a. Upgrade user role to COUPLE
-    if (user.role === UserRole.TRAVELER) {
-      await tx.user.update({
-        where: { id: user.id },
-        data: { role: UserRole.COUPLE },
-      });
-    }
-
-    // 3b. Update HostApplication status to SUBMITTED if model available
-    let updatedApp: any = { id: draftResult.applicationId };
-    if (tx.hostApplication) {
-      updatedApp = await tx.hostApplication.update({
-        where: { id: draftResult.applicationId },
-        data: {
-          status: "SUBMITTED",
-          submittedAt: new Date(),
-        },
-      });
-
-      // Audit Log
-      if (tx.hostApplicationAuditLog) {
-        await tx.hostApplicationAuditLog.create({
-          data: {
-            applicationId: updatedApp.id,
-            action: "APPLICATION_SUBMITTED",
-            actorId: user.id,
-            actorRole: "COUPLE",
-            details: `Host submitted application for ${resolvedCoupleNames} (${input.durationDays || 3} days, ${input.requestedTier || "SIGNATURE_ROYAL"} requested).`,
-          },
-        });
-      }
-    }
-
-    // 3c. Update Verification record
-    await tx.verification.upsert({
-      where: { userId: user.id },
-      create: {
-        userId: user.id,
-        status: VerificationStatus.PENDING,
-        submissionDate: new Date(),
-        notes: `Host submitted celebration application for ${resolvedCoupleNames} in ${resolvedCity}. Duration: ${input.durationDays || 3} days.`,
-      },
-      update: {
-        status: VerificationStatus.PENDING,
-        submissionDate: new Date(),
-        notes: `Host submitted celebration application for ${resolvedCoupleNames} in ${resolvedCity}. Duration: ${input.durationDays || 3} days.`,
-      },
-    });
-
-    return updatedApp;
+  await prisma.hostApplication.update({
+    where: { id: result.applicationId },
+    data: {
+      status: HostApplicationStatus.SUBMITTED,
+      submittedAt: new Date(),
+    },
   });
 
-  // 4. Notify Admins (non-blocking for core transaction)
+  const user = await requireAuth();
+
+  // 1. Upgrade user role to COUPLE
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { role: UserRole.COUPLE },
+  });
+
+  // 2. Create or ensure PENDING verification record
+  await prisma.verification.upsert({
+    where: { userId: user.id },
+    create: {
+      userId: user.id,
+      status: VerificationStatus.PENDING,
+    },
+    update: {
+      status: VerificationStatus.PENDING,
+    },
+  });
+
+  // Dispatch Notifications (non-blocking)
   try {
     const adminUsers = await prisma.user.findMany({
       where: { role: UserRole.ADMIN },
       select: { id: true },
     });
 
-    for (const admin of adminUsers) {
+    if (adminUsers.length > 0) {
+      for (const admin of adminUsers) {
+        await prisma.notification.create({
+          data: {
+            userId: admin.id,
+            title: "New Host Application Submitted",
+            message: `${input.hostName} submitted an application for ${input.coupleNames} in ${input.city}.`,
+            type: "INFO",
+          },
+        }).catch(() => {});
+      }
+    } else {
       await prisma.notification.create({
         data: {
-          userId: admin.id,
-          title: "New Host Application Submitted",
-          message: `${input.hostName} submitted an application for ${input.coupleNames} in ${input.city}.`,
+          userId: user.id,
+          title: "Application Received",
+          message: `Your celebration ${input.coupleNames} has been submitted for verification.`,
           type: "INFO",
         },
-      });
+      }).catch(() => {});
     }
   } catch (notifErr) {
-    console.warn("Failed to dispatch admin notification on host application submit:", notifErr);
+    console.warn("Failed to dispatch notification on host application submit:", notifErr);
   }
 
   revalidatePath("/dashboard");
@@ -665,8 +667,8 @@ export async function submitHostApplicationAction(input: HostApplicationInput) {
 
   return {
     success: true,
-    applicationId: txResult.id,
-    status: txResult.status,
+    applicationId: result.applicationId,
+    status: "SUBMITTED",
   };
 }
 

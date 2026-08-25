@@ -14,12 +14,21 @@ import { PrismaClient } from "@prisma/client";
  * 15 seconds gives a comfortable margin without hanging indefinitely.
  */
 function buildDatasourceUrl(): string | undefined {
-  const url = process.env.DATABASE_URL;
+  let url = process.env.DATABASE_URL;
   if (!url) return undefined;
-  // Only append if not already present in the URL
-  if (url.includes("connect_timeout=")) return url;
-  const separator = url.includes("?") ? "&" : "?";
-  return `${url}${separator}connect_timeout=15`;
+  if (!url.includes("connect_timeout=")) {
+    const separator = url.includes("?") ? "&" : "?";
+    url = `${url}${separator}connect_timeout=15`;
+  }
+  if (!url.includes("pool_timeout=")) {
+    const separator = url.includes("?") ? "&" : "?";
+    url = `${url}${separator}pool_timeout=25`;
+  }
+  if (!url.includes("connection_limit=")) {
+    const separator = url.includes("?") ? "&" : "?";
+    url = `${url}${separator}connection_limit=15`;
+  }
+  return url;
 }
 
 const prismaClientSingleton = () => {

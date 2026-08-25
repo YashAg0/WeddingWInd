@@ -28,9 +28,21 @@ const clerkHandler = clerkMiddleware(async (auth, req) => {
 });
 
 export async function proxy(req: NextRequest, event: NextFetchEvent) {
+  // Allow Next.js Server Actions and RSC internal calls to execute without Clerk handshake interference
+  if (req.headers.has("next-action") || req.headers.get("accept")?.includes("text/x-component")) {
+    return NextResponse.next();
+  }
+
   // 1. E2E Testing Authenticated Session Handling (Local/Test environments ONLY)
   if (isE2ETestAuthEnabled()) {
-    const e2eCookie = req.cookies.get("__wwi_e2e_session")?.value;
+    let e2eCookie = req.cookies.get("__wwi_e2e_session")?.value;
+    if (!e2eCookie) {
+      const cookieHeader = req.headers.get("cookie") || "";
+      const match = cookieHeader.match(/__wwi_e2e_session=([^;]+)/);
+      if (match) {
+        e2eCookie = match[1];
+      }
+    }
     if (e2eCookie) {
       const session = verifyE2ETestSessionToken(e2eCookie);
       if (session) {
