@@ -26,7 +26,7 @@ Before deploying to production, ensure:
 2. **Framework Preset**:
    - Select **Next.js**.
 3. **Build & Install Commands**:
-   - Build Command: `npm run build` (runs `prisma generate && next build`)
+   - Build Command: `npm run build` (runs `prisma migrate deploy`, `prisma generate`, then `next build`)
    - Install Command: `npm install`
 4. **Environment Variables**:
    - Copy all production keys from `ENVIRONMENT.md` into Vercel **Environment Variables**.

@@ -2,8 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma, withDbRetry } from "../prisma";
-import { requireAuth, syncAndGetDbUser } from "../auth";
-export { syncAndGetDbUser };
+import { requireAuth, syncAndGetDbUser as authSyncAndGetDbUser } from "../auth";
+export async function syncAndGetDbUser() {
+  return await authSyncAndGetDbUser();
+}
 import { UserRole, BookingStatus, PaymentStatus, VerificationStatus, WeddingStatus, ReferralStatus, CancellationReasonCode, CancellationActor, WeddingSide } from "@prisma/client";
 import { rateLimit } from "../rate-limit";
 import { getBatchWeddingRatingAggregates, getPublishedReviewWhere } from "../services/trust-score";

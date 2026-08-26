@@ -66,7 +66,7 @@ const nextConfig: NextConfig = {
               "frame-ancestors 'none'",
               // Form submissions
               "form-action 'self'",
-              ...(process.env.NODE_ENV === "production" ? ["upgrade-insecure-requests"] : []),
+              ...(process.env.NODE_ENV === "production" && !process.env.PLAYWRIGHT_TEST && !process.env.NEXT_PUBLIC_APP_URL?.includes("localhost") ? ["upgrade-insecure-requests"] : []),
             ].join("; "),
           },
         ],

@@ -11,6 +11,7 @@ const testFixtures: Record<string, string> = {
   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: "pk_test_e2e_mock_key_wedding_with_india",
   CLERK_SECRET_KEY: "sk_test_e2e_mock_key_wedding_with_india",
   DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/weddingwithindia_test?pgbouncer=true",
+  DIRECT_URL: "postgresql://postgres:postgres@localhost:5432/weddingwithindia_test",
   STRIPE_SECRET_KEY: "sk_test_e2e_mock_key_wedding_with_india",
   STRIPE_WEBHOOK_SECRET: "whsec_e2e_mock_key_wedding_with_india",
   RESEND_API_KEY: "re_e2e_mock_key_wedding_with_india",

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
+import { useUser } from "@clerk/nextjs";
 import { Menu, X, ChevronDown, Heart, Globe, Bell, LayoutDashboard, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
@@ -169,7 +170,9 @@ export default function Navbar() {
 
   const pathname = usePathname();
   const { user, loading, notifications } = useAuth();
+  const { isLoaded: clerkLoaded, isSignedIn } = useUser();
   const { currency, setCurrency } = useCurrency();
+  const authPending = loading || (clerkLoaded && isSignedIn && !user);
 
   const currencyPickerRef = useRef<HTMLDivElement>(null);
   const mobileToggleRef = useRef<HTMLButtonElement>(null);
@@ -583,7 +586,7 @@ export default function Navbar() {
               {/* PWA App Install Quick CTA - visible on screens where space is abundant */}
               <InstallButton variant="navbar" isTransparent={isTransparent} className="hidden min-[1380px]:inline-flex flex-shrink-0" />
 
-              {loading ? (
+              {authPending ? (
                 /* Loading skeleton — prevents layout shift */
                 <div className="flex items-center gap-2 flex-shrink-0">
                   <div className="w-8 h-8 rounded-full bg-charcoal-100 animate-pulse" />
@@ -807,7 +810,12 @@ export default function Navbar() {
             </div>
             <CurrencySwitcher value={currency} onChange={setCurrency} reducedMotion={prefersReducedMotion} compact />
 
-            {user ? (
+            {authPending ? (
+              <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-warm-50 border border-warm-200 text-sm text-charcoal-500">
+                <div className="w-9 h-9 rounded-full bg-charcoal-100 animate-pulse" />
+                <span>Finishing sign-in...</span>
+              </div>
+            ) : user ? (
               <>
                 {/* User info row */}
                 <Link

@@ -19,8 +19,12 @@ function SignupContent() {
   React.useEffect(() => {
     if (!loading && user) {
       if (!user.onboarded) {
-        const onboardingTarget = `/onboarding?redirect_url=${encodeURIComponent(redirectTarget)}`;
-        router.replace(onboardingTarget);
+        if (redirectTarget.includes("/list-wedding")) {
+          router.replace(redirectTarget);
+        } else {
+          const onboardingTarget = `/onboarding?redirect_url=${encodeURIComponent(redirectTarget)}`;
+          router.replace(onboardingTarget);
+        }
       } else {
         router.replace(redirectTarget);
       }
@@ -40,7 +44,9 @@ function SignupContent() {
     ? `/login?redirect_url=${encodeURIComponent(redirectTarget)}`
     : "/login";
 
-  const fallbackOnboardingUrl = `/onboarding?redirect_url=${encodeURIComponent(redirectTarget)}`;
+  const fallbackOnboardingUrl = redirectTarget.includes("/list-wedding")
+    ? redirectTarget
+    : `/onboarding?redirect_url=${encodeURIComponent(redirectTarget)}`;
 
   return (
     <div className="min-h-screen bg-warm-50 flex items-center justify-center p-4">

@@ -44,10 +44,15 @@ async function getE2ETestDbUser() {
       return null;
     }
 
-    const user = await safeDbCall(
+    let user = await safeDbCall(
       () =>
-        prisma.user.findUnique({
-          where: { id: session.userId },
+        prisma.user.findFirst({
+          where: {
+            OR: [
+              { id: session.userId },
+              session.email ? { email: session.email } : undefined,
+            ].filter(Boolean) as any,
+          },
           include: {
             travelerProfile: true,
             coupleProfile: {
@@ -64,17 +69,82 @@ async function getE2ETestDbUser() {
             verification: true,
           },
         }),
-      { label: "getE2ETestDbUser" }
+      { label: "getE2ETestDbUser:find" }
     );
 
+    if (!user && (session.userId || session.email)) {
+      try {
+        const existing = await safeDbCall(
+          () =>
+            prisma.user.findFirst({
+              where: {
+                OR: [
+                  ...(session.userId ? [{ id: session.userId }] : []),
+                  ...(session.email ? [{ email: session.email }] : []),
+                ],
+              },
+              include: {
+                travelerProfile: true,
+                coupleProfile: {
+                  include: {
+                    weddings: {
+                      where: { isDemo: false },
+                      orderBy: { createdAt: "desc" },
+                      take: 1,
+                    },
+                  },
+                },
+                agentProfile: true,
+                coordinatorProfile: true,
+                verification: true,
+              },
+            }),
+          { label: "getE2ETestDbUser:fallbackFind" }
+        );
+
+        if (existing) {
+          user = existing;
+        } else if (session.email) {
+          user = await safeDbCall(
+            () =>
+              prisma.user.create({
+                data: {
+                  id: session.userId,
+                  email: session.email,
+                  name: session.email.split("@")[0],
+                  role: (session.role as any) || UserRole.TRAVELER,
+                  status: UserStatus.ACTIVE,
+                  clerkUserId: `clerk_e2e_${session.userId}`,
+                },
+                include: {
+                  travelerProfile: true,
+                  coupleProfile: {
+                    include: {
+                      weddings: {
+                        where: { isDemo: false },
+                        orderBy: { createdAt: "desc" },
+                        take: 1,
+                      },
+                    },
+                  },
+                  agentProfile: true,
+                  coordinatorProfile: true,
+                  verification: true,
+                },
+              }),
+            { label: "getE2ETestDbUser:provision" }
+          );
+        }
+      } catch (upsertErr) {
+        console.warn("[E2E AUTH] Provision test user fallback warning:", upsertErr);
+      }
+    }
+
     if (user && user.status !== UserStatus.BANNED) {
-      console.log("[E2E AUTH] Successfully resolved user:", user.email, "role:", user.role);
       return user;
     }
-    console.log("[E2E AUTH] User not found or banned:", session.userId);
     return null;
-  } catch (err: any) {
-    console.error("[E2E AUTH] Error resolving test user:", err?.message);
+  } catch {
     return null;
   }
 }

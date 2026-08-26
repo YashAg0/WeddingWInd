@@ -3,7 +3,7 @@ import { z } from "zod";
 const envSchema = z.object({
   // Database
   DATABASE_URL: z.string().url().min(1, "DATABASE_URL is required").refine(
-    (url) => process.env.NODE_ENV !== "production" || url.includes("pgbouncer=true") || url.includes("pool_timeout="),
+    (url) => process.env.NODE_ENV !== "production" || url.includes("pgbouncer=true") || url.includes("pool_timeout=") || url.includes("pooler"),
     "DATABASE_URL must use connection pooling (pgbouncer=true) in production"
   ),
 

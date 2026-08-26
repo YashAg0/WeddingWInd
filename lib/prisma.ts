@@ -14,12 +14,21 @@ import { PrismaClient } from "@prisma/client";
  * 15 seconds gives a comfortable margin without hanging indefinitely.
  */
 function buildDatasourceUrl(): string | undefined {
-  const url = process.env.DATABASE_URL;
+  let url = process.env.DATABASE_URL;
   if (!url) return undefined;
-  // Only append if not already present in the URL
-  if (url.includes("connect_timeout=")) return url;
-  const separator = url.includes("?") ? "&" : "?";
-  return `${url}${separator}connect_timeout=15`;
+  if (!url.includes("connect_timeout=")) {
+    const separator = url.includes("?") ? "&" : "?";
+    url = `${url}${separator}connect_timeout=30`;
+  }
+  if (!url.includes("pool_timeout=")) {
+    const separator = url.includes("?") ? "&" : "?";
+    url = `${url}${separator}pool_timeout=45`;
+  }
+  if (!url.includes("connection_limit=")) {
+    const separator = url.includes("?") ? "&" : "?";
+    url = `${url}${separator}connection_limit=15`;
+  }
+  return url;
 }
 
 const prismaClientSingleton = () => {
@@ -117,8 +126,9 @@ export async function withDbRetry<T>(
   options: { maxRetries?: number; initialDelayMs?: number; label?: string } = {}
 ): Promise<T> {
   const isTest = process.env.NODE_ENV === "test";
-  const maxRetries = isTest ? (options.maxRetries ?? 1) : (options.maxRetries ?? 3);
-  const initialDelayMs = options.initialDelayMs ?? (isTest ? 0 : 200);
+  const isBuild = process.env.NEXT_PHASE === "phase-production-build";
+  const maxRetries = (isTest || isBuild) ? (options.maxRetries ?? 1) : (options.maxRetries ?? 3);
+  const initialDelayMs = options.initialDelayMs ?? ((isTest || isBuild) ? 0 : 200);
   const label = options.label ? `[${options.label}] ` : "";
 
   let lastError: any;
