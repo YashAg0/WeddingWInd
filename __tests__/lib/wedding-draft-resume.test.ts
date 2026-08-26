@@ -78,7 +78,11 @@ jest.mock("@/lib/prisma", () => ({
 }));
 
 const { requireAuth } = require("@/lib/auth");
-const { saveHostApplicationDraftAction, submitHostApplicationAction } = require("@/lib/actions/host-application");
+const {
+  saveHostApplicationDraftAction,
+  submitHostApplicationAction,
+  getCurrentHostApplicationAction,
+} = require("@/lib/actions/host-application");
 
 describe("Wedding Draft Storage & Zero-Loss Sign-In Resumption Suite", () => {
   let mockStorage: Record<string, string> = {};
@@ -282,15 +286,16 @@ describe("Wedding Draft Storage & Zero-Loss Sign-In Resumption Suite", () => {
     it("rejects unauthenticated submission attempts at the server boundary", async () => {
       requireAuth.mockRejectedValueOnce(new Error("UNAUTHORIZED: Authentication required"));
 
-      await expect(
-        submitHostApplicationAction({
-          hostName: "Aarav Sharma",
-          coupleNames: "Ananya & Aarav Celebration",
-          city: "Udaipur",
-          weddingDate: "2026-11-20",
-          durationDays: 3,
-        })
-      ).rejects.toThrow("UNAUTHORIZED");
+      const res = await submitHostApplicationAction({
+        hostName: "Aarav Sharma",
+        coupleNames: "Ananya & Aarav Celebration",
+        city: "Udaipur",
+        weddingDate: "2026-11-20",
+        durationDays: 3,
+      });
+
+      expect(res.success).toBe(false);
+      expect(res.error).toContain("UNAUTHORIZED");
     });
 
     it("derives user identity authoritatively from authenticated session", async () => {
@@ -467,6 +472,108 @@ describe("Wedding Draft Storage & Zero-Loss Sign-In Resumption Suite", () => {
       // Verify Day-by-day and events were upserted
       expect(mockPrisma.hostApplicationDay.upsert).toHaveBeenCalledTimes(2);
       expect(mockPrisma.hostApplicationEvent.create).toHaveBeenCalledTimes(2);
+    });
+
+    it("ensures submitHostApplicationAction returns clean JSON-serializable strings for timestamps and status", async () => {
+      mockPrisma.coupleProfile.findUnique.mockResolvedValue({ id: "couple-123", userId: mockUser.id });
+      mockPrisma.hostApplication.findFirst.mockResolvedValue(null);
+      mockPrisma.hostApplication.create.mockResolvedValue({
+        id: "app-serial-123",
+        lastSavedAt: new Date("2026-08-26T12:00:00Z"),
+        status: "SUBMITTED",
+      });
+      mockPrisma.verification.upsert.mockResolvedValue({ id: "verif-1", status: "PENDING" });
+
+      const result = await submitHostApplicationAction({
+        hostName: "Aditi Rao",
+        email: "aditi@example.com",
+        coupleNames: "Aditi & Siddharth Celebration",
+        city: "Jaipur",
+        weddingDate: "2026-12-15",
+        durationDays: 3,
+      });
+
+      // Result must be plain object with serializable strings
+      expect(result).toHaveProperty("success", true);
+      expect(result).toHaveProperty("applicationId", "app-serial-123");
+      expect(result).toHaveProperty("status", "SUBMITTED");
+
+      const jsonStr = JSON.stringify(result);
+      const parsed = JSON.parse(jsonStr);
+      expect(parsed.success).toBe(true);
+      expect(parsed.applicationId).toBe("app-serial-123");
+    });
+
+    it("catches database pool timeout and returns structured error without crashing Server Action boundary", async () => {
+      mockPrisma.coupleProfile.findUnique.mockRejectedValueOnce(
+        new Error("P2024: Timed out fetching a new connection from the connection pool")
+      );
+
+      const result = await submitHostApplicationAction({
+        hostName: "Rohan Kapoor",
+        email: "rohan@example.com",
+        coupleNames: "Rohan & Tara",
+        city: "Goa",
+        weddingDate: "2026-11-10",
+        durationDays: 3,
+      });
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain("Timed out fetching a new connection");
+      expect(result.errorCode).toBe("DRAFT_SAVE_ERROR");
+    });
+
+    it("ensures getCurrentHostApplicationAction returns ISO strings for all dates", async () => {
+      mockPrisma.hostApplication.findFirst.mockResolvedValueOnce({
+        id: "app-existing-1",
+        coupleProfileId: "couple-prof-1",
+        userId: mockUser.id,
+        hostName: "Pooja Sharma",
+        email: "pooja@example.com",
+        phone: "+919876543210",
+        preferredContactMethod: "WHATSAPP",
+        brideName: "Pooja",
+        groomName: "Kunal",
+        coupleNames: "Pooja & Kunal Celebration",
+        city: "Udaipur",
+        state: "Rajasthan",
+        venueName: "Lake Palace",
+        weddingDate: new Date("2026-12-01T00:00:00.000Z"),
+        durationDays: 3,
+        tradition: "Hindu",
+        weddingScale: "GRAND",
+        expectedTotalGuests: 500,
+        expectedInternationalGuests: 40,
+        requestedTier: "SIGNATURE_ROYAL",
+        verifiedTier: null,
+        verifiedDurationDays: null,
+        story: "Love story",
+        status: "SUBMITTED",
+        adminNotesHostFacing: null,
+        reviewedBy: null,
+        createdAt: new Date("2026-08-20T10:00:00.000Z"),
+        updatedAt: new Date("2026-08-22T14:30:00.000Z"),
+        lastSavedAt: new Date("2026-08-22T14:30:00.000Z"),
+        days: [],
+        documentRequests: [],
+        documents: [],
+        auditLogs: [],
+      });
+
+      mockPrisma.verification.findUnique.mockResolvedValueOnce({
+        id: "verif-1",
+        status: "PENDING",
+        notes: "Pending review",
+      });
+
+      const res = await getCurrentHostApplicationAction();
+      expect(res.exists).toBe(true);
+      expect(res.hasActiveApplication).toBe(true);
+      expect(res.application).not.toBeNull();
+      expect(typeof res.application?.createdAt).toBe("string");
+      expect(typeof res.application?.updatedAt).toBe("string");
+      expect(typeof res.application?.lastSavedAt).toBe("string");
+      expect(res.application?.createdAt).toBe("2026-08-20T10:00:00.000Z");
     });
   });
 });

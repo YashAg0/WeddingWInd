@@ -352,8 +352,8 @@ export async function syncAndGetDbUser() {
         }
       });
     }, {
-      maxWait: 10000,
-      timeout: 15000
+      maxWait: 20000,
+      timeout: 60000
     });
 
     // Link referral AFTER the transaction is safely committed

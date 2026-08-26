@@ -4,7 +4,14 @@ import { revalidatePath } from "next/cache";
 import { prisma, withDbRetry } from "../prisma";
 import { requireAuth, syncAndGetDbUser as authSyncAndGetDbUser } from "../auth";
 export async function syncAndGetDbUser() {
-  return await authSyncAndGetDbUser();
+  try {
+    const user = await authSyncAndGetDbUser();
+    if (!user) return null;
+    return JSON.parse(JSON.stringify(user));
+  } catch (err) {
+    console.error("[syncAndGetDbUser Server Action] Error:", err);
+    return null;
+  }
 }
 import { UserRole, BookingStatus, PaymentStatus, VerificationStatus, WeddingStatus, ReferralStatus, CancellationReasonCode, CancellationActor, WeddingSide } from "@prisma/client";
 import { rateLimit } from "../rate-limit";
