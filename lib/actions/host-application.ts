@@ -91,9 +91,9 @@ export interface HostApplicationState {
     story: string;
     photoUrl: string;
     intlGuestCapacity: number;
-    createdAt: Date;
-    updatedAt: Date;
-    lastSavedAt?: Date;
+    createdAt: string;
+    updatedAt: string;
+    lastSavedAt?: string | null;
     gallery: any[];
     events: any[];
     traditions: any[];
@@ -103,6 +103,14 @@ export interface HostApplicationState {
     auditLogs?: any[];
   } | null;
 }
+
+export type SaveHostApplicationDraftResult =
+  | { success: true; applicationId: string; lastSavedAt: string; status: string; error?: never; errorCode?: never }
+  | { success: false; error: string; errorCode: string; applicationId?: never; lastSavedAt?: never; status?: never };
+
+export type SubmitHostApplicationResult =
+  | { success: true; applicationId: string; status: string; error?: never; errorCode?: never }
+  | { success: false; error: string; errorCode: string; applicationId?: never; status?: never };
 
 /**
  * Authoritative Server-Side Host Application Resolver.
@@ -384,7 +392,7 @@ function parseSafeDate(val: any, fallback: Date = new Date()): Date {
 export async function saveHostApplicationDraftAction(
   input: HostApplicationInput,
   options?: { status?: "DRAFT" | "SUBMITTED" }
-) {
+): Promise<SaveHostApplicationDraftResult> {
   try {
     const isSubmission = options?.status === "SUBMITTED";
     const user = await requireAuth();
@@ -626,7 +634,9 @@ export async function saveHostApplicationDraftAction(
  * Server Action: Submit Host Application for Admin Verification.
  * Executes as a SINGLE atomic database transaction.
  */
-export async function submitHostApplicationAction(input: HostApplicationInput) {
+export async function submitHostApplicationAction(
+  input: HostApplicationInput
+): Promise<SubmitHostApplicationResult> {
   try {
     const result = await saveHostApplicationDraftAction(input, { status: "SUBMITTED" });
     if (!result.success) {

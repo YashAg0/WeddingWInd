@@ -613,7 +613,8 @@ function ListWeddingContent() {
           toast.success("Your celebration has been submitted for verification.");
           window.location.assign("/dashboard");
         } else {
-          toast.error(res?.error || "Submission failed. Your draft is still saved.");
+          const errorMsg = res && !res.success ? res.error : "Submission failed. Your draft is still saved.";
+          toast.error(errorMsg);
         }
       } catch (err: any) {
         console.error("[list-wedding] submitHostApplicationAction error:", err);
@@ -682,7 +683,8 @@ function ListWeddingContent() {
               });
               window.location.assign("/dashboard");
             } else {
-              toast.error(res?.error || "Failed to auto-submit saved details. Please review and click Submit.", {
+              const errorMsg = res && !res.success ? res.error : "Failed to auto-submit saved details. Please review and click Submit.";
+              toast.error(errorMsg, {
                 id: "resume-submit",
               });
             }
