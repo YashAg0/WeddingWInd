@@ -1839,11 +1839,10 @@ export async function adminGetHostApplicationsAction() {
     }
   }
 
-  // Attach properties to array so both array-based and object-destructuring callers work seamlessly
-  (weddings as any).hostApps = hostApps;
-  (weddings as any).weddings = weddings;
-
-  return weddings;
+  return {
+    hostApps: JSON.parse(JSON.stringify(hostApps)),
+    weddings: JSON.parse(JSON.stringify(weddings)),
+  };
 }
 
 export async function adminGetHostApplicationByIdAction(id: string) {
@@ -1898,7 +1897,7 @@ export async function adminGetHostApplicationByIdAction(id: string) {
     combined.isHostApp = true;
     combined.hostApp = hostApp;
     combined.wedding = hostApp.wedding;
-    return combined;
+    return JSON.parse(JSON.stringify(combined));
   }
 
   // 2. Legacy fallback: Query Wedding by ID or hostCoupleId

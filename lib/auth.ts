@@ -393,7 +393,10 @@ export async function syncAndGetDbUser() {
     return dbUser;
   } catch (err: any) {
     console.error("[AUTH DEBUG] FATAL ERROR IN syncAndGetDbUser:", err);
-    throw new Error("SERVICE_UNAVAILABLE: Authentication service is temporarily unavailable. Please try again shortly.");
+    const serviceError = new Error("SERVICE_UNAVAILABLE: Authentication service is temporarily unavailable. Please try again shortly.");
+    (serviceError as any).code = err?.code || "SERVICE_UNAVAILABLE";
+    (serviceError as any).originalError = err;
+    throw serviceError;
   }
 }
 

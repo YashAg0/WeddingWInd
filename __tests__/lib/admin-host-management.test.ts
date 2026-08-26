@@ -82,8 +82,9 @@ describe("Admin Host Applications Management", () => {
 
     expect(requireRole).toHaveBeenCalledWith([UserRole.ADMIN]);
     expect(prisma.wedding.findMany).toHaveBeenCalled();
-    expect(result).toHaveLength(1);
-    expect(result[0].title).toBe("Priya & Rahul Wedding");
+    const weddingsList = Array.isArray(result) ? result : result.weddings;
+    expect(weddingsList).toHaveLength(1);
+    expect(weddingsList[0].title).toBe("Priya & Rahul Wedding");
   });
 
   it("should reject non-admin access for host management actions", async () => {

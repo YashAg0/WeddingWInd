@@ -17,7 +17,13 @@ export async function GET() {
       statusGroups,
       agentCommission
     ] = await Promise.all([
-      withDbRetry(() => prisma.wedding.count({ where: { status: "DRAFT" } }), { label: "adminOverview:pendingHosts" }).catch(() => 0),
+      withDbRetry(async () => {
+        const [hostApps, legacyWeddings] = await Promise.all([
+          prisma.hostApplication.count({ where: { status: "SUBMITTED" } }).catch(() => 0),
+          prisma.wedding.count({ where: { status: "DRAFT" } }).catch(() => 0),
+        ]);
+        return hostApps + legacyWeddings;
+      }, { label: "adminOverview:pendingHosts" }).catch(() => 0),
       withDbRetry(() => prisma.agentProfile.count({ where: { verifiedChecks: false } }), { label: "adminOverview:pendingAgents" }).catch(() => 0),
       withDbRetry(() => prisma.wedding.count(), { label: "adminOverview:totalWeddings" }).catch(() => 0),
       withDbRetry(() => prisma.agentProfile.count(), { label: "adminOverview:totalAgents" }).catch(() => 0),

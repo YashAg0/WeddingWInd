@@ -44,7 +44,7 @@ declare const globalThis: {
 
 const prisma = globalThis.prismaGlobal ?? prismaClientSingleton();
 
-if (process.env.NODE_ENV !== "production") globalThis.prismaGlobal = prisma;
+globalThis.prismaGlobal = prisma;
 
 let dbAliveCache: { status: boolean; timestamp: number } | null = null;
 
@@ -89,9 +89,6 @@ export async function isDatabaseAvailable(): Promise<boolean> {
   }
 }
 
-/**
- * Checks if a Prisma or database error is transient (connectivity, pool exhaustion, network blip).
- */
 export function isTransientDbError(err: any): boolean {
   if (!err) return false;
   const msg = (err.message || "").toLowerCase();
@@ -99,18 +96,22 @@ export function isTransientDbError(err: any): boolean {
   const code = err.code || "";
 
   if (name === "PrismaClientInitializationError") return true;
-  if (["P1000", "P1001", "P1002", "P1008", "P1011", "P1017"].includes(code)) return true;
+  if (["P1000", "P1001", "P1002", "P1008", "P1011", "P1017", "P2024", "P2028", "P2034"].includes(code)) return true;
   if (
     msg.includes("can't reach database server") ||
     msg.includes("cannot reach database server") ||
     msg.includes("connection pool exhausted") ||
     msg.includes("connection closed") ||
     msg.includes("connection timeout") ||
+    msg.includes("timed out") ||
+    msg.includes("pool timeout") ||
     msg.includes("etimedout") ||
     msg.includes("econnreset") ||
     msg.includes("econnrefused") ||
     msg.includes("socket has been ended") ||
-    msg.includes("terminating connection due to administrator command")
+    msg.includes("terminating connection due to administrator command") ||
+    msg.includes("service_unavailable") ||
+    msg.includes("temporarily unavailable")
   ) {
     return true;
   }
