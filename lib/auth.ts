@@ -202,16 +202,14 @@ export async function syncAndGetDbUser() {
 
   if (!session?.userId) return null;
 
-  // 1. Fetch Clerk user details
-  const clerkUser = await currentUser();
-  if (!clerkUser) return null;
+  const clerkUserId = session.userId as string;
 
-  // FAST PATH: Check if user is already synced by Clerk ID (indexed lookup, zero transaction lock)
+  // FAST PATH: Check if user is already synced by Clerk ID in PostgreSQL (indexed lookup, zero network overhead)
   try {
     const fastUser = await safeDbCall(
       () =>
         prisma.user.findUnique({
-          where: { clerkUserId: clerkUser.id },
+          where: { clerkUserId },
           include: {
             travelerProfile: true,
             coupleProfile: {
@@ -236,6 +234,30 @@ export async function syncAndGetDbUser() {
     }
   } catch (fastErr) {
     console.warn("[syncAndGetDbUser] Fast path query error, falling back to sync transaction:", fastErr);
+  }
+
+  // SLOW PATH: User not yet synced; fetch Clerk user details to provision
+  const clerkUser = await currentUser();
+  if (!clerkUser) {
+    // If currentUser() network call fails, try fallback database lookup by clerkUserId
+    const fallbackUser = await safeDbCall(
+      () =>
+        prisma.user.findUnique({
+          where: { clerkUserId },
+          include: {
+            travelerProfile: true,
+            coupleProfile: true,
+            agentProfile: true,
+            coordinatorProfile: true,
+            verification: true,
+          },
+        }),
+      { label: "syncAndGetDbUser:fallbackAfterNullClerkUser" }
+    );
+    if (fallbackUser && fallbackUser.status !== UserStatus.BANNED) {
+      return fallbackUser;
+    }
+    return null;
   }
 
   // SLOW PATH: Full synchronization transaction for new users or re-linked accounts

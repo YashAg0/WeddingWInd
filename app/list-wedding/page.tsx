@@ -647,13 +647,14 @@ function ListWeddingContent() {
             const resolvedCoupleNames =
               draft.coupleNames ||
               (draft.brideName && draft.groomName ? `${draft.brideName} & ${draft.groomName} Celebration` : draft.brideName || draft.hostName || "Our Celebration");
-            const resolvedHostName = draft.hostName || authenticatedName || "Host";
+            const resolvedHostName = draft.hostName || authenticatedName || clerkUser?.fullName || clerkUser?.firstName || "Host";
+            const resolvedEmail = authenticatedEmail || draft.email || clerkUser?.primaryEmailAddress?.emailAddress || "";
             const resolvedDate = draft.weddingDate || new Date().toISOString().split("T")[0];
 
             const res = await submitHostApplicationAction({
               applicationId: applicationId || undefined,
               hostName: resolvedHostName,
-              email: authenticatedEmail,
+              email: resolvedEmail,
               phone: draft.phone,
               preferredContactMethod: draft.preferredContactMethod || "WHATSAPP",
               brideName: draft.brideName,
