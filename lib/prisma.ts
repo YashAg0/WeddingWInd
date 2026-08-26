@@ -18,11 +18,11 @@ function buildDatasourceUrl(): string | undefined {
   if (!url) return undefined;
   if (!url.includes("connect_timeout=")) {
     const separator = url.includes("?") ? "&" : "?";
-    url = `${url}${separator}connect_timeout=15`;
+    url = `${url}${separator}connect_timeout=30`;
   }
   if (!url.includes("pool_timeout=")) {
     const separator = url.includes("?") ? "&" : "?";
-    url = `${url}${separator}pool_timeout=25`;
+    url = `${url}${separator}pool_timeout=45`;
   }
   if (!url.includes("connection_limit=")) {
     const separator = url.includes("?") ? "&" : "?";
@@ -126,8 +126,9 @@ export async function withDbRetry<T>(
   options: { maxRetries?: number; initialDelayMs?: number; label?: string } = {}
 ): Promise<T> {
   const isTest = process.env.NODE_ENV === "test";
-  const maxRetries = isTest ? (options.maxRetries ?? 1) : (options.maxRetries ?? 3);
-  const initialDelayMs = options.initialDelayMs ?? (isTest ? 0 : 200);
+  const isBuild = process.env.NEXT_PHASE === "phase-production-build";
+  const maxRetries = (isTest || isBuild) ? (options.maxRetries ?? 1) : (options.maxRetries ?? 3);
+  const initialDelayMs = options.initialDelayMs ?? ((isTest || isBuild) ? 0 : 200);
   const label = options.label ? `[${options.label}] ` : "";
 
   let lastError: any;

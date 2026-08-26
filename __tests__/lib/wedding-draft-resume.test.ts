@@ -355,9 +355,9 @@ describe("Wedding Draft Storage & Zero-Loss Sign-In Resumption Suite", () => {
       const res2 = await submitHostApplicationAction(payload);
       expect(res2.success).toBe(true);
 
-      // Database should update the existing application in place, never create a duplicate row
+      // Database should update the existing application in place in a single atomic transaction, never create duplicate rows
       expect(mockPrisma.hostApplication.create).not.toHaveBeenCalled();
-      expect(mockPrisma.hostApplication.update).toHaveBeenCalledTimes(4); // 2 drafts + 2 submits on existingApp.id
+      expect(mockPrisma.hostApplication.update).toHaveBeenCalledTimes(2); // 1 single atomic update per submission
     });
 
     it("ensures all comprehensive form fields survive draft persistence and database commit", async () => {

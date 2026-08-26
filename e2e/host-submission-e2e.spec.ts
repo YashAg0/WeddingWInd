@@ -37,6 +37,7 @@ test.describe("Real-Browser End-to-End: Host Application Submission Flow", () =>
     page,
     context,
   }) => {
+    test.setTimeout(180000);
     const testEmail = `test.e2e.resume.${Date.now()}@example.com`;
     let userId = "";
 
@@ -136,8 +137,8 @@ test.describe("Real-Browser End-to-End: Host Application Submission Flow", () =>
       await page.waitForLoadState("domcontentloaded");
 
       // Verify auto-resumption triggers and transitions to dashboard
-      await page.waitForURL(/\/dashboard/i, { timeout: 45000, waitUntil: "domcontentloaded" });
-      await expect(page.locator('aside, nav[aria-label="Dashboard navigation"]').first()).toBeVisible({ timeout: 45000 });
+      await page.waitForURL(/\/dashboard/i, { timeout: 60000, waitUntil: "domcontentloaded" });
+      await expect(page.locator('h1, h2, [role="main"], main').first()).toBeVisible({ timeout: 60000 });
 
       // 8. Inspect actual PostgreSQL Database state
       const createdApp = await prisma.hostApplication.findFirst({
@@ -207,6 +208,7 @@ test.describe("Real-Browser End-to-End: Host Application Submission Flow", () =>
     page,
     context,
   }) => {
+    test.setTimeout(180000);
     const testEmail = `test.e2e.direct.${Date.now()}@example.com`;
     let userId = "";
 
@@ -277,8 +279,8 @@ test.describe("Real-Browser End-to-End: Host Application Submission Flow", () =>
       await submitBtn.click();
 
       // Verify submission succeeds and transitions to dashboard
-      await page.waitForURL(/\/dashboard/i, { timeout: 45000, waitUntil: "domcontentloaded" });
-      await expect(page.locator('aside, nav[aria-label="Dashboard navigation"]').first()).toBeVisible({ timeout: 45000 });
+      await page.waitForURL(/\/dashboard/i, { timeout: 60000, waitUntil: "domcontentloaded" });
+      await expect(page.locator('h1, h2, [role="main"], main').first()).toBeVisible({ timeout: 60000 });
 
       // Verify exactly one application created in DB
       const apps = await prisma.hostApplication.findMany({

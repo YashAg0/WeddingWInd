@@ -196,7 +196,7 @@ export async function validateOrCreateDeviceSession(params: {
           isCurrent: true,
         },
       };
-    }, { maxWait: 10000, timeout: 20000 });
+    }, { maxWait: 20000, timeout: 60000 });
   }, { label: "validateOrCreateDeviceSession" });
 }
 

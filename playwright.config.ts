@@ -14,8 +14,16 @@ const originalResolveFilename = (module as any)._resolveFilename;
   return originalResolveFilename.call(this, request, parent, isMain, options);
 };
 
+// Load environment variables from .env
+if (typeof (process as any).loadEnvFile === "function") {
+  try {
+    (process as any).loadEnvFile(path.resolve(__dirname, ".env"));
+  } catch {}
+}
+
 // Initialize test environment variable fallbacks for E2E runner
 process.env.DATABASE_URL = process.env.DATABASE_URL || "";
+process.env.DIRECT_URL = process.env.DIRECT_URL || "";
 process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || "pk_test_e2e_mock_key_wedding_with_india";
 process.env.CLERK_SECRET_KEY = process.env.CLERK_SECRET_KEY || "sk_test_e2e_mock_key_wedding_with_india";
 process.env.STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || "sk_test_e2e_mock_key_wedding_with_india";
@@ -47,16 +55,18 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "npm run start",
+    command: "node --env-file=.env node_modules/next/dist/bin/next start",
     url: "http://localhost:3000",
     reuseExistingServer: false,
     timeout: 120000,
     env: {
+      ...process.env,
       NODE_ENV: "production",
       PLAYWRIGHT_TEST: "true",
       NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || "",
       CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY || "",
       DATABASE_URL: process.env.DATABASE_URL || "",
+      DIRECT_URL: process.env.DIRECT_URL || "",
       STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY || "",
       STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET || "",
       RESEND_API_KEY: process.env.RESEND_API_KEY || "",

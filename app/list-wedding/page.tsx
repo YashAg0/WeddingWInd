@@ -101,6 +101,7 @@ function ListWeddingContent() {
   const authenticatedEmail = user?.email || clerkUser?.primaryEmailAddress?.emailAddress || "";
   const authenticatedName = user?.name || clerkUser?.fullName || clerkUser?.firstName || "Host";
   const [isPending, startTransition] = useTransition();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Active Application Server State
   const [applicationId, setApplicationId] = useState<string | null>(null);
@@ -341,7 +342,8 @@ function ListWeddingContent() {
 
   // Debounced Autosave Trigger (Server sync if logged in)
   const triggerAutosave = useCallback(async () => {
-    if (!user || !city || !coupleNames || hasAutoSubmitted || appStatus === "SUBMITTED") return;
+    const isResumingFlow = searchParams?.get("resume") === "true" || hasAutoSubmitIntent();
+    if (!user || !city || !coupleNames || hasAutoSubmitted || isSubmitting || isResumingFlow || appStatus === "SUBMITTED") return;
 
     setAutosaveState("saving");
     try {
@@ -409,7 +411,7 @@ function ListWeddingContent() {
     const formValues: Record<string, string> = {};
     if (typeof document !== "undefined") {
       try {
-        const root = formEl || document.querySelector("form");
+        const root = formEl || document.getElementById("host-application-form") || document.querySelector("form");
         if (root && root instanceof HTMLFormElement) {
           const formData = new FormData(root);
           formData.forEach((value, key) => {
@@ -423,7 +425,7 @@ function ListWeddingContent() {
           const name = el.name || el.getAttribute("name") || el.id;
           if (name && el.value !== undefined && el.value !== null) {
             const val = String(el.value).trim();
-            if (val && !formValues[name]) {
+            if (val) {
               formValues[name] = val;
             }
           }
@@ -499,7 +501,7 @@ function ListWeddingContent() {
       if ((liveDraft.city || liveDraft.venueName) && (liveDraft.coupleNames || liveDraft.brideName || liveDraft.groomName || liveDraft.hostName)) {
         saveLocalWeddingDraft(liveDraft);
 
-        if (user && liveDraft.coupleNames && liveDraft.city) {
+        if (user && liveDraft.coupleNames && liveDraft.city && !isSubmitting && !hasAutoSubmitted && searchParams?.get("resume") !== "true") {
           triggerAutosave();
         } else {
           setAutosaveState("saved");
@@ -578,9 +580,7 @@ function ListWeddingContent() {
     if (event) {
       event.preventDefault();
     }
-    const formEl = (event && "currentTarget" in event && event.currentTarget instanceof HTMLFormElement)
-      ? event.currentTarget
-      : (document.querySelector("form") as HTMLFormElement | null);
+    const formEl = (typeof document !== "undefined" ? document.getElementById("host-application-form") : null) as HTMLFormElement | null;
 
     const draft = buildLocalDraft(formEl);
     saveLocalWeddingDraft(draft);
@@ -593,7 +593,8 @@ function ListWeddingContent() {
       return;
     }
 
-    startTransition(async () => {
+    setIsSubmitting(true);
+    (async () => {
       try {
         console.log("[list-wedding] Submitting direct host application action with draft:", draft.city, draft.coupleNames);
         const res = await submitHostApplicationAction({
@@ -610,14 +611,16 @@ function ListWeddingContent() {
           setAppStatus("SUBMITTED");
           setVerificationStatus("PENDING");
           toast.success("Your celebration has been submitted for verification.");
-          router.push("/dashboard");
+          window.location.assign("/dashboard");
         }
       } catch (err: any) {
         console.error("[list-wedding] submitHostApplicationAction error:", err);
         toast.error(err.message || "Submission failed. Your draft is still saved.");
+      } finally {
+        setIsSubmitting(false);
       }
-    });
-  }, [buildLocalDraft, isAuthenticated, authenticatedEmail, authenticatedName, router, applicationId, user]);
+    })();
+  }, [buildLocalDraft, isAuthenticated, authenticatedEmail, authenticatedName, applicationId, user]);
 
   // AUTO-RESUME & SUBMIT HOOK: Triggers when returning from Clerk login/signup
   useEffect(() => {
@@ -633,7 +636,8 @@ function ListWeddingContent() {
         setHasAutoSubmitted(true);
         populateFieldsFromDraft(draft);
 
-        startTransition(async () => {
+        setIsSubmitting(true);
+        (async () => {
           try {
             toast.loading("Submitting your saved celebration details...", { id: "resume-submit" });
 
@@ -674,15 +678,17 @@ function ListWeddingContent() {
               toast.success("Welcome! Your wedding details have been successfully submitted for verification.", {
                 id: "resume-submit",
               });
-              router.push("/dashboard");
+              window.location.assign("/dashboard");
             }
           } catch (err: any) {
             console.error("[list-wedding] auto-resume error:", err);
             toast.error(err.message || "Failed to auto-submit saved details. Please review and click Submit.", {
               id: "resume-submit",
             });
+          } finally {
+            setIsSubmitting(false);
           }
-        });
+        })();
       }
     }
   }, [isAuthenticated, authenticatedEmail, authenticatedName, isResuming, hasAutoSubmitted, applicationId, router, populateFieldsFromDraft, searchParams]);
@@ -1204,7 +1210,7 @@ function ListWeddingContent() {
           MAIN APPLICATION FORM (Host Details, Wedding Overview, Day-by-Day, Story)
           ========================================================================
         */}
-        <form noValidate onSubmit={handleSubmit} className="space-y-8">
+        <form id="host-application-form" noValidate onSubmit={handleSubmit} className="space-y-8">
           {/* SECTION 1: Host & Contact Details */}
           <div className="bg-white border border-warm-200/80 rounded-3xl p-6 sm:p-10 shadow-sm space-y-6">
             <div className="border-b border-warm-100 pb-4">
