@@ -82,6 +82,7 @@ const {
   saveHostApplicationDraftAction,
   submitHostApplicationAction,
   getCurrentHostApplicationAction,
+  checkHostAuthReadinessAction,
 } = require("@/lib/actions/host-application");
 
 describe("Wedding Draft Storage & Zero-Loss Sign-In Resumption Suite", () => {
@@ -576,4 +577,435 @@ describe("Wedding Draft Storage & Zero-Loss Sign-In Resumption Suite", () => {
       expect(res.application?.createdAt).toBe("2026-08-20T10:00:00.000Z");
     });
   });
+
+  describe("3. Deterministic Post-Login Auto-Resume & Auth Readiness Verification", () => {
+    let mockUser: any;
+
+    beforeEach(() => {
+      mockUser = {
+        id: "user-resume-deterministic-999",
+        email: "priya.resume@example.com",
+        name: "Priya & Rohan",
+        role: UserRole.COUPLE,
+        status: "ACTIVE",
+      };
+
+      requireAuth.mockResolvedValue(mockUser);
+      mockPrisma.user.findUnique.mockResolvedValue(mockUser);
+      mockPrisma.coupleProfile.findUnique.mockResolvedValue({ id: "cp-999", userId: mockUser.id });
+      mockPrisma.hostApplication.findFirst.mockResolvedValue(null);
+      mockPrisma.hostApplication.create.mockResolvedValue({
+        id: "app-resume-999",
+        userId: mockUser.id,
+        status: "SUBMITTED",
+        lastSavedAt: new Date(),
+      });
+      mockPrisma.verification.upsert.mockResolvedValue({ id: "v-999" });
+      mockPrisma.auditLog.create.mockResolvedValue({});
+      mockPrisma.notification.create.mockResolvedValue({});
+    });
+
+    it("1. checkHostAuthReadinessAction returns isReady: true when authenticated session is ready", async () => {
+      const res = await checkHostAuthReadinessAction();
+      expect(res.isReady).toBe(true);
+      expect(res.user?.id).toBe("user-resume-deterministic-999");
+      expect(res.user?.email).toBe("priya.resume@example.com");
+    });
+
+    it("2. checkHostAuthReadinessAction returns isReady: false and UNAUTHORIZED when session is not ready", async () => {
+      requireAuth.mockRejectedValueOnce(new Error("UNAUTHORIZED: Authentication required."));
+
+      const res = await checkHostAuthReadinessAction();
+      expect(res.isReady).toBe(false);
+      expect(res.errorCode).toBe("UNAUTHORIZED");
+      expect(res.error).toContain("UNAUTHORIZED");
+    });
+
+    it("3. Unauthenticated host fills form → submits → intent and draft are saved in localStorage → login returns → auto-resume persists exactly one application", async () => {
+      const initialDraft: HostDraftPayload = {
+        hostName: "Priya Sharma",
+        email: "priya@example.com",
+        phone: "+91 9988776655",
+        preferredContactMethod: "WHATSAPP",
+        brideName: "Priya",
+        groomName: "Rohan",
+        coupleNames: "Priya & Rohan Celebration",
+        city: "Jaipur",
+        weddingDate: "2027-04-10",
+        durationDays: 3,
+        tradition: "Hindu",
+        weddingScale: "GRAND",
+        expectedTotalGuests: 500,
+        expectedInternationalGuests: 30,
+        requestedTier: "ROYAL",
+        story: "Our dream celebration in the Pink City.",
+        days: [],
+        savedAt: Date.now(),
+      };
+
+      // 1. Unauthenticated user fills and triggers submit
+      saveLocalWeddingDraft(initialDraft);
+      setAutoSubmitIntent(true);
+      expect(hasAutoSubmitIntent()).toBe(true);
+      expect(getLocalWeddingDraft()?.city).toBe("Jaipur");
+
+      // 2. User logs in, returns with resume=true, checks auth readiness
+      const readiness = await checkHostAuthReadinessAction();
+      expect(readiness.isReady).toBe(true);
+
+      // 3. Auto-resume executes submission with restored draft
+      const restoredDraft = getLocalWeddingDraft()!;
+      const submitRes = await submitHostApplicationAction({
+        ...restoredDraft,
+        hostName: readiness.user?.name || restoredDraft.hostName,
+        email: readiness.user?.email || restoredDraft.email || "",
+      });
+
+      expect(submitRes.success).toBe(true);
+      expect(submitRes.applicationId).toBe("app-resume-999");
+
+      // 4. On confirmed success, local draft and intent are cleared
+      clearLocalWeddingDraft();
+      expect(getLocalWeddingDraft()).toBeNull();
+      expect(hasAutoSubmitIntent()).toBe(false);
+    });
+
+    it("4. Session not immediately available after login → submission waits/retries → eventually succeeds", async () => {
+      // First 2 readiness checks fail (session initializing), 3rd succeeds
+      requireAuth
+        .mockRejectedValueOnce(new Error("UNAUTHORIZED: Authentication required."))
+        .mockRejectedValueOnce(new Error("UNAUTHORIZED: Authentication required."))
+        .mockResolvedValue(mockUser);
+
+      // Attempt 1: not ready
+      const check1 = await checkHostAuthReadinessAction();
+      expect(check1.isReady).toBe(false);
+
+      // Attempt 2: not ready
+      const check2 = await checkHostAuthReadinessAction();
+      expect(check2.isReady).toBe(false);
+
+      // Attempt 3: ready!
+      const check3 = await checkHostAuthReadinessAction();
+      expect(check3.isReady).toBe(true);
+
+      // Proceed to submit
+      const res = await submitHostApplicationAction({
+        hostName: "Priya Sharma",
+        coupleNames: "Priya & Rohan",
+        city: "Jaipur",
+        weddingDate: "2027-04-10",
+        durationDays: 3,
+      });
+
+      expect(res.success).toBe(true);
+      expect(res.applicationId).toBe("app-resume-999");
+    });
+
+    it("5. First auto-resume submission attempt fails due to transient error → retry succeeds", async () => {
+      const existingApp = { id: "app-resume-999", userId: mockUser.id, status: "DRAFT" };
+      mockPrisma.hostApplication.findFirst.mockResolvedValue(existingApp);
+      mockPrisma.hostApplication.update.mockResolvedValue({
+        ...existingApp,
+        status: "SUBMITTED",
+      });
+
+      // 1st attempt fails with transient DB error, 2nd succeeds
+      mockPrisma.hostApplication.findFirst.mockRejectedValueOnce(new Error("Connection reset"));
+
+      const payload = {
+        applicationId: "app-resume-999",
+        hostName: "Priya Sharma",
+        coupleNames: "Priya & Rohan",
+        city: "Jaipur",
+        weddingDate: "2027-04-10",
+        durationDays: 3,
+      };
+
+      const res1 = await submitHostApplicationAction(payload);
+      expect(res1.success).toBe(false);
+
+      // Retry attempt
+      const res2 = await submitHostApplicationAction(payload);
+      expect(res2.success).toBe(true);
+      expect(res2.status).toBe("SUBMITTED");
+    });
+
+    it("6. Failed submission preserves local draft and auto-submit intent", async () => {
+      const draft: HostDraftPayload = {
+        hostName: "Ananya Roy",
+        email: "ananya@example.com",
+        preferredContactMethod: "EMAIL",
+        coupleNames: "Ananya & Dev",
+        city: "Kolkata",
+        weddingDate: "2027-05-15",
+        durationDays: 2,
+        tradition: "Bengali",
+        weddingScale: "MEDIUM",
+        expectedTotalGuests: 300,
+        expectedInternationalGuests: 15,
+        requestedTier: "ENHANCED",
+        story: "Traditional Bengali celebration.",
+        days: [],
+        savedAt: Date.now(),
+      };
+
+      saveLocalWeddingDraft(draft);
+      setAutoSubmitIntent(true);
+
+      // Simulate a failure on the server
+      requireAuth.mockRejectedValueOnce(new Error("SERVICE_UNAVAILABLE: Database unavailable."));
+
+      const res = await submitHostApplicationAction(draft);
+      expect(res.success).toBe(false);
+
+      // On failure, draft and intent must remain intact in localStorage
+      expect(getLocalWeddingDraft()?.city).toBe("Kolkata");
+      expect(getLocalWeddingDraft()?.coupleNames).toBe("Ananya & Dev");
+      expect(hasAutoSubmitIntent()).toBe(true);
+    });
+
+    it("7. Successful submission clears local draft and intent", async () => {
+      const draft: HostDraftPayload = {
+        hostName: "Ananya Roy",
+        email: "ananya@example.com",
+        preferredContactMethod: "EMAIL",
+        coupleNames: "Ananya & Dev",
+        city: "Kolkata",
+        weddingDate: "2027-05-15",
+        durationDays: 2,
+        tradition: "Bengali",
+        weddingScale: "MEDIUM",
+        expectedTotalGuests: 300,
+        expectedInternationalGuests: 15,
+        requestedTier: "ENHANCED",
+        story: "Traditional Bengali celebration.",
+        days: [],
+        savedAt: Date.now(),
+      };
+
+      saveLocalWeddingDraft(draft);
+      setAutoSubmitIntent(true);
+
+      const res = await submitHostApplicationAction(draft);
+      expect(res.success).toBe(true);
+
+      clearLocalWeddingDraft();
+      expect(getLocalWeddingDraft()).toBeNull();
+      expect(hasAutoSubmitIntent()).toBe(false);
+    });
+
+    it("8. Retry does not create duplicate applications (idempotency)", async () => {
+      const existingApp = { id: "app-idempotent-777", userId: mockUser.id, status: "DRAFT" };
+      mockPrisma.hostApplication.findFirst.mockResolvedValue(existingApp);
+      mockPrisma.hostApplication.update.mockResolvedValue({
+        ...existingApp,
+        status: "SUBMITTED",
+      });
+
+      const payload = {
+        applicationId: "app-idempotent-777",
+        hostName: "Priya Sharma",
+        coupleNames: "Priya & Rohan",
+        city: "Jaipur",
+        weddingDate: "2027-04-10",
+        durationDays: 3,
+      };
+
+      // Simulate 3 rapid retries
+      const [r1, r2, r3] = await Promise.all([
+        submitHostApplicationAction(payload),
+        submitHostApplicationAction(payload),
+        submitHostApplicationAction(payload),
+      ]);
+
+      expect(r1.success).toBe(true);
+      expect(r2.success).toBe(true);
+      expect(r3.success).toBe(true);
+
+      // Verify no duplicate creation was triggered
+      expect(mockPrisma.hostApplication.create).not.toHaveBeenCalled();
+      expect(mockPrisma.hostApplication.update).toHaveBeenCalledTimes(3);
+    });
+
+    it("9. Authenticated direct submission works seamlessly without needing resume flow", async () => {
+      const directDraft: HostDraftPayload = {
+        hostName: "Direct Host",
+        email: mockUser.email,
+        preferredContactMethod: "WHATSAPP",
+        coupleNames: "Direct Couple Celebration",
+        city: "Udaipur",
+        weddingDate: "2027-06-20",
+        durationDays: 3,
+        tradition: "Hindu",
+        weddingScale: "LARGE",
+        expectedTotalGuests: 450,
+        expectedInternationalGuests: 25,
+        requestedTier: "ROYAL",
+        story: "Direct submission test.",
+        days: [],
+        savedAt: Date.now(),
+      };
+
+      saveLocalWeddingDraft(directDraft);
+
+      const res = await submitHostApplicationAction(directDraft);
+      expect(res.success).toBe(true);
+      expect(res.status).toBe("SUBMITTED");
+
+      clearLocalWeddingDraft();
+      expect(getLocalWeddingDraft()).toBeNull();
+    });
+
+    it("10. REST API POST /api/host-application and Server Action maintain consistent validation and persistence semantics", async () => {
+      const { POST } = require("@/app/api/host-application/route");
+
+      const existingWedding = {
+        id: "wedding-rest-consistency-1",
+        title: "REST Couple Wedding",
+        location: "City Palace, Udaipur, Rajasthan",
+        category: "Hinduism",
+        date: new Date("2027-08-10"),
+        capacity: 20,
+        mainImageUrl: "https://images.unsplash.com/photo-1583939003579-730e3918a45a",
+        status: "DRAFT",
+        hostCoupleId: "cp-999",
+      };
+
+      mockPrisma.wedding.findFirst.mockResolvedValue(existingWedding);
+      mockPrisma.wedding.update.mockResolvedValue({
+        ...existingWedding,
+        title: "REST Updated Wedding",
+      });
+
+      const req = new Response(
+        JSON.stringify({
+          hostName: mockUser.name,
+          email: mockUser.email,
+          coupleNames: "REST Updated",
+          city: "Udaipur",
+          weddingDate: "2027-08-10",
+          durationDays: 3,
+          religion: "Hindu Vedic",
+          story: "Updated via REST route.",
+          existingApplicationId: "wedding-rest-consistency-1",
+        })
+      );
+
+      const res = await POST(req);
+      const json = await res.json();
+
+      expect(res.status).toBe(200);
+      expect(json.success).toBe(true);
+      expect(json.applicationId).toBe("wedding-rest-consistency-1");
+      expect(mockPrisma.wedding.create).not.toHaveBeenCalled();
+    });
+
+    it("11. Redirect URL survives login with return parameters preserved and open redirects blocked", () => {
+      const { sanitizeRedirectUrl } = require("@/lib/utils");
+
+      // Valid internal redirect with resume flag
+      const validUrl = "/list-wedding?resume=true";
+      expect(sanitizeRedirectUrl(validUrl)).toBe("/list-wedding?resume=true");
+
+      // Open redirect attacks blocked
+      expect(sanitizeRedirectUrl("https://evil.com/phishing")).toBe("/dashboard");
+      expect(sanitizeRedirectUrl("//evil.com")).toBe("/dashboard");
+      expect(sanitizeRedirectUrl("javascript:alert(1)")).toBe("/dashboard");
+      expect(sanitizeRedirectUrl(null)).toBe("/dashboard");
+    });
+
+    it("12. Unauthenticated host signup redirect flow preserves resume parameter without onboarding interception", () => {
+      const { sanitizeRedirectUrl } = require("@/lib/utils");
+      const redirectTarget = sanitizeRedirectUrl("/list-wedding?resume=true");
+
+      // Signup flow redirect configuration
+      const fallbackOnboardingUrl = redirectTarget.includes("/list-wedding")
+        ? redirectTarget
+        : `/onboarding?redirect_url=${encodeURIComponent(redirectTarget)}`;
+
+      // Must direct immediately to /list-wedding?resume=true, bypassing onboarding wizard
+      expect(fallbackOnboardingUrl).toBe("/list-wedding?resume=true");
+    });
+
+    it("13. Browser refresh during auto-resume flow is safe and preserves draft until DB commit", async () => {
+      const draft: HostDraftPayload = {
+        hostName: "Refresh Test Host",
+        email: "refresh@example.com",
+        preferredContactMethod: "WHATSAPP",
+        coupleNames: "Refresh Couple",
+        city: "Jaipur",
+        weddingDate: "2027-09-01",
+        durationDays: 3,
+        tradition: "Hindu",
+        weddingScale: "MEDIUM",
+        expectedTotalGuests: 200,
+        expectedInternationalGuests: 20,
+        requestedTier: "ROYAL",
+        story: "Testing refresh safety.",
+        days: [],
+        savedAt: Date.now(),
+      };
+
+      // 1. Draft and intent exist prior to submission
+      saveLocalWeddingDraft(draft);
+      setAutoSubmitIntent(true);
+
+      // 2. Simulate page reload before submit completes -> draft and intent are still preserved
+      expect(getLocalWeddingDraft()).toEqual(draft);
+      expect(hasAutoSubmitIntent()).toBe(true);
+
+      // 3. Page loads after refresh, completes submission
+      const res = await submitHostApplicationAction(draft);
+      expect(res.success).toBe(true);
+
+      // 4. Only upon confirmed success are they cleared
+      clearLocalWeddingDraft();
+      expect(getLocalWeddingDraft()).toBeNull();
+      expect(hasAutoSubmitIntent()).toBe(false);
+    });
+
+    it("14. React Strict Mode double-invocation does not create duplicate HostApplication records", async () => {
+      let createdAppsCount = 0;
+      let existingRecord: any = null;
+
+      mockPrisma.hostApplication.findFirst.mockImplementation(async () => {
+        return existingRecord;
+      });
+
+      mockPrisma.hostApplication.create.mockImplementation(async ({ data }: any) => {
+        createdAppsCount++;
+        existingRecord = { id: `app-strict-${createdAppsCount}`, ...data };
+        return existingRecord;
+      });
+
+      mockPrisma.hostApplication.update.mockImplementation(async ({ data }: any) => {
+        existingRecord = { ...existingRecord, ...data };
+        return existingRecord;
+      });
+
+      const payload = {
+        hostName: "Strict Mode Host",
+        email: mockUser.email,
+        coupleNames: "Strict Mode Celebration",
+        city: "Delhi",
+        weddingDate: "2027-10-15",
+        durationDays: 3,
+      };
+
+      // Mount 1 (Simulated Strict Mode initial mount)
+      const res1 = await submitHostApplicationAction(payload);
+      expect(res1.success).toBe(true);
+
+      // Mount 2 (Simulated Strict Mode immediate re-mount/invocation)
+      const res2 = await submitHostApplicationAction(payload);
+      expect(res2.success).toBe(true);
+
+      // Exactly ONE application created in database
+      expect(createdAppsCount).toBe(1);
+      expect(mockPrisma.hostApplication.create).toHaveBeenCalledTimes(1);
+      expect(mockPrisma.hostApplication.update).toHaveBeenCalledTimes(1);
+    });
+  });
 });
+

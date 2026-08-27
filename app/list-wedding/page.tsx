@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useTransition, useMemo, Suspense } from "react";
+import { useState, useEffect, useCallback, useMemo, Suspense, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { toast } from "sonner";
@@ -36,7 +36,10 @@ import {
   submitHostApplicationAction,
   uploadHostRequestedDocumentAction,
   getCurrentHostApplicationAction,
+  checkHostAuthReadinessAction,
   HostDayInput,
+  HostApplicationInput,
+  SubmitHostApplicationResult,
 } from "@/lib/actions/host-application";
 import { formatPsychologicalLakh } from "@/components/wedding/HostEarningsCalculator";
 import {
@@ -95,12 +98,11 @@ function ListWeddingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const isResuming = searchParams?.get("resume") === "true";
-  const { user, loading: authLoading, refreshData } = useAuth();
+  const { user } = useAuth();
   const { user: clerkUser, isLoaded: clerkLoaded, isSignedIn } = useUser();
   const isAuthenticated = Boolean(user || (clerkLoaded && isSignedIn));
   const authenticatedEmail = user?.email || clerkUser?.primaryEmailAddress?.emailAddress || "";
   const authenticatedName = user?.name || clerkUser?.fullName || clerkUser?.firstName || "Host";
-  const [isPending, startTransition] = useTransition();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Active Application Server State
@@ -113,6 +115,8 @@ function ListWeddingContent() {
   const [autosaveState, setAutosaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [lastSavedTime, setLastSavedTime] = useState<Date | null>(null);
   const [hasAutoSubmitted, setHasAutoSubmitted] = useState(false);
+  const [autoResumeError, setAutoResumeError] = useState<string | null>(null);
+  const isAutoSubmittingRef = useRef(false);
 
   // Authoritative Calculator State (Primary source of truth for Duration, Guests, Tier)
   const [durationDays, setDurationDays] = useState<WeddingDurationDays>(3);
@@ -332,13 +336,13 @@ function ListWeddingContent() {
     } finally {
       setIsLoadingActiveApp(false);
     }
-  }, [user?.id, user?.name, user?.email]);
+  }, [user]);
 
   useEffect(() => {
     if (user) {
       fetchActiveApplication();
     }
-  }, [user?.id, fetchActiveApplication]);
+  }, [user, fetchActiveApplication]);
 
   // Debounced Autosave Trigger (Server sync if logged in)
   const triggerAutosave = useCallback(async () => {
@@ -405,6 +409,10 @@ function ListWeddingContent() {
     requestedTier,
     story,
     allDays,
+    appStatus,
+    hasAutoSubmitted,
+    isSubmitting,
+    searchParams,
   ]);
 
   const buildLocalDraft = useCallback((formEl?: HTMLFormElement | null): HostDraftPayload => {
@@ -514,6 +522,9 @@ function ListWeddingContent() {
     buildLocalDraft,
     triggerAutosave,
     user,
+    hasAutoSubmitted,
+    isSubmitting,
+    searchParams,
   ]);
 
   const handleDurationChange = useCallback((nextDuration: WeddingDurationDays) => {
@@ -594,6 +605,8 @@ function ListWeddingContent() {
     }
 
     setIsSubmitting(true);
+    setAutoResumeError(null);
+
     (async () => {
       try {
         console.log("[list-wedding] Submitting direct host application action with draft:", draft.city, draft.coupleNames);
@@ -607,18 +620,26 @@ function ListWeddingContent() {
         console.log("[list-wedding] submitHostApplicationAction response:", res);
 
         if (res && res.success) {
+          setHasAutoSubmitted(true);
           clearLocalWeddingDraft();
+          setAutoSubmitIntent(false);
           setAppStatus("SUBMITTED");
           setVerificationStatus("PENDING");
           toast.success("Your celebration has been submitted for verification.");
           window.location.assign("/dashboard");
         } else {
+          // On failure: preserve local draft in storage
+          saveLocalWeddingDraft(draft);
           const errorMsg = res && !res.success ? res.error : "Submission failed. Your draft is still saved.";
+          setAutoResumeError(errorMsg);
           toast.error(errorMsg);
         }
       } catch (err: any) {
         console.error("[list-wedding] submitHostApplicationAction error:", err);
-        toast.error(err?.message || "Submission failed. Your draft is still saved.");
+        saveLocalWeddingDraft(draft);
+        const errorMsg = err?.message || "Submission failed. Your draft is still saved.";
+        setAutoResumeError(errorMsg);
+        toast.error(errorMsg);
       } finally {
         setIsSubmitting(false);
       }
@@ -629,78 +650,190 @@ function ListWeddingContent() {
   useEffect(() => {
     const resumeParam = searchParams?.get("resume") === "true";
     const autoIntent = hasAutoSubmitIntent();
-    console.log("[list-wedding] Auto-resume effect check. isAuthenticated:", isAuthenticated, "hasAutoSubmitted:", hasAutoSubmitted, "resumeParam:", resumeParam, "autoIntent:", autoIntent);
-    if (!isAuthenticated || hasAutoSubmitted) return;
+    const shouldResume = resumeParam || autoIntent || isResuming;
 
-    if (resumeParam || autoIntent || isResuming) {
-      const draft = getLocalWeddingDraft();
-      console.log("[list-wedding] Found draft for auto-resume:", draft?.city, draft?.coupleNames);
-      if (draft && (draft.coupleNames || draft.brideName || draft.hostName) && (draft.city || draft.venueName)) {
-        setHasAutoSubmitted(true);
-        populateFieldsFromDraft(draft);
+    // Guard: Only proceed if in resume flow, not yet successfully submitted, and no resume execution is in-flight
+    if (!shouldResume || hasAutoSubmitted || isAutoSubmittingRef.current) return;
 
-        setIsSubmitting(true);
-        (async () => {
-          try {
-            toast.loading("Submitting your saved celebration details...", { id: "resume-submit" });
-
-            const resolvedCoupleNames =
-              draft.coupleNames ||
-              (draft.brideName && draft.groomName ? `${draft.brideName} & ${draft.groomName} Celebration` : draft.brideName || draft.hostName || "Our Celebration");
-            const resolvedHostName = draft.hostName || authenticatedName || clerkUser?.fullName || clerkUser?.firstName || "Host";
-            const resolvedEmail = authenticatedEmail || draft.email || clerkUser?.primaryEmailAddress?.emailAddress || "";
-            const resolvedDate = draft.weddingDate || new Date().toISOString().split("T")[0];
-
-            const res = await submitHostApplicationAction({
-              applicationId: applicationId || undefined,
-              hostName: resolvedHostName,
-              email: resolvedEmail,
-              phone: draft.phone,
-              preferredContactMethod: draft.preferredContactMethod || "WHATSAPP",
-              brideName: draft.brideName,
-              groomName: draft.groomName,
-              coupleNames: resolvedCoupleNames,
-              city: draft.city || "India",
-              state: draft.state,
-              venueName: draft.venueName,
-              weddingDate: resolvedDate,
-              durationDays: draft.durationDays || 3,
-              tradition: draft.tradition || "Traditional / Cultural",
-              weddingScale: draft.weddingScale || "MEDIUM",
-              expectedTotalGuests: draft.expectedTotalGuests || 200,
-              expectedInternationalGuests: draft.expectedInternationalGuests || 20,
-              requestedTier: draft.requestedTier || "SIGNATURE_ROYAL",
-              story: draft.story || "",
-              days: (draft.days || []).slice(0, draft.durationDays || 3),
-            });
-            console.log("[list-wedding] auto-resume res:", res);
-
-            if (res && res.success) {
-              clearLocalWeddingDraft();
-              setAppStatus("SUBMITTED");
-              setVerificationStatus("PENDING");
-              toast.success("Welcome! Your wedding details have been successfully submitted for verification.", {
-                id: "resume-submit",
-              });
-              window.location.assign("/dashboard");
-            } else {
-              const errorMsg = res && !res.success ? res.error : "Failed to auto-submit saved details. Please review and click Submit.";
-              toast.error(errorMsg, {
-                id: "resume-submit",
-              });
-            }
-          } catch (err: any) {
-            console.error("[list-wedding] auto-resume error:", err);
-            toast.error(err?.message || "Failed to auto-submit saved details. Please review and click Submit.", {
-              id: "resume-submit",
-            });
-          } finally {
-            setIsSubmitting(false);
-          }
-        })();
-      }
+    const draft = getLocalWeddingDraft();
+    if (!draft || (!draft.coupleNames && !draft.brideName && !draft.hostName) || (!draft.city && !draft.venueName)) {
+      return;
     }
-  }, [isAuthenticated, authenticatedEmail, authenticatedName, isResuming, hasAutoSubmitted, applicationId, router, populateFieldsFromDraft, searchParams]);
+
+    // Immediately restore form fields so the user sees their work
+    populateFieldsFromDraft(draft);
+
+    // Wait until client auth indicates signed-in
+    if (!isAuthenticated) return;
+
+    isAutoSubmittingRef.current = true;
+    setIsSubmitting(true);
+    setAutoResumeError(null);
+
+    let isCancelled = false;
+
+    (async () => {
+      try {
+        toast.loading("Verifying your session and submitting your celebration details...", { id: "resume-submit" });
+
+        // 1. Deterministic Server-Side Auth Readiness Check with Backoff Retry
+        let isAuthReady = false;
+        let verifiedUser: any = null;
+        const maxReadinessAttempts = 5;
+        const baseDelayMs = 300;
+
+        for (let attempt = 1; attempt <= maxReadinessAttempts; attempt++) {
+          if (isCancelled) break;
+          try {
+            const readiness = await checkHostAuthReadinessAction();
+            if (readiness.isReady && readiness.user) {
+              isAuthReady = true;
+              verifiedUser = readiness.user;
+              break;
+            }
+          } catch (probeErr) {
+            console.warn(`[list-wedding] Auth readiness probe attempt ${attempt} warning:`, probeErr);
+          }
+
+          if (attempt < maxReadinessAttempts) {
+            const delay = baseDelayMs * Math.pow(1.5, attempt - 1);
+            await new Promise((r) => setTimeout(r, delay));
+          }
+        }
+
+        if (isCancelled) return;
+
+        // If readiness check didn't confirm auth and client isn't ready, alert user to submit manually
+        if (!isAuthReady && !user && (!clerkLoaded || !isSignedIn)) {
+          toast.error("Your session is still initializing. Please click 'Submit Celebration' below.", {
+            id: "resume-submit",
+          });
+          setAutoResumeError("Authentication session is initializing. Please click 'Submit Celebration' below to complete your listing.");
+          saveLocalWeddingDraft(draft);
+          isAutoSubmittingRef.current = false;
+          setIsSubmitting(false);
+          return;
+        }
+
+        // 2. Prepare payload from draft with authoritatively resolved details
+        const resolvedCoupleNames =
+          draft.coupleNames ||
+          (draft.brideName && draft.groomName ? `${draft.brideName} & ${draft.groomName} Celebration` : draft.brideName || draft.hostName || "Our Celebration");
+        const resolvedHostName = draft.hostName || verifiedUser?.name || authenticatedName || clerkUser?.fullName || clerkUser?.firstName || "Host";
+        const resolvedEmail = verifiedUser?.email || authenticatedEmail || draft.email || clerkUser?.primaryEmailAddress?.emailAddress || "";
+        const resolvedDate = draft.weddingDate || new Date().toISOString().split("T")[0];
+
+        const payload: HostApplicationInput = {
+          applicationId: applicationId || undefined,
+          hostName: resolvedHostName,
+          email: resolvedEmail,
+          phone: draft.phone,
+          preferredContactMethod: draft.preferredContactMethod || "WHATSAPP",
+          brideName: draft.brideName,
+          groomName: draft.groomName,
+          coupleNames: resolvedCoupleNames,
+          city: draft.city || "India",
+          state: draft.state,
+          venueName: draft.venueName,
+          weddingDate: resolvedDate,
+          durationDays: draft.durationDays || 3,
+          tradition: draft.tradition || "Traditional / Cultural",
+          weddingScale: draft.weddingScale || "MEDIUM",
+          expectedTotalGuests: draft.expectedTotalGuests || 200,
+          expectedInternationalGuests: draft.expectedInternationalGuests || 20,
+          requestedTier: draft.requestedTier || "SIGNATURE_ROYAL",
+          story: draft.story || "",
+          days: (draft.days || []).slice(0, draft.durationDays || 3),
+        };
+
+        // 3. Attempt submission with transient retry loop (up to 3 attempts)
+        let submissionResult: SubmitHostApplicationResult | null = null;
+        const maxSubmissionAttempts = 3;
+
+        for (let subAttempt = 1; subAttempt <= maxSubmissionAttempts; subAttempt++) {
+          if (isCancelled) break;
+          try {
+            submissionResult = await submitHostApplicationAction(payload);
+            if (submissionResult.success) {
+              break;
+            }
+            // If error is transient, wait and retry
+            const errCode = submissionResult.errorCode || "";
+            const isTransient = errCode === "UNAUTHORIZED" || errCode === "SERVICE_UNAVAILABLE" || errCode === "AUTH_NOT_READY";
+            if (isTransient && subAttempt < maxSubmissionAttempts) {
+              await new Promise((r) => setTimeout(r, 600 * subAttempt));
+              continue;
+            }
+            // Permanent failure or exhausted retries
+            break;
+          } catch (subErr: any) {
+            console.warn(`[list-wedding] Submission attempt ${subAttempt} error:`, subErr);
+            if (subAttempt < maxSubmissionAttempts) {
+              await new Promise((r) => setTimeout(r, 600 * subAttempt));
+            } else {
+              submissionResult = {
+                success: false,
+                error: subErr?.message || "Submission failed.",
+                errorCode: subErr?.code || "SUBMISSION_ERROR",
+              };
+            }
+          }
+        }
+
+        if (isCancelled) return;
+
+        if (submissionResult && submissionResult.success) {
+          // Confirmed success: only now clear local draft and intent, and mark auto-submitted
+          setHasAutoSubmitted(true);
+          clearLocalWeddingDraft();
+          setAutoSubmitIntent(false);
+          setAppStatus("SUBMITTED");
+          setVerificationStatus("PENDING");
+          toast.success("Welcome! Your wedding details have been successfully submitted for verification.", {
+            id: "resume-submit",
+          });
+          window.location.assign("/dashboard");
+        } else {
+          // On failure: DO NOT mark hasAutoSubmitted, PRESERVE draft in localStorage
+          const errorMsg = submissionResult && !submissionResult.success ? submissionResult.error : "Failed to auto-submit saved details. Please review and click Submit.";
+          setAutoResumeError(errorMsg);
+          toast.error(errorMsg, {
+            id: "resume-submit",
+          });
+          saveLocalWeddingDraft(draft);
+        }
+      } catch (err: any) {
+        console.error("[list-wedding] auto-resume unexpected error:", err);
+        const errorMsg = err?.message || "Failed to auto-submit. Your draft is saved — please click Submit.";
+        setAutoResumeError(errorMsg);
+        toast.error(errorMsg, {
+          id: "resume-submit",
+        });
+        saveLocalWeddingDraft(draft);
+      } finally {
+        isAutoSubmittingRef.current = false;
+        setIsSubmitting(false);
+      }
+    })();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [
+    isAuthenticated,
+    user,
+    clerkLoaded,
+    isSignedIn,
+    clerkUser,
+    authenticatedEmail,
+    authenticatedName,
+    isResuming,
+    hasAutoSubmitted,
+    applicationId,
+    router,
+    populateFieldsFromDraft,
+    searchParams,
+  ]);
 
 
   // Document Upload Handler for Post-Submission Action Required slots
@@ -1791,13 +1924,24 @@ function ListWeddingContent() {
             />
           </div>
 
+          {/* Submission Notice / Auto-Resume Error Banner */}
+          {autoResumeError && (
+            <div className="bg-amber-50 border border-amber-300 text-amber-900 rounded-2xl p-4 flex items-start gap-3 text-xs shadow-2xs">
+              <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <p className="font-bold">Submission Update</p>
+                <p className="text-amber-800">{autoResumeError}</p>
+              </div>
+            </div>
+          )}
+
           {/* Form Action Footer */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4">
             <button
               type="button"
               onClick={handleManualSave}
-              disabled={autosaveState === "saving"}
-              className="w-full sm:w-auto px-6 py-3.5 bg-white border border-warm-200 text-charcoal-800 rounded-2xl text-xs font-bold hover:bg-warm-50 transition-all cursor-pointer inline-flex items-center justify-center gap-2 shadow-2xs"
+              disabled={autosaveState === "saving" || isSubmitting}
+              className="w-full sm:w-auto px-6 py-3.5 bg-white border border-warm-200 text-charcoal-800 rounded-2xl text-xs font-bold hover:bg-warm-50 transition-all cursor-pointer inline-flex items-center justify-center gap-2 shadow-2xs disabled:opacity-50"
             >
               <Save size={15} />
               Save &amp; Continue Later
@@ -1806,10 +1950,10 @@ function ListWeddingContent() {
             <div className="flex flex-col items-center sm:items-end gap-1.5 w-full sm:w-auto">
               <button
                 type="submit"
-                disabled={isPending}
+                disabled={isPending || isSubmitting}
                 className="w-full sm:w-auto px-8 py-4 bg-[var(--color-brand-primary)] text-white rounded-2xl text-xs font-bold uppercase tracking-wider hover:bg-maroon-900 transition-all shadow-sm cursor-pointer disabled:opacity-50 inline-flex items-center justify-center gap-2"
               >
-                {isPending ? (
+                {isPending || isSubmitting ? (
                   <>
                     <RefreshCw size={15} className="animate-spin" />
                     Submitting Application...

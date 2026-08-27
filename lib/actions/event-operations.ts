@@ -271,7 +271,15 @@ export async function checkInGuestAction(rawToken: string, weddingId: string, de
       return { success: false, result: "REVOKED", pass };
     }
 
-    if (pass.status === "EXPIRED") {
+    const isPassExpired = pass.status === "EXPIRED" || (pass.expiresAt && new Date(pass.expiresAt).getTime() < Date.now());
+    if (isPassExpired) {
+      // Mark pass as EXPIRED in DB if still showing ACTIVE
+      if (pass.status === "ACTIVE") {
+        await tx.guestPass.update({
+          where: { id: pass.id },
+          data: { status: "EXPIRED" },
+        });
+      }
       await tx.guestCheckIn.create({
         data: {
           guestPassId: pass.id,
@@ -286,17 +294,24 @@ export async function checkInGuestAction(rawToken: string, weddingId: string, de
       return { success: false, result: "EXPIRED", pass };
     }
 
-    // ATOMIC check-in: only updates the pass when its current status is ACTIVE.
+    // ATOMIC check-in: only updates the pass when its current status is ACTIVE AND not expired.
     // If two scanners race on the same token, only one updateMany can match
-    // status = ACTIVE and return count = 1. The other gets count = 0 and
-    // correctly returns ALREADY_USED. This eliminates the TOCTOU race condition.
+    // and return count = 1. The other gets count = 0 and correctly returns ALREADY_USED.
+    const now = new Date();
     const updated = await tx.guestPass.updateMany({
-      where: { id: pass.id, status: "ACTIVE" },
+      where: {
+        id: pass.id,
+        status: "ACTIVE",
+        OR: [
+          { expiresAt: null },
+          { expiresAt: { gte: now } },
+        ],
+      },
       data: {
         status: "USED",
         scanCount: { increment: 1 },
-        firstScannedAt: new Date(),
-        lastScannedAt: new Date(),
+        firstScannedAt: now,
+        lastScannedAt: now,
       },
     });
 

@@ -112,6 +112,59 @@ export type SubmitHostApplicationResult =
   | { success: true; applicationId: string; status: string; error?: never; errorCode?: never }
   | { success: false; error: string; errorCode: string; applicationId?: never; status?: never };
 
+export interface CheckHostAuthReadinessResult {
+  isReady: boolean;
+  user?: {
+    id: string;
+    email: string;
+    name: string;
+    role: string;
+  };
+  error?: string;
+  errorCode?: string;
+}
+
+/**
+ * Deterministic Server Action: Check if the authenticated Clerk session is reliably ready on the server.
+ * Used by the post-login /list-wedding resume flow to prevent race conditions before auto-submitting.
+ */
+export async function checkHostAuthReadinessAction(): Promise<CheckHostAuthReadinessResult> {
+  try {
+    const user = await requireAuth();
+    if (!user || !user.id) {
+      return {
+        isReady: false,
+        error: "User session is not yet initialized.",
+        errorCode: "SESSION_NOT_READY",
+      };
+    }
+    return {
+      isReady: true,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name || "Host",
+        role: user.role,
+      },
+    };
+  } catch (err: any) {
+    const message = err?.message || "Authentication required.";
+    let errorCode = err?.code || "AUTH_NOT_READY";
+    if (message.startsWith("UNAUTHORIZED")) {
+      errorCode = "UNAUTHORIZED";
+    } else if (message.startsWith("SERVICE_UNAVAILABLE")) {
+      errorCode = "SERVICE_UNAVAILABLE";
+    } else if (message.startsWith("BANNED")) {
+      errorCode = "BANNED";
+    }
+    return {
+      isReady: false,
+      error: message,
+      errorCode,
+    };
+  }
+}
+
 /**
  * Authoritative Server-Side Host Application Resolver.
  * Resolves the authenticated user's database identity -> HostApplication (or legacy CoupleProfile -> Wedding).
@@ -622,10 +675,17 @@ export async function saveHostApplicationDraftAction(
     };
   } catch (err: any) {
     console.error("[saveHostApplicationDraftAction] Error:", err);
+    const msg = err?.message || "Failed to save host application draft.";
+    let code = err?.code || "DRAFT_SAVE_ERROR";
+    if (msg.startsWith("UNAUTHORIZED")) {
+      code = "UNAUTHORIZED";
+    } else if (msg.startsWith("SERVICE_UNAVAILABLE") || msg.startsWith("AUTH_PROVIDER_UNAVAILABLE")) {
+      code = "SERVICE_UNAVAILABLE";
+    }
     return {
       success: false,
-      error: err?.message || "Failed to save host application draft.",
-      errorCode: err?.code || "DRAFT_SAVE_ERROR",
+      error: msg,
+      errorCode: code,
     };
   }
 }

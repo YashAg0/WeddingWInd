@@ -195,8 +195,19 @@ export async function syncAndGetDbUser() {
   let session: any = null;
   try {
     session = await getSession();
-  } catch (err) {
+  } catch (err: any) {
     console.warn("[syncAndGetDbUser] Unable to fetch Clerk session:", err);
+    const isNetworkOrProviderOutage =
+      err?.message?.includes("fetch failed") ||
+      err?.message?.includes("ETIMEDOUT") ||
+      err?.message?.includes("ECONNRESET") ||
+      err?.message?.includes("Service Unavailable") ||
+      err?.code === "UND_ERR_CONNECT_TIMEOUT";
+    if (isNetworkOrProviderOutage) {
+      const authError = new Error("AUTH_PROVIDER_UNAVAILABLE: Authentication service is temporarily unavailable. Please try again shortly.");
+      (authError as any).code = "AUTH_PROVIDER_UNAVAILABLE";
+      throw authError;
+    }
     return null;
   }
 
@@ -378,15 +389,13 @@ export async function syncAndGetDbUser() {
       timeout: 60000
     });
 
-    // Link referral AFTER the transaction is safely committed
-    if (dbUser && dbUser.createdAt.getTime() === dbUser.updatedAt.getTime()) {
-      if (refCookie && refCookie.referralCode) {
-        try {
-          const { associateReferralOnSignup } = require("./actions/referrals");
-          await associateReferralOnSignup(dbUser.id, refCookie);
-        } catch (err) {
-          console.error("Failed to link referral cookie on signup:", err);
-        }
+    // Link referral AFTER the transaction is safely committed (for both new signups and returning referred visitors)
+    if (dbUser && refCookie && refCookie.referralCode) {
+      try {
+        const { associateReferralOnSignup } = require("./actions/referrals");
+        await associateReferralOnSignup(dbUser.id, refCookie);
+      } catch (err) {
+        console.error("Failed to link referral cookie:", err);
       }
     }
 

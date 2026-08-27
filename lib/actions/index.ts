@@ -867,7 +867,7 @@ export async function handleGuestApplicationAction(appId: string, status: "appro
   const { assertCanHost } = require("./safety");
   await assertCanHost(user.id);
 
-  await prisma.$transaction(async (tx) => {
+  const emailData = await prisma.$transaction(async (tx) => {
     // 1. Fetch booking with wedding
     const booking = await tx.booking.findUnique({
       where: { id: appId },
@@ -890,7 +890,6 @@ export async function handleGuestApplicationAction(appId: string, status: "appro
     if (booking.status !== BookingStatus.PENDING) {
       throw new Error("Only pending booking requests can be approved or declined.");
     }
-
 
     if (status === "approved") {
       // Concurrency lock on Wedding row to serialize simultaneous approvals
@@ -926,15 +925,15 @@ export async function handleGuestApplicationAction(appId: string, status: "appro
         }
       });
 
-      // Send host approval with payment link email
-      // ENV-001: Use validated env to prevent localhost URLs in production transactional emails.
       const dashboardUrl = `${env.NEXT_PUBLIC_APP_URL}/dashboard/bookings`;
-      await sendHostApprovalWithPaymentLinkEmail(
-        booking.traveler.user.email,
-        booking.traveler.fullName,
-        booking.wedding.title,
-        dashboardUrl
-      );
+
+      return {
+        isApproved: true,
+        email: booking.traveler.user.email,
+        fullName: booking.traveler.fullName,
+        weddingTitle: booking.wedding.title,
+        dashboardUrl,
+      };
     } else {
       await tx.booking.update({
         where: { id: appId },
@@ -951,13 +950,36 @@ export async function handleGuestApplicationAction(appId: string, status: "appro
         }
       });
 
-      await sendHostRejectionEmail(
-        booking.traveler.user.email,
-        booking.traveler.fullName,
-        booking.wedding.title
-      );
+      return {
+        isApproved: false,
+        email: booking.traveler.user.email,
+        fullName: booking.traveler.fullName,
+        weddingTitle: booking.wedding.title,
+      };
     }
   });
+
+  // Post-commit external email dispatch (releases database row lock before network I/O)
+  if (emailData) {
+    try {
+      if (emailData.isApproved && emailData.dashboardUrl) {
+        await sendHostApprovalWithPaymentLinkEmail(
+          emailData.email,
+          emailData.fullName,
+          emailData.weddingTitle,
+          emailData.dashboardUrl
+        );
+      } else {
+        await sendHostRejectionEmail(
+          emailData.email,
+          emailData.fullName,
+          emailData.weddingTitle
+        );
+      }
+    } catch (emailErr) {
+      console.error("[handleGuestApplicationAction] Non-blocking email dispatch error:", emailErr);
+    }
+  }
 
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/bookings");

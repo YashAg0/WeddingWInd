@@ -121,7 +121,7 @@ export async function trackReferralVisitAction(
 }
 
 /**
- * Associates user with referral attribution on signup.
+ * Associates user with referral attribution on signup or subsequent referred visits.
  */
 export async function associateReferralOnSignup(userId: string, refCookieData: any) {
   try {
@@ -133,7 +133,21 @@ export async function associateReferralOnSignup(userId: string, refCookieData: a
     });
     if (!agent) return;
 
-    // Create signup referral linkage
+    // Security: Do not link if agent is referring themselves
+    if (agent.userId === userId) return;
+
+    // Check if user already has an active pending referral for this agent
+    const existingActive = await prisma.agentReferral.findFirst({
+      where: {
+        agentId: agent.id,
+        referredUserId: userId,
+        status: { in: [ReferralStatus.SIGNED_UP, ReferralStatus.ONBOARDED, ReferralStatus.QUALIFIED] },
+      },
+    });
+
+    if (existingActive) return existingActive;
+
+    // Create referral linkage
     const referral = await prisma.agentReferral.create({
       data: {
         agentId: agent.id,
@@ -150,8 +164,12 @@ export async function associateReferralOnSignup(userId: string, refCookieData: a
       },
     });
 
-    // Run basic fraud detection checks
-    await detectReferralFraudAction(referral.id);
+    // Run basic fraud detection checks safely
+    try {
+      await detectReferralFraudAction(referral.id);
+    } catch (fraudErr) {
+      console.warn("[associateReferralOnSignup] Non-blocking fraud check:", fraudErr);
+    }
 
     return referral;
   } catch (error) {

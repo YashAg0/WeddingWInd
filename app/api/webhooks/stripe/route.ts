@@ -88,9 +88,9 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    let emailDataToSend: any = null;
+
     // 3. Process Authoritative Event Types
-    // Note: Sponsored Placement does NOT use Stripe (external UPI/PayPal/Bank transfer only).
-    // General Stripe webhook events (guest payments/refunds if configured) are safely acknowledged here.
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
@@ -98,6 +98,192 @@ export async function POST(req: NextRequest) {
         if (session.payment_status !== "paid") {
           console.warn(`[Stripe Webhook] Checkout session ${session.id} payment_status is not 'paid': ${session.payment_status}`);
           break;
+        }
+
+        const bookingId = session.metadata?.bookingId || session.client_reference_id;
+        const transactionId = (typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id) || session.id;
+
+        if (bookingId) {
+          const { encryptPass, hashPassToken } = await import("@/lib/security/guest-pass-crypto");
+          const crypto = await import("crypto");
+          const { BookingStatus, PaymentStatus } = await import("@prisma/client");
+
+          const txResult = await prisma.$transaction(async (tx) => {
+            const booking = await tx.booking.findUnique({
+              where: { id: bookingId },
+              include: {
+                traveler: { include: { user: true } },
+                wedding: { include: { hostCouple: { include: { user: true } } } },
+                payments: { where: { status: PaymentStatus.PAID } },
+                guestPasses: true,
+                preparations: true,
+              },
+            });
+
+            if (!booking) {
+              console.warn(`[Stripe Webhook] Booking ${bookingId} not found.`);
+              return null;
+            }
+
+            // IDEMPOTENCY GUARD: If already paid, return early safely
+            if (booking.status === BookingStatus.PAID && booking.payments.length > 0) {
+              return { alreadyPaid: true };
+            }
+
+            const now = new Date();
+            const totalAmount = session.amount_total ? session.amount_total / 100 : Number(booking.totalAmount || 0);
+            const currency = (session.currency || booking.currency || "USD").toUpperCase();
+
+            // 1. Find existing pending payment or create new
+            const existingPendingPayment = await tx.payment.findFirst({
+              where: {
+                bookingId: booking.id,
+                status: { not: PaymentStatus.PAID },
+              },
+              orderBy: { createdAt: "desc" },
+            });
+
+            let paymentRecord;
+            if (existingPendingPayment) {
+              paymentRecord = await tx.payment.update({
+                where: { id: existingPendingPayment.id },
+                data: {
+                  provider: "STRIPE",
+                  status: PaymentStatus.PAID,
+                  amount: totalAmount,
+                  totalAmount,
+                  currency,
+                  transactionId,
+                  paidAt: now,
+                },
+              });
+            } else {
+              paymentRecord = await tx.payment.create({
+                data: {
+                  bookingId: booking.id,
+                  provider: "STRIPE",
+                  status: PaymentStatus.PAID,
+                  amount: totalAmount,
+                  baseAmount: totalAmount,
+                  totalAmount,
+                  currency,
+                  transactionId,
+                  paidAt: now,
+                },
+              });
+            }
+
+            // 2. Update Booking status to PAID (Confirmed Ticket)
+            const updatedBooking = await tx.booking.update({
+              where: { id: booking.id },
+              data: {
+                status: BookingStatus.PAID,
+                totalAmount,
+              },
+            });
+
+            // 3. Create Transaction Ledger Entry
+            await tx.transaction.create({
+              data: {
+                paymentId: paymentRecord.id,
+                type: "CHARGE",
+                amount: totalAmount,
+                status: "SUCCESS",
+                referenceId: transactionId,
+                metadata: JSON.stringify({
+                  provider: "STRIPE",
+                  stripeEventId: event.id,
+                  stripeSessionId: session.id,
+                  verifiedAt: now.toISOString(),
+                }),
+              },
+            });
+
+            // 4. Idempotent GuestPass Generation (AES-256-GCM encrypted QR token)
+            const existingPass = await tx.guestPass.findFirst({
+              where: { bookingId: booking.id },
+            });
+
+            if (!existingPass) {
+              const rawToken = crypto.randomBytes(32).toString("hex");
+              const tokenHash = hashPassToken(rawToken);
+              const passCode = `WWI-PASS-${crypto.randomBytes(4).toString("hex").toUpperCase()}`;
+              const encrypted = encryptPass(rawToken);
+              const eventDate = booking.wedding?.date ? new Date(booking.wedding.date) : booking.date ? new Date(booking.date) : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+              await tx.guestPass.create({
+                data: {
+                  bookingId: booking.id,
+                  passCode,
+                  qrTokenHash: tokenHash,
+                  encryptedToken: encrypted,
+                  status: "ACTIVE",
+                  expiresAt: new Date(eventDate.getTime() + 48 * 60 * 60 * 1000),
+                },
+              });
+            }
+
+            // 5. Ensure TravelerPreparation record exists
+            if (!booking.preparations) {
+              await tx.travelerPreparation.create({
+                data: {
+                  bookingId: booking.id,
+                  identityVerified: true,
+                },
+              });
+            }
+
+            // 6. Referral Commission Generation (14-day hold)
+            try {
+              const { generateBookingCommissionAction } = await import("@/lib/actions/referrals");
+              await generateBookingCommissionAction(
+                tx,
+                paymentRecord.id,
+                booking.id,
+                booking.traveler.user.id,
+                totalAmount
+              );
+            } catch (commErr) {
+              console.error("[Stripe Webhook] Note: Commission generation:", commErr);
+            }
+
+            // 7. Traveler Notification
+            await tx.notification.create({
+              data: {
+                userId: booking.traveler.user.id,
+                title: "Payment Confirmed! Pass Ready",
+                message: `Your payment of ${currency} $${totalAmount} for "${booking.wedding.title}" has been verified. Your Digital Pass is active in the Event Hub!`,
+                type: "PAYMENT_RECEIVED",
+              },
+            });
+
+            // 8. Host Notification
+            await tx.notification.create({
+              data: {
+                userId: booking.wedding.hostCouple.user.id,
+                title: "Guest Payment Confirmed",
+                message: `${booking.traveler.fullName || "A traveler"} has completed payment for your wedding "${booking.wedding.title}". Their pass is confirmed.`,
+                type: "BOOKING_APPROVED",
+              },
+            });
+
+            return {
+              alreadyPaid: false,
+              emailData: {
+                email: booking.traveler.user.email,
+                fullName: booking.traveler.fullName || booking.traveler.user.name || "Guest",
+                weddingTitle: booking.wedding.title,
+                transactionId,
+                totalAmount,
+                guestsCount: booking.guestsCount,
+                bookingDateStr: booking.date instanceof Date ? booking.date.toLocaleDateString() : String(booking.date || ""),
+              },
+            };
+          });
+
+          if (txResult && !txResult.alreadyPaid && txResult.emailData) {
+            emailDataToSend = txResult.emailData;
+          }
         }
         break;
       }
@@ -108,6 +294,23 @@ export async function POST(req: NextRequest) {
         if (paymentIntent.status !== "succeeded") {
           console.warn(`[Stripe Webhook] PaymentIntent ${paymentIntent.id} status is not 'succeeded': ${paymentIntent.status}`);
           break;
+        }
+
+        const bookingId = paymentIntent.metadata?.bookingId;
+        if (bookingId) {
+          const { BookingStatus, PaymentStatus } = await import("@prisma/client");
+          const existingBooking = await prisma.booking.findUnique({
+            where: { id: bookingId },
+            include: { payments: { where: { status: PaymentStatus.PAID } } },
+          });
+
+          if (existingBooking && existingBooking.status !== BookingStatus.PAID) {
+            // Update booking if checkout.session.completed was not received or pending
+            await prisma.booking.update({
+              where: { id: bookingId },
+              data: { status: BookingStatus.PAID },
+            });
+          }
         }
         break;
       }
@@ -125,6 +328,24 @@ export async function POST(req: NextRequest) {
         processedAt: new Date(),
       },
     });
+
+    // 5. Dispatch confirmation email outside database transaction
+    if (emailDataToSend) {
+      try {
+        const { sendInvoiceEmail } = await import("@/lib/email");
+        await sendInvoiceEmail(
+          emailDataToSend.email,
+          emailDataToSend.fullName,
+          emailDataToSend.weddingTitle,
+          emailDataToSend.transactionId,
+          emailDataToSend.totalAmount,
+          emailDataToSend.guestsCount,
+          emailDataToSend.bookingDateStr
+        );
+      } catch (emailErr) {
+        console.error("[Stripe Webhook] Non-blocking invoice email dispatch error:", emailErr);
+      }
+    }
 
     return NextResponse.json({ received: true, success: true });
   } catch (err: any) {

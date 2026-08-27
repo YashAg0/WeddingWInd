@@ -20,10 +20,35 @@ const isProtectedRoute = createRouteMatcher([
   "/api/agent-application(.*)"
 ]);
 
-// Clerk handler — only used for protected/admin routes
+// Clerk handler — handles protected and admin routes with explicit API 401 and page redirects
 const clerkHandler = clerkMiddleware(async (auth, req) => {
   if (isProtectedRoute(req) || isAdminRoute(req)) {
-    await auth.protect();
+    const { userId } = await auth();
+    const pathname = req.nextUrl?.pathname || new URL(req.url).pathname;
+
+    if (!userId) {
+      // 1. API routes must receive clean 401 JSON, never 404 HTML
+      if (pathname.startsWith("/api/")) {
+        return NextResponse.json(
+          { error: "UNAUTHORIZED: Authentication required." },
+          { status: 401 }
+        );
+      }
+
+      // 2. Prefetch / RSC navigation requests receive clean 401 without 404 HTML rendering
+      const isPrefetch =
+        req.headers.get("next-router-prefetch") === "1" ||
+        req.headers.get("purpose") === "prefetch";
+
+      if (isPrefetch) {
+        return new NextResponse(null, { status: 401 });
+      }
+
+      // 3. Browser page navigation: redirect to /login with redirect_url
+      const signInUrl = new URL("/login", req.url);
+      signInUrl.searchParams.set("redirect_url", req.url);
+      return NextResponse.redirect(signInUrl);
+    }
   }
 });
 

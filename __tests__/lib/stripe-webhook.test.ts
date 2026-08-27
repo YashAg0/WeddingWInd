@@ -28,6 +28,25 @@ jest.mock("@/lib/prisma", () => {
       upsert: jest.fn(),
       update: jest.fn(),
     },
+    booking: {
+      findUnique: jest.fn(),
+      update: jest.fn(),
+    },
+    payment: {
+      findFirst: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+    },
+    guestPass: {
+      findFirst: jest.fn(),
+      create: jest.fn(),
+    },
+    travelerPreparation: {
+      create: jest.fn(),
+    },
+    transaction: {
+      create: jest.fn(),
+    },
     sponsorshipRequest: {
       findUnique: jest.fn(),
       findFirst: jest.fn(),
@@ -86,10 +105,29 @@ describe("Stripe Webhook API — Forensic Security & Idempotency Audit", () => {
     expect(json.error).toContain("Webhook signature verification failed");
   });
 
-  it("case 18: handles valid signed event and records event idempotency", async () => {
+  it("case 18: handles valid signed event, marks booking PAID, creates payment and guest pass", async () => {
     mockPrisma.stripeWebhookEvent.findUnique.mockResolvedValue(null);
     mockPrisma.stripeWebhookEvent.upsert.mockResolvedValue({});
     mockPrisma.stripeWebhookEvent.update.mockResolvedValue({});
+
+    mockPrisma.booking.findUnique.mockResolvedValue({
+      id: "booking_123",
+      status: "AWAITING_PAYMENT",
+      totalAmount: 299,
+      currency: "USD",
+      date: new Date(),
+      guestsCount: 2,
+      traveler: { user: { id: "user_traveler", email: "traveler@test.com", name: "John Traveler" } },
+      wedding: { title: "Royal Jaipur Celebration", hostCouple: { user: { id: "host_user" } } },
+      payments: [],
+      guestPasses: [],
+    });
+    mockPrisma.payment.findFirst.mockResolvedValue(null);
+    mockPrisma.payment.create.mockResolvedValue({ id: "payment_stripe_1", amount: 299, status: "PAID" });
+    mockPrisma.booking.update.mockResolvedValue({ id: "booking_123", status: "PAID" });
+    mockPrisma.guestPass.findFirst.mockResolvedValue(null);
+    mockPrisma.guestPass.create.mockResolvedValue({ id: "pass_123", status: "ACTIVE" });
+    mockPrisma.transaction.create.mockResolvedValue({});
 
     const payload = JSON.stringify({
       id: "evt_test_checkout_123",
@@ -101,6 +139,7 @@ describe("Stripe Webhook API — Forensic Security & Idempotency Audit", () => {
           payment_status: "paid",
           amount_total: 29900,
           currency: "usd",
+          metadata: { bookingId: "booking_123" },
         },
       },
     });
@@ -118,6 +157,20 @@ describe("Stripe Webhook API — Forensic Security & Idempotency Audit", () => {
 
     expect(res.status).toBe(200);
     expect(json.success).toBe(true);
+    expect(mockPrisma.booking.update).toHaveBeenCalledWith({
+      where: { id: "booking_123" },
+      data: expect.objectContaining({ status: "PAID" }),
+    });
+    expect(mockPrisma.payment.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          bookingId: "booking_123",
+          status: "PAID",
+          provider: "STRIPE",
+        }),
+      })
+    );
+    expect(mockPrisma.guestPass.create).toHaveBeenCalled();
     expect(mockPrisma.stripeWebhookEvent.update).toHaveBeenCalledWith({
       where: { stripeEventId: "evt_test_checkout_123" },
       data: expect.objectContaining({
@@ -152,8 +205,9 @@ describe("Stripe Webhook API — Forensic Security & Idempotency Audit", () => {
 
     expect(res.status).toBe(200);
     expect(json.idempotent).toBe(true);
-    expect(mockPrisma.sponsorshipRequest.update).not.toHaveBeenCalled();
-    expect(mockPrisma.wedding.update).not.toHaveBeenCalled();
+    expect(mockPrisma.booking.update).not.toHaveBeenCalled();
+    expect(mockPrisma.payment.create).not.toHaveBeenCalled();
+    expect(mockPrisma.guestPass.create).not.toHaveBeenCalled();
   });
 
   it("case 3: handles concurrent duplicate webhook race condition safely (P2002 unique constraint)", async () => {
