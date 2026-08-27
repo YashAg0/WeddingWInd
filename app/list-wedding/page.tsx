@@ -1950,10 +1950,10 @@ function ListWeddingContent() {
             <div className="flex flex-col items-center sm:items-end gap-1.5 w-full sm:w-auto">
               <button
                 type="submit"
-                disabled={isPending || isSubmitting}
+                disabled={isSubmitting}
                 className="w-full sm:w-auto px-8 py-4 bg-[var(--color-brand-primary)] text-white rounded-2xl text-xs font-bold uppercase tracking-wider hover:bg-maroon-900 transition-all shadow-sm cursor-pointer disabled:opacity-50 inline-flex items-center justify-center gap-2"
               >
-                {isPending || isSubmitting ? (
+                {isSubmitting ? (
                   <>
                     <RefreshCw size={15} className="animate-spin" />
                     Submitting Application...
