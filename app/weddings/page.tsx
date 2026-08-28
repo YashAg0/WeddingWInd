@@ -1,4 +1,5 @@
 import { Metadata } from "next";
+import Link from "next/link";
 import { Suspense } from "react";
 import { getWeddings } from "@/lib/actions";
 import { WeddingCard } from "@/components/wedding/WeddingCard";
@@ -189,19 +190,20 @@ export default async function WeddingsPage({ searchParams }: PageProps) {
   const sortedWeddings: Wedding[] = sortWeddingsByDiscoveryPriority<Wedding>(filteredWeddings, sort);
 
   return (
-    <div className="min-h-screen bg-warm-50 pt-28 pb-20">
-      <div className="container-luxury flex flex-col gap-8">
+    <div className="min-h-screen bg-warm-50 pt-20 sm:pt-28 pb-20 pb-bottom-nav lg:pb-20">
+      <div className="container-luxury flex flex-col gap-4 sm:gap-8">
         
-        {/* Search header container */}
-        <div className="text-center max-w-2xl mx-auto space-y-3">
+        {/* Search header container — compact on mobile */}
+        <div className="text-center max-w-2xl mx-auto space-y-2 sm:space-y-3 pt-2 sm:pt-0">
           <div className="inline-flex items-center gap-2 bg-maroon-50 text-[var(--color-brand-primary)] text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full border border-maroon-100/50">
             <Flower2 size={12} className="text-[var(--color-brand-secondary)]" />
             Discover Celebrations
           </div>
-          <h1 className="font-display font-bold text-3xl md:text-5xl text-charcoal-900 leading-tight">
+          <h1 className="font-display font-bold text-2xl sm:text-3xl md:text-5xl text-charcoal-900 leading-tight">
             Explore Wedding Celebrations
           </h1>
-          <p className="text-charcoal-500 text-sm md:text-base leading-relaxed">
+          {/* Description hidden on mobile for compact layout */}
+          <p className="hidden sm:block text-charcoal-500 text-sm md:text-base leading-relaxed">
             Attend an authentic Indian wedding as an honored guest. Experience diverse 1 to 5 day celebrations across India with transparent pricing and dedicated cultural host support.
           </p>
         </div>
@@ -211,8 +213,44 @@ export default async function WeddingsPage({ searchParams }: PageProps) {
           <MarketplaceHeaderWrapper />
         </Suspense>
 
+        {/* Quick-filter chip rail — mobile only */}
+        <div className="lg:hidden">
+          <div className="filter-chip-rail -mx-4 px-4 sm:-mx-6 sm:px-6">
+            {/* "All" chip — clears duration/tier filters */}
+            <Link
+              href="/weddings"
+              className={`filter-chip ${!resolvedParams.durations && !resolvedParams.tiers && !resolvedParams.religions ? "active" : ""}`}
+              aria-label="Show all celebrations"
+            >
+              All
+            </Link>
+            {/* Duration quick-filters */}
+            {([1, 2, 3, 4, 5] as const).map((d) => (
+              <Link
+                key={d}
+                href={`/weddings?durations=${d}`}
+                className={`filter-chip ${resolvedParams.durations === String(d) ? "active" : ""}`}
+                aria-label={`Filter by ${d} day celebrations`}
+              >
+                {d} {d === 1 ? "Day" : "Days"}
+              </Link>
+            ))}
+            {/* Tier quick-filters */}
+            {(["ROYAL", "GRAND", "SIGNATURE_ROYAL"] as const).map((tier) => (
+              <Link
+                key={tier}
+                href={`/weddings?tiers=${tier}`}
+                className={`filter-chip ${resolvedParams.tiers?.toUpperCase() === tier ? "active" : ""}`}
+                aria-label={`Filter by ${tier.replace("_", " ")} tier`}
+              >
+                {tier === "SIGNATURE_ROYAL" ? "Signature Royal" : tier.charAt(0) + tier.slice(1).toLowerCase()}
+              </Link>
+            ))}
+          </div>
+        </div>
+
         {/* Content Layout Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start mt-2">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-8 items-start mt-0 sm:mt-2">
           
           {/* Desktop Filter Sidebar */}
           <div className="hidden lg:block lg:col-span-1 sticky top-24 z-20 max-h-[calc(100vh-7rem)] overflow-y-auto overscroll-contain pr-1 bg-white border border-warm-200/60 rounded-3xl p-5 shadow-card scrollbar-thin">
@@ -230,9 +268,9 @@ export default async function WeddingsPage({ searchParams }: PageProps) {
           </div>
 
           {/* Marketplace Listing area */}
-          <div className="col-span-1 lg:col-span-3 flex flex-col gap-6">
+          <div className="col-span-1 lg:col-span-3 flex flex-col gap-4 sm:gap-6">
             {/* Top Toolbar / Counts & Sorting */}
-            <div className="flex items-center justify-between bg-white border border-warm-200/60 px-5 py-3.5 rounded-2xl shadow-sm">
+            <div className="flex items-center justify-between bg-white border border-warm-200/60 px-4 sm:px-5 py-3 sm:py-3.5 rounded-2xl shadow-sm">
               <span className="text-xs font-semibold text-charcoal-500 uppercase tracking-widest">
                 {sortedWeddings.length} {sortedWeddings.length === 1 ? "celebration" : "celebrations"} found
               </span>
@@ -245,7 +283,7 @@ export default async function WeddingsPage({ searchParams }: PageProps) {
             {/* Weddings Card Grid */}
             {sortedWeddings.length > 0 ? (
               <div
-                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
+                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6"
                 role="list"
                 aria-label="Wedding listings"
               >

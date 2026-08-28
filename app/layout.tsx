@@ -208,7 +208,7 @@ export default function RootLayout({
             }}
           />
         </head>
-        <body className="min-h-screen flex flex-col antialiased">
+        <body className="min-h-[100dvh] flex flex-col antialiased">
           {/* No-JavaScript fallback */}
           <noscript>
             <div

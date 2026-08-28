@@ -255,7 +255,6 @@ function ListWeddingContent() {
 
   // Fetch active application on authentication
   const fetchActiveApplication = useCallback(async () => {
-    if (!user) return;
     setIsLoadingActiveApp(true);
 
     try {
@@ -267,8 +266,8 @@ function ListWeddingContent() {
         setVerificationStatus(app.verificationStatus);
         setAdminNotes(app.adminNotesHostFacing || app.adminNotes || null);
 
-        setHostName(app.hostName || user.name || "");
-        setEmail(app.email || user.email || "");
+        setHostName(app.hostName || user?.name || "");
+        setEmail(app.email || user?.email || "");
         setPhone(app.phone || "");
         setPreferredContactMethod((app.preferredContactMethod as any) || "WHATSAPP");
         setBrideName(app.brideName || "");
@@ -328,8 +327,8 @@ function ListWeddingContent() {
           setDocumentRequests(app.documentRequests);
         }
       } else {
-        setHostName((prev) => prev || user.name || "");
-        setEmail((prev) => prev || user.email || "");
+        setHostName((prev) => prev || user?.name || "");
+        setEmail((prev) => prev || user?.email || "");
       }
     } catch (err: any) {
       console.warn("Failed to load active host application:", err);
@@ -339,10 +338,8 @@ function ListWeddingContent() {
   }, [user]);
 
   useEffect(() => {
-    if (user) {
-      fetchActiveApplication();
-    }
-  }, [user, fetchActiveApplication]);
+    fetchActiveApplication();
+  }, [fetchActiveApplication]);
 
   // Debounced Autosave Trigger (Server sync if logged in)
   const triggerAutosave = useCallback(async () => {
@@ -355,8 +352,8 @@ function ListWeddingContent() {
 
       const res = await saveHostApplicationDraftAction({
         applicationId: applicationId || undefined,
-        hostName: hostName || user.name || "Host",
-        email: user.email,
+        hostName: hostName || user?.name || "Host",
+        email: user?.email || "",
         phone,
         preferredContactMethod,
         brideName,
@@ -420,24 +417,19 @@ function ListWeddingContent() {
     if (typeof document !== "undefined") {
       try {
         const root = formEl || document.getElementById("host-application-form") || document.querySelector("form");
-        if (root && root instanceof HTMLFormElement) {
-          const formData = new FormData(root);
-          formData.forEach((value, key) => {
-            if (typeof value === "string" && value.trim()) {
-              formValues[key] = value.trim();
-            }
-          });
-        }
-        const allInputs = (root || document).querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>("input, textarea, select");
-        allInputs.forEach((el) => {
-          const name = el.name || el.getAttribute("name") || el.id;
-          if (name && el.value !== undefined && el.value !== null) {
-            const val = String(el.value).trim();
-            if (val) {
-              formValues[name] = val;
+        if (root) {
+          const elements = (root as HTMLFormElement).elements || root.querySelectorAll("input, textarea, select");
+          for (let i = 0; i < elements.length; i++) {
+            const el = elements[i] as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
+            const name = el.name || el.getAttribute("name") || el.id;
+            if (name && el.value !== undefined && el.value !== null) {
+              const val = String(el.value).trim();
+              if (val) {
+                formValues[name] = val;
+              }
             }
           }
-        });
+        }
       } catch {}
     }
 
@@ -595,30 +587,41 @@ function ListWeddingContent() {
 
     const draft = buildLocalDraft(formEl);
     saveLocalWeddingDraft(draft);
-    console.log("[list-wedding] handleSubmit called. isAuthenticated:", isAuthenticated, "user:", user?.id, "draft city:", draft.city);
-
-    if (!isAuthenticated) {
-      setAutoSubmitIntent(true);
-      toast.info("Sign in to submit your celebration. Your details are saved and will be restored automatically.");
-      window.location.assign(`/login?redirect_url=${encodeURIComponent("/list-wedding?resume=true")}`);
-      return;
-    }
 
     setIsSubmitting(true);
     setAutoResumeError(null);
 
     (async () => {
       try {
-        console.log("[list-wedding] Submitting direct host application action with draft:", draft.city, draft.coupleNames);
+        let currentAuth = isAuthenticated;
+        let readyEmail = authenticatedEmail;
+        let readyName = authenticatedName;
+
+        if (!currentAuth) {
+          try {
+            const readiness = await checkHostAuthReadinessAction();
+            if (readiness.isReady && readiness.user) {
+              currentAuth = true;
+              readyEmail = readiness.user.email || readyEmail;
+              readyName = readiness.user.name || readyName;
+            }
+          } catch {}
+        }
+
+        if (!currentAuth) {
+          setAutoSubmitIntent(true);
+          toast.info("Sign in to submit your celebration. Your details are saved and will be restored automatically.");
+          window.location.assign(`/login?redirect_url=${encodeURIComponent("/list-wedding?resume=true")}`);
+          return;
+        }
+
         const res = await submitHostApplicationAction({
           applicationId: applicationId || undefined,
           ...draft,
-          hostName: draft.hostName || authenticatedName,
-          email: authenticatedEmail,
+          hostName: draft.hostName || readyName,
+          email: readyEmail,
           days: (draft.days || []).slice(0, draft.durationDays || 3),
         });
-        console.log("[list-wedding] submitHostApplicationAction response:", res);
-
         if (res && res.success) {
           setHasAutoSubmitted(true);
           clearLocalWeddingDraft();
@@ -644,7 +647,7 @@ function ListWeddingContent() {
         setIsSubmitting(false);
       }
     })();
-  }, [buildLocalDraft, isAuthenticated, authenticatedEmail, authenticatedName, applicationId, user]);
+  }, [buildLocalDraft, isAuthenticated, authenticatedEmail, authenticatedName, applicationId]);
 
   // AUTO-RESUME & SUBMIT HOOK: Triggers when returning from Clerk login/signup
   useEffect(() => {
@@ -662,9 +665,6 @@ function ListWeddingContent() {
 
     // Immediately restore form fields so the user sees their work
     populateFieldsFromDraft(draft);
-
-    // Wait until client auth indicates signed-in
-    if (!isAuthenticated) return;
 
     isAutoSubmittingRef.current = true;
     setIsSubmitting(true);
@@ -867,7 +867,7 @@ function ListWeddingContent() {
   };
 
   return (
-    <div className="min-h-screen bg-warm-50 pt-28 pb-20">
+    <div className="min-h-[100dvh] bg-warm-50 pt-20 sm:pt-28 pb-28 pb-bottom-nav">
       <div className="container-luxury max-w-4xl mx-auto space-y-8">
         {/* Page Header */}
         <div className="text-center space-y-2.5 max-w-2xl mx-auto">
@@ -1352,9 +1352,32 @@ function ListWeddingContent() {
           MAIN APPLICATION FORM (Host Details, Wedding Overview, Day-by-Day, Story)
           ========================================================================
         */}
+        {/* Mobile-only: sticky step progress bar */}
+        <div className="sticky top-[4.25rem] z-30 -mx-4 px-4 py-2 bg-warm-50/95 backdrop-blur-sm border-b border-warm-100 sm:hidden">
+          <div className="flex items-center gap-1">
+            {[
+              { n: 1, label: "Host" },
+              { n: 2, label: "Overview" },
+              { n: 3, label: "Schedule" },
+              { n: 4, label: "Story" },
+            ].map(({ n, label }) => (
+              <a
+                key={n}
+                href={`#step-${n}`}
+                className="flex-1 flex flex-col items-center gap-0.5 group"
+              >
+                <span className="w-6 h-6 rounded-full bg-maroon-50 border border-maroon-200 text-[var(--color-brand-primary)] text-[0.625rem] font-black flex items-center justify-center group-hover:bg-maroon-100 transition-colors">
+                  {n}
+                </span>
+                <span className="text-[0.5rem] font-bold text-charcoal-400 uppercase tracking-wide">{label}</span>
+              </a>
+            ))}
+          </div>
+        </div>
+
         <form id="host-application-form" noValidate onSubmit={handleSubmit} className="space-y-8">
           {/* SECTION 1: Host & Contact Details */}
-          <div className="bg-white border border-warm-200/80 rounded-3xl p-6 sm:p-10 shadow-sm space-y-6">
+          <div id="step-1" className="bg-white border border-warm-200/80 rounded-3xl p-6 sm:p-10 shadow-sm space-y-6">
             <div className="border-b border-warm-100 pb-4">
               <h2 className="font-display font-bold text-xl text-charcoal-900 flex items-center gap-2">
                 <span className="w-6 h-6 rounded-full bg-maroon-50 text-[var(--color-brand-primary)] text-xs font-black flex items-center justify-center border border-maroon-200">
@@ -1481,7 +1504,7 @@ function ListWeddingContent() {
           </div>
 
           {/* SECTION 2: Wedding Overview & Location (No duplicate controls!) */}
-          <div className="bg-white border border-warm-200/80 rounded-3xl p-6 sm:p-10 shadow-sm space-y-6">
+          <div id="step-2" className="bg-white border border-warm-200/80 rounded-3xl p-6 sm:p-10 shadow-sm space-y-6">
             <div className="border-b border-warm-100 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>
                 <h2 className="font-display font-bold text-xl text-charcoal-900 flex items-center gap-2">
@@ -1645,8 +1668,7 @@ function ListWeddingContent() {
             </div>
           </div>
 
-          {/* SECTION 3: Day-by-Day Celebration Details ({durationDays} Days) */}
-          <div className="bg-white border border-warm-200/80 rounded-3xl p-6 sm:p-10 shadow-sm space-y-6">
+          <div id="step-3" className="bg-white border border-warm-200/80 rounded-3xl p-6 sm:p-10 shadow-sm space-y-6">
             <div className="border-b border-warm-100 pb-4">
               <h2 className="font-display font-bold text-xl text-charcoal-900 flex items-center gap-2">
                 <span className="w-6 h-6 rounded-full bg-maroon-50 text-[var(--color-brand-primary)] text-xs font-black flex items-center justify-center border border-maroon-200">
@@ -1904,7 +1926,7 @@ function ListWeddingContent() {
           </div>
 
           {/* SECTION 4: Couple Story & Vision */}
-          <div className="bg-white border border-warm-200/80 rounded-3xl p-6 sm:p-10 shadow-sm space-y-4">
+          <div id="step-4" className="bg-white border border-warm-200/80 rounded-3xl p-6 sm:p-10 shadow-sm space-y-4">
             <h2 className="font-display font-bold text-xl text-charcoal-900 flex items-center gap-2">
               <span className="w-6 h-6 rounded-full bg-maroon-50 text-[var(--color-brand-primary)] text-xs font-black flex items-center justify-center border border-maroon-200">
                 4
@@ -1980,7 +2002,7 @@ export default function ListWeddingPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-warm-50 pt-28 pb-20 flex items-center justify-center">
+        <div className="min-h-[100dvh] bg-warm-50 pt-20 sm:pt-28 pb-20 flex items-center justify-center">
           <div className="text-center space-y-3">
             <div className="w-8 h-8 rounded-full border-4 border-maroon-100 border-t-maroon-800 animate-spin mx-auto" />
             <p className="text-xs font-bold text-charcoal-500 uppercase tracking-widest">

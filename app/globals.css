@@ -93,6 +93,15 @@
    ───────────────────────────────────────────── */
 :root {
   --navbar-height: 4.5rem; /* height of fixed navbar + padding */
+
+  /* ── Mobile Foundation Tokens ──────────────── */
+  --bottom-nav-height: 3.5rem;      /* 56px bottom tab bar */
+  --bottom-nav-total: calc(3.5rem + env(safe-area-inset-bottom, 0px));
+  --min-touch-target: 2.75rem;      /* 44px HIG / WCAG minimum */
+  --safe-bottom-pad: env(safe-area-inset-bottom, 0px);
+
+  /* Mobile bottom clearance so content isn't hidden behind bottom nav */
+  --mobile-bottom-clearance: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px) + 0.5rem);
 }
 
 /* ─────────────────────────────────────────────
@@ -772,7 +781,228 @@ a:focus-visible {
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
   }
+
+
 }
 
+/* ─────────────────────────────────────────────
+   MOBILE-FIRST UTILITIES
+   ───────────────────────────────────────────── */
 
+/* Dynamic viewport height — survives iOS Safari address bar */
+.min-h-dvh  { min-height: 100dvh; }
+.h-dvh      { height: 100dvh; }
+
+/* Bottom nav clearance — add to pages that show bottom nav */
+.pb-bottom-nav {
+  padding-bottom: var(--mobile-bottom-clearance);
+}
+
+/* Mobile touch tap highlight global kill */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ── Horizontal scroll rail  ─────────────────── */
+.mobile-scroll-rail {
+  display: flex;
+  gap: 1rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  padding-bottom: 0.5rem;
+  /* Hide scrollbar */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.mobile-scroll-rail::-webkit-scrollbar {
+  display: none;
+}
+
+.mobile-scroll-rail > * {
+  scroll-snap-align: start;
+  flex-shrink: 0;
+}
+
+/* ── Bottom Sheet Primitive ──────────────────── */
+.mobile-bottom-sheet {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #fff;
+  border-radius: 1.5rem 1.5rem 0 0;
+  box-shadow: 0 -4px 32px 0 rgb(0 0 0 / 0.12);
+  z-index: 60;
+  padding-bottom: env(safe-area-inset-bottom, 1rem);
+}
+
+.mobile-bottom-sheet-handle {
+  width: 2.5rem;
+  height: 0.25rem;
+  background: var(--color-warm-300);
+  border-radius: 9999px;
+  margin: 0.75rem auto 0;
+}
+
+/* ── Fixed Mobile Bottom Action Bar ─────────── */
+.mobile-action-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 40;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-top: 1px solid var(--color-warm-200);
+  padding: 0.75rem 1rem;
+  padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
+}
+
+/* ── Mobile Section Spacing ──────────────────── */
+.section-padding-mobile {
+  padding-block: 1.75rem;
+}
+
+@media (min-width: 640px) {
+  .section-padding-mobile { padding-block: 2.5rem; }
+}
+
+@media (min-width: 1024px) {
+  .section-padding-mobile { padding-block: 4rem; }
+}
+
+/* ── Mobile Card in Horizontal Rail ─────────── */
+.mobile-rail-card {
+  width: 82vw;
+  max-width: 22rem;
+  flex-shrink: 0;
+  scroll-snap-align: start;
+}
+
+@media (min-width: 640px) {
+  .mobile-rail-card {
+    width: 18rem;
+  }
+}
+
+/* ── Keyboard Safe Form Container ───────────── */
+/* Use on forms that contain fixed bottom controls */
+.keyboard-safe-form {
+  padding-bottom: max(5rem, calc(5rem + env(safe-area-inset-bottom, 0px)));
+}
+
+/* ── Quick Filter Chip Rail ──────────────────── */
+.filter-chip-rail {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  padding-block: 0.25rem;
+}
+
+.filter-chip-rail::-webkit-scrollbar {
+  display: none;
+}
+
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  white-space: nowrap;
+  flex-shrink: 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  padding: 0.5rem 1rem;
+  border-radius: 9999px;
+  border: 1.5px solid var(--color-warm-300);
+  background: #fff;
+  color: var(--color-charcoal-700);
+  cursor: pointer;
+  transition: all 0.18s ease;
+  min-height: var(--min-touch-target);
+}
+
+.filter-chip.active,
+.filter-chip[aria-pressed="true"] {
+  background: var(--color-brand-primary);
+  border-color: var(--color-brand-primary);
+  color: #fff;
+}
+
+/* ── Mobile Typography Baseline ─────────────── */
+@media (max-width: 639px) {
+  /* Minimum readable size for supporting text */
+  .mobile-meta {
+    font-size: 0.75rem; /* 12px */
+    line-height: 1.4;
+  }
+
+  /* Remove hover transform on cards to prevent accidental misfire */
+  .card:hover,
+  .card-luxury:hover {
+    transform: none;
+  }
+}
+
+/* ── Sticky Tab Navigation ───────────────────── */
+.mobile-tab-nav {
+  display: flex;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  gap: 0;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--color-warm-200);
+}
+
+.mobile-tab-nav::-webkit-scrollbar {
+  display: none;
+}
+
+.mobile-tab-item {
+  flex-shrink: 0;
+  padding: 0.75rem 1.125rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-charcoal-500);
+  white-space: nowrap;
+  border-bottom: 2.5px solid transparent;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  min-height: var(--min-touch-target);
+  display: flex;
+  align-items: center;
+}
+
+.mobile-tab-item.active {
+  color: var(--color-brand-primary);
+  border-bottom-color: var(--color-brand-primary);
+}
+
+/* ── Safe-area booking bar ───────────────────── */
+.booking-action-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 40;
+  background: rgba(255, 255, 255, 0.97);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid var(--color-warm-200);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  padding-bottom: calc(0.875rem + env(safe-area-inset-bottom, 0px));
+  box-shadow: 0 -4px 24px 0 rgb(0 0 0 / 0.06);
+}
 

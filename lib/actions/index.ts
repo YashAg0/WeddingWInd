@@ -1634,7 +1634,7 @@ export const getWeddings = unstable_cache(
 );
 
 export const getHomepageWeddings = unstable_cache(
-  async (limit: number = 6) => {
+  async (limit: number = 8) => {
     try {
       const now = new Date();
       const weddings = await withDbRetry(

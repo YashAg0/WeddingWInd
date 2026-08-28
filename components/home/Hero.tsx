@@ -253,7 +253,7 @@ export function Hero({ stats: _stats }: HeroProps) {
       {/* Foreground content */}
       <motion.div
         style={{ y: isReducedMotion ? 0 : contentY }}
-        className="relative z-10 container-luxury pt-32 pb-20 flex flex-col items-center text-center will-change-transform"
+        className="relative z-10 container-luxury pt-24 sm:pt-32 pb-20 flex flex-col items-center text-center will-change-transform"
       >
         {/* Localized text scrim behind eyebrow + headline block for high contrast */}
         <div
@@ -292,7 +292,7 @@ export function Hero({ stats: _stats }: HeroProps) {
           initial={motionInitial("hidden")}
           animate="visible"
           className="relative font-display font-bold leading-[1.06] tracking-tight mb-4 max-w-4xl [text-wrap:balance] drop-shadow-[0_4px_30px_rgba(0,0,0,0.80)]"
-          style={{ fontSize: "clamp(2.75rem, 6.5vw, 5.5rem)" }}
+          style={{ fontSize: "clamp(1.875rem, 6.5vw, 5.5rem)" }}
         >
           <span
             className="relative inline bg-[length:200%_auto]"
@@ -328,7 +328,7 @@ export function Hero({ stats: _stats }: HeroProps) {
           variants={fadeUp}
           initial={motionInitial("hidden")}
           animate="visible"
-          className="relative w-full max-w-3xl mb-8"
+          className="relative w-full max-w-3xl mb-4 sm:mb-8"
           style={{ perspective: 1200 }}
         >
           <div
@@ -339,6 +339,27 @@ export function Hero({ stats: _stats }: HeroProps) {
             }}
             aria-hidden="true"
           />
+
+          {/* ── Mobile Search Pill (< sm) ─────────────────────────────── */}
+          <Link
+            href="/weddings"
+            className="sm:hidden flex items-center gap-3 glass rounded-2xl px-4 py-3.5 shadow-[0_20px_70px_0_rgba(0,0,0,0.32)] border border-white/20 group"
+            aria-label="Search for Indian wedding celebrations"
+          >
+            <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-[var(--color-brand-primary)] flex-shrink-0">
+              <Search size={18} className="text-white" aria-hidden="true" />
+            </div>
+            <div className="flex-1 text-left min-w-0">
+              <div className="text-white font-semibold text-sm leading-tight">Where in India?</div>
+              <div className="text-white/65 text-xs mt-0.5">Any tradition · Any month</div>
+            </div>
+            <div className="flex-shrink-0 flex items-center gap-1.5 text-white/70 text-xs font-semibold">
+              <span>Explore</span>
+              <ChevronDown size={14} className="rotate-[-90deg]" aria-hidden="true" />
+            </div>
+          </Link>
+
+          {/* ── Full Desktop Search Card (sm+) ────────────────────────── */}
           <motion.div
             ref={cardRef}
             onPointerMove={handleCardPointerMove}
@@ -348,7 +369,7 @@ export function Hero({ stats: _stats }: HeroProps) {
               rotateY: tiltEnabled ? rotateY : 0,
               transformStyle: "preserve-3d",
             }}
-            className="relative overflow-hidden glass rounded-2xl p-2 flex flex-col sm:flex-row sm:items-stretch gap-2 shadow-[0_20px_70px_0_rgba(0,0,0,0.32)] border border-white/20"
+            className="hidden sm:flex relative overflow-hidden glass rounded-2xl p-2 items-stretch gap-2 shadow-[0_20px_70px_0_rgba(0,0,0,0.32)] border border-white/20"
           >
             {!isReducedMotion && (
               <motion.div

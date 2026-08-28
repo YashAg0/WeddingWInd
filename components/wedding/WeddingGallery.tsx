@@ -37,8 +37,15 @@ export function WeddingGallery({ images, title }: WeddingGalleryProps) {
   return (
     <section className="relative" aria-label="Photo gallery">
       <div className="mt-4">
-        {/* Unified View: Single Hero Image */}
-        <div className="relative rounded-3xl overflow-hidden h-[40vh] md:h-[500px] min-h-[400px] shadow-lg border border-warm-200/50 bg-warm-100">
+        {/* Mobile: edge-to-edge hero. Desktop: rounded card */}
+        <div className="relative overflow-hidden
+          h-[52vw] sm:h-[44vw] md:h-[500px] min-h-[220px] md:min-h-[400px]
+          rounded-none sm:rounded-3xl
+          shadow-none sm:shadow-lg
+          border-0 sm:border sm:border-warm-200/50
+          bg-warm-100
+          -mx-4 sm:mx-0"
+        >
           <Image
             src={heroImgSrc}
             alt={`${title} main photo`}
@@ -51,13 +58,32 @@ export function WeddingGallery({ images, title }: WeddingGalleryProps) {
               if (heroImgSrc !== fallback) setHeroImgSrc(fallback);
             }}
           />
+          {/* Photo count overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent pointer-events-none" />
+          {/* View all button — 44px min touch target */}
           <button
             onClick={() => handleOpenModal(0)}
-            className="absolute bottom-4 right-4 md:bottom-6 md:right-6 bg-white/90 backdrop-blur-sm text-charcoal-900 text-sm font-semibold px-4 py-2 md:px-5 md:py-2.5 rounded-xl shadow-md hover:bg-white transition-colors flex items-center gap-2"
+            className="absolute bottom-4 right-4 sm:bottom-6 sm:right-6 bg-white/90 backdrop-blur-sm text-charcoal-900 text-xs sm:text-sm font-semibold px-4 py-2.5 sm:px-5 rounded-xl shadow-md hover:bg-white transition-colors flex items-center gap-2 min-h-[44px]"
           >
-            <Grid2x2 size={16} />
-            View all {images.length} photos
+            <Grid2x2 size={15} />
+            {images.length} photos
           </button>
+          {/* Image dots indicator on mobile */}
+          {images.length > 1 && (
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 sm:hidden">
+              {images.slice(0, 5).map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => handleOpenModal(i)}
+                  className={cn(
+                    "h-1.5 rounded-full transition-all duration-300",
+                    i === 0 ? "w-4 bg-white" : "w-1.5 bg-white/60"
+                  )}
+                  aria-label={`View photo ${i + 1}`}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -73,32 +99,33 @@ export function WeddingGallery({ images, title }: WeddingGalleryProps) {
             aria-modal="true"
           >
             {/* Header / Actions */}
-            <div className="flex justify-between items-center p-5 text-white bg-gradient-to-b from-black/50 to-transparent">
-              <span className="font-display font-medium text-sm md:text-base tracking-wide">
-                {title} — Guest View
+            <div className="flex justify-between items-center p-4 sm:p-5 text-white bg-gradient-to-b from-black/50 to-transparent">
+              <span className="font-display font-medium text-sm tracking-wide line-clamp-1 flex-1 mr-4">
+                {title} — Photo {activeImageIndex + 1} of {images.length}
               </span>
+              {/* Close: 48px touch target */}
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+                className="w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors flex-shrink-0"
                 aria-label="Close gallery"
               >
-                <X size={20} />
+                <X size={22} />
               </button>
             </div>
 
             {/* Slider Center Area */}
-            <div className="flex-1 relative flex items-center justify-center p-4">
-              {/* Prev Button */}
+            <div className="flex-1 relative flex items-center justify-center p-2 sm:p-4">
+              {/* Prev Button — 48px */}
               <button
                 onClick={handlePrev}
-                className="absolute left-4 z-10 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center active:scale-90 transition-all"
+                className="absolute left-2 sm:left-4 z-10 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center active:scale-90 transition-all"
                 aria-label="Previous image"
               >
-                <ChevronLeft size={24} />
+                <ChevronLeft size={26} />
               </button>
 
               {/* Active Image */}
-              <div className="relative w-full max-w-5xl h-[50vh] md:h-[70vh]">
+              <div className="relative w-full max-w-5xl h-[60dvh] sm:h-[70vh]">
                 <Image
                   src={images[activeImageIndex]}
                   alt={`${title} enlarged image ${activeImageIndex + 1}`}
@@ -108,24 +135,38 @@ export function WeddingGallery({ images, title }: WeddingGalleryProps) {
                 />
               </div>
 
-              {/* Next Button */}
+              {/* Next Button — 48px */}
               <button
                 onClick={handleNext}
-                className="absolute right-4 z-10 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center active:scale-90 transition-all"
+                className="absolute right-2 sm:right-4 z-10 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center active:scale-90 transition-all"
                 aria-label="Next image"
               >
-                <ChevronRight size={24} />
+                <ChevronRight size={26} />
               </button>
             </div>
 
             {/* Footer / Image Counter & Thumbnail Track */}
-            <div className="p-6 bg-gradient-to-t from-black/50 to-transparent flex flex-col items-center gap-4">
-              <span className="text-white/60 text-xs font-semibold uppercase tracking-widest">
-                {activeImageIndex + 1} / {images.length}
-              </span>
+            <div
+              className="p-4 sm:p-6 bg-gradient-to-t from-black/50 to-transparent flex flex-col items-center gap-3"
+              style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom, 0px))" }}
+            >
+              {/* Dot indicators (mobile-friendly) */}
+              <div className="flex gap-1.5 sm:hidden">
+                {images.slice(0, 8).map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setActiveImageIndex(i)}
+                    className={cn(
+                      "h-1.5 rounded-full transition-all duration-300",
+                      i === activeImageIndex ? "w-5 bg-white" : "w-1.5 bg-white/40"
+                    )}
+                    aria-label={`Go to photo ${i + 1}`}
+                  />
+                ))}
+              </div>
               
-              {/* Small horizontal thumbnails for jumping */}
-              <div className="flex gap-2 overflow-x-auto max-w-full py-2 px-4 scrollbar-thin scrollbar-thumb-white/20">
+              {/* Small horizontal thumbnails (desktop) */}
+              <div className="hidden sm:flex gap-2 overflow-x-auto max-w-full py-2 px-4 scrollbar-thin scrollbar-thumb-white/20">
                 {images.map((img, i) => (
                   <button
                     key={i}

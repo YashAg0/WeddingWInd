@@ -167,11 +167,11 @@ export function WeddingCard({ wedding, className, hidePrice = false }: WeddingCa
                 e.stopPropagation();
                 toggleWishlist(wedding.id);
               }}
-              className="relative z-20 p-1.5 rounded-full bg-black/45 backdrop-blur-md text-white hover:bg-black/70 hover:scale-110 active:scale-95 transition-all pointer-events-auto border border-white/15 focus:outline-none focus:ring-2 focus:ring-amber-400 cursor-pointer"
+              className="relative z-20 w-11 h-11 flex items-center justify-center rounded-full bg-black/45 backdrop-blur-md text-white hover:bg-black/70 hover:scale-110 active:scale-95 transition-all pointer-events-auto border border-white/15 focus:outline-none focus:ring-2 focus:ring-amber-400 cursor-pointer"
               aria-label={isWishlisted ? `Remove ${wedding.title} from wishlist` : `Add ${wedding.title} to wishlist`}
             >
               <Heart
-                size={14}
+                size={15}
                 className={cn("transition-colors", isWishlisted && "fill-red-500 text-red-500")}
               />
             </button>
@@ -245,8 +245,8 @@ export function WeddingCard({ wedding, className, hidePrice = false }: WeddingCa
             )}
           </div>
 
-          {/* Description — fixed 2-line slot */}
-          <p className="text-xs text-charcoal-500 line-clamp-2 leading-relaxed flex-1">
+          {/* Description — fixed 2-line slot (hidden on mobile for compact density) */}
+          <p className="hidden sm:block text-xs text-charcoal-500 line-clamp-2 leading-relaxed flex-1">
             {wedding.story || "An authentic Indian wedding celebration welcoming international guests."}
           </p>
 

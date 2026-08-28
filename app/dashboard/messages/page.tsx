@@ -327,7 +327,8 @@ export default function MessagesDashboardPage() {
 
   return (
     <div 
-      className="h-[calc(100vh-10rem)] border border-warm-200/60 rounded-[2rem] overflow-hidden bg-white shadow-sm flex flex-col md:flex-row relative"
+      className="flex flex-col lg:flex-row border border-warm-200/60 rounded-[2rem] overflow-hidden bg-white shadow-sm relative"
+      style={{ height: "calc(100dvh - 8rem)" }}
       onDragEnter={handleDrag}
       onDragOver={handleDrag}
       onDragLeave={handleDrag}
@@ -343,7 +344,7 @@ export default function MessagesDashboardPage() {
       )}
 
       {/* 1. Inbox Sidebar (Left) */}
-      <div className={`w-full md:w-80 border-r border-warm-150 flex flex-col bg-warm-50/10 h-full ${activeConversationId ? "hidden md:flex" : "flex"}`}>
+      <div className={`w-full lg:w-80 border-r border-warm-150 flex flex-col bg-warm-50/10 h-full ${activeConversationId ? "hidden lg:flex" : "flex"}`}>
         {/* Sidebar Header */}
         <div className="p-4 border-b border-warm-150 space-y-3">
           <div className="flex justify-between items-center">
@@ -357,7 +358,8 @@ export default function MessagesDashboardPage() {
                 setNewChatSearch("");
               }}
               title="Start New Conversation"
-              className="text-maroon-700 hover:text-maroon-900 cursor-pointer flex items-center gap-1 font-bold text-xs uppercase tracking-wider transition-colors"
+              className="text-maroon-700 hover:text-maroon-900 cursor-pointer flex items-center justify-center min-w-[44px] min-h-[44px] rounded-xl hover:bg-warm-50 transition-colors"
+              aria-label="Start new conversation"
             >
               <PlusCircle size={18} />
             </button>
@@ -471,7 +473,7 @@ export default function MessagesDashboardPage() {
       </div>
 
       {/* 2. Messaging Panel (Right / Center) */}
-      <div className={`flex-1 flex flex-col h-full bg-warm-50/5 relative ${!activeConversationId ? "hidden md:flex items-center justify-center text-center p-8 bg-warm-50/15" : "flex"}`}>
+      <div className={`flex-1 flex flex-col h-full bg-warm-50/5 relative ${!activeConversationId ? "hidden lg:flex items-center justify-center text-center p-8 bg-warm-50/15" : "flex"}`}>
         {!activeConversationId ? (
           <div className="space-y-3 max-w-sm">
             <div className="w-16 h-16 rounded-full bg-maroon-50 text-maroon-600 flex items-center justify-center mx-auto mb-4">
@@ -487,12 +489,13 @@ export default function MessagesDashboardPage() {
             {/* Conversation Header */}
             <div className="p-4 border-b border-warm-150 flex justify-between items-center bg-white shadow-sm flex-shrink-0">
               <div className="flex items-center gap-3 min-w-0">
-                {/* Mobile Back Button */}
+                {/* Mobile Back Button — 44 px touch target, hidden on desktop */}
                 <button
                   onClick={() => setActiveConversationId(null)}
-                  className="md:hidden p-1 rounded hover:bg-warm-100 mr-1 text-charcoal-600 cursor-pointer"
+                  className="lg:hidden flex items-center justify-center min-w-[44px] min-h-[44px] rounded-xl hover:bg-warm-100 mr-1 text-charcoal-600 cursor-pointer"
+                  aria-label="Back to conversation list"
                 >
-                  <ArrowLeft size={16} />
+                  <ArrowLeft size={20} />
                 </button>
 
                 <div className="w-10 h-10 rounded-full overflow-hidden bg-warm-200 relative flex-shrink-0">
@@ -525,7 +528,7 @@ export default function MessagesDashboardPage() {
                   <Link
                     href="/dashboard/bookings"
                     title="View related booking details"
-                    className="p-2 border border-warm-200 text-charcoal-600 hover:bg-warm-50 rounded-xl"
+                    className="flex items-center justify-center min-w-[44px] min-h-[44px] border border-warm-200 text-charcoal-600 hover:bg-warm-50 rounded-xl"
                   >
                     <BookOpen size={14} />
                   </Link>
@@ -535,7 +538,7 @@ export default function MessagesDashboardPage() {
                 <button
                   onClick={() => handleToggleMute(activeChat.id)}
                   title={activeChat?.participants.find((p: any) => p.userId === user?.id)?.muted ? "Unmute Notifications" : "Mute Notifications"}
-                  className={`p-2 border rounded-xl cursor-pointer ${
+                  className={`flex items-center justify-center min-w-[44px] min-h-[44px] border rounded-xl cursor-pointer ${
                     activeChat?.participants.find((p: any) => p.userId === user?.id)?.muted
                       ? "bg-rose-50 border-rose-100 text-rose-650 hover:bg-rose-100"
                       : "border-warm-200 text-charcoal-600 hover:bg-warm-50"
@@ -548,7 +551,7 @@ export default function MessagesDashboardPage() {
                 <button
                   onClick={() => handleTogglePin(activeChat.id)}
                   title="Toggle Pinned State"
-                  className={`p-2 border rounded-xl cursor-pointer ${
+                  className={`flex items-center justify-center min-w-[44px] min-h-[44px] border rounded-xl cursor-pointer ${
                     activeChat?.participants.find((p: any) => p.userId === user?.id)?.pinned
                       ? "bg-amber-50 border-amber-150 text-amber-600 hover:bg-amber-100"
                       : "border-warm-200 text-charcoal-600 hover:bg-warm-50"
@@ -561,7 +564,7 @@ export default function MessagesDashboardPage() {
                 <button
                   onClick={() => handleArchive(activeChat.id, !activeChat.archived)}
                   title={activeChat?.archived ? "Unarchive Conversation" : "Archive Conversation"}
-                  className="p-2 border border-warm-200 text-charcoal-600 hover:bg-warm-50 rounded-xl cursor-pointer"
+                  className="flex items-center justify-center min-w-[44px] min-h-[44px] border border-warm-200 text-charcoal-600 hover:bg-warm-50 rounded-xl cursor-pointer"
                 >
                   <Archive size={14} />
                 </button>
@@ -730,7 +733,10 @@ export default function MessagesDashboardPage() {
             </div>
 
             {/* Composer (Bottom Editor) */}
-            <div className="p-4 border-t border-warm-150 bg-white flex-shrink-0">
+            <div
+              className="p-4 border-t border-warm-150 bg-white flex-shrink-0"
+              style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom, 0px))" }}
+            >
               <form onSubmit={handleSendMessage} className="space-y-3">
                 {/* Upload attachment display if attached */}
                 {attachedFile && (
@@ -761,7 +767,7 @@ export default function MessagesDashboardPage() {
                 {/* Main composition input tray */}
                 <div className="flex gap-2 items-center">
                   {/* File attach input button */}
-                  <label className="p-2 border border-warm-200 text-charcoal-600 hover:bg-warm-50 rounded-xl cursor-pointer flex-shrink-0 flex items-center justify-center">
+                  <label className="min-w-[44px] min-h-[44px] border border-warm-200 text-charcoal-600 hover:bg-warm-50 rounded-xl cursor-pointer flex-shrink-0 flex items-center justify-center">
                     <Paperclip size={16} />
                     <input
                       type="file"
@@ -790,7 +796,7 @@ export default function MessagesDashboardPage() {
 
                   <button
                     type="submit"
-                    className="bg-maroon-800 text-white rounded-xl p-2.5 hover:bg-maroon-900 transition-colors cursor-pointer flex-shrink-0 flex items-center justify-center shadow-sm"
+                    className="bg-maroon-800 text-white rounded-xl min-w-[44px] min-h-[44px] hover:bg-maroon-900 transition-colors cursor-pointer flex-shrink-0 flex items-center justify-center shadow-sm"
                   >
                     <Send size={16} />
                   </button>

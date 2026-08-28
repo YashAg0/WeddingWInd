@@ -158,7 +158,7 @@ export default async function WeddingDetailPage({ params }: PageProps) {
   };
 
   return (
-    <div className="min-h-screen bg-warm-50 pt-28 pb-20">
+    <div className="min-h-[100dvh] bg-warm-50 pt-20 sm:pt-28 pb-[calc(5rem+env(safe-area-inset-bottom,0px))] lg:pb-20">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(eventJsonLd).replace(/</g, "\\u003c") }}
@@ -168,7 +168,7 @@ export default async function WeddingDetailPage({ params }: PageProps) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd).replace(/</g, "\\u003c") }}
       />
 
-      <header className="container-luxury mt-4 flex flex-col gap-4">
+      <header className="container-luxury mt-2 sm:mt-4 flex flex-col gap-3 sm:gap-4">
         {/* Breadcrumbs */}
         <nav aria-label="Breadcrumb" className="text-xs font-semibold text-charcoal-400 uppercase tracking-wider flex items-center gap-1.5">
           <Link href="/" className="hover:text-[var(--color-brand-primary)] transition-colors">Home</Link>
@@ -192,7 +192,7 @@ export default async function WeddingDetailPage({ params }: PageProps) {
                 </span>
               )}
             </div>
-            <h1 className="font-display font-bold text-3xl md:text-4xl text-charcoal-900 leading-tight">
+            <h1 className="font-display font-bold text-2xl md:text-4xl text-charcoal-900 leading-tight">
               {wedding.title}
             </h1>
             <div className="flex flex-wrap items-center gap-3 text-xs font-medium text-charcoal-500">
@@ -233,17 +233,17 @@ export default async function WeddingDetailPage({ params }: PageProps) {
       </header>
 
       {/* ─── IMMERSIVE GALLERY HERO ─── */}
-      <div className="container-luxury mt-6">
+      <div className="container-luxury mt-4 sm:mt-6 overflow-visible">
         <WeddingGallery images={wedding.gallery} title={wedding.title} />
         {(!wedding.isVerifiedRealMedia || wedding.coverImageType === "representative") && (
-          <p className="text-[0.6875rem] text-charcoal-400 mt-2 text-right">
+          <p className="text-[0.6875rem] text-charcoal-400 mt-2 text-right px-4 sm:px-0">
             Representative cultural imagery — host family photos and specific ceremony schedules are shared with confirmed guests.
           </p>
         )}
       </div>
 
       {/* ─── Main 2-col layout ─── */}
-      <div className="container-luxury mt-10">
+      <div className="container-luxury mt-6 sm:mt-10">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 lg:gap-16">
 
           {/* LEFT: Story + Details */}

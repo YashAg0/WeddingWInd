@@ -71,7 +71,7 @@ export function getLocalWeddingDraft(): HostDraftPayload | null {
     const raw = localStorage.getItem(DRAFT_STORAGE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw);
-    if (parsed && typeof parsed === "object" && (parsed.coupleNames || parsed.city || parsed.hostName)) {
+    if (parsed && typeof parsed === "object" && (parsed.coupleNames || parsed.city || parsed.hostName || parsed.venueName || parsed.state || parsed.story)) {
       return parsed as HostDraftPayload;
     }
     return null;

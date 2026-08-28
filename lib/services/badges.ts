@@ -45,6 +45,7 @@ export async function initializeDefaultBadges() {
     }
   ];
 
+  if (!prisma.qualityBadge?.upsert) return;
   for (const b of defaultBadges) {
     await prisma.qualityBadge.upsert({
       where: { key: b.key },
@@ -70,6 +71,8 @@ export async function evaluateEntityBadges(
 ): Promise<void> {
   // Ensure default definitions exist
   await initializeDefaultBadges();
+
+  if (!prisma.reputationProfile?.findUnique) return;
 
   const profile = await prisma.reputationProfile.findUnique({
     where: { entityType_entityId: { entityType, entityId } }

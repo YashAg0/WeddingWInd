@@ -107,7 +107,12 @@ export default function AdminHostsPage() {
       createdAt: app.createdAt,
     })),
     ...legacyWeddings
-      .filter((w) => !hostApplications.some((ha) => ha.weddingId === w.id || ha.id === w.id))
+      .filter((w) => !hostApplications.some((ha) => 
+        ha.weddingId === w.id || 
+        ha.id === w.id || 
+        (ha.coupleProfileId && ha.coupleProfileId === w.hostCoupleId) ||
+        (ha.userId && ha.userId === w.hostCouple?.userId)
+      ))
       .map((w) => ({
         id: w.id,
         isHostApp: false,

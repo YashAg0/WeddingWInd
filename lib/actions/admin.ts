@@ -1848,45 +1848,61 @@ export async function adminGetHostApplicationsAction() {
 export async function adminGetHostApplicationByIdAction(id: string) {
   await requireRole([UserRole.ADMIN]);
 
-  // 1. Query HostApplication if model available
+  const includeConfig = {
+    days: {
+      include: { events: true },
+      orderBy: { dayNumber: "asc" as const },
+    },
+    documentRequests: {
+      include: { documents: true },
+      orderBy: { requestedAt: "desc" as const },
+    },
+    documents: true,
+    auditLogs: { orderBy: { createdAt: "desc" as const } },
+    wedding: {
+      include: {
+        bookings: {
+          include: {
+            traveler: { include: { user: true } },
+            payments: true,
+          },
+        },
+        sponsorshipRequests: {
+          orderBy: { requestedAt: "desc" as const },
+        },
+      },
+    },
+    user: {
+      include: {
+        verification: true,
+        travelerProfile: true,
+        agentProfile: true,
+      },
+    },
+  };
+
+  // 1. Query HostApplication by ID or by weddingId/coupleProfileId/userId
   let hostApp: any = null;
   if (prisma.hostApplication) {
     try {
       hostApp = await prisma.hostApplication.findUnique({
         where: { id },
-        include: {
-          days: {
-            include: { events: true },
-            orderBy: { dayNumber: "asc" },
-          },
-          documentRequests: {
-            include: { documents: true },
-            orderBy: { requestedAt: "desc" },
-          },
-          documents: true,
-          auditLogs: { orderBy: { createdAt: "desc" } },
-          wedding: {
-            include: {
-              bookings: {
-                include: {
-                  traveler: { include: { user: true } },
-                  payments: true,
-                },
-              },
-              sponsorshipRequests: {
-                orderBy: { requestedAt: "desc" },
-              },
-            },
-          },
-          user: {
-            include: {
-              verification: true,
-              travelerProfile: true,
-              agentProfile: true,
-            },
-          },
-        },
+        include: includeConfig,
       });
+
+      if (!hostApp) {
+        hostApp = await prisma.hostApplication.findFirst({
+          where: {
+            OR: [
+              { weddingId: id },
+              { coupleProfileId: id },
+              { userId: id },
+            ],
+          },
+          include: includeConfig,
+          orderBy: { updatedAt: "desc" },
+        });
+      }
     } catch {
       hostApp = null;
     }
@@ -1990,10 +2006,10 @@ export async function adminCreateDocumentRequestAction(data: {
   if (!hostApp) {
     const legacyWedding = await prisma.wedding.findUnique({
       where: { id: data.applicationId },
-      include: { hostCouple: true },
+      include: { hostCouple: { include: { user: true } } },
     });
 
-    if (!legacyWedding) {
+    if (!legacyWedding || !legacyWedding.hostCouple) {
       throw new Error("Host application not found.");
     }
 
@@ -2004,10 +2020,10 @@ export async function adminCreateDocumentRequestAction(data: {
         coupleProfileId: legacyWedding.hostCoupleId,
         weddingId: legacyWedding.id,
         status: "ACTION_REQUIRED",
-        hostName: legacyWedding.title,
-        email: "host@example.com",
+        hostName: legacyWedding.hostCouple.user?.name || legacyWedding.title,
+        email: legacyWedding.hostCouple.user?.email || "host@example.com",
         coupleNames: legacyWedding.title,
-        city: legacyWedding.location.split(",")[0] || "City",
+        city: legacyWedding.location.split(",")[0]?.trim() || "City",
         weddingDate: legacyWedding.date,
         durationDays: legacyWedding.durationDays || 3,
         requestedTier: legacyWedding.tier || "ROYAL",
@@ -2015,66 +2031,72 @@ export async function adminCreateDocumentRequestAction(data: {
     });
   }
 
-  const docReq = await prisma.hostDocumentRequest.create({
-    data: {
-      applicationId: hostApp.id,
-      userId: hostApp.userId,
-      requestType: data.requestType || "OTHER",
-      title: data.title,
-      description: data.description,
-      isRequired: data.isRequired ?? true,
-      deadline: data.deadline ? new Date(data.deadline) : null,
-      status: "PENDING",
-      requestedBy: admin.name || admin.email,
-    },
-  });
+  const docReq = await prisma.$transaction(async (tx) => {
+    const createdReq = await tx.hostDocumentRequest.create({
+      data: {
+        applicationId: hostApp.id,
+        userId: hostApp.userId,
+        requestType: data.requestType || "OTHER",
+        title: data.title,
+        description: data.description,
+        isRequired: data.isRequired ?? true,
+        deadline: data.deadline ? new Date(data.deadline) : null,
+        status: "PENDING",
+        requestedBy: admin.name || admin.email,
+      },
+    });
 
-  await prisma.hostApplication.update({
-    where: { id: hostApp.id },
-    data: {
-      status: "ACTION_REQUIRED",
-      adminNotesHostFacing: `Document requested: ${data.title}`,
-    },
-  });
+    await tx.hostApplication.update({
+      where: { id: hostApp.id },
+      data: {
+        status: "ACTION_REQUIRED",
+        adminNotesHostFacing: `Document requested: ${data.title}`,
+      },
+    });
 
-  await prisma.verification.upsert({
-    where: { userId: hostApp.userId },
-    create: {
-      userId: hostApp.userId,
-      status: VerificationStatus.NEED_MORE_DOCUMENTS,
-      notes: `Additional document requested: ${data.title}. ${data.description}`,
-      reviewedBy: admin.name || admin.email,
-    },
-    update: {
-      status: VerificationStatus.NEED_MORE_DOCUMENTS,
-      notes: `Additional document requested: ${data.title}. ${data.description}`,
-      reviewedBy: admin.name || admin.email,
-    },
-  });
+    await tx.verification.upsert({
+      where: { userId: hostApp.userId },
+      create: {
+        userId: hostApp.userId,
+        status: VerificationStatus.NEED_MORE_DOCUMENTS,
+        notes: `Additional document requested: ${data.title}. ${data.description}`,
+        reviewedBy: admin.name || admin.email,
+      },
+      update: {
+        status: VerificationStatus.NEED_MORE_DOCUMENTS,
+        notes: `Additional document requested: ${data.title}. ${data.description}`,
+        reviewedBy: admin.name || admin.email,
+      },
+    });
 
-  await prisma.notification.create({
-    data: {
-      userId: hostApp.userId,
-      title: "Action Required: Document Requested",
-      message: `WeddingWithIndia verification team requested: "${data.title}". Please upload the requested file.`,
-      type: "ALERT",
-    },
-  });
+    await tx.notification.create({
+      data: {
+        userId: hostApp.userId,
+        title: "Action Required: Document Requested",
+        message: `WeddingWithIndia verification team requested: "${data.title}". Please upload the requested file.`,
+        type: "ALERT",
+      },
+    });
 
-  await prisma.hostApplicationAuditLog.create({
-    data: {
-      applicationId: hostApp.id,
-      action: "DOCUMENT_REQUESTED",
-      actorId: admin.id,
-      actorRole: "ADMIN",
-      details: `Admin requested document "${data.title}" (Type: ${data.requestType}).`,
-    },
-  });
+    await tx.hostApplicationAuditLog.create({
+      data: {
+        applicationId: hostApp.id,
+        action: "DOCUMENT_REQUESTED",
+        actorId: admin.id,
+        actorRole: "ADMIN",
+        details: `Admin requested document "${data.title}" (Type: ${data.requestType}).`,
+      },
+    });
 
-  revalidatePath("/dashboard/admin/hosts");
-  revalidatePath(`/dashboard/admin/hosts/${hostApp.id}`);
-  revalidatePath("/dashboard");
-  revalidatePath("/list-wedding");
+    return createdReq;
+  }, { timeout: 30000, maxWait: 10000 });
+
+  try {
+    revalidatePath("/dashboard/admin/hosts");
+    revalidatePath(`/dashboard/admin/hosts/${hostApp.id}`);
+    revalidatePath("/dashboard");
+    revalidatePath("/list-wedding");
+  } catch {}
 
   return { success: true, documentRequest: docReq };
 }
@@ -2093,57 +2115,89 @@ export async function adminReviewDocumentAction(data: {
 
   if (!doc) throw new Error("Document record not found.");
 
-  const updatedDoc = await prisma.hostDocument.update({
-    where: { id: data.documentId },
-    data: {
-      status: data.status,
-      adminFeedback: data.adminFeedback || null,
-    },
-  });
-
-  if (data.status === "APPROVED") {
-    await prisma.hostDocumentRequest.update({
-      where: { id: doc.requestId },
+  const updatedDoc = await prisma.$transaction(async (tx) => {
+    const updated = await tx.hostDocument.update({
+      where: { id: data.documentId },
       data: {
-        status: "APPROVED",
-        reviewedBy: admin.name || admin.email,
-        reviewedAt: new Date(),
-        reviewNotes: data.adminFeedback || "Approved by admin",
-      },
-    });
-  } else {
-    await prisma.hostDocumentRequest.update({
-      where: { id: doc.requestId },
-      data: {
-        status: "PENDING",
-        reviewedBy: admin.name || admin.email,
-        reviewedAt: new Date(),
-        reviewNotes: data.adminFeedback || "Document rejected. Please re-upload.",
+        status: data.status,
+        adminFeedback: data.adminFeedback || null,
       },
     });
 
-    await prisma.notification.create({
+    if (data.status === "APPROVED") {
+      await tx.hostDocumentRequest.update({
+        where: { id: doc.requestId },
+        data: {
+          status: "APPROVED",
+          reviewedBy: admin.name || admin.email,
+          reviewedAt: new Date(),
+          reviewNotes: data.adminFeedback || "Approved by admin",
+        },
+      });
+    } else {
+      // Rejection: reset request to PENDING and set application & verification status back to ACTION_REQUIRED / NEED_MORE_DOCUMENTS
+      await tx.hostDocumentRequest.update({
+        where: { id: doc.requestId },
+        data: {
+          status: "PENDING",
+          reviewedBy: admin.name || admin.email,
+          reviewedAt: new Date(),
+          reviewNotes: data.adminFeedback || "Document rejected. Please re-upload.",
+        },
+      });
+
+      await tx.hostApplication.update({
+        where: { id: doc.applicationId },
+        data: {
+          status: "ACTION_REQUIRED",
+          adminNotesHostFacing: `Document revision requested: ${data.adminFeedback || "Please re-upload a clear copy."}`,
+        },
+      });
+
+      await tx.verification.upsert({
+        where: { userId: doc.userId },
+        create: {
+          userId: doc.userId,
+          status: VerificationStatus.NEED_MORE_DOCUMENTS,
+          notes: `Document '${doc.fileName}' rejected: ${data.adminFeedback || "Please re-upload a clear copy."}`,
+          reviewedBy: admin.name || admin.email,
+        },
+        update: {
+          status: VerificationStatus.NEED_MORE_DOCUMENTS,
+          notes: `Document '${doc.fileName}' rejected: ${data.adminFeedback || "Please re-upload a clear copy."}`,
+          reviewedBy: admin.name || admin.email,
+        },
+      });
+
+      await tx.notification.create({
+        data: {
+          userId: doc.userId,
+          title: "Document Needs Revision",
+          message: `Uploaded file '${doc.fileName}' was not accepted. Feedback: ${data.adminFeedback || "Please upload a clearer copy."}`,
+          type: "ALERT",
+        },
+      });
+    }
+
+    await tx.hostApplicationAuditLog.create({
       data: {
-        userId: doc.userId,
-        title: "Document Needs Revision",
-        message: `Uploaded file '${doc.fileName}' was not accepted. Feedback: ${data.adminFeedback || "Please upload a clearer copy."}`,
-        type: "ALERT",
+        applicationId: doc.applicationId,
+        action: data.status === "APPROVED" ? "DOCUMENT_APPROVED" : "DOCUMENT_REJECTED",
+        actorId: admin.id,
+        actorRole: "ADMIN",
+        details: `Admin ${data.status.toLowerCase()} document '${doc.fileName}'. Feedback: "${data.adminFeedback || "N/A"}"`,
       },
     });
-  }
 
-  await prisma.hostApplicationAuditLog.create({
-    data: {
-      applicationId: doc.applicationId,
-      action: data.status === "APPROVED" ? "DOCUMENT_APPROVED" : "DOCUMENT_REJECTED",
-      actorId: admin.id,
-      actorRole: "ADMIN",
-      details: `Admin ${data.status.toLowerCase()} document '${doc.fileName}'. Feedback: "${data.adminFeedback || "N/A"}"`,
-    },
-  });
+    return updated;
+  }, { timeout: 30000, maxWait: 10000 });
 
-  revalidatePath("/dashboard/admin/hosts");
-  revalidatePath(`/dashboard/admin/hosts/${doc.applicationId}`);
+  try {
+    revalidatePath("/dashboard/admin/hosts");
+    revalidatePath(`/dashboard/admin/hosts/${doc.applicationId}`);
+    revalidatePath("/dashboard");
+    revalidatePath("/list-wedding");
+  } catch {}
 
   return { success: true, document: updatedDoc };
 }
@@ -2203,13 +2257,34 @@ export async function adminVerifyHostApplicationAction(data: {
     : VerificationStatus.UNDER_REVIEW;
 
   const result = await prisma.$transaction(async (tx) => {
+    // 1. Ensure CoupleProfile exists
+    let coupleProfileId = hostApp.coupleProfileId;
+    if (!coupleProfileId) {
+      let cp = await tx.coupleProfile.findUnique({
+        where: { userId: hostApp.userId },
+      });
+      if (!cp) {
+        cp = await tx.coupleProfile.create({
+          data: {
+            userId: hostApp.userId,
+            weddingDate: hostApp.weddingDate,
+            weddingLocation: `${hostApp.venueName || hostApp.city}, ${hostApp.city}, ${hostApp.state || ""}`.trim(),
+            expectedGuests: hostApp.expectedTotalGuests || 200,
+            familyBio: hostApp.story || "",
+          },
+        });
+      }
+      coupleProfileId = cp.id;
+    }
+
+    // 2. Resolve or create Wedding record
     let weddingRecord = hostApp.wedding;
     const weddingTitle = `${hostApp.coupleNames} Wedding`;
     const venueLoc = `${hostApp.venueName || hostApp.city}, ${hostApp.city}, ${hostApp.state || ""}`.trim();
 
-    if (!weddingRecord && hostApp.coupleProfileId) {
+    if (!weddingRecord && coupleProfileId) {
       weddingRecord = await tx.wedding.findFirst({
-        where: { hostCoupleId: hostApp.coupleProfileId, isDemo: false, deletedAt: null },
+        where: { hostCoupleId: coupleProfileId, isDemo: false, deletedAt: null },
       });
     }
 
@@ -2230,7 +2305,7 @@ export async function adminVerifyHostApplicationAction(data: {
           status: targetWeddingStatus,
         },
       });
-    } else if (hostApp.coupleProfileId) {
+    } else if (coupleProfileId) {
       const slug = `${hostApp.coupleNames.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${hostApp.city.toLowerCase()}-${Date.now()}`;
       weddingRecord = await tx.wedding.create({
         data: {
@@ -2248,9 +2323,30 @@ export async function adminVerifyHostApplicationAction(data: {
           durationDays: duration,
           mainImageUrl: "https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=800&q=80",
           status: targetWeddingStatus,
-          hostCoupleId: hostApp.coupleProfileId,
+          hostCoupleId: coupleProfileId,
         },
       });
+
+      // Synchronize day-by-day ceremonies to WeddingEvent records
+      if (hostApp.days && hostApp.days.length > 0) {
+        for (const day of hostApp.days) {
+          if (day.events && day.events.length > 0) {
+            for (const ev of day.events) {
+              await tx.weddingEvent.create({
+                data: {
+                  weddingId: weddingRecord.id,
+                  name: ev.name,
+                  description: ev.description || day.title,
+                  date: day.date || hostApp.weddingDate,
+                  startTime: ev.startTime || "17:00",
+                  endTime: ev.endTime || "22:00",
+                  location: ev.location || venueLoc,
+                },
+              });
+            }
+          }
+        }
+      }
     }
 
     const updatedApp = await tx.hostApplication.update({
@@ -2265,6 +2361,7 @@ export async function adminVerifyHostApplicationAction(data: {
         reviewedAt: new Date(),
         verifiedAt: isApproved ? new Date() : null,
         weddingId: weddingRecord?.id || null,
+        coupleProfileId,
       },
     });
 
@@ -2310,13 +2407,21 @@ export async function adminVerifyHostApplicationAction(data: {
     });
 
     return { updatedApp, weddingRecord };
-  });
+  }, { timeout: 30000, maxWait: 10000 });
 
-  revalidatePath("/dashboard/admin/hosts");
-  revalidatePath(`/dashboard/admin/hosts/${hostApp.id}`);
-  revalidatePath("/dashboard/admin/weddings");
-  revalidatePath("/weddings");
-  revalidatePath("/dashboard");
+  try {
+    revalidatePath("/dashboard/admin/hosts");
+    revalidatePath(`/dashboard/admin/hosts/${hostApp.id}`);
+    revalidatePath("/dashboard/admin/weddings");
+    revalidatePath("/weddings");
+    if (result.weddingRecord?.slug) {
+      revalidatePath(`/weddings/${result.weddingRecord.slug}`);
+    }
+    revalidatePath("/dashboard");
+    revalidatePath("/list-wedding");
+    revalidateTag("weddings", "max");
+    revalidateTag("homepage", "max");
+  } catch {}
 
   return { success: true, application: result.updatedApp, wedding: result.weddingRecord };
 }
@@ -2411,31 +2516,65 @@ export async function adminReviewHostApplicationAction(
           type: reviewStatus === "APPROVED" ? "SUCCESS" : reviewStatus === "REJECTED" ? "ALERT" : "INFO",
         },
       });
+
+      // Synchronize HostApplication record if present
+      if (tx.hostApplication) {
+        const hostApp = await tx.hostApplication.findFirst({
+          where: {
+            OR: [
+              { weddingId },
+              { coupleProfileId: wedding.hostCoupleId },
+              { userId: hostUserId },
+            ],
+          },
+        });
+
+        if (hostApp) {
+          const targetHostAppStatus = reviewStatus === "APPROVED" 
+            ? "APPROVED_FOR_LISTING" 
+            : reviewStatus === "REJECTED" 
+            ? "REJECTED" 
+            : reviewStatus === "NEED_MORE_DOCUMENTS" 
+            ? "ACTION_REQUIRED" 
+            : "UNDER_REVIEW";
+
+          await tx.hostApplication.update({
+            where: { id: hostApp.id },
+            data: {
+              status: targetHostAppStatus as any,
+              adminNotesHostFacing: reviewNote,
+              reviewedBy: admin.name || admin.email,
+              reviewedAt: new Date(),
+              verifiedAt: reviewStatus === "APPROVED" ? new Date() : null,
+            },
+          });
+        }
+      }
     }
 
     return updated;
-  });
+  }, { timeout: 30000, maxWait: 10000 });
 
-    // Send Emails
-    const hostUser = wedding.hostCouple?.user;
-    if (hostUser?.email) {
-      const userName = hostUser.name || hostUser.email.split("@")[0];
-      if (reviewStatus === "APPROVED") {
-        await sendVerificationApprovedEmail(hostUser.email, userName, UserRole.COUPLE);
-      } else if (reviewStatus === "REJECTED") {
-        await sendVerificationRejectedEmail(hostUser.email, userName, reviewNote);
-      }
+  // Send Emails
+  const hostUser = wedding.hostCouple?.user;
+  if (hostUser?.email) {
+    const userName = hostUser.name || hostUser.email.split("@")[0];
+    if (reviewStatus === "APPROVED") {
+      await sendVerificationApprovedEmail(hostUser.email, userName, UserRole.COUPLE);
+    } else if (reviewStatus === "REJECTED") {
+      await sendVerificationRejectedEmail(hostUser.email, userName, reviewNote);
     }
+  }
 
-    // Evaluate Quality Badges for Host
-    if (wedding.hostCoupleId) {
-      try {
-        const { evaluateEntityBadges } = require("../services/badges");
-        await evaluateEntityBadges(ReputationEntityType.HOST, wedding.hostCoupleId);
-      } catch (err) {
-        console.warn("Badge evaluation warning on host review:", err);
-      }
+  // Evaluate Quality Badges for Host
+  if (wedding.hostCoupleId) {
+    try {
+      const { evaluateEntityBadges } = require("../services/badges");
+      await evaluateEntityBadges(ReputationEntityType.HOST, wedding.hostCoupleId);
+    } catch (err) {
+      console.warn("Badge evaluation warning on host review:", err);
     }
+  }
 
   await createAuditLog(
     "REVIEW_HOST_APPLICATION",
@@ -2444,12 +2583,18 @@ export async function adminReviewHostApplicationAction(
     `Admin ${admin.email} reviewed host application for "${wedding.title}". Set status to ${reviewStatus}. Notes: "${reviewNote}"`
   );
 
-  revalidatePath("/dashboard/admin/hosts");
-  revalidatePath(`/dashboard/admin/hosts/${weddingId}`);
-  revalidatePath("/dashboard/admin/weddings");
-  revalidatePath("/dashboard/admin/verifications");
-  revalidatePath("/weddings");
-  revalidatePath(`/weddings/${wedding.slug}`);
+  try {
+    revalidatePath("/dashboard/admin/hosts");
+    revalidatePath(`/dashboard/admin/hosts/${weddingId}`);
+    revalidatePath("/dashboard/admin/weddings");
+    revalidatePath("/dashboard/admin/verifications");
+    revalidatePath("/weddings");
+    revalidatePath(`/weddings/${wedding.slug}`);
+    revalidatePath("/dashboard");
+    revalidatePath("/list-wedding");
+    revalidateTag("weddings", "max");
+    revalidateTag("homepage", "max");
+  } catch {}
 
   return { success: true, wedding: updatedWedding };
 }

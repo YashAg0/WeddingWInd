@@ -461,28 +461,46 @@ export async function saveHostApplicationDraftAction(
         : input.brideName?.trim() || input.hostName?.trim() || user.name || "Couple Celebration");
 
     const result = await prisma.$transaction(async (tx) => {
-      // 1. Resolve or create CoupleProfile
-      let coupleProfile = await tx.coupleProfile.findUnique({
-        where: { userId: user.id },
-      });
-
-      if (!coupleProfile) {
-        try {
-          coupleProfile = await tx.coupleProfile.create({
-            data: {
-              userId: user.id,
-              weddingLocation: input.city?.trim() || "India",
-              weddingDate: input.weddingDate ? parseSafeDate(input.weddingDate) : null,
-              expectedGuests: input.expectedTotalGuests || 200,
-              traditions: input.tradition || "Traditional / Cultural",
-              languagesSpoken: "English, Hindi",
-              familyBio: input.story || null,
-            },
-          });
-        } catch {
-          coupleProfile = await tx.coupleProfile.findUnique({
-            where: { userId: user.id },
-          });
+      // 1. Resolve or create CoupleProfile (support upsert and mock fallback)
+      let coupleProfile = null;
+      if (typeof tx.coupleProfile?.upsert === "function") {
+        coupleProfile = await tx.coupleProfile.upsert({
+          where: { userId: user.id },
+          update: {
+            weddingLocation: input.city?.trim() || undefined,
+            weddingDate: input.weddingDate ? parseSafeDate(input.weddingDate) : undefined,
+            expectedGuests: input.expectedTotalGuests || undefined,
+            traditions: input.tradition || undefined,
+            familyBio: input.story || undefined,
+          },
+          create: {
+            userId: user.id,
+            weddingLocation: input.city?.trim() || "India",
+            weddingDate: input.weddingDate ? parseSafeDate(input.weddingDate) : null,
+            expectedGuests: input.expectedTotalGuests || 200,
+            traditions: input.tradition || "Traditional / Cultural",
+            languagesSpoken: "English, Hindi",
+            familyBio: input.story || null,
+          },
+        });
+      } else {
+        coupleProfile = await tx.coupleProfile.findUnique({ where: { userId: user.id } });
+        if (!coupleProfile) {
+          try {
+            coupleProfile = await tx.coupleProfile.create({
+              data: {
+                userId: user.id,
+                weddingLocation: input.city?.trim() || "India",
+                weddingDate: input.weddingDate ? parseSafeDate(input.weddingDate) : null,
+                expectedGuests: input.expectedTotalGuests || 200,
+                traditions: input.tradition || "Traditional / Cultural",
+                languagesSpoken: "English, Hindi",
+                familyBio: input.story || null,
+              },
+            });
+          } catch {
+            coupleProfile = await tx.coupleProfile.findUnique({ where: { userId: user.id } });
+          }
         }
       }
 
@@ -822,11 +840,28 @@ export async function uploadHostRequestedDocumentAction(data: {
       });
 
       if (pendingRequired.length === 0) {
-        // Transition application status back to UNDER_REVIEW
+        // Transition application status and verification status back to UNDER_REVIEW
         await tx.hostApplication.update({
           where: { id: reqRecord.applicationId },
           data: { status: "UNDER_REVIEW" },
         });
+
+        try {
+          await tx.verification.upsert({
+            where: { userId: user.id },
+            create: {
+              userId: user.id,
+              status: VerificationStatus.UNDER_REVIEW,
+              notes: `Host uploaded all requested documents including '${data.fileName}'.`,
+            },
+            update: {
+              status: VerificationStatus.UNDER_REVIEW,
+              notes: `Host uploaded all requested documents including '${data.fileName}'.`,
+            },
+          });
+        } catch (verErr) {
+          console.warn("[uploadHostRequestedDocumentAction] Verification update notice:", verErr);
+        }
       }
 
       // 4. Audit Log
@@ -846,8 +881,34 @@ export async function uploadHostRequestedDocumentAction(data: {
       timeout: 60000,
     });
 
+    // Notify admins that host uploaded the requested document
+    try {
+      const adminUsers = await prisma.user.findMany({
+        where: { role: UserRole.ADMIN },
+        select: { id: true },
+      });
+
+      for (const admin of adminUsers) {
+        try {
+          await prisma.notification.create({
+            data: {
+              userId: admin.id,
+              title: "Host Document Uploaded",
+              message: `Host uploaded '${data.fileName}' for request '${reqRecord.title}'. Ready for admin review.`,
+              type: "INFO",
+            },
+          });
+        } catch {}
+      }
+    } catch (notifErr) {
+      console.warn("[uploadHostRequestedDocumentAction] Admin notification notice:", notifErr);
+    }
+
     try {
       revalidatePath("/dashboard");
+      revalidatePath("/list-wedding");
+      revalidatePath("/dashboard/admin/hosts");
+      revalidatePath(`/dashboard/admin/hosts/${reqRecord.applicationId}`);
     } catch {}
 
     return {

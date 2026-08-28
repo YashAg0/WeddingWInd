@@ -13,9 +13,32 @@ import { toWeddingDTO } from "@/lib/wedding-dto";
 import { featuredWeddings } from "@/lib/data";
 
 describe("Homepage Hierarchy & 4-Card Composition Invariants", () => {
-  it("should provide top 4 featured celebrations for the 4-column desktop grid", () => {
+  it("should provide top 4 featured celebrations for the first row", () => {
     const featuredTop4 = featuredWeddings.slice(0, 4);
     expect(featuredTop4.length).toBe(4);
+  });
+
+  it("should provide 8 featured celebrations across 2 rows of 4 cards without duplicates", () => {
+    const featuredTop8 = featuredWeddings.slice(0, 8);
+    expect(featuredTop8.length).toBe(8);
+
+    // Row 1 (cards 0-3) and Row 2 (cards 4-7)
+    const row1 = featuredTop8.slice(0, 4);
+    const row2 = featuredTop8.slice(4, 8);
+    expect(row1.length).toBe(4);
+    expect(row2.length).toBe(4);
+
+    // Ensure all 8 IDs and slugs are unique
+    const uniqueIds = new Set(featuredTop8.map((w) => w.id));
+    const uniqueSlugs = new Set(featuredTop8.map((w) => w.slug));
+    expect(uniqueIds.size).toBe(8);
+    expect(uniqueSlugs.size).toBe(8);
+
+    // Ensure first 4 remain identical to original top 4
+    expect(row1[0].id).toBe(featuredWeddings[0].id);
+    expect(row1[1].id).toBe(featuredWeddings[1].id);
+    expect(row1[2].id).toBe(featuredWeddings[2].id);
+    expect(row1[3].id).toBe(featuredWeddings[3].id);
   });
 
   it("should provide a realistic multi-day distribution (1-5 days) across featured celebrations", () => {

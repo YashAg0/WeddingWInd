@@ -1,12 +1,12 @@
 import React from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getGuestPassAction } from "@/lib/actions/event-operations";
 import QRCode from "qrcode";
-import { Heart, ArrowLeft, Ticket } from "lucide-react";
+import { Heart, ArrowLeft } from "lucide-react";
 import ClientEventHubForm from "./ClientEventHubForm";
+import ClientQRSection from "@/components/dashboard/ClientQRSection";
 
 interface EventHubPageProps {
   params: Promise<{ bookingId: string }>;
@@ -135,36 +135,21 @@ export default async function EventHubDetailPage({ params }: EventHubPageProps) 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Post-payment check-in QR pass */}
         <div className="space-y-6">
-          <div className="bg-white border border-warm-200/60 p-6 rounded-3xl shadow-sm text-center flex flex-col items-center space-y-4">
-            <h2 className="font-display font-bold text-sm text-charcoal-900 flex items-center gap-1.5 justify-center">
-              <Ticket size={16} className="text-maroon-700" />
-              Digital Guest Pass
-            </h2>
-
-            {qrCodeUrl ? (
-              <div className="p-3 border border-warm-100 rounded-2xl bg-white shadow-inner my-2">
-                <Image src={qrCodeUrl} alt="Check-in QR Pass" width={176} height={176} className="w-44 h-44" unoptimized />
-              </div>
-            ) : (
+          {qrCodeUrl ? (
+            <ClientQRSection
+              qrCodeUrl={qrCodeUrl}
+              passCode={passData?.pass.passCode || ""}
+              scanCount={passData?.pass.scanCount || 0}
+              passStatus={passData?.pass.status || ""}
+              eventTitle={booking.wedding.title}
+            />
+          ) : (
+            <div className="bg-white border border-warm-200/60 p-6 rounded-3xl shadow-sm text-center flex flex-col items-center space-y-4">
               <div className="p-6 bg-warm-50 border border-warm-200 rounded-2xl text-xs text-charcoal-500">
                 Generating entry pass...
               </div>
-            )}
-
-            <div className="text-xs space-y-1">
-              <div className="font-black text-charcoal-850 text-sm">
-                Pass Code: {passData?.pass.passCode || "N/A"}
-              </div>
-              <div className="text-[10px] text-charcoal-500">
-                Scan count: {passData?.pass.scanCount || 0} • Status:{" "}
-                <span className="font-bold text-maroon-800">{passData?.pass.status}</span>
-              </div>
             </div>
-
-            <p className="text-[10px] text-charcoal-400">
-              Present this code at the venue gateway entry check-in counter.
-            </p>
-          </div>
+          )}
 
           {/* Contact coordinates */}
           {booking.wedding.contacts.length > 0 && (

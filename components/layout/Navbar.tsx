@@ -676,7 +676,7 @@ export default function Navbar() {
               ref={mobileToggleRef}
               type="button"
               className={cn(
-                "xl:hidden h-10 w-10 flex items-center justify-center rounded-full transition-colors duration-200 cursor-pointer flex-shrink-0",
+                "xl:hidden h-11 w-11 flex items-center justify-center rounded-full transition-colors duration-200 cursor-pointer flex-shrink-0",
                 FOCUS_RING,
                 isTransparent ? "text-white hover:bg-white/10" : "text-charcoal-700 hover:bg-charcoal-100"
               )}
@@ -801,7 +801,10 @@ export default function Navbar() {
           </nav>
 
           {/* CTA area */}
-          <div className="p-5 border-t border-warm-200 space-y-3">
+          <div
+            className="p-5 border-t border-warm-200 space-y-3"
+            style={{ paddingBottom: "calc(1.25rem + env(safe-area-inset-bottom, 0px))" }}
+          >
             <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-warm-50 border border-warm-200 text-xs font-semibold text-charcoal-700">
               <span className="flex items-center gap-2">
                 <Globe size={15} className="text-charcoal-500" aria-hidden="true" />

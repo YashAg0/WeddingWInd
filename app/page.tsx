@@ -44,7 +44,7 @@ export const metadata: Metadata = {
 };
 
 export default async function HomePage() {
-  const homepageWeddings = await getHomepageWeddings(6);
+  const homepageWeddings = await getHomepageWeddings(8);
 
   return (
     <>
