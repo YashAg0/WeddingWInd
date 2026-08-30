@@ -93,6 +93,9 @@ export function Hero({ stats: _stats }: HeroProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedMonth, setSelectedMonth] = useState("");
+  const [heroImgSrc, setHeroImgSrc] = useState(
+    "https://images.unsplash.com/photo-1735415899585-12e3cde91d31?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+  );
   const prefersReducedMotion = useReducedMotion();
   const router = useRouter();
 
@@ -170,12 +173,12 @@ export function Hero({ stats: _stats }: HeroProps) {
   return (
     <section
       ref={sectionRef}
-      className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden"
+      className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-charcoal-950"
       aria-label="Hero — Experience Our Indian Weddings"
     >
       {/* Background image layer */}
       <motion.div
-        className="absolute inset-0 z-0 will-change-transform overflow-hidden"
+        className="absolute inset-0 z-0 will-change-transform overflow-hidden bg-charcoal-950"
         style={{ y: isReducedMotion ? 0 : bgY }}
         aria-hidden="true"
       >
@@ -189,13 +192,17 @@ export function Hero({ stats: _stats }: HeroProps) {
           }
         >
           <Image
-            src="https://images.unsplash.com/photo-1735415899585-12e3cde91d31?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+            src={heroImgSrc}
             alt="Indian Wedding Celebration"
             fill
             priority
-            quality={90}
+            quality={85}
             sizes="100vw"
-            className="object-cover opacity-85"
+            className="object-cover opacity-90 transition-opacity duration-700"
+            onError={() => {
+              const fallback = "https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=1200&q=85";
+              if (heroImgSrc !== fallback) setHeroImgSrc(fallback);
+            }}
           />
         </motion.div>
 

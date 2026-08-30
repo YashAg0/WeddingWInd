@@ -32,6 +32,9 @@ describe("Single Source of Truth Wedding DTO Normalizer", () => {
           id: "u-1",
           name: "Devika & Kaber Singhania",
           avatar: "https://images.unsplash.com/photo-1615966650071",
+          verification: {
+            status: "APPROVED",
+          },
         },
       },
       gallery: [{ imageUrl: "https://images.unsplash.com/photo-1583939003579-730e3918a45a" }],

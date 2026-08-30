@@ -1,48 +1,61 @@
-# BRIEFING — 2026-08-10T04:10:00Z
+# BRIEFING — 2026-08-30T04:33:00Z
 
 ## Mission
-Implement Milestone M2: R3 (Diagnose & Fix Database Availability in `lib/prisma.ts`) & R4 (Enforce Fail-Closed Database Auth).
+Execute Milestone 2 (Phase 2: Booking, Trust Verification & Multi-Currency Architecture) of WeddingWithIndia covering TRU-01, ROU-01, UX-03, UX-02, FIN-01, and comprehensive tests.
 
 ## 🔒 My Identity
-- Archetype: implementer, qa, specialist
+- Archetype: Worker
 - Roles: implementer, qa, specialist
 - Working directory: c:\Projects\WeddingWithIndia\wedding-with-india\.agents\worker_m2
-- Original parent: a7f70242-e8a7-4783-aef8-bb812bf35c7c
-- Milestone: M2
+- Original parent: 2bef5307-2898-47cb-b043-393c117215ef
+- Milestone: Milestone 2 (Phase 2)
 
 ## 🔒 Key Constraints
-- Default timeoutMs in `isDatabaseAvailable()` must be 5000ms.
-- On `status: true`, cache for 5000ms. On `status: false`, DO NOT cache `false` for 5 seconds (clear `dbAliveCache` or do not store `false`).
-- Audit callers in `app/dashboard/admin/layout.tsx`, `app/api/readiness/route.ts`, and `instrumentation.ts` to ensure default/appropriate timeouts are used.
-- Ensure `syncAndGetDbUser()` in `lib/auth.ts` throws `SERVICE_UNAVAILABLE` when DB is genuinely offline.
-- Verify `isAdmin()` returns `false` when DB is offline.
-- Verify `AdminLayout` renders the DB lock screen when DB is offline.
-- Ensure zero synthetic fallback roles/permissions are granted.
-- Create unit test suite `__tests__/lib/auth-db-availability.test.ts`.
-- Run type-check, lint, and test.
+- Genuine implementation only, no dummy/synthetic/hardcoded logic
+- Strictly preserve database integrity, SELECT FOR UPDATE concurrency locks, and server-authoritative pricing
+- Zero TypeScript errors (`npx tsc --noEmit`) and 100% passing Jest test suite
 
 ## Current Parent
-- Conversation ID: a7f70242-e8a7-4783-aef8-bb812bf35c7c
-- Updated: 2026-08-10T04:10:00Z
+- Conversation ID: 2bef5307-2898-47cb-b043-393c117215ef
+- Updated: 2026-08-30T04:33:00Z
 
 ## Task Summary
-- **What to build**: Fix DB ping timeout & caching logic in `lib/prisma.ts`, audit callers, verify fail-closed auth in `lib/auth.ts` and `app/dashboard/admin/layout.tsx`, create unit test suite `__tests__/lib/auth-db-availability.test.ts`.
-- **Success criteria**: All requirements pass, type-check, lint, and Jest unit tests pass cleanly without errors or cheats.
+- **TRU-01**: Bind host verification strictly to approved KYC / UserQualityBadge / verified-host record, removing fake badges.
+- **ROU-01**: Remove `/destinations` redirect from `next.config.ts`.
+- **UX-03**: Expandable Cancellation & Escrow Protection drawer in `BookingSidebar.tsx`.
+- **UX-02**: Multi-guest attendee card collection in booking flow & dashboard manifest management + atomic database inserts.
+- **FIN-01**: 8 currencies architecture (USD, EUR, GBP, AUD, CAD, SGD, AED, INR) in `lib/currency.ts`, `CurrencyContext.tsx`, `Navbar.tsx`, `WeddingCard.tsx`, `BookingSidebar.tsx`, `StickyBookingCard.tsx`.
+- **Testing**: Unit tests for all requirements and verification.
 
 ## Change Tracker
 - **Files modified**:
-  - `lib/prisma.ts`: Updated `isDatabaseAvailable()` default `timeoutMs` to 5000, updated caching to only cache `status: true` for 5s and set `dbAliveCache = null` on failure, exported `clearDbAliveCache()`.
-  - `app/dashboard/admin/layout.tsx`: Removed explicit 500ms override in call to `isDatabaseAvailable()`.
-  - `app/api/readiness/route.ts`: Removed explicit 500ms override in call to `isDatabaseAvailable()`.
-  - `instrumentation.ts`: Removed explicit 2000ms override in call to `isDatabaseAvailable()`.
-  - `__tests__/lib/auth-db-availability.test.ts`: Created new unit test suite testing timeout, success caching, failure non-caching, fail-closed auth error throwing, `isAdmin()` DB offline handling, and source invariants.
-- **Build status**: `type-check` PASS, `lint` PASS, `test` PASS (25 suites, 138 tests)
+  - `lib/wedding-dto.ts`: Replaced synthetic isVerified logic with strict KYC & badge verification
+  - `next.config.ts`: Removed `/destinations` redirect unshadowing `app/destinations/page.tsx`
+  - `lib/actions/index.ts`: Updated wedding queries with verification includes + updated `createBookingAction` to accept & insert `BookingGuest` records
+  - `lib/currency.ts`: Expanded to 8 currencies, FX rates, conversion formulas, formatters, and browser detection
+  - `context/CurrencyContext.tsx`: Full support for 8 currencies, USD/INR formatters, and localStorage persistence
+  - `components/layout/Navbar.tsx`: 8-currency grid in desktop popover and mobile navigation drawer
+  - `components/wedding/WeddingCard.tsx`: Currency estimates with `formatPriceFromUSD`
+  - `components/wedding/StickyBookingCard.tsx`: Currency estimates with authoritative USD notes
+  - `components/wedding/BookingSidebar.tsx`: Multi-currency, UX-02 dynamic attendee cards, UX-03 cancellation drawer
+  - `lib/actions/event-operations.ts`: Added `saveBookingGuestsAction` for manifest persistence
+  - `app/dashboard/events/[bookingId]/page.tsx`: Included guests and passed to ClientEventHubForm
+  - `app/dashboard/events/[bookingId]/ClientEventHubForm.tsx`: Added 5th tab for Guest Manifest management
+  - `__tests__/lib/m2-trust-routes-currency.test.ts`: Created comprehensive unit test suite
+  - `__tests__/lib/single-source-dto.test.ts`: Updated fixture with KYC verification
+- **Build status**: `npx tsc --noEmit` passed (0 errors)
 - **Pending issues**: None
 
 ## Quality Status
-- **Build/test result**: PASS (25 suites, 138 tests)
-- **Lint status**: PASS (0 violations)
-- **Tests added/modified**: `__tests__/lib/auth-db-availability.test.ts` (13 test cases added)
+- **Build/test result**: 76/76 test suites passed (754/754 tests passed)
+- **Lint status**: Clean
+- **Tests added/modified**: `__tests__/lib/m2-trust-routes-currency.test.ts` (14 new tests covering TRU-01, ROU-01, UX-03, UX-02, FIN-01)
 
 ## Loaded Skills
 - None
+
+## Artifact Index
+- `.agents/worker_m2/DISPATCH.md` — Assignment prompt
+- `.agents/worker_m2/BRIEFING.md` — Working memory
+- `.agents/worker_m2/progress.md` — Liveness & progress tracking
+- `.agents/worker_m2/handoff.md` — Final handoff report

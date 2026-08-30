@@ -33,7 +33,7 @@ process.env.UPLOADTHING_SECRET = process.env.UPLOADTHING_SECRET || "sk_live_e2e_
 process.env.UPLOADTHING_APP_ID = process.env.UPLOADTHING_APP_ID || "app_e2e_mock_id_wedding_with_india";
 process.env.GUEST_PASS_ENCRYPTION_KEY = process.env.GUEST_PASS_ENCRYPTION_KEY || "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
 process.env.NEXT_PUBLIC_APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-(process.env as Record<string, string>).NODE_ENV = process.env.NODE_ENV || "production";
+(process.env as Record<string, string>).NODE_ENV = process.env.NODE_ENV || "test";
 process.env.PLAYWRIGHT_TEST = "true";
 
 export default defineConfig({
@@ -61,7 +61,7 @@ export default defineConfig({
     timeout: 120000,
     env: {
       ...process.env,
-      NODE_ENV: "production",
+      NODE_ENV: "test",
       PLAYWRIGHT_TEST: "true",
       NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || "",
       CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY || "",

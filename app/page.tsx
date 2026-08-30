@@ -9,6 +9,7 @@ import { Categories } from "@/components/home/Categories";
 import { Testimonials } from "@/components/home/Testimonials";
 import { FAQ } from "@/components/home/FAQ";
 import { CTASection } from "@/components/home/CTASection";
+import { TrustStrip } from "@/components/home/TrustStrip";
 import { getHomepageWeddings } from "@/lib/actions";
 import {
   weddingCategories,
@@ -16,7 +17,7 @@ import {
   countries,
   faqItems,
   heroStats,
-} from "@/lib/data";
+} from "@/lib/marketing-data";
 
 export const revalidate = 60;
 
@@ -50,6 +51,9 @@ export default async function HomePage() {
     <>
       {/* 1. HERO — Attention + immediate understanding */}
       <Hero stats={heroStats} />
+
+      {/* 1.5. TRUST STRIP — Static 4-Pillar Traveler Trust & Safety Badges */}
+      <TrustStrip />
 
       {/* 2. FEATURED WEDDINGS — Core product proof immediately after Hero */}
       <FeaturedWeddings weddings={homepageWeddings} />

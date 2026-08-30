@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import { AuthProvider } from "@/context/AuthContext";
@@ -11,10 +12,19 @@ import { RoyalBackground } from "@/components/ui/RoyalBackground";
 import { PwaProvider } from "@/components/pwa/PwaProvider";
 import { InstallPrompt } from "@/components/pwa/InstallPrompt";
 
-// Fonts disabled via Next.js builder due to Turbopack network failures
-// Using native <link> tags in the head instead.
-const interVariable = "font-inter";
-const playfairVariable = "font-playfair";
+const inter = Inter({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-inter",
+  weight: ["400", "500", "600", "700"],
+});
+
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-playfair",
+  weight: ["500", "600", "700", "800"],
+});
 
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
 const APP_URL = "https://weddingwithindia.com";
@@ -184,16 +194,8 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkProvider publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}>
-      <html lang="en" className={`${interVariable} ${playfairVariable} scroll-smooth`}>
+      <html lang="en" className={`${inter.variable} ${playfair.variable} scroll-smooth`}>
         <head>
-          {/* Non-blocking Google Fonts loading */}
-          <link rel="preconnect" href="https://fonts.googleapis.com" />
-          <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-          <link
-            rel="stylesheet"
-            href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700;800&display=swap"
-          />
-          
           {/* JSON-LD Structured Data */}
           <script
             type="application/ld+json"

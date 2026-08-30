@@ -9,6 +9,7 @@ import { Menu, X, ChevronDown, Heart, Globe, Bell, LayoutDashboard, User } from 
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import { useCurrency } from "@/context/CurrencyContext";
+import { Currency, SUPPORTED_CURRENCIES, CURRENCY_METADATA } from "@/lib/currency";
 import { InstallButton } from "@/components/pwa/InstallButton";
 
 interface NavItem {
@@ -36,9 +37,6 @@ const navItems: NavItem[] = [
   { label: "List Your Wedding", href: "/list-wedding" },
 ];
 
-const CURRENCIES = ["INR", "USD", "EUR"] as const;
-type CurrencyCode = (typeof CURRENCIES)[number];
-
 const FOCUS_RING =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-secondary)] focus-visible:ring-offset-2";
 
@@ -49,37 +47,36 @@ function isActiveHref(pathname: string, href: string): boolean {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-function currencySymbol(code: CurrencyCode) {
-  return code === "INR" ? "₹" : code === "USD" ? "$" : "€";
-}
-
 function UserAvatar({
   avatar,
   name,
   size = 32,
 }: {
-  avatar: string;
+  avatar?: string | null;
   name: string;
   size?: number;
 }) {
-  const initials = name
+  const [imgError, setImgError] = useState(false);
+  const initials = (name || "User")
     .split(" ")
     .slice(0, 2)
     .map((n) => n[0]?.toUpperCase() ?? "")
     .join("");
 
-  if (avatar) {
+  if (avatar && !imgError) {
     return (
       <div
-        className="rounded-full overflow-hidden border-2 border-[var(--color-brand-secondary)]/40 flex-shrink-0"
+        className="rounded-full overflow-hidden border-2 border-[var(--color-brand-secondary)]/40 flex-shrink-0 bg-maroon-800"
         style={{ width: size, height: size }}
       >
         <Image
           src={avatar}
-          alt={name}
+          alt={name || "User"}
           width={size}
           height={size}
           className="object-cover w-full h-full"
+          onError={() => setImgError(true)}
+          unoptimized={avatar.startsWith("data:") || avatar.includes("clerk") || avatar.includes("pravatar")}
         />
       </div>
     );
@@ -87,7 +84,7 @@ function UserAvatar({
 
   return (
     <div
-      className="rounded-full flex items-center justify-center flex-shrink-0 font-bold text-white"
+      className="rounded-full flex items-center justify-center flex-shrink-0 font-bold text-white shadow-xs"
       style={{
         width: size,
         height: size,
@@ -101,59 +98,67 @@ function UserAvatar({
   );
 }
 
-/** Segmented pick-one control with a sliding highlight — reused by the
- *  desktop currency popover and the mobile drawer footer so both stay
- *  in sync visually and behaviorally. */
-function CurrencySwitcher({
+/** 8-currency grid picker with flag, symbol, name, and ISO code */
+function CurrencyPickerGrid({
   value,
   onChange,
-  reducedMotion,
+  onClose,
   compact = false,
   tabbable = true,
 }: {
-  value: CurrencyCode;
-  onChange: (c: CurrencyCode) => void;
-  reducedMotion: boolean;
+  value: Currency;
+  onChange: (c: Currency) => void;
+  onClose?: () => void;
   compact?: boolean;
   tabbable?: boolean;
 }) {
-  const activeIndex = CURRENCIES.indexOf(value);
   return (
-    <div
-      role="radiogroup"
-      aria-label="Select currency"
-      className={cn(
-        "relative flex items-center bg-warm-50 border border-warm-200 rounded-full p-1",
-        compact ? "w-full" : "w-[180px]"
-      )}
-    >
-      <span
-        aria-hidden="true"
-        className={cn(
-          "absolute top-1 bottom-1 left-1 rounded-full bg-[var(--color-brand-primary)] shadow-sm",
-          !reducedMotion && "transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]"
-        )}
-        style={{
-          width: "calc((100% - 0.5rem) / 3)",
-          transform: `translateX(${activeIndex * 100}%)`,
-        }}
-      />
-      {CURRENCIES.map((c) => (
-        <button
-          key={c}
-          type="button"
-          role="radio"
-          aria-checked={value === c}
-          tabIndex={tabbable ? 0 : -1}
-          onClick={() => onChange(c)}
-          className={cn(
-            "relative z-10 flex-1 px-2 py-1.5 rounded-full text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-1",
-            value === c ? "text-white" : "text-charcoal-600 hover:text-charcoal-900"
-          )}
-        >
-          {currencySymbol(c)} {c}
-        </button>
-      ))}
+    <div className="flex flex-col gap-2.5">
+      <div
+        role="radiogroup"
+        aria-label="Select display currency"
+        className={cn("grid gap-1.5", compact ? "grid-cols-2" : "grid-cols-2 w-[280px]")}
+      >
+        {SUPPORTED_CURRENCIES.map((code) => {
+          const meta = CURRENCY_METADATA[code];
+          const isSelected = value === code;
+          return (
+            <button
+              key={code}
+              type="button"
+              role="radio"
+              aria-checked={isSelected}
+              tabIndex={tabbable ? 0 : -1}
+              onClick={() => {
+                onChange(code);
+                onClose?.();
+              }}
+              className={cn(
+                "flex items-center gap-2 px-2.5 py-2 rounded-xl text-left transition-all text-xs font-semibold cursor-pointer border",
+                isSelected
+                  ? "bg-[var(--color-brand-primary)] text-white border-[var(--color-brand-primary)] shadow-xs"
+                  : "bg-warm-50/80 hover:bg-warm-100 text-charcoal-800 border-warm-200/80"
+              )}
+            >
+              <span className="text-base leading-none" aria-hidden="true">{meta.flag}</span>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold">{meta.code}</span>
+                  <span className={cn("text-[0.6875rem]", isSelected ? "text-white/80" : "text-charcoal-500")}>
+                    {meta.symbol}
+                  </span>
+                </div>
+                <div className={cn("text-[0.625rem] truncate", isSelected ? "text-white/80" : "text-charcoal-400")}>
+                  {meta.name}
+                </div>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+      <p className="text-[0.625rem] text-charcoal-400 text-center leading-tight pt-1 border-t border-warm-100">
+        Prices display as estimates. Authoritative transactions settle in USD / INR.
+      </p>
     </div>
   );
 }
@@ -563,21 +568,26 @@ export default function Navbar() {
                 </button>
                 <div
                   className={cn(
-                    "absolute right-0 top-full mt-2 bg-white border border-warm-200 rounded-2xl shadow-[0_8px_40px_0_rgba(0,0,0,0.14)] p-3 min-w-[210px] z-50 origin-top-right transition-[opacity,transform,visibility] duration-200",
+                    "absolute right-0 top-full mt-2 bg-white border border-warm-200 rounded-2xl shadow-[0_8px_40px_0_rgba(0,0,0,0.14)] p-3.5 z-50 origin-top-right transition-[opacity,transform,visibility] duration-200",
                     showCurrencyPicker ? "visible opacity-100 scale-100" : "invisible opacity-0 scale-95"
                   )}
                   aria-hidden={!showCurrencyPicker}
                 >
-                  <p className="text-[0.6875rem] font-bold uppercase tracking-wider text-charcoal-400 px-1 mb-2">
-                    Currency
-                  </p>
-                  <CurrencySwitcher
+                  <div className="flex items-center justify-between px-1 mb-2.5">
+                    <span className="text-[0.6875rem] font-bold uppercase tracking-wider text-charcoal-500">
+                      Select Display Currency
+                    </span>
+                    <span className="text-[0.6875rem] font-semibold text-[var(--color-brand-primary)]">
+                      {CURRENCY_METADATA[currency]?.flag} {currency}
+                    </span>
+                  </div>
+                  <CurrencyPickerGrid
                     value={currency}
                     onChange={(c) => {
                       setCurrency(c);
                       setShowCurrencyPicker(false);
                     }}
-                    reducedMotion={prefersReducedMotion}
+                    onClose={() => setShowCurrencyPicker(false)}
                     tabbable={showCurrencyPicker}
                   />
                 </div>
@@ -808,10 +818,13 @@ export default function Navbar() {
             <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-warm-50 border border-warm-200 text-xs font-semibold text-charcoal-700">
               <span className="flex items-center gap-2">
                 <Globe size={15} className="text-charcoal-500" aria-hidden="true" />
-                Currency
+                Display Currency
+              </span>
+              <span className="font-bold text-[var(--color-brand-primary)]">
+                {CURRENCY_METADATA[currency]?.flag} {currency} ({CURRENCY_METADATA[currency]?.symbol})
               </span>
             </div>
-            <CurrencySwitcher value={currency} onChange={setCurrency} reducedMotion={prefersReducedMotion} compact />
+            <CurrencyPickerGrid value={currency} onChange={setCurrency} compact />
 
             {authPending ? (
               <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-warm-50 border border-warm-200 text-sm text-charcoal-500">

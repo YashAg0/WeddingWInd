@@ -5,6 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 import ProfileCard from "@/components/dashboard/ProfileCard";
 import { Check } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { DietaryAllergenSelector } from "@/components/dietary/DietaryAllergenSelector";
 
 export default function ProfilePage() {
   const { user, updateProfile } = useAuth();
@@ -174,9 +175,14 @@ export default function ProfilePage() {
                       <option value="5000">Above $3,000</option>
                     </select>
                   </div>
-                  <div className="flex flex-col gap-1.5">
-                    <label htmlFor="edit-food" className="text-[0.625rem] font-bold text-charcoal-500 uppercase tracking-widest">Food Preferences</label>
-                    <input id="edit-food" type="text" value={formData.foodPreferences} onChange={(e) => setFormData({ ...formData, foodPreferences: e.target.value })} className="input-luxury" />
+                  <div className="sm:col-span-2">
+                    <DietaryAllergenSelector
+                      value={formData.foodPreferences}
+                      onChange={(val) =>
+                        setFormData({ ...formData, foodPreferences: val })
+                      }
+                      label="Food & Allergen Preferences"
+                    />
                   </div>
                   <div className="flex flex-col gap-1.5">
                     <label htmlFor="edit-accessibility" className="text-[0.625rem] font-bold text-charcoal-500 uppercase tracking-widest">Accessibility Needs</label>

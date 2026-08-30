@@ -5,6 +5,7 @@ import { X, Check, Minus, Plus } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Wedding } from "@/types";
 import { useAuth } from "@/context/AuthContext";
+import { useCurrency } from "@/context/CurrencyContext";
 import { useRouter } from "next/navigation";
 import { WEDDING_TIER_CONFIG, normalizeWeddingTier, normalizeDurationDays, getCustomerPriceUSD } from "@/lib/services/pricing-engine";
 
@@ -14,6 +15,7 @@ interface StickyBookingCardProps {
 
 export function StickyBookingCard({ wedding }: StickyBookingCardProps) {
   const { user, addBooking } = useAuth();
+  const { currency, formatPriceFromUSD } = useCurrency();
   const router = useRouter();
 
   const tier = normalizeWeddingTier(wedding.tier || (wedding.category === "Royal" ? "ROYAL" : "STANDARD"));
@@ -31,6 +33,8 @@ export function StickyBookingCard({ wedding }: StickyBookingCardProps) {
   const isShowcase = wedding.isDemo === true;
   const isSoldOut = isShowcase || wedding.availabilityStatus === "FULLY_BOOKED" || wedding.availabilityStatus === "UNAVAILABLE" || wedding.availabilityStatus === "COMPLETED" || wedding.guestsAllowed === 0 || availableSlots <= 0;
   const subtotalUSD = pricePerGuestUSD * guestsCount;
+  const priceDisplay = formatPriceFromUSD(pricePerGuestUSD);
+  const subtotalDisplay = formatPriceFromUSD(subtotalUSD);
 
   return (
     <>
@@ -57,12 +61,12 @@ export function StickyBookingCard({ wedding }: StickyBookingCardProps) {
             </span>
             <div className="flex items-baseline gap-1">
               <span className="font-display font-black text-xl text-[var(--color-brand-primary)]">
-                ${pricePerGuestUSD}
+                {priceDisplay.primary}
               </span>
               <span className="text-[0.625rem] text-charcoal-400 font-semibold">/guest</span>
             </div>
             <span className="text-[0.625rem] text-charcoal-500 font-medium block">
-              {durationDays}-Day Pass
+              {durationDays}-Day Pass{currency !== "USD" && priceDisplay.secondary ? ` (${priceDisplay.secondary})` : ""}
             </span>
           </div>
 
@@ -181,13 +185,20 @@ export function StickyBookingCard({ wedding }: StickyBookingCardProps) {
                 {/* Pricing Breakdown */}
                 <div className="p-4 bg-warm-50 border border-warm-200 rounded-2xl space-y-2">
                   <div className="flex justify-between text-xs text-charcoal-600">
-                    <span>${pricePerGuestUSD} × {guestsCount}</span>
-                    <span className="font-semibold text-charcoal-900">${subtotalUSD} USD</span>
+                    <span>{priceDisplay.primary} × {guestsCount} {guestsCount === 1 ? "Guest" : "Guests"}</span>
+                    <span className="font-semibold text-charcoal-900">{subtotalDisplay.primary}</span>
                   </div>
                   <div className="flex justify-between items-baseline pt-2 border-t border-warm-200">
-                    <span className="font-bold text-charcoal-900 text-sm">Total Amount</span>
+                    <div>
+                      <span className="font-bold text-charcoal-900 text-sm block">Total Amount</span>
+                      {currency !== "USD" && (
+                        <span className="text-[0.625rem] text-charcoal-400 font-medium block">
+                          (${subtotalUSD} USD authoritative)
+                        </span>
+                      )}
+                    </div>
                     <span className="font-display font-black text-xl text-[var(--color-brand-primary)]">
-                      ${subtotalUSD} USD
+                      {subtotalDisplay.primary}
                     </span>
                   </div>
                 </div>

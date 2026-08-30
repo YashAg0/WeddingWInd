@@ -1,22 +1,22 @@
-## 2026-08-10T17:03:08Z
-<USER_REQUEST>
-You are an independent Reviewer subagent for Milestone M2 (Database & Transaction Integrity).
+## 2026-08-30T04:45:34Z
+You are Reviewer 2 for Milestone 2 (Phase 2: Booking, Trust Verification & Multi-Currency Architecture) of WeddingWithIndia.
+Your working directory is: c:\Projects\WeddingWithIndia\wedding-with-india\.agents\reviewer_m2_2
+Project root is: c:\Projects\WeddingWithIndia\wedding-with-india
 
-Working Directory: c:\Projects\WeddingWithIndia\wedding-with-india\.agents\reviewer_m2_2
-Original Request File: c:\Projects\WeddingWithIndia\wedding-with-india\.agents\ORIGINAL_REQUEST.md
-Worker Handoff Report: c:\Projects\WeddingWithIndia\wedding-with-india\.agents\worker_m2_v2\handoff.md
-Modified Files:
-- c:\Projects\WeddingWithIndia\wedding-with-india\app\api\webhooks\stripe\route.ts
-- c:\Projects\WeddingWithIndia\wedding-with-india\lib\actions\index.ts
+Read authoritative requirements at:
+`c:\Projects\WeddingWithIndia\wedding-with-india\.agents\ORIGINAL_REQUEST.md`
+`c:\Projects\WeddingWithIndia\wedding-with-india\.agents\PROJECT.md`
+and the Worker report at:
+`c:\Projects\WeddingWithIndia\wedding-with-india\.agents\worker_m2\handoff.md`
 
-Your Task:
-1. Independently review `app/api/webhooks/stripe/route.ts` and `lib/actions/index.ts` for transaction atomicity, connection timeout parameters (`maxWait: 10000, timeout: 15000`), and idempotency.
-2. Verify that network calls (email and Stripe API) are properly isolated outside database transactions.
-3. Run verification commands: `npm run type-check`, `npm run lint`, and `npm test`.
-4. Render an explicit verdict: `APPROVE` or `REQUEST_CHANGES`.
+Examine:
+1. TRU-01: Accurate database KYC check binding (`rawWedding.hostCouple?.user?.verification?.status === 'APPROVED'` or unrevoked `verified-host` badge).
+2. ROU-01: Unshadowed `app/destinations/page.tsx` with zero broken redirects.
+3. UX-03: Upfront cancellation terms (4-tier refund policy) and escrow guarantees in `BookingSidebar.tsx`.
+4. UX-02: Multi-guest attendee cards (2-10 guests) and atomic insertion in `createBookingAction`.
+5. FIN-01: Multi-currency display estimates engine for GBP, AUD, CAD, SGD, AED, USD, EUR, INR.
+6. Run builds and tests (`npx tsc --noEmit`, `npx jest`).
 
-Output Requirements:
-- Write detailed review to `c:\Projects\WeddingWithIndia\wedding-with-india\.agents\reviewer_m2_2\handoff.md`.
-- Update `c:\Projects\WeddingWithIndia\wedding-with-india\.agents\reviewer_m2_2\progress.md`.
-- Send completion message to parent via `send_message` stating your verdict (`APPROVE` or `REQUEST_CHANGES`) and summary.
-</USER_REQUEST>
+Write your review report and explicit verdict (APPROVE or REQUEST_CHANGES) to:
+`c:\Projects\WeddingWithIndia\wedding-with-india\.agents\reviewer_m2_2\handoff.md`
+Report your verdict via send_message to your caller.

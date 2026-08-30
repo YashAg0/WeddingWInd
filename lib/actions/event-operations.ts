@@ -806,3 +806,64 @@ export async function publishWeddingAnnouncementAction(data: z.infer<typeof anno
   revalidatePath(`/dashboard/operations`);
   return announcement;
 }
+
+/**
+ * Saves or updates accompanying BookingGuest records for a booking manifest.
+ */
+export async function saveBookingGuestsAction(
+  bookingId: string,
+  guests: Array<{
+    id?: string;
+    fullName: string;
+    email?: string | null;
+    age?: number | null;
+    gender?: string | null;
+    foodPreference?: string;
+    accessibilityNeed?: string;
+  }>
+) {
+  const user = await requireAuth();
+
+  return await prisma.$transaction(async (tx) => {
+    const booking = await tx.booking.findUnique({
+      where: { id: bookingId },
+      include: { traveler: { include: { user: true } } },
+    });
+
+    if (!booking) throw new Error("Booking not found.");
+    if (booking.traveler.user.id !== user.id && user.role !== UserRole.ADMIN) {
+      throw new Error("Unauthorized access to booking.");
+    }
+
+    if (guests.length > Math.max(0, booking.guestsCount - 1)) {
+      throw new Error(`Cannot register more than ${Math.max(0, booking.guestsCount - 1)} accompanying guests.`);
+    }
+
+    // Delete existing accompanying guest records for this booking and re-create cleanly
+    await tx.bookingGuest.deleteMany({
+      where: { bookingId },
+    });
+
+    const sanitized = (guests || [])
+      .slice(0, Math.max(0, booking.guestsCount - 1))
+      .filter((g) => g && typeof g.fullName === "string" && g.fullName.trim().length > 0)
+      .map((g) => ({
+        bookingId,
+        fullName: g.fullName.trim().slice(0, 100),
+        email: typeof g.email === "string" && g.email.trim().length > 0 ? g.email.trim().slice(0, 150) : null,
+        age: typeof g.age === "number" && !isNaN(g.age) && g.age > 0 && g.age < 120 ? Math.floor(g.age) : null,
+        gender: typeof g.gender === "string" && g.gender.trim().length > 0 ? g.gender.trim().slice(0, 30) : null,
+        foodPreference: typeof g.foodPreference === "string" && g.foodPreference.trim().length > 0 ? g.foodPreference.trim().slice(0, 500) : "No Restrictions",
+        accessibilityNeed: typeof g.accessibilityNeed === "string" && g.accessibilityNeed.trim().length > 0 ? g.accessibilityNeed.trim().slice(0, 500) : "None",
+      }));
+
+    if (sanitized.length > 0) {
+      await tx.bookingGuest.createMany({
+        data: sanitized,
+      });
+    }
+
+    revalidatePath(`/dashboard/events/${bookingId}`);
+    return { success: true, count: sanitized.length };
+  });
+}

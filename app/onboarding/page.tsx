@@ -5,6 +5,7 @@ import { useAuth, UserRole } from "@/context/AuthContext";
 import { Compass, ArrowRight, ArrowLeft, Check, Sparkles, User, Heart, Shield } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter, useSearchParams } from "next/navigation";
+import { DietaryAllergenSelector } from "@/components/dietary/DietaryAllergenSelector";
 
 function OnboardingContent() {
   const router = useRouter();
@@ -303,17 +304,13 @@ function OnboardingContent() {
                   </select>
                 </div>
 
-                <div className="flex flex-col gap-1.5">
-                  <label htmlFor="traveler-food" className="text-[0.625rem] font-bold text-charcoal-500 uppercase tracking-widest">Food Preferences</label>
-                  <input
-                    id="traveler-food"
-                    type="text"
-                    value={travelerData.foodPreferences}
-                    onChange={(e) => setTravelerData({ ...travelerData, foodPreferences: e.target.value })}
-                    className="input-luxury"
-                    placeholder="Vegetarian, Halal, Gluten Free..."
-                  />
-                </div>
+                <DietaryAllergenSelector
+                  value={travelerData.foodPreferences}
+                  onChange={(val) =>
+                    setTravelerData({ ...travelerData, foodPreferences: val })
+                  }
+                  label="Dietary & Allergen Preferences"
+                />
 
                 <div className="flex flex-col gap-1.5">
                   <label htmlFor="traveler-accessibility" className="text-[0.625rem] font-bold text-charcoal-500 uppercase tracking-widest">Accessibility Needs</label>

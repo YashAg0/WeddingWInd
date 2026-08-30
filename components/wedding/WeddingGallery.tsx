@@ -43,7 +43,7 @@ export function WeddingGallery({ images, title }: WeddingGalleryProps) {
           rounded-none sm:rounded-3xl
           shadow-none sm:shadow-lg
           border-0 sm:border sm:border-warm-200/50
-          bg-warm-100
+          bg-charcoal-900
           -mx-4 sm:mx-0"
         >
           <Image

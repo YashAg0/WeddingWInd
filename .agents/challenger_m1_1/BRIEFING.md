@@ -1,57 +1,58 @@
-# BRIEFING — 2026-08-10T22:25:00+05:30
+# BRIEFING — 2026-08-30T04:29:00Z
 
 ## Mission
-Adversarial challenge and empirical verification of `syncAndGetDbUser()` in `lib/auth.ts` for Milestone M1 (Identity & Auth Hardening).
+Adversarially challenge and stress-test the Milestone 1 (Phase 1: Critical Security, Medical Safety & Server Resilience) implementations including SEC-01 middleware, SEC-02 CSV formula injection sanitization, unhandledRejection handling, and overall test suite & typechecking.
 
 ## 🔒 My Identity
-- Archetype: Empirical Challenger
+- Archetype: EMPIRICAL CHALLENGER
 - Roles: critic, specialist
 - Working directory: c:\Projects\WeddingWithIndia\wedding-with-india\.agents\challenger_m1_1
-- Original parent: aab74dd5-dc0b-4693-b07d-07bb9ebb7e15
-- Milestone: M1 Identity & Auth Hardening
+- Original parent: 2bef5307-2898-47cb-b043-393c117215ef
+- Milestone: Milestone 1 (Phase 1)
 - Instance: 1 of 1
 
 ## 🔒 Key Constraints
-- Review-only — do NOT modify implementation code (`lib/auth.ts`).
-- Run empirical verification and tests.
-- Output explicit verdict: APPROVE or REJECT.
+- Review-only — do NOT modify implementation code (unless fixing tests created for verification)
+- EMPIRICAL CHALLENGE: find bugs by writing and executing tests — generators, oracles, and stress harnesses.
+- Must run verification code directly. Do NOT trust claims or logs without reproduction.
+- Layout Compliance: .agents/ must contain only metadata. Source and tests belong in project directories.
 
 ## Current Parent
-- Conversation ID: aab74dd5-dc0b-4693-b07d-07bb9ebb7e15
-- Updated: 2026-08-10T22:25:00+05:30
+- Conversation ID: 2bef5307-2898-47cb-b043-393c117215ef
+- Updated: 2026-08-30T04:29:00Z
 
 ## Review Scope
-- **Files to review**: `lib/auth.ts`, `__tests__/lib/auth-reconciliation.test.ts`, `.agents/worker_m1_v2/handoff.md`, `.agents/ORIGINAL_REQUEST.md`
-- **Verification criteria**:
-  1. Correctness of `syncAndGetDbUser()` under adversarial inputs and race conditions.
-  2. Stress test email normalization, conflicting Clerk ID vs Email scenarios, Prisma `P2002` error handling.
-  3. Execution and passage of `npm test`.
+- **Files to review**:
+  - `c:\Projects\WeddingWithIndia\wedding-with-india\.agents\ORIGINAL_REQUEST.md`
+  - `c:\Projects\WeddingWithIndia\wedding-with-india\.agents\PROJECT.md`
+  - `c:\Projects\WeddingWithIndia\wedding-with-india\.agents\worker_m1\handoff.md`
+  - `lib/test-auth.ts`, `app/api/test/auth/route.ts`, `lib/auth.ts`
+  - `app/api/reports/host/[weddingId]/route.ts`, `lib/actions/admin.ts`
+  - `instrumentation.ts`
+- **Interface contracts**: `PROJECT.md`
+- **Review criteria**: Empirical correctness, resilience under adversarial attacks, edge case robustness, type safety, test pass.
 
 ## Attack Surface
 - **Hypotheses tested**:
-  - Email casing/whitespace normalization (` "  TEST.User+Tag@WeddingWithIndia.COM \n "` -> `test.user+tag@weddingwithindia.com`)
-  - Missing emailAddresses in Clerk profile (fallback to `${clerkUser.id}@guest.weddingwithindia.com`)
-  - Stale Clerk ID unlinking (`unlinked_<id>_<timestamp>`) when Clerk ID and Email belong to separate DB rows
-  - Canonical row protection (preserving `ADMIN` role and `ACTIVE` status on founder row during reconciliation)
-  - Same row matching both Clerk ID and email (safe update of name/avatar only)
-  - Prisma `P2002` unique constraint recovery on concurrent signups (`tx.user.create()` race condition)
-  - Rethrowing `P2002` when raced user cannot be found -> converted to `SERVICE_UNAVAILABLE`
-  - Fail-closed security (SEC-002: throwing `SERVICE_UNAVAILABLE` on database exceptions, zero synthetic fallbacks)
-  - Null/unauthenticated session handling
-- **Vulnerabilities found**: None in `lib/auth.ts`. All 9 adversarial attack scenarios passed cleanly.
-- **Untested angles**: None. All edge cases, race conditions, and error paths were empirically tested and verified.
+  - SEC-01 can be bypassed via environment spoofing, forged signatures, malformed payloads, or expired tokens -> REFUTED (securely rejected)
+  - SEC-02 formula injection can be triggered via leading tabs, carriage returns, spaces, or multiline strings -> REFUTED (all neutralized)
+  - unhandledRejection terminates process or crashes on non-Error objects -> REFUTED (process liveness 100% maintained)
+- **Vulnerabilities found**: 0 vulnerabilities found in Milestone 1 deliverables.
+- **Untested angles**: None within M1 scope.
 
 ## Loaded Skills
-- None.
+- None
 
 ## Key Decisions Made
-- Executed `npm test` across entire repository (29 test suites passed, 167 tests passed).
-- Created `__tests__/lib/auth-challenger-stress.test.ts` to empirically stress-test 9 specific edge cases against `syncAndGetDbUser()`.
-- Verified verdict: `APPROVE`.
+- Created comprehensive adversarial challenge test suite `__tests__/lib/challenger-m1-adversarial.test.ts` (46 tests).
+- Created empirical subprocess liveness verifier `scripts/verify-unhandled-rejection-liveness.js`.
+- Verified clean compilation with `npx tsc --noEmit` and full Jest pass (75 suites, 740 tests).
+- Issued APPROVE verdict for Milestone 1.
 
 ## Artifact Index
-- `.agents/challenger_m1_1/DISPATCH.md` — Record of prompt dispatch
-- `.agents/challenger_m1_1/BRIEFING.md` — Persistent state tracking
-- `.agents/challenger_m1_1/progress.md` — Heartbeat and progress tracking
-- `__tests__/lib/auth-challenger-stress.test.ts` — Empirical stress test harness (9 tests, 100% pass)
-- `.agents/challenger_m1_1/handoff.md` — Final handoff report and explicit verdict
+- `.agents/challenger_m1_1/DISPATCH.md` — Incoming dispatch record
+- `.agents/challenger_m1_1/BRIEFING.md` — Agent state and briefing
+- `.agents/challenger_m1_1/progress.md` — Progress tracker and heartbeat
+- `.agents/challenger_m1_1/handoff.md` — Final handoff report & verdict
+- `__tests__/lib/challenger-m1-adversarial.test.ts` — 46 adversarial unit/integration tests
+- `scripts/verify-unhandled-rejection-liveness.js` — Empirical Node process liveness verifier

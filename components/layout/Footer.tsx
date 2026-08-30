@@ -33,40 +33,24 @@ const footerLinks = {
     { label: "Become a Host Family", href: "/list-wedding" },
     { label: "Become a Partner", href: "/for-agents" },
     { label: "Become a Coordinator", href: "/coordinators" },
-    { label: "Safety Overview", href: "/safety" },
+    { label: "Trust & Safety Portal", href: "/trust" },
   ],
 
   trustSafety: [
-    { label: "Guest Safety Guide", href: "/guest-safety" },
-    { label: "Host Safety Guide", href: "/host-safety" },
-    { label: "Community Guidelines", href: "/community-guidelines" },
-    { label: "Photo & Video Consent", href: "/photo-video-consent" },
+    { label: "Trust & Safety Hub", href: "/trust?tab=safety" },
+    { label: "Host KYC Standards", href: "/trust?tab=safety#verification" },
+    { label: "Guest Cultural Guide", href: "/trust?tab=safety#guest-guide" },
+    { label: "Emergency Helplines", href: "/trust?tab=safety#emergency" },
+    { label: "Grievance Officer", href: "/trust?tab=safety#grievance" },
     { label: "Travel & Visa Info", href: "/travel-visa" },
-    { label: "Insurance Guidance", href: "/insurance" },
-    { label: "Incident Reporting", href: "/incident-report" },
-    { label: "Complaints & Disputes", href: "/complaints" },
   ],
 
   legal: [
-    { label: "Terms of Service", href: "/terms" },
-    { label: "Privacy Policy", href: "/privacy" },
+    { label: "Terms of Service", href: "/trust?tab=terms" },
+    { label: "Privacy & Data Protection", href: "/trust?tab=privacy" },
+    { label: "Cancellation & Refund", href: "/trust?tab=terms#cancellation" },
+    { label: "Booking & Payment Terms", href: "/trust?tab=terms#booking-terms" },
     { label: "Cookie Policy", href: "/cookies" },
-    { label: "Cancellation Policy", href: "/cancellation-policy" },
-    { label: "Refund Policy", href: "/refund-policy" },
-    { label: "Booking Terms", href: "/booking-terms" },
-    { label: "Payment Terms", href: "/payment-terms" },
-    { label: "Grievance Redressal", href: "/grievance" },
-  ],
-
-  agreements: [
-    { label: "Traveler Agreement", href: "/traveler-agreement" },
-    { label: "Host Agreement", href: "/host-agreement" },
-    { label: "Partner Agreement", href: "/agent-agreement" },
-    { label: "Coordinator Agreement", href: "/coordinator-agreement" },
-    { label: "Acceptable Use", href: "/acceptable-use" },
-    { label: "Content Policy", href: "/content-policy" },
-    { label: "DPDP Act (India)", href: "/dpdp" },
-    { label: "GDPR (EU/UK)", href: "/gdpr" },
   ],
 };
 
@@ -361,19 +345,19 @@ export default function Footer() {
             </p>
 
             <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs sm:text-sm text-white/40">
-              <Link href="/privacy" className="hover:text-white transition-colors">
+              <Link href="/trust?tab=privacy" className="hover:text-white transition-colors">
                 Privacy
               </Link>
 
-              <Link href="/terms" className="hover:text-white transition-colors">
+              <Link href="/trust?tab=terms" className="hover:text-white transition-colors">
                 Terms
               </Link>
 
-              <Link href="/cookies" className="hover:text-white transition-colors">
-                Cookies
+              <Link href="/trust?tab=terms#cancellation" className="hover:text-white transition-colors">
+                Refunds
               </Link>
 
-              <Link href="/grievance" className="hover:text-white transition-colors">
+              <Link href="/trust?tab=safety#grievance" className="hover:text-white transition-colors">
                 Grievance
               </Link>
 

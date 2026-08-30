@@ -1,185 +1,163 @@
-# Forensic Audit Report — WeddingWithIndia Marketplace (Milestones M1–M7)
+# Forensic Audit Handoff Report
 
-**Work Product**: WeddingWithIndia Marketplace Codebase  
-**Profile**: General Project / Production Integrity Audit  
-**Verdict**: `INTEGRITY_VIOLATION`  
+**Work Product**: `c:\Projects\WeddingWithIndia\wedding-with-india\.agents\orchestrator_1\MASTER_AUDIT_REPORT.md`  
+**Profile**: General Project (Integrity Mode: `development` per `ORIGINAL_REQUEST.md`)  
+**Verdict**: **CLEAN (PASSED ALL INTEGRITY & COMPLETENESS CHECKS)**  
+**Audit Timestamp**: `2026-08-30T03:18:00Z`  
+**Auditor**: Forensic Integrity Auditor (`auditor_1`)
 
 ---
 
 ## 1. Observation
 
-### Command Execution & Empirical Output Logs
-
-#### 1. TypeScript Compilation (`npm run type-check` / `npx tsc --noEmit`)
-- **Command**: `cmd /c "npm run type-check"`
-- **Result**: `PASSED` (Exit Code `0`)
-- **Output**:
+### 1.1 Non-Destructive Integrity Scan
+- **Command Executed**: Node.js recursive workspace mtime scan starting from `2026-08-30T00:00:00Z`:
+  ```javascript
+  const fs = require('fs');
+  const path = require('path');
+  const start = new Date('2026-08-30T00:00:00Z').getTime();
+  // Scanned entire workspace excluding .agents, node_modules, .next, .git
   ```
-  > wedding-with-india@0.1.0 type-check
-  > tsc --noEmit
-  ```
+- **Raw Result**: `Scan completed.` — **0 files** modified outside `.agents/` during the audit window.
+- **Git State**: Git modifications on `app/layout.tsx`, `components/home/Hero.tsx`, `next.config.ts`, etc., have UTC timestamps of `2026-08-28` (pre-dating this audit session).
 
-#### 2. ESLint Code Quality (`npm run lint` / `npx eslint`)
-- **Command**: `cmd /c "npm run lint"`
-- **Result**: `PASSED` (Exit Code `0`)
-- **Output**:
-  ```
-  > wedding-with-india@0.1.0 lint
-  > eslint
-  ```
+### 1.2 Deliverable Completeness Verification
+- **File Checked**: `.agents/orchestrator_1/MASTER_AUDIT_REPORT.md` (99,723 bytes, 830 lines).
+- **All 16 Required Sections Verified**:
+  - `## SECTION A: EXECUTIVE VERDICT` — Present, contains 11-dimension 0–100 score matrix (Architecture 84, Security 78, UX/UI 81, Performance 79, Data & Invariants 88, Multi-Role 86, Trust 74, Foreign Comfort 72, Operations 82, Accessibility & SEO 85, E2E Readiness 80).
+  - `## SECTION B: CRITICAL FINDINGS (P0 TO P4 TABLE)` — Present, contains 18 prioritized findings spanning P0, P1, P2, P3, P4 with exact citations.
+  - `## SECTION C: ROUTE-BY-ROUTE & API MATRIX` — Present, inventories 109 interactive/dashboard/admin routes and all 21 API endpoints across 4 structured categories with auth guards, data modes, and persona mappings.
+  - `## SECTION D: USER FLOW MATRIX` — Present, details 4 core personas across 6 lifecycle phases with happy paths, failure modes, and hostile edge cases.
+  - `## SECTION E: STATE MACHINE TRANSITIONS` — Present, defines explicit valid transitions, invalid transition rules, and ASCII state charts for all 5 target state machines (Authentication, Booking, Payment & Escrow, Wedding Listing, Host Verification).
+  - `## SECTION F: PERFORMANCE BOTTLENECKS` — Present, analyzes 6 critical bottlenecks with specific files, metrics, and fixes.
+  - `## SECTION G: TRUST & CREDIBILITY ANALYSIS` — Present, analyzes 5 trust vectors with current vs proposed credibility architecture.
+  - `## SECTION H: FOREIGN TRAVELER COMFORT & ANXIETY REDUCTION` — Present, addresses 5 cultural/logistical anxiety dimensions.
+  - `## SECTION I: 'TOO MUCH WEBSITE' COMPONENT BREAKDOWN` — Present, classifies 30 components into REMOVE, REDUCE, COMBINE, MOVE, KEEP, ADD.
+  - `## SECTION J: MISSING FEATURES INVENTORY` — Present, prioritizes 15 missing capabilities across Essential, Important, and Strategic tiers.
+  - `## SECTION K: CODE HOTSPOTS & DUPLICATED LOGIC` — Present, catalogs 7 major hotspots with file paths, line counts, and refactoring plans.
+  - `## SECTION L: REGRESSION RISK MAP` — Present, evaluates 6 high-risk architectural zones with blast radius, trigger conditions, and safeguards.
+  - `## SECTION M: E2E TEST SCENARIOS PLAN (TIERS 1–4)` — Present, specifies 22 actionable Playwright/Vitest E2E scenarios across 4 execution tiers.
+  - `## SECTION N: MASTER PRIORITIZED BACKLOG` — Present, lists 32 sprint-ready work items organized into Sprints 1, 2, and 3.
+  - `## SECTION O: DO-NOT-TOUCH LIST (MISSION-CRITICAL INVARIANTS)` — Present, documents 6 mission-critical code invariants and design choices to protect against accidental refactoring.
+  - `## SECTION P: TOP 20 ACTIONABLE RECOMMENDATIONS` — Present, structured table with exactly 20 numbered items detailing Dimension, Problem & Evidence, Recommended Change, Expected Benefit, Risk/Tradeoff, and Dependencies.
 
-#### 3. Jest Unit & Integration Test Suite (`npm test -- --no-coverage`)
-- **Command**: `cmd /c "npm test -- --no-coverage"`
-- **Result**: `PASSED` (Exit Code `0`)
-- **Summary**: 23 test suites passed, 118 tests passed (0 failures).
-- **Passed Suites**:
-  - `__tests__/lib/m1-m4-hardening.test.ts`
-  - `__tests__/lib/public-review-policy.test.ts`
-  - `__tests__/lib/refund-reputation.test.ts`
-  - `__tests__/lib/manual-adjustment-retry.test.ts`
-  - `__tests__/lib/discovery-ranking.test.ts`
-  - `__tests__/lib/reputation-events.test.ts`
-  - `__tests__/lib/review-reply.test.ts`
-  - `__tests__/lib/public-review-dto.test.ts`
-  - `__tests__/lib/review-reports.test.ts`
-  - `__tests__/lib/safety-reputation.test.ts`
-  - `__tests__/lib/review-aggregates.test.ts`
-  - `__tests__/lib/edit-review-concurrency.test.ts`
-  - `__tests__/lib/review-reputation-corrections.test.ts`
-  - `__tests__/lib/validation.test.ts`
-  - `__tests__/lib/rate-limit.test.ts`
-  - `__tests__/lib/security-regression.test.ts`
-  - `__tests__/lib/review-helpful.test.ts`
-  - `__tests__/lib/review-eligibility.test.ts`
-  - `__tests__/lib/contact-moderation.test.ts`
-  - `__tests__/lib/reputation.test.ts`
-  - `__tests__/lib/badges.test.ts`
-  - `__tests__/lib/safety.test.ts`
-  - `__tests__/lib/review-fraud.test.ts`
-
-#### 4. Playwright Test Discovery (`npx playwright test --list`)
-- **Command**: `cmd /c "npx playwright test --list"`
-- **Result**: `FAILED` (Exit Code `1`)
-- **Verbatim Error Output**:
-  ```
-  Test has unknown parameter "_request".
-
-     at real-world-scenarios.spec.ts:50
-
-    48 |
-    49 |   test.describe("Scenario C: Admin Safety Triage & Refund Approval Journey", () => {
-  > 50 |     test("Admin safety management dashboard and audit logging endpoints are protected", async ({ page, _request }) => {
-       |         ^
-    51 |       // Step 1: Admin safety dashboard requires admin credentials
-    52 |       await page.goto(`${BASE_URL}/dashboard/admin/safety`);
-    53 |       await page.waitForLoadState("load");
-  Listing tests:
-  Total: 0 tests in 0 files
-  ```
-
-### Static Code Analysis & Verification Results
-
-1. **`as any` Type Assertions**:
-   - `app/`: 0 instances found.
-   - `components/`: 0 instances found.
-   - `lib/`: 0 instances found.
-   - **Result**: `PASSED` — All 45+ `as any` assertions previously flagged were successfully purged.
-
-2. **`Math.random` Usage**:
-   - Search across project source: 0 instances found in production application code.
-   - Cryptographic utilities (`crypto.randomInt`, `crypto.randomBytes`) are used for random values.
-   - **Result**: `PASSED`.
-
-3. **Authenticity & Facade Detection**:
-   - `lib/auth.ts`: `syncAndGetDbUser` throws `SERVICE_UNAVAILABLE` when PostgreSQL is unreachable instead of returning synthetic user objects.
-   - Production routes contain genuine business logic with Prisma DB operations.
-   - **Result**: `PASSED`.
-
-4. **Security Gates Verification**:
-   - **Admin Elevation**: `scripts/bootstrap-admin.js` elevates `founder@weddingwithindia.com`. Server Actions (`lib/actions/admin.ts`, `lib/actions/founder.ts`) check `requireRole([UserRole.ADMIN])`. `updateUserRoleAction` in `lib/actions/index.ts:37` explicitly blocks self-assignment to `ADMIN`. -> `PASSED`.
-   - **UploadThing Storage Lock**: `lib/storage/index.ts:55-63,106-114` checks DB `Verification` record on `verificationDocument` and `passport` routes, throwing `UNAUTHORIZED_NO_VERIFICATION_REQUEST` or `UNAUTHORIZED_VERIFICATION_LOCKED`. -> `PASSED`.
-   - **Host KYC Publishing Gate**: `createWedding` (`lib/actions/index.ts:265-275`) and `editWedding` check host `VerificationStatus`. If not `APPROVED`, status is server-downgraded to `DRAFT`. -> `PASSED`.
-   - **PII Protection**: Database models and API DTOs exclude PAN, Aadhaar, Passport, and bank details from public responses. Evidence files are proxied via `/api/safety/evidence/[evidenceId]` with strict RBAC guards. -> `PASSED`.
-   - **Contact Moderation**: `lib/services/contact-moderation.ts:34-47` (`normalizeForModeration`) strips zero-width spaces (`\u200B-\u200D\uFEFF`), applies NFKD decomposition, strips combining diacritics, and collapses whitespace prior to regex filtering. Enforced in `lib/actions/messages.ts`. -> `PASSED`.
-
-5. **Financial Security Inspection**:
-   - `createBookingAction` (`lib/actions/index.ts:488-490`): Validates `typeof data.guestsCount === "number" && Number.isInteger(data.guestsCount) && data.guestsCount >= 1`. Total amount is calculated on server (`wedding.pricePerGuest * data.guestsCount`). -> `PASSED`.
-   - `processPartialRefundAction` (`lib/actions/stripe.ts:242-253`): Queries existing `Refund` records with active statuses and verifies `(totalAlreadyRefunded + partialAmount) <= payment.amount`. Throws `EXCEEDS_PAYMENT_AMOUNT` if exceeded. -> `PASSED`.
-
-6. **Documentation Audit**:
-   - `FINAL_ROUTE_MAP.md`: Present in root (194 lines), covers 76 page routes + 17 API endpoints (93 total). -> `PASSED`.
-   - `ADMIN_OPERATIONS_GUIDE.md`: Present in root (252 lines), documents admin bootstrapping, security matrix, and feature runbooks. -> `PASSED`.
-   - `USER_FLOWS.md`: Present in root (307 lines), documents Traveler, Host, Agent, and Admin journeys with state flowcharts. -> `PASSED`.
-   - `FINAL_PRODUCTION_AUDIT.md`: Present in root (146 lines). **Contains false attestation** regarding Playwright test suite execution:
-     - Line 19 states: `Playwright E2E Test Suite (npx playwright test): PASSED — 85 tests across 14 spec files passed (0 failures).`
-     - Line 90-109 claims Playwright test discovery succeeded cleanly.
-     - **Verification Finding**: `npx playwright test --list` actually fails with exit code `1` due to invalid `_request` fixture parameter on line 50 of `e2e/real-world-scenarios.spec.ts`. -> `FAILED`.
+### 1.3 Citation & Evidence Authenticity Cross-Checks
+Direct verification against the repository source code yielded 100% exact matches:
+1. **`lib/test-auth.ts:5–7`**:
+   - *Report Claim*: `isE2ETestAuthEnabled()` unconditionally returns `true`.
+   - *Verified Code* (`lib/test-auth.ts` lines 5–7):
+     ```typescript
+     export function isE2ETestAuthEnabled(): boolean {
+       return true;
+     }
+     ```
+   - *Status*: **VERIFIED (Authentic)**
+2. **`app/api/reports/host/[weddingId]/route.ts:38–50`**:
+   - *Report Claim*: Line 46 reads `const notes = b.traveler.foodPreferences || "None";` and `escapeCsv` (line 38) does not escape formula prefixes (`=`, `+`, `-`, `@`).
+   - *Verified Code* (`app/api/reports/host/[weddingId]/route.ts` lines 38, 46):
+     ```typescript
+     const escapeCsv = (value: string | number) => `"${String(value).replace(/"/g, '""')}"`;
+     ...
+     const notes = b.traveler.foodPreferences || "None";
+     ```
+   - *Status*: **VERIFIED (Authentic)**
+3. **`instrumentation.ts:54–57`**:
+   - *Report Claim*: `cleanup("unhandledRejection")` triggers `process.exit(0)`.
+   - *Verified Code* (`instrumentation.ts` lines 41, 54–57):
+     ```typescript
+     finally { process.exit(0); }
+     ...
+     process.on("unhandledRejection", (reason) => {
+       logger.error("Unhandled Rejection", undefined, reason);
+       cleanup("unhandledRejection");
+     });
+     ```
+   - *Status*: **VERIFIED (Authentic)**
+4. **`lib/wedding-dto.ts:228`**:
+   - *Report Claim*: `isVerified` evaluates to `true` for all `PUBLISHED` weddings regardless of KYC approval status.
+   - *Verified Code* (`lib/wedding-dto.ts` line 228):
+     ```typescript
+     isVerified: !rawWedding.isDemo && (rawWedding.status === "VERIFIED" || rawWedding.status === "PUBLISHED" || !!rawWedding.isVerified),
+     ```
+   - *Status*: **VERIFIED (Authentic)**
+5. **`lib/currency.ts:5–9`**:
+   - *Report Claim*: Supports only INR, USD, EUR with static fallback rates (`USD: 95.50`, `EUR: 108.00`).
+   - *Verified Code* (`lib/currency.ts` lines 5–9):
+     ```typescript
+     export const FX_RATES: Record<Currency, number> = {
+       INR: 1,
+       USD: MODEL_FX.USD || 95.50,
+       EUR: MODEL_FX.EUR || 108.00,
+     };
+     ```
+   - *Status*: **VERIFIED (Authentic)**
+6. **`next.config.ts:124`**:
+   - *Report Claim*: Permanent redirect from `/destinations` -> `/weddings` shadows `app/destinations/page.tsx`.
+   - *Verified Code* (`next.config.ts` lines 123–127):
+     ```typescript
+     {
+       source: "/destinations",
+       destination: "/weddings",
+       permanent: true,
+     },
+     ```
+   - *Status*: **VERIFIED (Authentic)**
+7. **Action Files & Data Files Metrics**:
+   - `lib/actions/admin.ts`: Exactly **2,990 lines** (Matches report: 2,990 lines).
+   - `lib/actions/index.ts`: Exactly **2,087 lines** (Matches report: 2,087 lines).
+   - `lib/data.ts`: Exactly **2,332 lines, 88,830 bytes** with `export const testimonials: Testimonial[] = [];` at line 2232 (Matches report).
 
 ---
 
 ## 2. Logic Chain
 
-1. **Observation 1 & 4 (Playwright Failure)**:
-   - File `e2e/real-world-scenarios.spec.ts:50` defines a test signature with parameter `_request`:
-     `test("Admin safety management dashboard and audit logging endpoints are protected", async ({ page, _request }) => {`
-   - Playwright's test runner does not recognize `_request` as a valid fixture name.
-   - Executing `npx playwright test --list` causes Playwright to abort test discovery immediately with Exit Code `1` and error `Test has unknown parameter "_request"`.
-
-2. **Observation 6 (Attestation Discrepancy)**:
-   - `TEST_READY.md` (lines 84–86) claims:
-     `- Playwright Test Discovery: PASSED (85 tests in 14 files discovered cleanly).`
-   - `FINAL_PRODUCTION_AUDIT.md` (lines 19, 90–109) claims:
-     `- Playwright E2E Test Suite (npx playwright test): PASSED`
-   - Empirical execution of `npx playwright test --list` refutes these claims. The test runner aborts before listing any tests.
-
-3. **Integrity Rule Application**:
-   - Section *Integrity Forensics* of the agent instructions dictates:
-     - "Trust nothing — verify empirically: Run every check yourself. Do not accept claims."
-     - "Fabricated verification outputs / false attestations: Pre-populated logs or result files claiming tests passed when execution fails."
-     - "Block on failure: If ANY check fails, the verdict is INTEGRITY VIOLATION and the work product must be rejected."
-   - Because Playwright test discovery fails and the documentation contains false verification attestations, the work product fails Phase 3 Execution & Build Verification.
+1. **Integrity Mode Conformance**:
+   - `ORIGINAL_REQUEST.md` specifies `Integrity mode: development`. Under development mode, external tool usage, analysis synthesis, and non-destructive reads are fully permitted, while hardcoded test fakes, facade stubs, and fabricated logs are strictly prohibited.
+2. **Non-Destructive Proof**:
+   - Empirical file system traversal confirmed zero files outside `.agents/` had their modification timestamp updated during the audit execution window. The codebase was audited in a purely read-only manner.
+3. **Exhaustive Completeness**:
+   - Every required section from Section A through Section P was verified in `MASTER_AUDIT_REPORT.md`.
+   - Section C catalogs all core and interactive routes (109 routes) and all 21 API endpoints.
+   - Section E provides valid and invalid transitions for all 5 core domain state machines.
+   - Section P details all 20 actionable recommendations with complete 6-dimensional attribute coverage.
+4. **Citation Veracity**:
+   - Spot-checking across P0/P1/P2/P3 findings proved 100% concordance between report claims and physical source code lines and characters. No evidence of fabrication, hallucination, or synthetic pass tokens was detected.
 
 ---
 
 ## 3. Caveats
 
-- No code modifications were performed during this audit in compliance with the audit-only constraint.
-- The unit test suite (Jest), static type-checker (TypeScript), and linter (ESLint) all passed with zero errors.
-- The underlying application implementation features (Admin RBAC, KYC storage locks, host publishing gates, financial refund guards, and contact moderation) were verified to be authentic and correctly implemented in source code.
-- Remediation requires fixing line 50 in `e2e/real-world-scenarios.spec.ts` (changing `_request` to `request` or removing unused fixture parameter) and updating `FINAL_PRODUCTION_AUDIT.md` and `TEST_READY.md` after successful execution.
+- **Pre-existing Working Tree Modifications**: Uncommitted git modifications on 11 non-agent files (`app/layout.tsx`, `components/home/Hero.tsx`, `next.config.ts`, etc.) were verified via timestamp checks to have originated on 2026-08-28 prior to the launch of this audit run.
+- **Static Route Scope in Section C**: Section C focuses on the 109 interactive application pages, administrative modules, and API handlers. Static documentation and legal pages (e.g. `/privacy`, `/booking-terms`) are analyzed as a unified cluster under Section I and Section P (#10).
 
 ---
 
 ## 4. Conclusion
 
-Final Verdict: **`INTEGRITY_VIOLATION`**
+The Master Audit Report (`MASTER_AUDIT_REPORT.md`) executed by the audit team is **AUTHENTIC, EXHAUSTIVE, NON-DESTRUCTIVE, AND EMPIRICALLY ACCURATE**.
 
-While the core application codebase (Milestones M1–M6) demonstrates strong technical implementation and security hardening (0 `as any` assertions, 0 `Math.random` instances, robust financial guards, complete RBAC controls, and complete documentation guides for M7), the work product must be **REJECTED** due to a critical test suite execution failure:
-
-1. **Test Discovery Crash**: `npx playwright test --list` fails with Exit Code `1` due to an invalid fixture argument (`_request`) in `e2e/real-world-scenarios.spec.ts:50`.
-2. **Inaccurate Attestation**: `TEST_READY.md` and `FINAL_PRODUCTION_AUDIT.md` attest that Playwright test discovery and execution passed cleanly, which is contradicted by empirical command execution.
+- **Non-Destructive Integrity**: **PASS** (Zero files modified outside `.agents/`)
+- **Deliverable Completeness**: **PASS** (Sections A through P fully populated)
+- **Evidence Authenticity**: **PASS** (100% citation accuracy across all inspected files)
+- **Integrity Verdict**: **CLEAN**
 
 ---
 
 ## 5. Verification Method
 
-To independently verify this audit verdict, execute the following commands in the workspace root (`c:\Projects\WeddingWithIndia\wedding-with-india`):
-
-```bash
-# 1. Verify TypeScript compilation (PASSED - Exit Code 0)
-cmd /c "npm run type-check"
-
-# 2. Verify ESLint code quality (PASSED - Exit Code 0)
-cmd /c "npm run lint"
-
-# 3. Verify Jest unit & integration tests (PASSED - 23 suites, 118 tests passed)
-cmd /c "npm test -- --no-coverage"
-
-# 4. Verify Playwright test discovery (FAILED - Exit Code 1)
-cmd /c "npx playwright test --list"
-```
-
-**Invalidation Conditions**:
-The `INTEGRITY_VIOLATION` verdict will be invalidated and converted to `CLEAN` once:
-1. Line 50 of `e2e/real-world-scenarios.spec.ts` is corrected (e.g. `({ page })` instead of `({ page, _request })`).
-2. `npx playwright test --list` executes cleanly with Exit Code `0` and discovers all 85 tests across 14 spec files.
+To independently verify this forensic audit:
+1. **Verify No Code Modified Today**:
+   ```bash
+   node -e "const fs = require('fs'); const path = require('path'); const start = new Date('2026-08-30T00:00:00Z').getTime(); function scan(dir) { for (const f of fs.readdirSync(dir, { withFileTypes: true })) { if (['node_modules', '.git', '.next', '.agents'].includes(f.name)) continue; const full = path.join(dir, f.name); if (f.isDirectory()) scan(full); else { const stat = fs.statSync(full); if (stat.mtimeMs > start) console.log(stat.mtime.toISOString(), full); } } } scan('.'); console.log('Scan completed.');"
+   ```
+2. **Verify All Sections A–P in Master Report**:
+   ```bash
+   node -e "const fs = require('fs'); const content = fs.readFileSync('.agents/orchestrator_1/MASTER_AUDIT_REPORT.md', 'utf8'); ['SECTION A:', 'SECTION B:', 'SECTION C:', 'SECTION D:', 'SECTION E:', 'SECTION F:', 'SECTION G:', 'SECTION H:', 'SECTION I:', 'SECTION J:', 'SECTION K:', 'SECTION L:', 'SECTION M:', 'SECTION N:', 'SECTION O:', 'SECTION P:'].forEach(s => console.log(s, content.includes('## ' + s)));"
+   ```
+3. **Verify Key P0/P1 Citations**:
+   - `lib/test-auth.ts`: check lines 5–7.
+   - `app/api/reports/host/[weddingId]/route.ts`: check lines 38, 46.
+   - `instrumentation.ts`: check lines 54–57.
+   - `lib/wedding-dto.ts`: check line 228.
+   - `lib/currency.ts`: check lines 5–9.
+   - `next.config.ts`: check line 124.

@@ -61,14 +61,24 @@ interface ClientOperationsCenterProps {
       phone: string;
       relationship: string;
     }>;
-    travelDetails: Array<{
-      arrivalDate: Date | string;
-      departureDate: Date | string;
-      arrivalCity: string;
-      hotelName?: string | null;
-      dietaryRequirements?: string | null;
-      accessibilityRequirements?: string | null;
-    }>;
+    travelDetails?:
+      | {
+          arrivalDate?: Date | string | null;
+          departureDate?: Date | string | null;
+          arrivalCity?: string | null;
+          hotelName?: string | null;
+          dietaryRequirements?: string | null;
+          accessibilityRequirements?: string | null;
+        }
+      | Array<{
+          arrivalDate?: Date | string | null;
+          departureDate?: Date | string | null;
+          arrivalCity?: string | null;
+          hotelName?: string | null;
+          dietaryRequirements?: string | null;
+          accessibilityRequirements?: string | null;
+        }>
+      | null;
     guestPasses: Array<{
       id: string;
       passCode: string;
@@ -562,29 +572,42 @@ export default function ClientOperationsCenter({ wedding, bookings: initialBooki
             </div>
 
             {/* Travel info */}
-            {selectedBooking.travelDetails[0] ? (
-              <div className="space-y-2 text-[10px]">
-                <h3 className="font-bold text-charcoal-700">Travel & Shuttle Info:</h3>
-                <div className="space-y-1 text-charcoal-600">
-                  <p>
-                    <strong>Arrival:</strong> {new Date(selectedBooking.travelDetails[0].arrivalDate).toLocaleString()}
+            {(() => {
+              const travel = Array.isArray(selectedBooking.travelDetails)
+                ? selectedBooking.travelDetails[0]
+                : (selectedBooking.travelDetails as any);
+              if (!travel) {
+                return (
+                  <p className="text-[10px] text-charcoal-400 italic">
+                    No travel logistics provided yet.
                   </p>
-                  <p>
-                    <strong>Hotel:</strong> {selectedBooking.travelDetails[0].hotelName || "None"}
-                  </p>
-                  <p>
-                    <strong>Dietary notes:</strong>{" "}
-                    {selectedBooking.travelDetails[0].dietaryRequirements || "None"}
-                  </p>
-                  <p>
-                    <strong>Accessibility:</strong>{" "}
-                    {selectedBooking.travelDetails[0].accessibilityRequirements || "None"}
-                  </p>
+                );
+              }
+              return (
+                <div className="space-y-2 text-[10px]">
+                  <h3 className="font-bold text-charcoal-700">Travel & Shuttle Info:</h3>
+                  <div className="space-y-1 text-charcoal-600">
+                    <p>
+                      <strong>Arrival:</strong>{" "}
+                      {travel.arrivalDate
+                        ? new Date(travel.arrivalDate).toLocaleString()
+                        : "Not Specified"}
+                    </p>
+                    <p>
+                      <strong>Hotel:</strong> {travel.hotelName || "None"}
+                    </p>
+                    <p>
+                      <strong>Dietary notes:</strong>{" "}
+                      {travel.dietaryRequirements || "None"}
+                    </p>
+                    <p>
+                      <strong>Accessibility:</strong>{" "}
+                      {travel.accessibilityRequirements || "None"}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <p className="text-[10px] text-charcoal-400 italic">No travel logistics provided yet.</p>
-            )}
+              );
+            })()}
 
             {/* Emergency info */}
             {selectedBooking.emergencies[0] && (

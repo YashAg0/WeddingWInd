@@ -1,20 +1,17 @@
-## 2026-08-10T16:49:38Z
-You are a Forensic Auditor subagent (`teamwork_preview_auditor`) for Milestone M1 (Identity & Auth Hardening).
+## 2026-08-30T04:21:36Z
 
-Working Directory: c:\Projects\WeddingWithIndia\wedding-with-india\.agents\auditor_m1
-Original Request File: c:\Projects\WeddingWithIndia\wedding-with-india\.agents\ORIGINAL_REQUEST.md
-Worker Handoff Report: c:\Projects\WeddingWithIndia\wedding-with-india\.agents\worker_m1_v2\handoff.md
-Modified Code: c:\Projects\WeddingWithIndia\wedding-with-india\lib\auth.ts
-Unit Tests: c:\Projects\WeddingWithIndia\wedding-with-india\__tests__\lib\auth-reconciliation.test.ts
+<USER_REQUEST>
+You are the Forensic Integrity Auditor for Milestone 1 (Phase 1: Critical Security, Medical Safety & Server Resilience) of WeddingWithIndia.
+Your working directory is: c:\Projects\WeddingWithIndia\wedding-with-india\.agents\auditor_m1
+Project root is: c:\Projects\WeddingWithIndia\wedding-with-india
 
-Your Task:
-Perform a forensic integrity audit on the code implemented by `worker_m1_v2` in `lib/auth.ts` and `__tests__/lib/auth-reconciliation.test.ts`:
-1. Verify genuine logic implementation (no hardcoded test return values, dummy/facade implementations, or test-bypass shortcuts).
-2. Verify that `P2002` error handling, email normalization, and Clerk ID reconciliation execute real Prisma operations.
-3. Check for any cheating, fake data injection, or synthetic fallbacks.
-4. Render an explicit verdict: `CLEAN` or `INTEGRITY VIOLATION`.
+Perform an exhaustive forensic integrity audit on all changes made in Milestone 1:
+1. Verify that all implementations are genuine (no hardcoded test outputs, no mock facades, no cheated assertions).
+2. Check git diff and all touched files (`lib/test-auth.ts`, `playwright.config.ts`, `instrumentation.ts`, `app/api/reports/host/[weddingId]/route.ts`, `lib/actions/admin.ts`, `lib/dietary.ts`, `components/dietary/DietaryAllergenSelector.tsx`, `app/onboarding/page.tsx`, `app/dashboard/profile/page.tsx`, `app/dashboard/events/[bookingId]/ClientEventHubForm.tsx`, `app/dashboard/operations/ClientOperationsCenter.tsx`, test files).
+3. Run `npx tsc --noEmit` and `npx jest`.
+4. Render an unambiguous verdict: CLEAN or INTEGRITY VIOLATION.
 
-Output Requirements:
-- Write detailed audit report to `c:\Projects\WeddingWithIndia\wedding-with-india\.agents\auditor_m1\handoff.md`.
-- Update `c:\Projects\WeddingWithIndia\wedding-with-india\.agents\auditor_m1\progress.md`.
-- Send completion message to parent via `send_message` stating your verdict (`CLEAN` or `INTEGRITY VIOLATION`) and summary.
+Write your audit report to:
+`c:\Projects\WeddingWithIndia\wedding-with-india\.agents\auditor_m1\handoff.md`
+Report your verdict via send_message to your caller.
+</USER_REQUEST>

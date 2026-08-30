@@ -561,6 +561,14 @@ export async function createBookingAction(data: {
   date: string;
   guestsCount: number;
   attendanceSide?: string;
+  guests?: Array<{
+    fullName: string;
+    email?: string | null;
+    age?: number | null;
+    gender?: string | null;
+    foodPreference?: string;
+    accessibilityNeed?: string;
+  }>;
   // NOTE: pricePerGuest and totalAmount are intentionally NOT accepted from the client.
   // The server recalculates authoritative pricing from the database to prevent price injection.
 }) {
@@ -674,6 +682,20 @@ export async function createBookingAction(data: {
         : WeddingSide.BRIDE_SIDE
     );
 
+    // Sanitize and validate accompanying guests if present (seats 2..N)
+    const rawGuests = Array.isArray(data.guests) ? data.guests : [];
+    const sanitizedGuests = rawGuests
+      .slice(0, Math.max(0, data.guestsCount - 1))
+      .filter((g) => g && typeof g.fullName === "string" && g.fullName.trim().length > 0)
+      .map((g) => ({
+        fullName: g.fullName.trim().slice(0, 100),
+        email: typeof g.email === "string" && g.email.trim().length > 0 ? g.email.trim().slice(0, 150) : null,
+        age: typeof g.age === "number" && !isNaN(g.age) && g.age > 0 && g.age < 120 ? Math.floor(g.age) : null,
+        gender: typeof g.gender === "string" && g.gender.trim().length > 0 ? g.gender.trim().slice(0, 30) : null,
+        foodPreference: typeof g.foodPreference === "string" && g.foodPreference.trim().length > 0 ? g.foodPreference.trim().slice(0, 500) : "No Restrictions",
+        accessibilityNeed: typeof g.accessibilityNeed === "string" && g.accessibilityNeed.trim().length > 0 ? g.accessibilityNeed.trim().slice(0, 500) : "None",
+      }));
+
     const createdBooking = await tx.booking.create({
       data: {
         travelerId: traveler.id,
@@ -697,6 +719,9 @@ export async function createBookingAction(data: {
         currency: "USD",
         status: BookingStatus.PENDING,
         attendanceSide: sanitizedSide,
+        guests: sanitizedGuests.length > 0 ? {
+          create: sanitizedGuests,
+        } : undefined,
       }
     });
 
@@ -1567,7 +1592,17 @@ export const getWeddings = unstable_cache(
             ],
             include: {
               hostCouple: {
-                include: { user: true }
+                include: {
+                  user: {
+                    include: {
+                      verification: true,
+                      badges: {
+                        where: { revokedAt: null },
+                        include: { badge: true },
+                      },
+                    },
+                  },
+                },
               },
               gallery: true,
               events: true,
@@ -1655,7 +1690,17 @@ export const getHomepageWeddings = unstable_cache(
             ],
             include: {
               hostCouple: {
-                include: { user: true },
+                include: {
+                  user: {
+                    include: {
+                      verification: true,
+                      badges: {
+                        where: { revokedAt: null },
+                        include: { badge: true },
+                      },
+                    },
+                  },
+                },
               },
               gallery: true,
               events: true,
@@ -1743,7 +1788,19 @@ export async function getRelatedWeddings(category: string, excludeWeddingId: str
             { createdAt: "desc" },
           ],
           include: {
-            hostCouple: { include: { user: true } },
+            hostCouple: {
+              include: {
+                user: {
+                  include: {
+                    verification: true,
+                    badges: {
+                      where: { revokedAt: null },
+                      include: { badge: true },
+                    },
+                  },
+                },
+              },
+            },
             gallery: true,
             events: true,
             traditions: true,
@@ -1872,7 +1929,17 @@ export const getWeddingBySlug = unstable_cache(
       where: { slug: effectiveSlug },
       include: {
         hostCouple: {
-          include: { user: true }
+          include: {
+            user: {
+              include: {
+                verification: true,
+                badges: {
+                  where: { revokedAt: null },
+                  include: { badge: true },
+                },
+              },
+            },
+          },
         },
         gallery: true,
         events: true,
@@ -1885,7 +1952,17 @@ export const getWeddingBySlug = unstable_cache(
         where: { slug },
         include: {
           hostCouple: {
-            include: { user: true }
+            include: {
+              user: {
+                include: {
+                  verification: true,
+                  badges: {
+                    where: { revokedAt: null },
+                    include: { badge: true },
+                  },
+                },
+              },
+            },
           },
           gallery: true,
           events: true,

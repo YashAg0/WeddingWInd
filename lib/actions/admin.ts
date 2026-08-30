@@ -1167,11 +1167,34 @@ export async function adminExportBookingsCSVAction() {
     },
   });
 
+  const escapeCsv = (value: unknown) => {
+    if (value === null || value === undefined) return '""';
+    let str = String(value);
+    const trimmed = str.trimStart();
+    const dangerousChars = ["=", "+", "-", "@", "\t", "\r"];
+    if (
+      dangerousChars.some((ch) => str.startsWith(ch)) ||
+      (trimmed.length > 0 && dangerousChars.some((ch) => trimmed.startsWith(ch)))
+    ) {
+      str = `'${str}`;
+    }
+    return `"${str.replace(/"/g, '""')}"`;
+  };
+
   const header = "Booking ID,Traveler Name,Wedding,Date,Guests,Amount,Status\n";
   const rows = bookings
-    .map(
-      (b) =>
-        `"${b.id}","${b.traveler.fullName}","${b.wedding.title}","${b.date.toISOString().split("T")[0]}",${b.guestsCount},${b.totalAmount},"${b.status}"`
+    .map((b) =>
+      [
+        b.id,
+        b.traveler.fullName,
+        b.wedding.title,
+        b.date.toISOString().split("T")[0],
+        b.guestsCount,
+        b.totalAmount,
+        b.status,
+      ]
+        .map(escapeCsv)
+        .join(",")
     )
     .join("\n");
 

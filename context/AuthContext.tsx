@@ -157,19 +157,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const rawToken = decodeURIComponent(cookieMatch[1]);
             const parts = rawToken.split(".");
             if (parts.length === 2) {
-              const payload = JSON.parse(atob(parts[0]));
+              const b64 = parts[0].replace(/-/g, "+").replace(/_/g, "/");
+              const padded = b64.padEnd(b64.length + ((4 - (b64.length % 4)) % 4), "=");
+              const payload = JSON.parse(atob(padded));
               if (payload.userId) {
                 dbUser = {
                   id: payload.userId,
                   email: payload.email || `${payload.userId}@example.com`,
-                  name: payload.email?.split("@")[0] || "Test User",
+                  name: payload.name || payload.email?.split("@")[0] || "Test User",
                   role: payload.role || "TRAVELER",
                   status: "ACTIVE",
                 } as any;
               }
             }
           }
-        } catch {}
+        } catch (e) {
+          console.warn("[AuthContext] E2E token decode fallback warning:", e);
+        }
       }
 
       if (!dbUser) {

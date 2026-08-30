@@ -7,6 +7,7 @@ import { MapPin, Users, Heart, Calendar, Sparkles, ShieldCheck, ArrowRight } fro
 import type { Wedding } from "@/types";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
+import { useCurrency } from "@/context/CurrencyContext";
 import { resolveWeddingVisualProfile } from "@/lib/wedding-images";
 
 const FALLBACK_IMAGE =
@@ -47,10 +48,12 @@ export function WeddingCard({ wedding, className, hidePrice = false }: WeddingCa
     wedding.availabilityStatus === "FULLY_BOOKED" ||
     (!isUnlimitedCapacity && availableSlots <= 0);
 
+  const { formatPriceFromUSD } = useCurrency();
   const displayPriceUSD =
     typeof wedding.pricePerGuest === "number" && wedding.pricePerGuest > 0
       ? wedding.pricePerGuest
       : 149;
+  const priceFormatted = formatPriceFromUSD(displayPriceUSD);
   const durationDays = wedding.durationDays || 1;
   const ceremoniesCount =
     wedding.ceremoniesCount || (wedding.timeline?.length || durationDays);
@@ -298,11 +301,13 @@ export function WeddingCard({ wedding, className, hidePrice = false }: WeddingCa
                 <div className="min-w-0">
                   <div className="flex items-baseline gap-1">
                     <span className="font-display font-bold text-lg text-charcoal-900">
-                      ${displayPriceUSD.toLocaleString()}
+                      {priceFormatted.primary}
                     </span>
                     <span className="text-xs text-charcoal-500">/guest</span>
                   </div>
-                  <div className="text-[0.625rem] text-charcoal-400">Experience Pass</div>
+                  <div className="text-[0.625rem] text-charcoal-400">
+                    {priceFormatted.secondary ? `${priceFormatted.secondary} · Experience Pass` : "Experience Pass"}
+                  </div>
                 </div>
                 <div
                   className="btn btn-primary text-xs font-bold py-2 px-4 rounded-xl transition-all inline-flex items-center gap-1.5 shadow-xs group/btn flex-shrink-0 whitespace-nowrap pointer-events-none group-hover/card:bg-maroon-800"

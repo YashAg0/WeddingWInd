@@ -37,6 +37,7 @@ export default async function EventHubDetailPage({ params }: EventHubPageProps) 
       preparations: true,
       emergencies: true,
       travelDetails: true,
+      guests: { orderBy: { createdAt: "asc" } },
     },
   });
 
@@ -230,6 +231,9 @@ export default async function EventHubDetailPage({ params }: EventHubPageProps) 
             }}
             itinerary={booking.wedding.itinerary}
             announcements={booking.wedding.announcements}
+            initialGuests={booking.guests}
+            guestsCount={booking.guestsCount}
+            travelerName={booking.traveler.user.name || booking.traveler.fullName || "Lead Traveler"}
           />
         </div>
       </div>

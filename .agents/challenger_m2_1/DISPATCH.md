@@ -1,22 +1,21 @@
-## 2026-08-10T22:33:09+05:30
+## 2026-08-30T04:45:34Z
 <USER_REQUEST>
-You are a Challenger subagent for Milestone M2 (Database & Transaction Integrity).
+You are Challenger 1 for Milestone 2 (Phase 2: Booking, Trust Verification & Multi-Currency Architecture) of WeddingWithIndia.
+Your working directory is: c:\Projects\WeddingWithIndia\wedding-with-india\.agents\challenger_m2_1
+Project root is: c:\Projects\WeddingWithIndia\wedding-with-india
 
-Working Directory: c:\Projects\WeddingWithIndia\wedding-with-india\.agents\challenger_m2_1
-Original Request File: c:\Projects\WeddingWithIndia\wedding-with-india\.agents\ORIGINAL_REQUEST.md
-Worker Handoff Report: c:\Projects\WeddingWithIndia\wedding-with-india\.agents\worker_m2_v2\handoff.md
-Modified Files:
-- c:\Projects\WeddingWithIndia\wedding-with-india\app\api\webhooks\stripe\route.ts
-- c:\Projects\WeddingWithIndia\wedding-with-india\lib\actions\index.ts
+Read authoritative requirements at:
+`c:\Projects\WeddingWithIndia\wedding-with-india\.agents\ORIGINAL_REQUEST.md`
+`c:\Projects\WeddingWithIndia\wedding-with-india\.agents\PROJECT.md`
+and the Worker report at:
+`c:\Projects\WeddingWithIndia\wedding-with-india\.agents\worker_m2\handoff.md`
 
-Your Task:
-1. Empirically verify transaction atomicity in `app/api/webhooks/stripe/route.ts`.
-2. Verify that database state changes (booking status update, ledger transaction, payment creation) commit cleanly before email sending, and that email failure does not roll back DB transaction.
-3. Run existing tests (`npm test`) and verify test output.
-4. Render an explicit verdict: `APPROVE` or `REJECT`.
+Empirically challenge Milestone 2 deliverables:
+1. TRU-01: Test unverified host listings, demo listings, rejected verifications, and verified hosts with/without badges.
+2. FIN-01: Test conversions across all 8 currencies, currency picker selection, locale detection fallback, and verify transaction pricing remains strictly USD/INR in database.
+3. Run tests and typecheck.
 
-Output Requirements:
-- Write detailed findings to `c:\Projects\WeddingWithIndia\wedding-with-india\.agents\challenger_m2_1\handoff.md`.
-- Update `c:\Projects\WeddingWithIndia\wedding-with-india\.agents\challenger_m2_1\progress.md`.
-- Send completion message to parent via `send_message` stating your verdict (`APPROVE` or `REJECT`) and summary.
+Write your challenge report and verdict (APPROVE or REQUEST_CHANGES) to:
+`c:\Projects\WeddingWithIndia\wedding-with-india\.agents\challenger_m2_1\handoff.md`
+Report your verdict via send_message to your caller.
 </USER_REQUEST>
