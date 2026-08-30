@@ -14,7 +14,6 @@ import {
   Shield,
   Lock,
   RotateCcw,
-  Sparkles,
 } from "lucide-react";
 import type { Wedding } from "@/types";
 import { cn } from "@/lib/utils";
@@ -45,7 +44,7 @@ interface BookingSidebarProps {
 }
 
 export function BookingSidebar({ wedding }: BookingSidebarProps) {
-  const { user, addBooking } = useAuth();
+  const { user } = useAuth();
   const { currency, formatPriceFromUSD } = useCurrency();
   const router = useRouter();
 

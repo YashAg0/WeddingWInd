@@ -9,15 +9,11 @@
  */
 
 import nextConfig from "@/next.config";
-import { toWeddingDTO } from "@/lib/wedding-dto";
 import {
   SUPPORTED_CURRENCIES,
-  FX_RATES,
-  CURRENCY_METADATA,
   convertFromUSD,
   convertFromINR,
   formatCurrencyPairFromUSD,
-  detectBrowserCurrency,
 } from "@/lib/currency";
 import { DIETARY_OPTIONS, formatDietaryRequirements, parseDietaryRequirements } from "@/lib/dietary";
 

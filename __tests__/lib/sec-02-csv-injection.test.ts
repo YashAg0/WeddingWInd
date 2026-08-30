@@ -6,7 +6,6 @@
  */
 
 import { adminExportBookingsCSVAction } from "@/lib/actions/admin";
-import { UserRole } from "@prisma/client";
 
 // Mock Prisma
 jest.mock("@/lib/prisma", () => ({

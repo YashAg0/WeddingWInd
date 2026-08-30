@@ -93,7 +93,7 @@ async function runForensicAudit() {
         try {
           const buf = await res.body();
           size = buf.length;
-        } catch (_) {
+        } catch {
           size = parseInt(headers["content-length"] || "0", 10);
         }
         networkRequests.push({
@@ -103,7 +103,7 @@ async function runForensicAudit() {
           resourceType: req.resourceType(),
           size
         });
-      } catch (_) {}
+      } catch {}
     });
 
     const startNav = Date.now();
@@ -137,7 +137,7 @@ async function runForensicAudit() {
           duration: Math.round(duration),
         };
       });
-    } catch (_) {
+    } catch {
       perfMetrics = { ttfb: 50, fcp: 1200, domLoaded: 800, duration: navDuration };
     }
 
@@ -145,14 +145,12 @@ async function runForensicAudit() {
     let totalBytes = 0;
     let jsBytes = 0;
     let imgBytes = 0;
-    let cssBytes = 0;
     let docSize = 0;
 
     networkRequests.forEach(r => {
       totalBytes += r.size;
       if (r.resourceType === "script" || r.contentType.includes("javascript")) jsBytes += r.size;
       else if (r.resourceType === "image" || r.contentType.includes("image")) imgBytes += r.size;
-      else if (r.resourceType === "stylesheet" || r.contentType.includes("css")) cssBytes += r.size;
       else if (r.resourceType === "document") docSize += r.size;
     });
 
@@ -281,7 +279,7 @@ async function runForensicAudit() {
 
       try {
         await page.waitForURL(`**${expectedHref}`, { timeout: 6000 });
-      } catch (_) {}
+      } catch {}
       await page.waitForTimeout(200);
 
       const currentUrl = page.url();

@@ -23,9 +23,6 @@ describe("OPS-01: Server Process Resilience", () => {
   });
 
   it("handles unhandledRejection without calling process.exit", async () => {
-    // Save existing listeners
-    const originalListeners = process.listeners("unhandledRejection");
-
     // Register our resilient handler as specified in instrumentation.ts
     const resilientHandler = (reason: unknown) => {
       logger.error(

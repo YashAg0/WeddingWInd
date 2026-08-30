@@ -174,7 +174,7 @@ export async function POST(req: NextRequest) {
             }
 
             // 2. Update Booking status to PAID (Confirmed Ticket)
-            const updatedBooking = await tx.booking.update({
+            await tx.booking.update({
               where: { id: booking.id },
               data: {
                 status: BookingStatus.PAID,

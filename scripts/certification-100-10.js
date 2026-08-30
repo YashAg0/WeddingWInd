@@ -376,7 +376,7 @@ async function run100OutOf10Certification() {
     assert(idorAppLookup === null, "IDOR Defense: Host B Cannot Query Host A's Application", "IDOR vulnerability: cross-user application leakage");
 
     // Attack 2: Traveler attempts to query private admin notes or internal documents
-    const privateAuditQuery = await prisma.hostApplicationAuditLog.findFirst({
+    await prisma.hostApplicationAuditLog.findFirst({
       where: { applicationId: hostApp.id, actorRole: "ADMIN" },
     });
     // In our architecture, audit logs and hostApplication records require authenticated ownership or ADMIN role.

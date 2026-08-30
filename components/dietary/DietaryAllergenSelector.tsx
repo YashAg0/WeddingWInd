@@ -6,7 +6,7 @@ import {
   formatDietaryRequirements,
   parseDietaryRequirements,
 } from "@/lib/dietary";
-import { AlertTriangle, Check, ShieldAlert } from "lucide-react";
+import { Check, ShieldAlert } from "lucide-react";
 
 export interface DietaryAllergenSelectorProps {
   value: string;

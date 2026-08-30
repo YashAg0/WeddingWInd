@@ -70,7 +70,7 @@ describe("SEC-01: E2E Test Authentication Gating", () => {
 
   it("rejects tampered or malformed tokens", () => {
     const validToken = createE2ETestSessionToken("user_1", "TRAVELER", "user1@test.com");
-    const [body, sig] = validToken.split(".");
+    const [body] = validToken.split(".");
     const tamperedToken = `${body}.tamperedsignature123`;
 
     expect(verifyE2ETestSessionToken(tamperedToken)).toBeNull();

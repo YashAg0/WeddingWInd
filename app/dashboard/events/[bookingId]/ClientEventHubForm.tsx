@@ -9,7 +9,7 @@ import {
   saveBookingGuestsAction,
 } from "@/lib/actions/event-operations";
 import { DietaryAllergenSelector } from "@/components/dietary/DietaryAllergenSelector";
-import { Users, User, Heart, ShieldCheck } from "lucide-react";
+import { Users, ShieldCheck } from "lucide-react";
 
 interface EmergencyContactData {
   name: string;

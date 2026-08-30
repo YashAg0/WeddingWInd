@@ -10,7 +10,6 @@ import {
   Scale,
   Mail,
   ArrowRight,
-  Sparkles,
 } from "lucide-react";
 import Link from "next/link";
 import { LEGAL_CONFIG } from "@/lib/constants/legal";

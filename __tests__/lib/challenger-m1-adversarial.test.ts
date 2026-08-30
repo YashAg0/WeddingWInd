@@ -23,7 +23,6 @@ import {
 } from "@/lib/test-auth";
 import { GET as testAuthGET, POST as testAuthPOST } from "@/app/api/test/auth/route";
 import { GET as hostReportGET } from "@/app/api/reports/host/[weddingId]/route";
-import { adminExportBookingsCSVAction } from "@/lib/actions/admin";
 import { logger } from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { UserRole } from "@prisma/client";
@@ -60,7 +59,7 @@ jest.mock("@/lib/auth", () => {
 });
 
 const { prisma } = jest.requireMock("@/lib/prisma");
-const { requireAuth, requireRole } = jest.requireMock("@/lib/auth");
+const { requireAuth } = jest.requireMock("@/lib/auth");
 
 describe("ADVERSARIAL CHALLENGE: Milestone 1 (SEC-01, SEC-02, OPS-01)", () => {
   const originalEnv = process.env.NODE_ENV;
