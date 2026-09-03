@@ -94,9 +94,6 @@ export const metadata: Metadata = {
       "max-snippet": -1,
     },
   },
-  alternates: {
-    canonical: APP_URL,
-  },
   icons: {
     icon: "/favicon.ico",
     shortcut: "/favicon.ico",

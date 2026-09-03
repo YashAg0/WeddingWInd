@@ -19,13 +19,13 @@ export const metadata: Metadata = {
     "Indian wedding experience cancellation",
   ],
   alternates: {
-    canonical: "https://weddingwithindia.com/refund-policy",
+    canonical: "https://weddingwithindia.com/trust?tab=terms#cancellation",
   },
   openGraph: {
     title: "Refund & Payment Protection Policy | WeddingWithIndia",
     description:
       "Clear cancellation and refund rules for WeddingWithIndia bookings and Indian wedding experiences.",
-    url: "https://weddingwithindia.com/refund-policy",
+    url: "https://weddingwithindia.com/trust?tab=terms#cancellation",
     siteName: "WeddingWithIndia",
     type: "website",
   },
@@ -36,7 +36,7 @@ export const metadata: Metadata = {
       "Clear cancellation and refund rules for WeddingWithIndia bookings and Indian wedding experiences.",
   },
   robots: {
-    index: true,
+    index: false,
     follow: true,
   },
 };

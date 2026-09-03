@@ -8,7 +8,11 @@ export const metadata: Metadata = {
   description:
     "How to report safety incidents, misconduct, boundary violations, or urgent concerns during a WeddingWithIndia experience.",
   alternates: {
-    canonical: "https://weddingwithindia.com/incident-report",
+    canonical: "https://weddingwithindia.com/trust?tab=safety#emergency",
+  },
+  robots: {
+    index: false,
+    follow: true,
   },
 };
 

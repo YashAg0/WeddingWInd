@@ -20,13 +20,13 @@ export const metadata: Metadata = {
     "EEA privacy rights",
   ],
   alternates: {
-    canonical: "https://weddingwithindia.com/gdpr",
+    canonical: "https://weddingwithindia.com/trust?tab=privacy#gdpr",
   },
   openGraph: {
     title: "GDPR & EU Privacy Rights | WeddingWithIndia",
     description:
       "Information about GDPR and EU/EEA privacy rights when using WeddingWithIndia.",
-    url: "https://weddingwithindia.com/gdpr",
+    url: "https://weddingwithindia.com/trust?tab=privacy#gdpr",
     siteName: "WeddingWithIndia",
     type: "website",
   },
@@ -37,7 +37,7 @@ export const metadata: Metadata = {
       "Information about GDPR and EU/EEA privacy rights when using WeddingWithIndia.",
   },
   robots: {
-    index: true,
+    index: false,
     follow: true,
   },
 };

@@ -3,9 +3,9 @@ import Link from "next/link";
 import { Shirt, Sparkles, HelpCircle, ArrowRight, XCircle, Palette } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "What to Wear to an Indian Wedding: Guest Attire & Color Guide for Foreigners",
+  title: "What to Wear to an Indian Wedding: Guest Dress Code & Color Guide",
   description:
-    "Complete attire guide for international guests at Indian weddings. Learn what women and men should wear for Haldi, Mehndi, Sangeet, Ceremony, and Reception, plus colors to choose or avoid.",
+    "What should western guests wear to an Indian wedding? Complete dress code guide covering lehengas, sarees, kurtas, forbidden colors, and ceremony attire.",
   keywords: [
     "what to wear to an Indian wedding",
     "what should foreigners wear to an Indian wedding",
@@ -13,14 +13,15 @@ export const metadata: Metadata = {
     "Indian wedding guest attire",
     "colors to wear to Indian wedding",
     "colors to avoid at Indian wedding",
+    "what to wear to a hindu wedding as a guest",
   ],
   alternates: {
     canonical: "https://weddingwithindia.com/learn/what-to-wear-to-an-indian-wedding",
   },
   openGraph: {
-    title: "What to Wear to an Indian Wedding: Guest Attire & Color Guide | WeddingWithIndia",
+    title: "What to Wear to an Indian Wedding: Guest Dress Code & Color Guide | WeddingWithIndia",
     description:
-      "Essential clothing advice and color rules for international guests attending multi-day Indian weddings.",
+      "What should western guests wear to an Indian wedding? Complete dress code guide covering lehengas, sarees, kurtas, forbidden colors, and ceremony attire.",
     url: "https://weddingwithindia.com/learn/what-to-wear-to-an-indian-wedding",
     siteName: "WeddingWithIndia",
     type: "article",
@@ -35,9 +36,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "What to Wear to an Indian Wedding | WeddingWithIndia",
+    title: "What to Wear to an Indian Wedding: Guest Dress Code & Color Guide | WeddingWithIndia",
     description:
-      "Complete attire and color guide for women and men attending Indian wedding celebrations.",
+      "What should western guests wear to an Indian wedding? Complete dress code guide covering lehengas, sarees, kurtas, forbidden colors, and ceremony attire.",
     images: ["https://weddingwithindia.com/og-image.jpg"],
   },
 };
@@ -191,7 +192,7 @@ export default function WhatToWearPage() {
             <Shirt size={13} /> Attire &amp; Style Guide
           </div>
           <h1 className="font-display font-bold text-3xl sm:text-4xl lg:text-5xl text-charcoal-900 leading-tight">
-            What to Wear to an Indian Wedding: Guest Attire &amp; Color Guide
+            What to Wear to an Indian Wedding: Complete Guest Dress Code
           </h1>
           <p className="text-sm text-charcoal-500 font-medium">
             Published by WeddingWithIndia Editorial Team • Updated August 2026
@@ -206,6 +207,30 @@ export default function WhatToWearPage() {
           </div>
           <p className="text-charcoal-900 font-medium text-base sm:text-lg leading-relaxed">
             International guests are encouraged to wear festive Indian attire: <strong>women</strong> look stunning in Lehengas, Sarees, or Anarkali suits; <strong>men</strong> look sharp in Kurta-Pyjama sets with Nehru jackets or Sherwanis. Opt for vibrant jewel tones (emerald, royal blue, gold, yellow, pink). <strong>Avoid pure black, plain white, and bridal red.</strong>
+          </p>
+        </div>
+
+        {/* Contextual Guide Navigation */}
+        <div className="bg-warm-100/70 border border-warm-200/80 rounded-2xl p-4 sm:p-5 text-xs sm:text-sm text-charcoal-700 leading-relaxed space-y-1">
+          <p>
+            <strong>Cultural Context:</strong> Different rituals demand different levels of formality. Before finalizing your outfit, review our guide to{" "}
+            <Link href="/learn/indian-wedding-rituals-explained" className="text-[var(--color-brand-primary)] font-semibold underline underline-offset-2">
+              Indian wedding rituals explained
+            </Link>{" "}
+            and ensure you understand temple footwear and greeting customs in our{" "}
+            <Link href="/learn/indian-wedding-etiquette-for-foreigners" className="text-[var(--color-brand-primary)] font-semibold underline underline-offset-2">
+              Indian wedding etiquette guide
+            </Link>.
+          </p>
+          <p>
+            For coastal celebrations, read our{" "}
+            <Link href="/destinations/goa" className="text-[var(--color-brand-primary)] font-semibold underline underline-offset-2">
+              Goa beach weddings guide
+            </Link>{" "}
+            for lightweight fabrics, or explore royal regal wear for{" "}
+            <Link href="/destinations/rajasthan" className="text-[var(--color-brand-primary)] font-semibold underline underline-offset-2">
+              Rajasthan palace weddings
+            </Link>.
           </p>
         </div>
 

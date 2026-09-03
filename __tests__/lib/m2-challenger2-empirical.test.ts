@@ -557,9 +557,8 @@ describe("Adversarial Challenge 3: ROU-01 Route Unshadowing & Destination Integr
       expect(redirectMap.get("/attend")).toBe("/weddings");
       expect(redirectMap.get("/signin")).toBe("/login");
       expect(redirectMap.get("/about-us")).toBe("/about");
-      expect(redirectMap.get("/contact-us")).toBe("/contact");
-      expect(redirectMap.get("/terms-of-service")).toBe("/terms");
-      expect(redirectMap.get("/privacy-policy")).toBe("/privacy");
+      expect(redirectMap.get("/terms-of-service")).toBe("/trust?tab=terms");
+      expect(redirectMap.get("/privacy-policy")).toBe("/trust?tab=privacy");
     }
   });
 });

@@ -12,8 +12,20 @@ import { WeddingDetailReviews } from "@/components/wedding/WeddingDetailReviews"
 import type { Metadata } from 'next';
 import { getDbUser } from "@/lib/auth";
 
+import { isWeddingIndexable, isSyntheticTestSlug } from "@/lib/seo/indexability";
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const resolvedParams = await params;
+  if (isSyntheticTestSlug(resolvedParams.slug)) {
+    return {
+      title: 'Wedding Experience Not Found',
+      robots: {
+        index: false,
+        follow: false,
+      },
+    };
+  }
+
   const wedding = await getWeddingBySlug(resolvedParams.slug);
   
   if (!wedding) {
@@ -26,8 +38,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     };
   }
 
-  const wAny = wedding as any;
-  const isIndexable = !wAny.suspended && !wAny.deletedAt && (wAny.status === "PUBLISHED" || !wAny.status);
+  const isIndexable = isWeddingIndexable(wedding as any);
   if (!isIndexable) {
     return {
       title: `${wedding.title} | WeddingWithIndia`,
@@ -86,6 +97,10 @@ interface PageProps {
 export default async function WeddingDetailPage({ params }: PageProps) {
   const { slug } = await params;
   
+  if (isSyntheticTestSlug(slug)) {
+    notFound();
+  }
+
   // Find wedding
   const wedding = await getWeddingBySlug(slug);
   if (!wedding) {

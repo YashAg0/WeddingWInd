@@ -274,7 +274,7 @@ export default function LearnHubPage() {
             <p className="text-xs text-charcoal-600 leading-relaxed">
               Learn how host identity checks, on-site bilingual coordinators, and emergency protocols protect every guest.
             </p>
-            <Link href="/safety" className="text-xs font-bold text-[var(--color-brand-primary)] inline-flex items-center gap-1 hover:underline">
+            <Link href="/trust?tab=safety" className="text-xs font-bold text-[var(--color-brand-primary)] inline-flex items-center gap-1 hover:underline">
               Read Safety Protocols <ArrowRight size={12} />
             </Link>
           </div>

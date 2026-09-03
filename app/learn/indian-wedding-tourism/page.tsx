@@ -174,7 +174,13 @@ export default function WeddingTourismPage() {
               Why Indian Weddings are a Magnet for Cultural Travelers
             </h2>
             <p>
-              India’s wedding industry is one of the most vibrant cultural phenomena on Earth, blending thousands of years of Vedic traditions, regional folklore, haute couture fashion, and opulent feasts. For international visitors who previously had no avenue to attend without personal local connections, wedding tourism provides a structured, safe, and mutually respectful bridge.
+              India’s wedding industry is one of the most vibrant cultural phenomena on Earth, blending thousands of years of Vedic traditions, regional folklore, haute couture fashion, and opulent feasts. For international visitors who previously had no avenue to attend without personal local connections, wedding tourism provides a structured, safe, and mutually respectful bridge. Learn more about the cultural welcoming philosophy in our guide on{" "}
+              <Link href="/learn/can-foreigners-attend-indian-weddings" className="text-[var(--color-brand-primary)] font-semibold underline underline-offset-2">
+                can foreigners attend Indian weddings
+              </Link>, or explore premier destination hubs in our{" "}
+              <Link href="/destinations" className="text-[var(--color-brand-primary)] font-semibold underline underline-offset-2">
+                destinations directory
+              </Link>.
             </p>
           </section>
 
@@ -183,7 +189,14 @@ export default function WeddingTourismPage() {
               Ethical Standards &amp; Verified Hospitality
             </h2>
             <p>
-              Platforms like <strong>WeddingWithIndia</strong> operate on strict ethical community standards: host families voluntarily opt-in, guest capacities are limited, on-site bilingual coordinators ensure smooth translation, and guests undergo verification to maintain the sacred sanctity and safety of every celebration.
+              Platforms like <strong>WeddingWithIndia</strong> operate on strict ethical community standards: host families voluntarily opt-in, guest capacities are limited, on-site bilingual coordinators ensure smooth translation, and guests undergo verification to maintain the sacred sanctity and safety of every celebration. Read our{" "}
+              <Link href="/learn/how-to-attend-an-indian-wedding" className="text-[var(--color-brand-primary)] font-semibold underline underline-offset-2">
+                step-by-step guest booking guide
+              </Link>{" "}
+              or review our{" "}
+              <Link href="/trust?tab=safety" className="text-[var(--color-brand-primary)] font-semibold underline underline-offset-2">
+                Trust &amp; Safety Standards
+              </Link>.
             </p>
           </section>
         </div>

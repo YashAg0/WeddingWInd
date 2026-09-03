@@ -20,13 +20,13 @@ export const metadata: Metadata = {
     "WeddingWithIndia platform terms",
   ],
   alternates: {
-    canonical: "https://weddingwithindia.com/terms",
+    canonical: "https://weddingwithindia.com/trust?tab=terms",
   },
   openGraph: {
     title: "Terms of Service | WeddingWithIndia",
     description:
       "The terms governing use of WeddingWithIndia, including bookings, experiences, payments, cancellations, and platform responsibilities.",
-    url: "https://weddingwithindia.com/terms",
+    url: "https://weddingwithindia.com/trust?tab=terms",
     siteName: "WeddingWithIndia",
     type: "website",
   },
@@ -37,7 +37,7 @@ export const metadata: Metadata = {
       "The terms governing use of WeddingWithIndia, including bookings, experiences, payments, cancellations, and platform responsibilities.",
   },
   robots: {
-    index: true,
+    index: false,
     follow: true,
   },
 };

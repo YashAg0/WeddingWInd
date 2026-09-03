@@ -12,25 +12,25 @@ import { sortWeddingsByDiscoveryPriority } from "@/lib/wedding-dto";
 import { Wedding } from "@/types";
 
 export const metadata: Metadata = {
-  title: "Explore Indian Wedding Celebrations",
+  title: "Authentic Indian Weddings: Find & Attend Celebrations Across India",
   description:
-    "Explore authentic multi-day Indian wedding celebrations across Rajasthan, Goa, Punjab, and Kerala. Filter by duration (1–5 days), destination, and cultural tradition.",
+    "Discover and attend authentic Indian wedding celebrations. Browse multi-day royal palace, beach, and countryside weddings in Rajasthan, Goa, Punjab, and Kerala.",
   alternates: {
     canonical: "https://weddingwithindia.com/weddings",
   },
   openGraph: {
-    title: "Explore Indian Wedding Celebrations | WeddingWithIndia",
+    title: "Authentic Indian Weddings: Find & Attend Celebrations Across India | WeddingWithIndia",
     description:
-      "Explore authentic multi-day Indian wedding celebrations across Rajasthan, Goa, Punjab, and Kerala. Filter by duration (1–5 days), destination, and cultural tradition.",
+      "Discover and attend authentic Indian wedding celebrations. Browse multi-day royal palace, beach, and countryside weddings in Rajasthan, Goa, Punjab, and Kerala.",
     url: "https://weddingwithindia.com/weddings",
     siteName: "WeddingWithIndia",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Explore Indian Wedding Celebrations | WeddingWithIndia",
+    title: "Authentic Indian Weddings: Find & Attend Celebrations Across India | WeddingWithIndia",
     description:
-      "Explore authentic multi-day Indian wedding celebrations across Rajasthan, Goa, Punjab, and Kerala. Filter by duration (1–5 days), destination, and cultural tradition.",
+      "Discover and attend authentic Indian wedding celebrations. Browse multi-day royal palace, beach, and countryside weddings in Rajasthan, Goa, Punjab, and Kerala.",
   },
 };
 
@@ -200,7 +200,7 @@ export default async function WeddingsPage({ searchParams }: PageProps) {
             Discover Celebrations
           </div>
           <h1 className="font-display font-bold text-2xl sm:text-3xl md:text-5xl text-charcoal-900 leading-tight">
-            Explore Wedding Celebrations
+            Authentic Indian Weddings Across India
           </h1>
           {/* Description hidden on mobile for compact layout */}
           <p className="hidden sm:block text-charcoal-500 text-sm md:text-base leading-relaxed">

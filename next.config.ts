@@ -132,12 +132,12 @@ const nextConfig: NextConfig = {
       },
       {
         source: "/terms-of-service",
-        destination: "/terms",
+        destination: "/trust?tab=terms",
         permanent: true,
       },
       {
         source: "/privacy-policy",
-        destination: "/privacy",
+        destination: "/trust?tab=privacy",
         permanent: true,
       },
       {

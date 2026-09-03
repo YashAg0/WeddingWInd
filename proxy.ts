@@ -53,6 +53,30 @@ const clerkHandler = clerkMiddleware(async (auth, req) => {
 });
 
 export async function proxy(req: NextRequest, event: NextFetchEvent) {
+  // 0. Canonical Host & Protocol Enforcement (Production only; skip localhost / test / preview deployments)
+  const host = req.headers.get("host") || "";
+  const forwardedProto = req.headers.get("x-forwarded-proto");
+  const proto = forwardedProto || req.nextUrl.protocol.replace(":", "");
+
+  if (
+    process.env.NODE_ENV === "production" &&
+    !host.includes("localhost") &&
+    !host.includes("127.0.0.1") &&
+    !host.endsWith(".vercel.app")
+  ) {
+    const isWww = host.startsWith("www.");
+    const isHttp = proto === "http";
+
+    if (isWww || isHttp) {
+      const cleanHost = host.replace(/^www\./i, "");
+      const canonicalUrl = new URL(
+        req.nextUrl.pathname + req.nextUrl.search,
+        `https://${cleanHost}`
+      );
+      return NextResponse.redirect(canonicalUrl, { status: 301 });
+    }
+  }
+
   // 1. E2E Testing Authenticated Session Handling (Local/Test environments ONLY)
   if (isE2ETestAuthEnabled()) {
     let e2eCookie = req.cookies.get("__wwi_e2e_session")?.value;

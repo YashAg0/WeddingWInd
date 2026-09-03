@@ -187,6 +187,23 @@ export default function EtiquettePage() {
           </p>
         </div>
 
+        {/* Contextual Guide Navigation */}
+        <div className="bg-warm-100/70 border border-warm-200/80 rounded-2xl p-4 sm:p-5 text-xs sm:text-sm text-charcoal-700 leading-relaxed space-y-1">
+          <p>
+            <strong>Related Resources:</strong> Need help selecting appropriate ceremonial outfits? Read our{" "}
+            <Link href="/learn/what-to-wear-to-an-indian-wedding" className="text-[var(--color-brand-primary)] font-semibold underline underline-offset-2">
+              Indian wedding dress code guide
+            </Link>. To understand what happens during each sacred ceremony, see our{" "}
+            <Link href="/learn/indian-wedding-rituals-explained" className="text-[var(--color-brand-primary)] font-semibold underline underline-offset-2">
+              wedding rituals guide
+            </Link>, and check our{" "}
+            <Link href="/learn/how-to-attend-an-indian-wedding" className="text-[var(--color-brand-primary)] font-semibold underline underline-offset-2">
+              how to attend guide
+            </Link>{" "}
+            for booking and travel logistics.
+          </p>
+        </div>
+
         {/* Dos & Don'ts Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="bg-white border border-emerald-200/80 rounded-3xl p-6 sm:p-8 space-y-4 shadow-xs">

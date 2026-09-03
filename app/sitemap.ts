@@ -204,30 +204,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.55,
     },
 
-    // Safety & Trust Standards
+    // Consolidated Trust & Safety Center
     {
-      url: `${baseUrl}/safety`,
+      url: `${baseUrl}/trust`,
       lastModified: STATIC_PAGE_LASTMOD,
       changeFrequency: "monthly",
       priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/guest-safety`,
-      lastModified: STATIC_PAGE_LASTMOD,
-      changeFrequency: "monthly",
-      priority: 0.65,
-    },
-    {
-      url: `${baseUrl}/host-safety`,
-      lastModified: STATIC_PAGE_LASTMOD,
-      changeFrequency: "monthly",
-      priority: 0.65,
-    },
-    {
-      url: `${baseUrl}/community-guidelines`,
-      lastModified: STATIC_PAGE_LASTMOD,
-      changeFrequency: "monthly",
-      priority: 0.5,
     },
     {
       url: `${baseUrl}/travel-visa`,
@@ -242,36 +224,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.6,
     },
 
-    // Legal, Compliance & Privacy
-    {
-      url: `${baseUrl}/privacy`,
-      lastModified: STATIC_PAGE_LASTMOD,
-      changeFrequency: "yearly",
-      priority: 0.3,
-    },
-    {
-      url: `${baseUrl}/terms`,
-      lastModified: STATIC_PAGE_LASTMOD,
-      changeFrequency: "yearly",
-      priority: 0.3,
-    },
+    // Legal, Compliance & Agreements
     {
       url: `${baseUrl}/cookies`,
       lastModified: STATIC_PAGE_LASTMOD,
       changeFrequency: "yearly",
       priority: 0.3,
-    },
-    {
-      url: `${baseUrl}/cancellation-policy`,
-      lastModified: STATIC_PAGE_LASTMOD,
-      changeFrequency: "yearly",
-      priority: 0.35,
-    },
-    {
-      url: `${baseUrl}/refund-policy`,
-      lastModified: STATIC_PAGE_LASTMOD,
-      changeFrequency: "yearly",
-      priority: 0.35,
     },
     {
       url: `${baseUrl}/traveler-agreement`,
@@ -310,18 +268,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.3,
     },
     {
-      url: `${baseUrl}/dpdp`,
-      lastModified: STATIC_PAGE_LASTMOD,
-      changeFrequency: "yearly",
-      priority: 0.3,
-    },
-    {
-      url: `${baseUrl}/gdpr`,
-      lastModified: STATIC_PAGE_LASTMOD,
-      changeFrequency: "yearly",
-      priority: 0.3,
-    },
-    {
       url: `${baseUrl}/acceptable-use`,
       lastModified: STATIC_PAGE_LASTMOD,
       changeFrequency: "yearly",
@@ -340,22 +286,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.35,
     },
     {
-      url: `${baseUrl}/incident-report`,
-      lastModified: STATIC_PAGE_LASTMOD,
-      changeFrequency: "yearly",
-      priority: 0.35,
-    },
-    {
       url: `${baseUrl}/complaints`,
       lastModified: STATIC_PAGE_LASTMOD,
       changeFrequency: "yearly",
       priority: 0.3,
-    },
-    {
-      url: `${baseUrl}/grievance`,
-      lastModified: STATIC_PAGE_LASTMOD,
-      changeFrequency: "yearly",
-      priority: 0.35,
     },
     {
       url: `${baseUrl}/accessibility`,
@@ -377,42 +311,44 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   ];
 
-  // Dynamic Published Wedding Experience routes
+  // Dynamic Published Wedding Experience routes (Authoritative Public Inventory Only)
   let weddingRoutes: MetadataRoute.Sitemap = [];
   try {
     const { prisma, withDbRetry } = await import("@/lib/prisma");
+    const { isWeddingIndexable } = await import("@/lib/seo/indexability");
     const weddings = await withDbRetry(() =>
       prisma.wedding.findMany({
-        where: { status: "PUBLISHED", suspended: false, deletedAt: null },
-        select: { slug: true, updatedAt: true },
+        where: {
+          status: "PUBLISHED",
+          isDemo: false,
+          suspended: false,
+          deletedAt: null,
+          NOT: { slug: { startsWith: "wedding-test_" } },
+        },
+        select: {
+          slug: true,
+          updatedAt: true,
+          status: true,
+          isDemo: true,
+          suspended: true,
+          deletedAt: true,
+        },
         orderBy: { updatedAt: "desc" },
       })
     );
 
-    if (weddings && weddings.length > 0) {
-      weddingRoutes = weddings.map((wedding) => ({
+    const eligibleWeddings = weddings.filter(isWeddingIndexable);
+
+    if (eligibleWeddings && eligibleWeddings.length > 0) {
+      weddingRoutes = eligibleWeddings.map((wedding) => ({
         url: `${baseUrl}/weddings/${wedding.slug}`,
         lastModified: wedding.updatedAt || STATIC_PAGE_LASTMOD,
         changeFrequency: "weekly" as const,
         priority: 0.8,
       }));
-    } else {
-      const { featuredWeddings } = await import("@/lib/data");
-      weddingRoutes = featuredWeddings.map((w) => ({
-        url: `${baseUrl}/weddings/${w.slug}`,
-        lastModified: STATIC_PAGE_LASTMOD,
-        changeFrequency: "weekly" as const,
-        priority: 0.8,
-      }));
     }
   } catch {
-    const { featuredWeddings } = await import("@/lib/data");
-    weddingRoutes = featuredWeddings.map((w) => ({
-      url: `${baseUrl}/weddings/${w.slug}`,
-      lastModified: STATIC_PAGE_LASTMOD,
-      changeFrequency: "weekly" as const,
-      priority: 0.8,
-    }));
+    weddingRoutes = [];
   }
 
   return [...staticRoutes, ...weddingRoutes];

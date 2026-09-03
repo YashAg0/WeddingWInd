@@ -206,6 +206,29 @@ export default function ExperienceCostPage() {
           </p>
         </div>
 
+        {/* Contextual Guide Navigation */}
+        <div className="bg-warm-100/70 border border-warm-200/80 rounded-2xl p-4 sm:p-5 text-xs sm:text-sm text-charcoal-700 leading-relaxed space-y-1">
+          <p>
+            <strong>Plan Your Experience:</strong> Ready to start planning your journey? Walk through the reservation process in our{" "}
+            <Link href="/learn/how-to-attend-an-indian-wedding" className="text-[var(--color-brand-primary)] font-semibold underline underline-offset-2">
+              step-by-step guest guide
+            </Link>. For outfit budgeting (rental vs buying in India), review our{" "}
+            <Link href="/learn/what-to-wear-to-an-indian-wedding" className="text-[var(--color-brand-primary)] font-semibold underline underline-offset-2">
+              wedding attire guide
+            </Link>.
+          </p>
+          <p>
+            Compare destinations: explore luxury heritage packages in{" "}
+            <Link href="/destinations/rajasthan" className="text-[var(--color-brand-primary)] font-semibold underline underline-offset-2">
+              Rajasthan
+            </Link>{" "}
+            or coastal sunset retreats in{" "}
+            <Link href="/destinations/goa" className="text-[var(--color-brand-primary)] font-semibold underline underline-offset-2">
+              Goa
+            </Link>.
+          </p>
+        </div>
+
         {/* Tiers Breakdown */}
         <div className="space-y-6">
           <h2 className="font-display font-bold text-2xl text-charcoal-900">

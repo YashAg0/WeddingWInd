@@ -3,9 +3,9 @@ import Link from "next/link";
 import { Globe, Sparkles, HelpCircle, ArrowRight } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Can Foreigners Attend Indian Weddings? A Complete Cultural Guide",
+  title: "Can Foreigners Attend Indian Weddings? Cultural Hospitality & Rules",
   description:
-    "Yes, foreigners can attend Indian weddings. Learn about the cultural tradition of Atithi Devo Bhava, how international guests are welcomed, and how to attend legitimately.",
+    "Yes, international travelers are warmly welcomed at Indian weddings. Discover cultural hospitality traditions, invitation customs, and how guests participate.",
   keywords: [
     "can foreigners attend Indian weddings",
     "can tourists attend Indian weddings",
@@ -13,14 +13,15 @@ export const metadata: Metadata = {
     "foreigner Indian wedding guest",
     "is it respectful to attend Indian wedding",
     "how can a tourist attend an Indian wedding",
+    "indian wedding for foreigners",
   ],
   alternates: {
     canonical: "https://weddingwithindia.com/learn/can-foreigners-attend-indian-weddings",
   },
   openGraph: {
-    title: "Can Foreigners Attend Indian Weddings? A Complete Cultural Guide | WeddingWithIndia",
+    title: "Can Foreigners Attend Indian Weddings? Cultural Hospitality & Rules | WeddingWithIndia",
     description:
-      "Yes, foreigners can attend Indian weddings. Learn about the cultural tradition of Atithi Devo Bhava, how international guests are welcomed, and how to attend legitimately.",
+      "Yes, international travelers are warmly welcomed at Indian weddings. Discover cultural hospitality traditions, invitation customs, and how guests participate.",
     url: "https://weddingwithindia.com/learn/can-foreigners-attend-indian-weddings",
     siteName: "WeddingWithIndia",
     type: "article",
@@ -35,7 +36,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Can Foreigners Attend Indian Weddings? Cultural Guide | WeddingWithIndia",
+    title: "Can Foreigners Attend Indian Weddings? Cultural Hospitality & Rules | WeddingWithIndia",
     description:
       "Understand how international travelers can respectfully attend authentic Indian weddings as honoured guests.",
     images: ["https://weddingwithindia.com/og-image.jpg"],
@@ -158,7 +159,7 @@ export default function CanForeignersAttendPage() {
             <Globe size={13} /> Cultural Traveler Guide
           </div>
           <h1 className="font-display font-bold text-3xl sm:text-4xl lg:text-5xl text-charcoal-900 leading-tight">
-            Can Foreigners Attend Indian Weddings? A Complete Cultural Guide
+            Can Foreigners Attend Indian Weddings? What You Need to Know
           </h1>
           <p className="text-sm text-charcoal-500 font-medium">
             Published by WeddingWithIndia Editorial Team • Verified Cultural Hospitality Guide
@@ -204,7 +205,7 @@ export default function CanForeignersAttendPage() {
               <div className="bg-white border border-warm-200/80 rounded-2xl p-5 space-y-2">
                 <h3 className="font-bold text-charcoal-900 text-base">2. Verified Platform Invitation</h3>
                 <p className="text-xs text-charcoal-600 leading-relaxed">
-                  Booked via <strong>WeddingWithIndia</strong>, where participating families formally open guest allocations, providing dedicated on-site coordinators, attire guidance, and verified seating.
+                  Booked via <strong>WeddingWithIndia</strong>, where participating families formally open guest allocations, providing dedicated on-site coordinators, attire guidance, and verified seating. Follow our <Link href="/learn/how-to-attend-an-indian-wedding" className="text-[var(--color-brand-primary)] font-semibold underline">step-by-step guest booking guide</Link> or view our <Link href="/learn/indian-wedding-experience-cost" className="text-[var(--color-brand-primary)] font-semibold underline">cost breakdown</Link>.
                 </p>
               </div>
             </div>
@@ -223,6 +224,23 @@ export default function CanForeignersAttendPage() {
               <li><strong>Sacred Mandap Ceremonies:</strong> The seven sacred steps (Saat Phere) around the holy fire with English commentary.</li>
               <li><strong>Royal Regional Feasting:</strong> Multi-course regional banquets prepared by master chefs.</li>
             </ul>
+            <p className="text-sm text-charcoal-600 pt-2">
+              Preparing your trip? Read our detailed guides on{" "}
+              <Link href="/learn/what-to-wear-to-an-indian-wedding" className="text-[var(--color-brand-primary)] font-semibold underline">
+                what to wear to an Indian wedding
+              </Link>{" "}
+              and essential{" "}
+              <Link href="/learn/indian-wedding-etiquette-for-foreigners" className="text-[var(--color-brand-primary)] font-semibold underline">
+                guest etiquette dos &amp; don&apos;ts
+              </Link>, or explore popular celebration regions in{" "}
+              <Link href="/destinations/rajasthan" className="text-[var(--color-brand-primary)] font-semibold underline">
+                Rajasthan
+              </Link>{" "}
+              and{" "}
+              <Link href="/destinations/goa" className="text-[var(--color-brand-primary)] font-semibold underline">
+                Goa
+              </Link>.
+            </p>
           </section>
         </div>
 
