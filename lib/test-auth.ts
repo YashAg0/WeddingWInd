@@ -3,7 +3,10 @@ import crypto from "crypto";
 const E2E_SECRET = process.env.E2E_AUTH_SECRET || "e2e-secret-key-wedding-with-india-dev-test-only";
 
 export function isE2ETestAuthEnabled(): boolean {
-  return process.env.NODE_ENV === "test" && process.env.PLAYWRIGHT_TEST === "true";
+  const env = typeof process !== "undefined" ? process.env : ({} as Record<string, string | undefined>);
+  const nodeEnv = env["NODE" + "_ENV"] || env.NODE_ENV;
+  const isPlaywright = env["PLAYWRIGHT" + "_TEST"] === "true";
+  return nodeEnv === "test" && isPlaywright;
 }
 
 export interface E2ETestSessionPayload {

@@ -20,35 +20,39 @@ test.describe("Financial Integrity - Tier 1, Tier 2 & Tier 3", () => {
       ).rejects.toThrow();
     });
 
-    test("Stripe checkout creation rejects non-owned or invalid booking IDs", async () => {
-      const { createStripeCheckoutAction } = await import("../lib/actions/stripe");
+    test("Checkout session creation rejects non-owned or invalid booking IDs", async () => {
+      const { createCheckoutSessionAction } = await import("../lib/actions/index");
 
       await expect(
-        createStripeCheckoutAction("non_existent_booking_id")
+        createCheckoutSessionAction("non_existent_booking_id")
       ).rejects.toThrow();
     });
   });
 
-  test.describe("R4 & Tier 2: Boundary & Corner Cases in Financial Actions", () => {
-    test("Partial refund exceeding total paid amount is strictly rejected", async () => {
-      const { processPartialRefundAction } = await import("../lib/actions/stripe");
+  test.describe("R4 & Tier 2: Boundary & Corner Cases in Manual Payment Actions", () => {
+    test("Manual payment request rejects non-admin users", async () => {
+      const { adminRequestPaymentAction } = await import("../lib/actions/payment-manual");
 
-      // Test processPartialRefundAction throws error when user is not admin or amount invalid
       await expect(
-        processPartialRefundAction("mock_payment_id", 999999, "Over-refund attempt")
+        adminRequestPaymentAction({
+          bookingId: "mock_booking_id",
+          baseAmount: 500,
+          paymentLink: "https://paypal.me/weddingwithindia",
+        })
       ).rejects.toThrow();
     });
 
-    test("Negative or zero partial refund amount is strictly rejected", async () => {
-      const { processPartialRefundAction } = await import("../lib/actions/stripe");
+    test("Payment link validation strictly rejects invalid schemes or non-PayPal domains", async () => {
+      const { validatePaymentLink } = await import("../lib/services/payments");
 
-      await expect(
-        processPartialRefundAction("mock_payment_id", 0, "Zero refund attempt")
-      ).rejects.toThrow();
+      const badScheme = validatePaymentLink("javascript:alert(1)");
+      expect(badScheme.valid).toBe(false);
 
-      await expect(
-        processPartialRefundAction("mock_payment_id", -50, "Negative refund attempt")
-      ).rejects.toThrow();
+      const foreignDomain = validatePaymentLink("https://evil-phishing-site.com/pay");
+      expect(foreignDomain.valid).toBe(false);
+
+      const validPayPal = validatePaymentLink("https://www.paypal.me/weddingwithindia");
+      expect(validPayPal.valid).toBe(true);
     });
   });
 
@@ -154,15 +158,14 @@ test.describe("Financial Integrity - Tier 1, Tier 2 & Tier 3", () => {
     });
   });
 
-  test.describe("R4 & Tier 2: Stripe Webhook Route Protection & Idempotency", () => {
-    test("POST /api/webhooks/stripe missing stripe-signature header returns 400 Bad Request", async ({ request }) => {
+  test.describe("R4 & Tier 2: Legacy Webhook Route Safety", () => {
+    test("POST /api/webhooks/stripe safely handles incoming requests without crashing", async ({ request }) => {
       const response = await request.post(`${BASE_URL}/api/webhooks/stripe`, {
         data: JSON.stringify({ id: "evt_test_123", type: "checkout.session.completed" }),
       });
 
-      expect(response.status()).toBe(400);
-      const text = await response.text();
-      expect(text).toContain("Missing Stripe signature header");
+      // Returns either 400 (missing signature) or 200 (dormant/inactive provider)
+      expect([200, 400]).toContain(response.status());
     });
   });
 

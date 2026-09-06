@@ -356,8 +356,13 @@ export default function DashboardOverviewPage() {
     refundBooking: _refundBooking,
     verification,
     submitVerification,
-    reviewVerification: _reviewVerification
+    reviewVerification: _reviewVerification,
+    loading,
+    dataLoading,
+    dataError,
+    refreshData
   } = useAuth();
+  const isBusyLoading = loading || dataLoading;
   const router = useRouter();
 
   const [weddings, setWeddings] = useState<any[]>([]);
@@ -525,7 +530,11 @@ export default function DashboardOverviewPage() {
             {/* Saved list preview */}
             <div className="space-y-4">
               <h3 className="font-display font-bold text-lg text-charcoal-900">Your Wishlist</h3>
-              {wishlistedWeddings.length === 0 ? (
+              {isBusyLoading ? (
+                <div className="bg-white border border-warm-200/50 p-6 rounded-2xl text-center text-xs text-charcoal-400 font-semibold animate-pulse">
+                  Loading saved celebrations...
+                </div>
+              ) : wishlistedWeddings.length === 0 ? (
                 <div className="bg-white border border-warm-200/50 p-6 rounded-2xl text-center text-xs text-charcoal-400 font-semibold">
                   No saved weddings. Link items in the marketplace!
                 </div>
@@ -790,7 +799,11 @@ export default function DashboardOverviewPage() {
                 </div>
               </div>
 
-              {guestApplications.filter((a) => a.status === appFilter).length === 0 ? (
+              {isBusyLoading ? (
+                <div className="bg-white border border-warm-200/50 p-8 rounded-[2rem] text-center text-xs sm:text-sm text-charcoal-400 font-semibold shadow-sm animate-pulse">
+                  Loading guest applications...
+                </div>
+              ) : guestApplications.filter((a) => a.status === appFilter).length === 0 ? (
                 <div className="bg-white border border-warm-200/50 p-8 rounded-[2rem] text-center text-xs sm:text-sm text-charcoal-400 font-semibold shadow-sm">
                   No {appFilter} guest applications found.
                 </div>
@@ -862,7 +875,11 @@ export default function DashboardOverviewPage() {
               <h3 className="font-display font-bold text-base text-charcoal-900 border-b border-warm-100 pb-3">
                 Paid Guests Ledger
               </h3>
-              {!coupleStats?.paidGuests || coupleStats.paidGuests.length === 0 ? (
+              {isBusyLoading ? (
+                <div className="p-6 text-center text-xs text-charcoal-400 font-semibold animate-pulse">
+                  Loading attendee records...
+                </div>
+              ) : !coupleStats?.paidGuests || coupleStats.paidGuests.length === 0 ? (
                 <div className="p-6 text-center text-xs text-charcoal-400 font-semibold">
                   No successful payments registered for your attendees yet.
                 </div>

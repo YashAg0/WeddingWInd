@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useUser, useClerk } from "@clerk/nextjs";
 import { UserRole as PrismaUserRole } from "@prisma/client";
@@ -89,6 +89,8 @@ export interface Notification {
 interface AuthContextType {
   user: User | null;
   loading: boolean;
+  dataLoading: boolean;
+  dataError: string | null;
   dbOffline: boolean;
   authState: AuthState;
   activeDeviceSessions: DeviceSessionDTO[];
@@ -129,6 +131,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [dataLoading, setDataLoading] = useState(true);
+  const [dataError, setDataError] = useState<string | null>(null);
   const [dbOffline, setDbOffline] = useState(false);
   const [authState, setAuthState] = useState<AuthState>("INITIALIZING");
   const [activeDeviceSessions, setActiveDeviceSessions] = useState<DeviceSessionDTO[]>([]);
@@ -141,9 +145,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [adminStats, setAdminStats] = useState<any>(null);
   const [verification, setVerification] = useState<any>(null);
 
-  // Function to refresh state data from Postgres and validate multi-device session.
-  const refreshData = useCallback(async () => {
+  const inFlightPromiseRef = useRef<Promise<void> | null>(null);
+  const pendingRefreshRef = useRef<boolean>(false);
+
+  // Core function to refresh state data from Postgres and validate multi-device session.
+  const executeRefresh = useCallback(async () => {
     setLoading(true);
+    setDataLoading(true);
+    setDataError(null);
     setAuthState("AUTHENTICATING");
 
     try {
@@ -188,6 +197,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setAuthState("INITIALIZING");
         }
         setLoading(false);
+        setDataLoading(false);
         return;
       }
 
@@ -244,12 +254,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setActiveDeviceSessions(deviceRes.activeSessions);
           setAuthState("DEVICE_LIMIT_REACHED");
           setLoading(false);
+          setDataLoading(false);
           return;
         }
 
         if (deviceRes.status === "REVOKED") {
           setAuthState("SESSION_REVOKED");
           setLoading(false);
+          setDataLoading(false);
           return;
         }
 
@@ -273,22 +285,52 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setCoupleStats(dashData.coupleStats || null);
           setAdminStats(dashData.adminStats || null);
           setVerification(dashData.verification || null);
+          setDataError(null);
         }
-      } catch (err) {
+      } catch (err: any) {
         console.warn("Dashboard data fetch warning (transient DB error?):", err);
-        setDbOffline(true);
+        setDataError(err?.message || "Unable to load dashboard data. Please try again.");
+      } finally {
+        setDataLoading(false);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("[AuthContext] DB unavailable during user sync:", err);
       // Fail safely: preserve authentication state, mark connection failure
       setDbOffline(true);
       setAuthState("TEMPORARY_CONNECTION_FAILURE");
+      setDataError("Database connection temporarily unavailable.");
+      setDataLoading(false);
     } finally {
       setLoading(false);
+      setDataLoading(false);
     }
   }, [isSignedIn]);
 
-  // Initial mount sync & listen to Clerk/session state
+  // Request coalescing: coalesces concurrent requests and triggers a trailing call if requested
+  const refreshData = useCallback(async (): Promise<void> => {
+    if (inFlightPromiseRef.current) {
+      pendingRefreshRef.current = true;
+      return inFlightPromiseRef.current;
+    }
+
+    const run = async () => {
+      try {
+        await executeRefresh();
+      } finally {
+        inFlightPromiseRef.current = null;
+        if (pendingRefreshRef.current) {
+          pendingRefreshRef.current = false;
+          // Trigger one trailing execution for pending callers
+          await refreshData();
+        }
+      }
+    };
+
+    inFlightPromiseRef.current = run();
+    return inFlightPromiseRef.current;
+  }, [executeRefresh]);
+
+  // Mount sync & session state listener
   useEffect(() => {
     refreshData();
   }, [refreshData]);
@@ -297,7 +339,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (isLoaded) {
       refreshData();
     }
-  }, [isLoaded, isSignedIn, clerkUser, refreshData]);
+  }, [isLoaded, isSignedIn, clerkUser?.id, refreshData]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -446,6 +488,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       value={{
         user,
         loading,
+        dataLoading,
+        dataError,
         dbOffline,
         authState,
         activeDeviceSessions,

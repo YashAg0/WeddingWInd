@@ -4,15 +4,22 @@ import { useAuth } from "@/context/AuthContext";
 import { getWeddings } from "@/lib/actions";
 import WishlistCard from "@/components/dashboard/WishlistCard";
 import EmptyState from "@/components/dashboard/EmptyState";
+import { DashboardLoadingState, DashboardErrorState } from "@/components/dashboard/DashboardDataState";
 import { useState, useEffect } from "react";
 
 export default function WishlistPage() {
-  const { wishlist, toggleWishlist } = useAuth();
+  const { wishlist, toggleWishlist, loading, dataLoading, dataError, refreshData } = useAuth();
   const [weddings, setWeddings] = useState<any[]>([]);
+  const [weddingsLoading, setWeddingsLoading] = useState(true);
 
   useEffect(() => {
-    getWeddings().then(setWeddings).catch(console.error);
+    getWeddings()
+      .then(setWeddings)
+      .catch(console.error)
+      .finally(() => setWeddingsLoading(false));
   }, []);
+
+  const isBusyLoading = loading || dataLoading || weddingsLoading;
 
   // Match active wishlist IDs or slugs with weddings
   const savedWeddings = weddings.filter((w) => wishlist.includes(w.id) || wishlist.includes(w.slug));
@@ -30,7 +37,18 @@ export default function WishlistPage() {
         </p>
       </div>
 
-      {savedWeddings.length === 0 ? (
+      {isBusyLoading && savedWeddings.length === 0 ? (
+        <DashboardLoadingState
+          message="Loading your saved celebrations..."
+          subMessage="Retrieving your bookmarked weddings..."
+        />
+      ) : dataError && wishlist.length === 0 ? (
+        <DashboardErrorState
+          title="Unable to load wishlist"
+          message={dataError}
+          onRetry={refreshData}
+        />
+      ) : savedWeddings.length === 0 ? (
         <EmptyState
           title="Your wishlist is empty"
           description="Save matching weddings from our curated platform to keep track of dates, locations, and pricing options."

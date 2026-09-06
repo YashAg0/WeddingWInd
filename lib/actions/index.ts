@@ -1,6 +1,7 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
+import { z } from "zod";
 import { prisma, withDbRetry } from "../prisma";
 import { requireAuth, syncAndGetDbUser as authSyncAndGetDbUser } from "../auth";
 export async function syncAndGetDbUser() {
@@ -28,9 +29,9 @@ import {
   travelerProfileSchema,
   coupleProfileSchema,
   agentProfileSchema,
-  weddingSchema
+  weddingSchema,
+  verificationSchema
 } from "../validation";
-import { unstable_cache } from "next/cache";
 import { env } from "../env";
 import { toWeddingDTO } from "../wedding-dto";
 import { sortWeddingsByDiscoveryPriority } from "../marketplace/ranking";
@@ -46,10 +47,21 @@ import { calculateBookingPricing } from "../services/pricing-engine";
 export async function updateUserRoleAction(role: UserRole) {
   const dbUser = await requireAuth();
 
-  // Security: Prevent self-elevation to ADMIN via client-controlled role update.
-  // Admin roles can only be assigned directly in the database by a platform operator.
-  if (role === UserRole.ADMIN) {
-    throw new Error("FORBIDDEN: Cannot self-assign administrative roles.");
+  // Explicit Self-Onboarding Role Whitelist:
+  // Only TRAVELER and COUPLE can be self-selected during initial onboarding.
+  // Privileged and vetted roles (ADMIN, COORDINATOR, AGENT) require explicit administrative workflows.
+  const ALLOWED_SELF_ONBOARDING_ROLES: UserRole[] = [UserRole.TRAVELER, UserRole.COUPLE];
+  if (!ALLOWED_SELF_ONBOARDING_ROLES.includes(role)) {
+    if (role === UserRole.ADMIN) {
+      throw new Error("FORBIDDEN: Cannot self-assign administrative roles.");
+    }
+    if (role === UserRole.COORDINATOR) {
+      throw new Error("FORBIDDEN: Cannot self-assign COORDINATOR role. Requires official application and administrative approval.");
+    }
+    if (role === UserRole.AGENT) {
+      throw new Error("FORBIDDEN: Cannot self-assign AGENT role. Requires official agent application and administrative verification.");
+    }
+    throw new Error(`FORBIDDEN: Role ${role} cannot be self-selected during onboarding.`);
   }
 
   // Prevent role change if user has already completed onboarding
@@ -185,13 +197,28 @@ export interface UpdateProfileInput {
 export async function updateProfileDetails(data: UpdateProfileInput) {
   const dbUser = await requireAuth();
 
+  let emailToUpdate = dbUser.email;
+  if (data.email && data.email.trim() !== "" && data.email.trim() !== dbUser.email) {
+    const emailParsed = z.string().email("Invalid email address format").safeParse(data.email.trim());
+    if (!emailParsed.success) {
+      throw new Error("Invalid email address format.");
+    }
+    const existingUser = await prisma.user.findFirst({
+      where: { email: emailParsed.data, NOT: { id: dbUser.id } }
+    });
+    if (existingUser) {
+      throw new Error("This email address is already in use by another account.");
+    }
+    emailToUpdate = emailParsed.data;
+  }
+
   await prisma.$transaction(async (tx) => {
     // Update base user details
     await tx.user.update({
       where: { id: dbUser.id },
       data: {
         name: data.name ?? dbUser.name,
-        email: data.email ?? dbUser.email
+        email: emailToUpdate
       }
     });
 
@@ -307,6 +334,12 @@ export async function createWedding(data: any) {
 
   revalidatePath("/weddings");
   revalidatePath("/dashboard/celebrations");
+  if (typeof revalidateTag === "function") {
+    try {
+      revalidateTag("weddings", "max");
+      revalidateTag("homepage", "max");
+    } catch {}
+  }
   return { success: true, wedding };
 }
 
@@ -343,15 +376,30 @@ export async function editWedding(weddingId: string, data: any) {
     }
   }
 
+  const parsedPrice = data.pricePerGuest !== undefined && data.pricePerGuest !== null && String(data.pricePerGuest).trim() !== ""
+    ? parseFloat(data.pricePerGuest)
+    : existing.pricePerGuest;
+
+  const parsedCapacity = data.capacity !== undefined && data.capacity !== null && String(data.capacity).trim() !== ""
+    ? parseInt(data.capacity, 10)
+    : existing.capacity;
+
+  const parsedRequiredGuests = data.requiredGuests !== undefined && data.requiredGuests !== null && String(data.requiredGuests).trim() !== ""
+    ? parseInt(data.requiredGuests, 10)
+    : (existing.requiredGuests || 0);
+
+  const parsedDate = data.date ? new Date(data.date) : existing.date;
+
   const parsed = weddingSchema.parse({
+    ...existing,
     ...data,
     status: resolvedStatus,
     slug: existing.slug,
     hostCoupleId: coupleProfile.id,
-    pricePerGuest: parseFloat(data.pricePerGuest),
-    capacity: parseInt(data.capacity),
-    requiredGuests: parseInt(data.requiredGuests || "0"),
-    date: new Date(data.date)
+    pricePerGuest: parsedPrice,
+    capacity: parsedCapacity,
+    requiredGuests: parsedRequiredGuests,
+    date: parsedDate
   });
 
   const wedding = await prisma.wedding.update({
@@ -362,6 +410,12 @@ export async function editWedding(weddingId: string, data: any) {
   revalidatePath(`/weddings/${wedding.slug}`);
   revalidatePath("/weddings");
   revalidatePath("/dashboard/celebrations");
+  if (typeof revalidateTag === "function") {
+    try {
+      revalidateTag("weddings", "max");
+      revalidateTag("homepage", "max");
+    } catch {}
+  }
   return { success: true, wedding };
 }
 
@@ -378,7 +432,7 @@ export async function deleteWedding(weddingId: string) {
 
   const existing = await prisma.wedding.findUnique({
     where: { id: weddingId },
-    include: { bookings: true }
+    include: { bookings: true, safetyCases: true }
   });
   if (!existing) throw new Error("Wedding experience not found.");
   if (existing.hostCoupleId !== coupleProfile.id) {
@@ -393,8 +447,8 @@ export async function deleteWedding(weddingId: string) {
     throw new Error("Cannot delete a wedding experience with active, paid, or confirmed guest bookings. Please contact support to cancel or archive this event.");
   }
 
-  if (existing.bookings.length > 0) {
-    // Soft delete to maintain historical booking and financial integrity
+  if (existing.bookings.length > 0 || (existing.safetyCases && existing.safetyCases.length > 0)) {
+    // Soft delete to maintain historical booking, safety, and financial integrity
     await prisma.wedding.update({
       where: { id: weddingId },
       data: {
@@ -404,7 +458,12 @@ export async function deleteWedding(weddingId: string) {
       }
     });
   } else {
-    // Hard delete is safe only when zero historical booking records exist
+    // Clean up dependent sponsorship requests (which have onDelete: Restrict) before hard deleting
+    await prisma.sponsorshipRequest.deleteMany({
+      where: { weddingId }
+    });
+
+    // Hard delete is safe only when zero historical booking or safety records exist
     await prisma.wedding.delete({
       where: { id: weddingId }
     });
@@ -412,6 +471,12 @@ export async function deleteWedding(weddingId: string) {
 
   revalidatePath("/weddings");
   revalidatePath("/dashboard/celebrations");
+  if (typeof revalidateTag === "function") {
+    try {
+      revalidateTag("weddings", "max");
+      revalidateTag("homepage", "max");
+    } catch {}
+  }
   return { success: true };
 }
 
@@ -537,16 +602,26 @@ export async function toggleWishlistAction(slug: string) {
   });
 
   if (existing) {
-    await prisma.wishlist.delete({
-      where: { id: existing.id }
-    });
+    try {
+      await prisma.wishlist.delete({
+        where: { id: existing.id }
+      });
+    } catch (err: any) {
+      // If already deleted by concurrent action (P2025), ignore
+      if (err?.code !== "P2025") throw err;
+    }
   } else {
-    await prisma.wishlist.create({
-      data: {
-        travelerId: traveler.id,
-        weddingId: wedding.id
-      }
-    });
+    try {
+      await prisma.wishlist.create({
+        data: {
+          travelerId: traveler.id,
+          weddingId: wedding.id
+        }
+      });
+    } catch (err: any) {
+      // If already created by concurrent action (P2002), ignore
+      if (err?.code !== "P2002") throw err;
+    }
   }
 
   revalidatePath("/dashboard/wishlist");
@@ -1146,10 +1221,26 @@ export async function submitVerificationAction(data: Record<string, any>) {
     }
   }
 
+  // Whitelist and parse only client-submittable fields against verificationSchema
+  // (omit admin/server-controlled fields: reviewedBy, expiryDate, status, notes, id, userId)
+  const clientVerificationSchema = verificationSchema.omit({
+    id: true,
+    userId: true,
+    status: true,
+    reviewedBy: true,
+    expiryDate: true,
+    notes: true,
+    submissionDate: true,
+    phoneVerified: true,
+    emailVerified: true,
+  });
+
+  const parsedData = clientVerificationSchema.parse(sanitizedData);
+
   const verification = await prisma.verification.update({
     where: { userId: user.id },
     data: {
-      ...sanitizedData,
+      ...parsedData,
       status: VerificationStatus.PENDING,
       submissionDate: new Date(),
     },
@@ -1318,21 +1409,31 @@ export async function fetchDashboardDataAction() {
   let refundQueue: any[] = [];
   let pendingVerifications: any[] = [];
 
-  if (dbUser.role === UserRole.TRAVELER && dbUser.travelerProfile) {
-    const [travelerBookings, wishEntries] = await Promise.all([
-      withDbRetry(() => prisma.booking.findMany({
-        where: { travelerId: dbUser.travelerProfile!.id },
-        include: { wedding: true, payments: { include: { refunds: true } } },
-        orderBy: { createdAt: "desc" },
-      }), { label: "fetchDash:travelerBookings" }).catch(() => []),
-      withDbRetry(() => prisma.wishlist.findMany({
-        where: { travelerId: dbUser.travelerProfile!.id },
-        include: { wedding: true },
-      }), { label: "fetchDash:wishlist" }).catch(() => []),
-    ]);
+  if (dbUser.role === UserRole.TRAVELER) {
+    let travelerProfileId = dbUser.travelerProfile?.id;
+    if (!travelerProfileId) {
+      const tp = await withDbRetry(
+        () => prisma.travelerProfile.findUnique({ where: { userId: dbUser.id } }),
+        { label: "fetchDash:tpFallback" }
+      ).catch(() => null);
+      travelerProfileId = tp?.id;
+    }
+    if (travelerProfileId) {
+      const [travelerBookings, wishEntries] = await Promise.all([
+        withDbRetry(() => prisma.booking.findMany({
+          where: { travelerId: travelerProfileId },
+          include: { wedding: true, payments: { include: { refunds: true } } },
+          orderBy: { createdAt: "desc" },
+        }), { label: "fetchDash:travelerBookings" }),
+        withDbRetry(() => prisma.wishlist.findMany({
+          where: { travelerId: travelerProfileId },
+          include: { wedding: true },
+        }), { label: "fetchDash:wishlist" }).catch(() => []),
+      ]);
 
-    bookings = travelerBookings;
-    wishlist = wishEntries.map((w: any) => w.wedding.slug);
+      bookings = travelerBookings;
+      wishlist = wishEntries.map((w: any) => w.wedding?.slug).filter(Boolean);
+    }
   } else if (dbUser.role === UserRole.COUPLE) {
     let coupleProfileId = dbUser.coupleProfile?.id;
     if (!coupleProfileId) {
@@ -1344,7 +1445,7 @@ export async function fetchDashboardDataAction() {
         where: { wedding: { hostCoupleId: coupleProfileId } },
         include: { wedding: true, traveler: { include: { user: true } }, payments: true },
         orderBy: { createdAt: "desc" },
-      }), { label: "fetchDash:coupleBookings" }).catch(() => []),
+      }), { label: "fetchDash:coupleBookings" }),
       withDbRetry(() => prisma.wedding.findFirst({
         where: { hostCoupleId: coupleProfileId },
       }), { label: "fetchDash:hosted" }).catch(() => null),

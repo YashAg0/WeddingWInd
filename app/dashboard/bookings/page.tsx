@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import BookingCard from "@/components/dashboard/BookingCard";
 import EmptyState from "@/components/dashboard/EmptyState";
+import { DashboardLoadingState, DashboardErrorState } from "@/components/dashboard/DashboardDataState";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { CreditCard, Clock, CalendarX, History, Ticket } from "lucide-react";
@@ -11,9 +12,10 @@ import { CreditCard, Clock, CalendarX, History, Ticket } from "lucide-react";
 type FilterStatus = "upcoming" | "awaiting_payment" | "pending" | "rejected" | "history";
 
 export default function BookingsPage() {
-  const { user, bookings, cancelBooking } = useAuth();
+  const { user, bookings, cancelBooking, loading, dataLoading, dataError, refreshData } = useAuth();
   const [filter, setFilter] = useState<FilterStatus>("upcoming");
 
+  const isBusyLoading = loading || dataLoading;
   const userRole = user?.role || "traveler";
 
   // 1. TRAVELER LOGIC
@@ -87,7 +89,19 @@ export default function BookingsPage() {
             Confirmed Attendees
           </h3>
 
-          {coupleApprovedGuests.length === 0 ? (
+          {isBusyLoading && bookings.length === 0 ? (
+            <DashboardLoadingState
+              message="Loading confirmed attendee guest list..."
+              subMessage="Syncing attendee records with server..."
+              minHeight="min-h-[180px]"
+            />
+          ) : dataError && bookings.length === 0 ? (
+            <DashboardErrorState
+              title="Unable to load attendee list"
+              message={dataError}
+              onRetry={refreshData}
+            />
+          ) : coupleApprovedGuests.length === 0 ? (
             <div className="p-8 text-center text-xs sm:text-sm text-charcoal-400 font-semibold">
               No confirmed attendees yet. Applications can be approved on the overview panel.
             </div>
@@ -168,7 +182,26 @@ export default function BookingsPage() {
               exit={{ opacity: 0, y: -10 }}
               className="space-y-4"
             >
-              {filteredBookings.length === 0 ? (
+              {isBusyLoading && bookings.length === 0 ? (
+                <DashboardLoadingState
+                  message={
+                    filter === "awaiting_payment"
+                      ? "Checking for pending payment requests..."
+                      : filter === "pending"
+                      ? "Loading your pending applications..."
+                      : filter === "history"
+                      ? "Loading reservation history..."
+                      : "Loading your wedding reservations and passes..."
+                  }
+                  subMessage="Retrieving live booking status from server..."
+                />
+              ) : dataError && bookings.length === 0 ? (
+                <DashboardErrorState
+                  title="Unable to load reservations"
+                  message={dataError}
+                  onRetry={refreshData}
+                />
+              ) : filteredBookings.length === 0 ? (
                 <EmptyState
                   title={getEmptyStateDetails().title}
                   description={getEmptyStateDetails().description}

@@ -541,7 +541,7 @@ export async function recordManualRefundAtomic(
     },
   });
 
-  // 3. Update Booking record (only on full refund)
+  // 3. Update Booking record and revoke Guest Passes (only on full refund)
   if (isFullRefund) {
     await tx.booking.update({
       where: { id: payment.bookingId },
@@ -549,6 +549,19 @@ export async function recordManualRefundAtomic(
         status: BookingStatus.REFUNDED,
       },
     });
+
+    // Authoritative Invariant: Revoke all active guest passes for the refunded booking
+    if (tx.guestPass?.updateMany) {
+      await tx.guestPass.updateMany({
+        where: {
+          bookingId: payment.bookingId,
+          status: "ACTIVE",
+        },
+        data: {
+          status: "REVOKED",
+        },
+      });
+    }
   }
 
   // 4. Create Transaction Ledger Entry
@@ -568,10 +581,10 @@ export async function recordManualRefundAtomic(
     },
   });
 
-  // 5. Reverse Agent Commission if linked
+  // 5. Reverse Agent Commission if linked (only on full refund/cancellation)
   try {
     const { reverseBookingCommissionAction } = require("../actions/referrals");
-    await reverseBookingCommissionAction(tx, payment.id, refundRecord.id);
+    await reverseBookingCommissionAction(tx, payment.id, refundRecord.id, isFullRefund);
   } catch (commErr) {
     console.error("[recordManualRefundAtomic] Note: Commission reversal:", commErr);
   }

@@ -3,12 +3,12 @@
 import { revalidatePath, revalidateTag } from "next/cache";
 import { prisma } from "../prisma";
 import { requireAuth, requireRole } from "../auth";
-import { UserRole, BookingStatus, PaymentStatus, VerificationStatus, WeddingStatus, ReputationEntityType, ReputationEventType } from "@prisma/client";
+import { UserRole, BookingStatus, PaymentStatus, VerificationStatus, WeddingStatus, UserStatus, ReputationEntityType, ReputationEventType } from "@prisma/client";
 import { z } from "zod";
 import { sendVerificationApprovedEmail, sendVerificationRejectedEmail } from "../email";
 import crypto from "crypto";
 import { logReputationEvent } from "../services/reputation";
-import { CAPACITY_HOLDING_BOOKING_STATUSES } from "../booking-statuses";
+import { CAPACITY_HOLDING_BOOKING_STATUSES, canProcessHostPayout } from "../booking-statuses";
 
 // Helper function to log audit events
 export async function createAuditLog(
@@ -453,11 +453,11 @@ export async function adminDeleteWeddingAction(weddingId: string) {
   const admin = await requireRole([UserRole.ADMIN]);
   const wedding = await prisma.wedding.findUnique({
     where: { id: weddingId },
-    include: { bookings: true }
+    include: { bookings: true, safetyCases: true }
   });
   if (!wedding) throw new Error("Wedding not found.");
 
-  if (wedding.bookings && wedding.bookings.length > 0) {
+  if ((wedding.bookings && wedding.bookings.length > 0) || (wedding.safetyCases && wedding.safetyCases.length > 0)) {
     await prisma.wedding.update({
       where: { id: weddingId },
       data: {
@@ -467,6 +467,11 @@ export async function adminDeleteWeddingAction(weddingId: string) {
       }
     });
   } else {
+    // Clean up dependent sponsorship requests (which have onDelete: Restrict) before hard deleting
+    await prisma.sponsorshipRequest.deleteMany({
+      where: { weddingId }
+    });
+
     await prisma.wedding.delete({
       where: { id: weddingId },
     });
@@ -566,6 +571,12 @@ export async function adminUpdateUserRoleAction(userId: string, role: UserRole) 
     if (adminCount <= 1) {
       throw new Error("Cannot demote the last active administrator account.");
     }
+  }
+
+  // Authoritative Invariant: Only SuperAdmin can promote to ADMIN or demote from ADMIN
+  if (role === UserRole.ADMIN || targetUser.role === UserRole.ADMIN) {
+    const { requirePermission } = await import("../rbac");
+    await requirePermission("PROMOTES_ADMIN_ROLES");
   }
 
   const updated = await prisma.user.update({
@@ -750,11 +761,26 @@ export async function adminDeleteUserAction(userId: string) {
     }
   }
 
-  const deleted = await prisma.user.delete({
-    where: { id: userId },
-  });
+  try {
+    const deleted = await prisma.user.delete({
+      where: { id: userId },
+    });
+    await createAuditLog("DELETE_USER", "User", userId, `Deleted user account: ${deleted.email}`);
+  } catch (err: any) {
+    if (err?.code === "P2003" || err?.message?.includes("foreign key")) {
+      await prisma.user.update({
+        where: { id: userId },
+        data: {
+          deletedAt: new Date(),
+          status: UserStatus.BANNED,
+        }
+      });
+      await createAuditLog("ARCHIVE_USER", "User", userId, `Archived/soft-deleted user account due to historical records: ${targetUser.email}`);
+    } else {
+      throw err;
+    }
+  }
 
-  await createAuditLog("DELETE_USER", "User", userId, `Deleted user account: ${deleted.email}`);
   revalidatePath("/dashboard/admin/users");
   return { success: true };
 }
@@ -1488,97 +1514,116 @@ export async function adminGetAuditLogsAction() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function adminProcessHostPayoutAction(paymentId: string) {
-  const _admin = await requireRole([UserRole.ADMIN]);
+  const admin = await requireRole([UserRole.ADMIN]);
 
   const { isFinanciallyHeld } = require("./safety");
-  const payment = await prisma.payment.findUnique({
-    where: { id: paymentId },
-    include: {
-      booking: {
-        include: {
-          traveler: true,
-          wedding: {
-            include: {
-              hostCouple: true
-            }
-          }
-        }
-      }
-    },
-  });
-
-  if (!payment) throw new Error("Payment not found.");
-
-  // Check safety holds for traveler and host couple
-  const travelerHeld = await isFinanciallyHeld({
-    bookingId: payment.bookingId,
-    weddingId: payment.booking.weddingId,
-    userId: payment.booking.traveler.userId,
-  });
-
-  const hostHeld = await isFinanciallyHeld({
-    bookingId: payment.bookingId,
-    weddingId: payment.booking.weddingId,
-    userId: payment.booking.wedding.hostCouple.userId,
-  });
-
-  if (travelerHeld || hostHeld) {
-    throw new Error("Cannot process payout: This transaction, traveler, or host couple is subject to an active safety hold.");
-  }
-
-  // Check if payout already exists
-  const existing = await prisma.payout.findFirst({
-    where: { paymentId },
-  });
-  if (existing) {
-    throw new Error("Payout has already been processed for this transaction.");
-  }
-
-  const payoutReference = `PAYOUT-HOST-${Date.now()}`;
-
   const { getHostPayoutPerGuestINR, normalizeWeddingTier, normalizeDurationDays } = require("../services/pricing-engine");
-  const booking = payment.booking;
-  const tier = normalizeWeddingTier(booking.weddingTier || booking.wedding?.tier || "STANDARD");
-  const duration = normalizeDurationDays(booking.durationDays || booking.wedding?.durationDays || 3);
-  const hostRatePerGuestINR = booking.hostPayoutPerGuestINR || getHostPayoutPerGuestINR(tier, duration);
-  const eligibleGuests = booking.eligibleInternationalGuestCount || booking.guestsCount || 1;
-  const hostPayoutAmountINR = booking.totalHostPayoutINR || (hostRatePerGuestINR * eligibleGuests);
+  const { logReputationEvent } = require("../services/reputation");
 
-  const payout = await prisma.payout.create({
-    data: {
-      paymentId,
-      amount: hostPayoutAmountINR,
-      status: "CLEARED",
-      stripeTransferId: payoutReference,
-    },
-  });
+  const result = await prisma.$transaction(async (tx) => {
+    // 1. Authoritative Concurrency Lock: Lock Payment row to serialize simultaneous payout requests
+    if (typeof (tx as any).$queryRaw === "function") {
+      await tx.$queryRaw`SELECT id FROM "Payment" WHERE id = ${paymentId} FOR UPDATE`;
+    }
 
-  // Mark host payout transferred flag on payment
-  await prisma.payment.update({
-    where: { id: paymentId },
-    data: { hostPayoutTransferred: true },
-  });
+    // 2. Fetch authoritative payment state
+    const payment = await tx.payment.findUnique({
+      where: { id: paymentId },
+      include: {
+        booking: {
+          include: {
+            traveler: true,
+            wedding: {
+              include: {
+                hostCouple: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!payment) throw new Error("Payment not found.");
+
+    // 3. Authoritative predicate check: payment must be PAID, not already transferred, and booking not refunded/cancelled
+    const eligibility = canProcessHostPayout(payment.status, payment.hostPayoutTransferred, payment.booking.status);
+    if (!eligibility.eligible) {
+      throw new Error(`Cannot process host payout: ${eligibility.reason}`);
+    }
+
+    // 4. Check if a CLEARED payout already exists
+    const existing = await tx.payout.findFirst({
+      where: { paymentId, status: "CLEARED" },
+    });
+    if (existing) {
+      throw new Error("Payout has already been processed for this transaction.");
+    }
+
+    // 5. Check safety holds for traveler and host couple
+    const travelerHeld = await isFinanciallyHeld({
+      bookingId: payment.bookingId,
+      weddingId: payment.booking.weddingId,
+      userId: payment.booking.traveler.userId,
+    });
+
+    const hostHeld = await isFinanciallyHeld({
+      bookingId: payment.bookingId,
+      weddingId: payment.booking.weddingId,
+      userId: payment.booking.wedding.hostCouple.userId,
+    });
+
+    if (travelerHeld || hostHeld) {
+      throw new Error("Cannot process payout: This transaction, traveler, or host couple is subject to an active safety hold.");
+    }
+
+    const booking = payment.booking;
+    const tier = normalizeWeddingTier(booking.weddingTier || booking.wedding?.tier || "STANDARD");
+    const duration = normalizeDurationDays(booking.durationDays || booking.wedding?.durationDays || 3);
+    const hostRatePerGuestINR = booking.hostPayoutPerGuestINR || getHostPayoutPerGuestINR(tier, duration);
+    const eligibleGuests = booking.eligibleInternationalGuestCount || booking.guestsCount || 1;
+    const hostPayoutAmountINR = booking.totalHostPayoutINR || (hostRatePerGuestINR * eligibleGuests);
+
+    const payoutReference = `PAYOUT-HOST-${Date.now()}`;
+
+    const payout = await tx.payout.create({
+      data: {
+        paymentId,
+        amount: hostPayoutAmountINR,
+        status: "CLEARED",
+        stripeTransferId: payoutReference,
+      },
+    });
+
+    // Mark host payout transferred flag on payment atomically
+    await tx.payment.update({
+      where: { id: paymentId },
+      data: { hostPayoutTransferred: true },
+    });
+
+    return { payout, booking, hostCoupleId: payment.booking.wedding.hostCoupleId, hostPayoutAmountINR };
+  }, { maxWait: 20000, timeout: 35000 });
 
   await createAuditLog(
     "PROCESS_PAYOUT",
     "Payout",
-    payout.id,
-    `Admin processed fixed host payout of ₹${hostPayoutAmountINR.toLocaleString("en-IN")} INR for payment ${paymentId} (Booking ${booking.id})`
+    result.payout.id,
+    `Admin (${admin.email}) processed fixed host payout of ₹${result.hostPayoutAmountINR.toLocaleString("en-IN")} INR for payment ${paymentId} (Booking ${result.booking.id})`
   );
 
   // Log PAYOUT_COMPLETED event for host
-  const { logReputationEvent } = require("../services/reputation");
   await logReputationEvent({
     entityType: ReputationEntityType.HOST,
-    entityId: payment.booking.wedding.hostCoupleId,
+    entityId: result.hostCoupleId,
     type: ReputationEventType.PAYOUT_COMPLETED,
     scoreEffect: 5,
-    referenceId: payout.id,
-    idempotencyKey: `PAYOUT_COMPLETED:HOST:${payout.id}`
+    referenceId: result.payout.id,
+    idempotencyKey: `PAYOUT_COMPLETED:HOST:${result.payout.id}`,
   });
 
-  revalidatePath("/dashboard/admin/payments");
-  return { success: true, payout };
+  try {
+    revalidatePath("/dashboard/admin/payments");
+  } catch {}
+  return { success: true, payout: result.payout };
 }
 
 export async function adminGetSafetyMetricsAction() {
@@ -3009,4 +3054,38 @@ export async function adminGetCoordinatorsAction() {
   });
 
   return { coordinators, publishedWeddings };
+}
+
+export async function adminApproveCoordinatorAction(coordinatorProfileId: string) {
+  const admin = await requireRole([UserRole.ADMIN]);
+
+  const coordinator = await prisma.coordinatorProfile.findUnique({
+    where: { id: coordinatorProfileId },
+    include: { user: true },
+  });
+  if (!coordinator) throw new Error("Coordinator profile not found.");
+
+  const updated = await prisma.$transaction(async (tx) => {
+    const prof = await tx.coordinatorProfile.update({
+      where: { id: coordinatorProfileId },
+      data: { status: "APPROVED" },
+    });
+
+    await tx.user.update({
+      where: { id: coordinator.userId },
+      data: { role: UserRole.COORDINATOR },
+    });
+
+    return prof;
+  });
+
+  await createAuditLog(
+    "APPROVE_COORDINATOR",
+    "CoordinatorProfile",
+    coordinatorProfileId,
+    `Admin (${admin.email}) approved coordinator application for user ${coordinator.user.email}`
+  );
+
+  revalidatePath("/dashboard/admin/coordinators");
+  return { success: true, coordinator: updated };
 }

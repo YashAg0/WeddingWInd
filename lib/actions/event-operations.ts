@@ -13,6 +13,11 @@ import {
   decryptPass,
   hashPassToken,
 } from "@/lib/security/guest-pass-crypto";
+import {
+  canIssueGuestPass,
+  canAdmitGuest,
+  canMarkAttendance,
+} from "@/lib/booking-statuses";
 
 // Zod validation schemas
 const itineraryItemSchema = z.object({
@@ -90,6 +95,11 @@ export async function issueGuestPassAction(bookingId: string) {
       }
     }
 
+    // Enforce authoritative business predicate: booking must be in paid/confirmed/ready state
+    if (!canIssueGuestPass(booking.status)) {
+      throw new Error(`Cannot issue Guest Pass for booking in ${booking.status} status. Payment must be verified first.`);
+    }
+
     // Check if pass already exists
     const existing = await tx.guestPass.findFirst({
       where: { bookingId },
@@ -133,7 +143,7 @@ export async function issueGuestPassAction(bookingId: string) {
     });
 
     return { ...pass, rawToken };
-  });
+  }, { maxWait: 20000, timeout: 35000 });
 }
 
 /**
@@ -255,7 +265,7 @@ export async function checkInGuestAction(rawToken: string, weddingId: string, de
       throw new Error("Unauthorized for this wedding event.");
     }
 
-    // Handle non-ACTIVE pass statuses (no write needed — log only)
+    // Handle non-ACTIVE pass statuses (REVOKED)
     if (pass.status === "REVOKED") {
       await tx.guestCheckIn.create({
         data: {
@@ -271,9 +281,9 @@ export async function checkInGuestAction(rawToken: string, weddingId: string, de
       return { success: false, result: "REVOKED", pass };
     }
 
+    // Handle pass expiration
     const isPassExpired = pass.status === "EXPIRED" || (pass.expiresAt && new Date(pass.expiresAt).getTime() < Date.now());
     if (isPassExpired) {
-      // Mark pass as EXPIRED in DB if still showing ACTIVE
       if (pass.status === "ACTIVE") {
         await tx.guestPass.update({
           where: { id: pass.id },
@@ -292,6 +302,28 @@ export async function checkInGuestAction(rawToken: string, weddingId: string, de
         },
       });
       return { success: false, result: "EXPIRED", pass };
+    }
+
+    // Enforce authoritative business predicate: booking must be in an admissible state (PAID, CONFIRMED, READY_FOR_EVENT)
+    // Terminal or refunded bookings can NEVER be admitted.
+    if (!canAdmitGuest(pass.booking.status, pass.status)) {
+      await tx.guestCheckIn.create({
+        data: {
+          guestPassId: pass.id,
+          bookingId: pass.bookingId,
+          weddingId,
+          scannedByUserId: user.id,
+          scanType: "ENTRY",
+          result: "BOOKING_INELIGIBLE",
+          deviceMetadata,
+        },
+      });
+      return {
+        success: false,
+        result: "BOOKING_INELIGIBLE",
+        reason: `Booking is in ${pass.booking.status} status. Only valid active bookings can be admitted.`,
+        pass,
+      };
     }
 
     // ATOMIC check-in: only updates the pass when its current status is ACTIVE AND not expired.
@@ -367,7 +399,7 @@ export async function checkInGuestAction(rawToken: string, weddingId: string, de
     );
 
     return { success: true, result: "SUCCESS", pass };
-  });
+  }, { maxWait: 20000, timeout: 35000 });
 }
 
 /**
@@ -405,6 +437,22 @@ export async function manualCheckInAction(bookingId: string, notes?: string) {
       throw new Error("Unauthorized.");
     }
 
+    // Enforce authoritative business predicate: booking must be in an admissible state
+    if (!canAdmitGuest(booking.status, "ACTIVE")) {
+      throw new Error(`Cannot manually check in booking in ${booking.status} status. Only valid paid bookings can be checked in.`);
+    }
+
+    // Invalidate/consume any active guest pass to prevent subsequent replay at gate
+    await tx.guestPass.updateMany({
+      where: { bookingId, status: "ACTIVE" },
+      data: {
+        status: "USED",
+        scanCount: { increment: 1 },
+        firstScannedAt: new Date(),
+        lastScannedAt: new Date(),
+      },
+    });
+
     await tx.booking.update({
       where: { id: bookingId },
       data: { status: BookingStatus.CHECKED_IN },
@@ -436,7 +484,7 @@ export async function manualCheckInAction(bookingId: string, notes?: string) {
     );
 
     return { success: true };
-  });
+  }, { maxWait: 20000, timeout: 35000 });
 }
 
 /**
@@ -472,6 +520,11 @@ export async function markAttendanceAction(bookingId: string, status: "ATTENDED"
 
     if (!isAdmin && !isAuthorizedHost && !isAuthorizedCoordinator) {
       throw new Error("Unauthorized.");
+    }
+
+    // Enforce authoritative business predicate: booking must be CHECKED_IN first
+    if (!canMarkAttendance(booking.status)) {
+      throw new Error(`Cannot mark attendance for booking in ${booking.status} status. Booking must be CHECKED_IN first.`);
     }
 
     const nextStatus = status === "ATTENDED" ? BookingStatus.ATTENDED : BookingStatus.NO_SHOW;
@@ -527,7 +580,7 @@ export async function markAttendanceAction(bookingId: string, status: "ATTENDED"
     );
 
     return { success: true };
-  });
+  }, { maxWait: 20000, timeout: 35000 });
 }
 
 /**
@@ -563,7 +616,7 @@ export async function saveEmergencyContactAction(data: z.infer<typeof emergencyC
     await calculateTravelerReadiness(tx, payload.bookingId);
 
     return contact;
-  });
+  }, { maxWait: 20000, timeout: 35000 });
 }
 
 /**
@@ -597,7 +650,7 @@ export async function saveTravelDetailsAction(data: z.input<typeof travelDetailS
     await calculateTravelerReadiness(tx, payload.bookingId);
 
     return detail;
-  });
+  }, { maxWait: 20000, timeout: 35000 });
 }
 
 /**
@@ -629,7 +682,7 @@ export async function updateTravelerPreparationAction(bookingId: string, updates
     await calculateTravelerReadiness(tx, bookingId);
 
     return prep;
-  });
+  }, { maxWait: 20000, timeout: 35000 });
 }
 
 /**
@@ -863,7 +916,9 @@ export async function saveBookingGuestsAction(
       });
     }
 
-    revalidatePath(`/dashboard/events/${bookingId}`);
+    try {
+      revalidatePath(`/dashboard/events/${bookingId}`);
+    } catch {}
     return { success: true, count: sanitized.length };
-  });
+  }, { maxWait: 20000, timeout: 35000 });
 }

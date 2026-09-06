@@ -25,6 +25,7 @@ import {
 import crypto from "crypto";
 import { rateLimit } from "../rate-limit";
 import { AuditLogger } from "../security/audit";
+import { HOST_CANCELLATION_AFFECTED_STATUSES } from "../booking-statuses";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. Restriction Assertions
@@ -683,19 +684,14 @@ export async function hostCancelWeddingAction(weddingId: string, reasonText?: st
       bookings: {
         where: {
           status: {
-            in: [
-              BookingStatus.PENDING,
-              BookingStatus.AWAITING_PAYMENT,
-              BookingStatus.APPROVED,
-              BookingStatus.PAID
-            ]
-          }
+            in: HOST_CANCELLATION_AFFECTED_STATUSES,
+          },
         },
         include: {
-          traveler: { include: { user: true } }
-        }
-      }
-    }
+          traveler: { include: { user: true } },
+        },
+      },
+    },
   });
 
   if (!wedding) throw new Error("Wedding not found or unauthorized.");
@@ -705,7 +701,7 @@ export async function hostCancelWeddingAction(weddingId: string, reasonText?: st
   // 1. Suspend the wedding experience
   await prisma.wedding.update({
     where: { id: weddingId },
-    data: { suspended: true, status: "DRAFT" }
+    data: { suspended: true, status: "DRAFT" },
   });
 
   // 2. Create Safety Incident Report automatically against the host
@@ -714,7 +710,7 @@ export async function hostCancelWeddingAction(weddingId: string, reasonText?: st
     title: `Host Cancelled Wedding Event: ${wedding.title}`,
     description: `Host couple has cancelled the wedding event scheduled on ${wedding.date.toLocaleDateString()}. Reason: ${reasonText || "None provided"}. All ${wedding.bookings.length} active bookings are flagged for refunds.`,
     weddingId,
-    subjectUserId: user.id
+    subjectUserId: user.id,
   });
 
   // 3. Process cancellations and refunds per-booking (resumable, not in a single big database transaction)
@@ -726,17 +722,27 @@ export async function hostCancelWeddingAction(weddingId: string, reasonText?: st
         requestedById: user.id,
         actorRole: "HOST",
         reasonCode: "HOST_CANCELLED",
-        reasonText: reasonText || "Host cancelled wedding event."
+        reasonText: reasonText || "Host cancelled wedding event.",
       });
 
-      if (booking.status === BookingStatus.PAID) {
-        // paid booking: trigger refund orchestration
+      const isPaidBooking = (
+        [BookingStatus.PAID, BookingStatus.CONFIRMED, BookingStatus.READY_FOR_EVENT] as BookingStatus[]
+      ).includes(booking.status);
+
+      if (isPaidBooking) {
+        // paid/confirmed booking: trigger refund orchestration (also revokes active passes)
         await processApprovedRefund(request.id, user.id);
       } else {
-        // unpaid booking: auto-approved will transition booking status directly
-        await prisma.booking.update({
-          where: { id: booking.id },
-          data: { status: BookingStatus.CANCELLED }
+        // unpaid booking: transition to CANCELLED and revoke passes atomically
+        await prisma.$transaction(async (tx) => {
+          await tx.booking.update({
+            where: { id: booking.id },
+            data: { status: BookingStatus.CANCELLED },
+          });
+          await tx.guestPass.updateMany({
+            where: { bookingId: booking.id, status: "ACTIVE" },
+            data: { status: "REVOKED" },
+          });
         });
       }
 

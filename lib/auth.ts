@@ -31,11 +31,21 @@ async function getE2ETestDbUser() {
     return null;
   }
   try {
-    const { cookies } = await import("next/headers");
-    const cookieStore = await cookies();
-    const e2eToken = cookieStore.get("__wwi_e2e_session")?.value;
+    let e2eToken: string | undefined;
+    try {
+      const { cookies } = await import("next/headers");
+      const cookieStore = await cookies();
+      e2eToken = cookieStore.get("__wwi_e2e_session")?.value;
+    } catch {
+      // Outside request scope (e.g. running directly in test process)
+    }
+
+    if (!e2eToken && process.env.__E2E_MOCK_TOKEN) {
+      e2eToken = process.env.__E2E_MOCK_TOKEN;
+    }
+
     if (!e2eToken) {
-      console.log("[E2E AUTH] No __wwi_e2e_session cookie found in cookieStore");
+      console.log("[E2E AUTH] No __wwi_e2e_session cookie or __E2E_MOCK_TOKEN found");
       return null;
     }
     const session = verifyE2ETestSessionToken(e2eToken);

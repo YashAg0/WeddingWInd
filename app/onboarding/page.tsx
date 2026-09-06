@@ -67,6 +67,10 @@ function OnboardingContent() {
   }, [user, loading, router, redirectUrl]);
 
   const handleRoleSelect = (selectedRole: UserRole) => {
+    if (selectedRole === "agent") {
+      router.push("/for-agents/apply");
+      return;
+    }
     setRole(selectedRole);
     updateRole(selectedRole);
     setStep(2);

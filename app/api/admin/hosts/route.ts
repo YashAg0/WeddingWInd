@@ -55,6 +55,33 @@ export async function PATCH(req: NextRequest) {
         return NextResponse.json({ error: "Invalid action" }, { status: 400 });
     }
 
+    if (newStatus === WeddingStatus.PUBLISHED) {
+      const existingWedding = await prisma.wedding.findUnique({
+        where: { id: weddingId },
+        include: {
+          hostCouple: {
+            include: {
+              user: {
+                include: { verification: true },
+              },
+            },
+          },
+        },
+      });
+
+      if (!existingWedding) {
+        return NextResponse.json({ error: "Wedding not found" }, { status: 404 });
+      }
+
+      const verificationStatus = existingWedding.hostCouple?.user?.verification?.status;
+      if (verificationStatus !== "APPROVED") {
+        return NextResponse.json(
+          { error: "Cannot publish wedding: Host KYC verification is not approved." },
+          { status: 400 }
+        );
+      }
+    }
+
     const updated = await prisma.wedding.update({
       where: { id: weddingId },
       data: { status: newStatus },

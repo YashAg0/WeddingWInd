@@ -576,18 +576,26 @@ export async function voteReviewHelpfulAction(reviewId: string) {
 
   if (existing) {
     // Unlike / revoke vote
-    await prisma.reviewHelpfulVote.delete({
-      where: { id: existing.id }
-    });
+    try {
+      await prisma.reviewHelpfulVote.delete({
+        where: { id: existing.id }
+      });
+    } catch (err: any) {
+      if (err?.code !== "P2025") throw err;
+    }
 
     const helpfulVotes = await reconcileReviewHelpfulCount(reviewId);
 
     return { success: true, helpfulVotes, voted: false };
   }
 
-  await prisma.reviewHelpfulVote.create({
-    data: { reviewId, userId: user.id }
-  });
+  try {
+    await prisma.reviewHelpfulVote.create({
+      data: { reviewId, userId: user.id }
+    });
+  } catch (err: any) {
+    if (err?.code !== "P2002") throw err;
+  }
 
   const helpfulVotes = await reconcileReviewHelpfulCount(reviewId);
 

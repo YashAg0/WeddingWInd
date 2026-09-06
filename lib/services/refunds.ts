@@ -138,6 +138,12 @@ export async function createCancellationRequest({
         where: { id: bookingId },
         data: { status: BookingStatus.CANCELLED },
       });
+
+      // Authoritative Invariant: Revoke all active guest passes for the cancelled booking
+      await tx.guestPass.updateMany({
+        where: { bookingId, status: "ACTIVE" },
+        data: { status: "REVOKED" },
+      });
     }
 
     return request;
@@ -220,6 +226,19 @@ export async function processApprovedRefund(cancellationRequestId: string, admin
         status: BookingStatus.REFUNDED,
       },
     });
+
+    // Authoritative Invariant: Revoke all active guest passes for the refunded booking
+    if (tx.guestPass?.updateMany) {
+      await tx.guestPass.updateMany({
+        where: {
+          bookingId: request.bookingId,
+          status: "ACTIVE",
+        },
+        data: {
+          status: "REVOKED",
+        },
+      });
+    }
 
     // Record Transaction
     await tx.transaction.create({

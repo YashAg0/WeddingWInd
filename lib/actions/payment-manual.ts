@@ -26,6 +26,14 @@ import { createAuditLog } from "./admin";
 import { sendHostApprovalWithPaymentLinkEmail } from "../email";
 import { sendRefundConfirmationEmail, sendInvoiceEmail } from "../email";
 
+function safeRevalidate(path: string) {
+  try {
+    revalidatePath(path);
+  } catch {
+    // Graceful fallback when invoked outside Next.js request lifecycle
+  }
+}
+
 /**
  * 1. Admin creates or sends a payment request to a customer with PayPal payment/invoice URL.
  */
@@ -55,7 +63,7 @@ export async function adminRequestPaymentAction(params: {
       adminUserId: admin.id,
       adminEmail: admin.email,
     });
-  });
+  }, { maxWait: 20000, timeout: 35000 });
 
   const auditNote = params.allowOverride
     ? `Admin (${admin.email}) requested OVERRIDDEN payment of ${result.currency} $${result.breakdown.totalAmount} (Reason: ${params.overrideReason || "Manual override"}) for Booking ${params.bookingId}`
@@ -85,10 +93,10 @@ export async function adminRequestPaymentAction(params: {
     }
   }
 
-  revalidatePath("/dashboard/admin/payments");
-  revalidatePath("/dashboard/admin/bookings");
-  revalidatePath("/dashboard/bookings");
-  revalidatePath("/dashboard");
+  safeRevalidate("/dashboard/admin/payments");
+  safeRevalidate("/dashboard/admin/bookings");
+  safeRevalidate("/dashboard/bookings");
+  safeRevalidate("/dashboard");
 
   return {
     success: true,
@@ -160,7 +168,7 @@ export async function adminUpdatePaymentRequestAction(params: {
     });
 
     return p;
-  });
+  }, { maxWait: 20000, timeout: 35000 });
 
   await createAuditLog(
     "PAYMENT_REQUEST_UPDATED",
@@ -169,9 +177,9 @@ export async function adminUpdatePaymentRequestAction(params: {
     `Admin (${admin.email}) updated payment request to ${currency} $${breakdown.totalAmount}`
   );
 
-  revalidatePath("/dashboard/admin/payments");
-  revalidatePath("/dashboard/admin/bookings");
-  revalidatePath("/dashboard/bookings");
+  safeRevalidate("/dashboard/admin/payments");
+  safeRevalidate("/dashboard/admin/bookings");
+  safeRevalidate("/dashboard/bookings");
 
   return { success: true, payment: JSON.parse(JSON.stringify(updated)), breakdown };
 }
@@ -202,7 +210,7 @@ export async function adminMarkPaymentPaidAction(params: {
         adminEmail: admin.email,
       });
     },
-    { maxWait: 10000, timeout: 15000 }
+    { maxWait: 20000, timeout: 35000 }
   );
 
   if (!result.alreadyPaid) {
@@ -231,11 +239,11 @@ export async function adminMarkPaymentPaidAction(params: {
     }
   }
 
-  revalidatePath("/dashboard/admin/payments");
-  revalidatePath("/dashboard/admin/bookings");
-  revalidatePath("/dashboard/bookings");
-  revalidatePath("/dashboard/event-hub");
-  revalidatePath("/dashboard");
+  safeRevalidate("/dashboard/admin/payments");
+  safeRevalidate("/dashboard/admin/bookings");
+  safeRevalidate("/dashboard/bookings");
+  safeRevalidate("/dashboard/event-hub");
+  safeRevalidate("/dashboard");
 
   return {
     success: true,
@@ -268,7 +276,7 @@ export async function adminRecordManualRefundAction(params: {
         adminEmail: admin.email,
       });
     },
-    { maxWait: 10000, timeout: 15000 }
+    { maxWait: 20000, timeout: 35000 }
   );
 
   await createAuditLog(
@@ -291,10 +299,10 @@ export async function adminRecordManualRefundAction(params: {
     console.error("[adminRecordManualRefundAction] Email dispatch note:", emailErr);
   }
 
-  revalidatePath("/dashboard/admin/payments");
-  revalidatePath("/dashboard/admin/bookings");
-  revalidatePath("/dashboard/bookings");
-  revalidatePath("/dashboard");
+  safeRevalidate("/dashboard/admin/payments");
+  safeRevalidate("/dashboard/admin/bookings");
+  safeRevalidate("/dashboard/bookings");
+  safeRevalidate("/dashboard");
 
   return { success: true, refund: JSON.parse(JSON.stringify(result.refund)) };
 }

@@ -678,13 +678,28 @@ export async function generateBookingCommissionAction(
 /**
  * Handles reversals / refunds of payments.
  */
-export async function reverseBookingCommissionAction(tx: any, paymentId: string, refundId?: string) {
+export async function reverseBookingCommissionAction(
+  tx: any,
+  paymentId: string,
+  refundId?: string,
+  isFullRefund: boolean = true
+) {
   try {
+    // Authoritative Invariant: Partial refunds do not reverse fixed agent commission.
+    // Fixed commissions are only reversed when a booking is fully refunded or cancelled.
+    if (!isFullRefund) {
+      return { success: true, reason: "Partial refund does not cancel fixed attendance commission." };
+    }
+
     const commissions = await tx.commission.findMany({
       where: { paymentId },
     });
 
     for (const c of commissions) {
+      if (c.status === CommissionStatus.CANCELLED || c.status === CommissionStatus.REVERSED) {
+        continue;
+      }
+
       if (c.status === CommissionStatus.PAID) {
         // Already paid: generate negative balance adjustment ledger
         const idempotencyKey = refundId 
@@ -718,14 +733,16 @@ export async function reverseBookingCommissionAction(tx: any, paymentId: string,
 
       // Notify agent of reversal
       const agent = await tx.agentProfile.findUnique({ where: { id: c.agentId } });
-      await tx.notification.create({
-        data: {
-          userId: agent.userId,
-          title: "Commission Reversal",
-          message: `Commission of $${c.commissionAmount} has been reversed due to traveler refund.`,
-          type: "ALERT",
-        },
-      });
+      if (agent) {
+        await tx.notification.create({
+          data: {
+            userId: agent.userId,
+            title: "Commission Reversal",
+            message: `Commission of ₹${c.commissionAmount.toLocaleString("en-IN")} INR has been reversed due to booking cancellation/refund.`,
+            type: "ALERT",
+          },
+        });
+      }
     }
 
     return { success: true };
