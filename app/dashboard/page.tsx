@@ -359,8 +359,8 @@ export default function DashboardOverviewPage() {
     reviewVerification: _reviewVerification,
     loading,
     dataLoading,
-    dataError,
-    refreshData
+    dataError: _dataError,
+    refreshData: _refreshData
   } = useAuth();
   const isBusyLoading = loading || dataLoading;
   const router = useRouter();

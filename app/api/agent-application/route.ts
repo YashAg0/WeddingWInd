@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
-import { UserRole } from "@prisma/client";
 
 // POST /api/agent-application — submit a new agent application
 // Creates User + AgentProfile (not verified yet — admin reviews)
