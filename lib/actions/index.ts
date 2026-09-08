@@ -2179,7 +2179,7 @@ export async function getWeddingBySlug(slug: string) {
     // 2. Private preview for drafts or suspended weddings (strictly uncached, verified auth)
     let user: any = null;
     try {
-      user = await requireAuth();
+      user = await authSyncAndGetDbUser();
     } catch {
       user = null;
     }
