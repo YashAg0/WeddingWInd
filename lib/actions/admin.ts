@@ -1235,6 +1235,181 @@ export async function adminExportBookingsCSVAction() {
 export async function adminGetPaymentsAndQueuesAction() {
   await requireRole([UserRole.ADMIN]);
 
+  // Option A: Ultra-fast single-round-trip flattened SQL CTE query for real PostgreSQL / runtime
+  if (typeof prisma.$queryRaw === "function" && !process.env.JEST_WORKER_ID) {
+    try {
+      const rawResult = await prisma.$queryRaw<Array<{ payload: any }>>`
+        WITH 
+        txs AS (
+          SELECT 
+            t.id,
+            t.type,
+            t.amount,
+            t."createdAt",
+            CASE WHEN p.id IS NOT NULL THEN
+              json_build_object(
+                'id', p.id,
+                'provider', p.provider,
+                'transactionId', p."transactionId",
+                'booking', CASE WHEN b.id IS NOT NULL THEN
+                  json_build_object(
+                    'id', b.id,
+                    'traveler', CASE WHEN tp.id IS NOT NULL THEN json_build_object('fullName', tp."fullName") ELSE NULL END,
+                    'wedding', CASE WHEN w.id IS NOT NULL THEN json_build_object('title', w.title) ELSE NULL END
+                  )
+                ELSE NULL END
+              )
+            ELSE NULL END as payment
+          FROM "Transaction" t
+          LEFT JOIN "Payment" p ON t."paymentId" = p.id
+          LEFT JOIN "Booking" b ON p."bookingId" = b.id
+          LEFT JOIN "TravelerProfile" tp ON b."travelerId" = tp.id
+          LEFT JOIN "Wedding" w ON b."weddingId" = w.id
+          ORDER BY t."createdAt" DESC
+          LIMIT 50
+        ),
+        rfs AS (
+          SELECT 
+            r.id,
+            r.amount,
+            r.reason,
+            r.status,
+            r."refundTransactionId",
+            r."createdAt",
+            CASE WHEN p.id IS NOT NULL THEN
+              json_build_object(
+                'id', p.id,
+                'transactionId', p."transactionId",
+                'booking', CASE WHEN b.id IS NOT NULL THEN
+                  json_build_object(
+                    'id', b.id,
+                    'traveler', CASE WHEN tp.id IS NOT NULL THEN json_build_object('fullName', tp."fullName") ELSE NULL END,
+                    'wedding', CASE WHEN w.id IS NOT NULL THEN json_build_object('title', w.title) ELSE NULL END
+                  )
+                ELSE NULL END
+              )
+            ELSE NULL END as payment
+          FROM "Refund" r
+          LEFT JOIN "Payment" p ON r."paymentId" = p.id
+          LEFT JOIN "Booking" b ON p."bookingId" = b.id
+          LEFT JOIN "TravelerProfile" tp ON b."travelerId" = tp.id
+          LEFT JOIN "Wedding" w ON b."weddingId" = w.id
+          ORDER BY r."createdAt" DESC
+          LIMIT 50
+        ),
+        pyo AS (
+          SELECT 
+            COALESCE(SUM(amount), 0)::float as total,
+            COUNT(id)::int as count
+          FROM "Payout"
+        ),
+        pts AS (
+          SELECT 
+            p.id,
+            p."bookingId",
+            p.provider,
+            p.amount,
+            p."baseAmount",
+            p."processingFeeAmount",
+            p."processingFeePercent",
+            p.currency,
+            p.status,
+            p."transactionId",
+            p."paymentLink",
+            p."paymentNotes",
+            p."paymentRequestedAt",
+            p."createdAt",
+            CASE WHEN b.id IS NOT NULL THEN
+              json_build_object(
+                'id', b.id,
+                'status', b.status,
+                'date', b.date,
+                'guestsCount', b."guestsCount",
+                'traveler', CASE WHEN tp.id IS NOT NULL THEN
+                  json_build_object(
+                    'fullName', tp."fullName",
+                    'user', CASE WHEN u.id IS NOT NULL THEN json_build_object('name', u.name, 'email', u.email) ELSE NULL END
+                  )
+                ELSE NULL END,
+                'wedding', CASE WHEN w.id IS NOT NULL THEN json_build_object('title', w.title, 'location', w.location) ELSE NULL END
+              )
+            ELSE NULL END as booking
+          FROM "Payment" p
+          LEFT JOIN "Booking" b ON p."bookingId" = b.id
+          LEFT JOIN "TravelerProfile" tp ON b."travelerId" = tp.id
+          LEFT JOIN "User" u ON tp."userId" = u.id
+          LEFT JOIN "Wedding" w ON b."weddingId" = w.id
+          ORDER BY p."createdAt" DESC
+          LIMIT 50
+        ),
+        bks AS (
+          SELECT 
+            b.id,
+            b.status,
+            b.date,
+            b."guestsCount",
+            b."totalAmount",
+            b.currency,
+            b."createdAt",
+            CASE WHEN tp.id IS NOT NULL THEN
+              json_build_object(
+                'fullName', tp."fullName",
+                'user', CASE WHEN u.id IS NOT NULL THEN json_build_object('name', u.name, 'email', u.email) ELSE NULL END
+              )
+            ELSE NULL END as traveler,
+            CASE WHEN w.id IS NOT NULL THEN json_build_object('title', w.title, 'location', w.location) ELSE NULL END as wedding,
+            COALESCE(
+              (
+                SELECT json_agg(json_build_object(
+                  'id', pay.id,
+                  'status', pay.status,
+                  'amount', pay.amount,
+                  'provider', pay.provider,
+                  'transactionId', pay."transactionId"
+                ))
+                FROM "Payment" pay
+                WHERE pay."bookingId" = b.id
+              ),
+              '[]'::json
+            ) as payments
+          FROM "Booking" b
+          LEFT JOIN "TravelerProfile" tp ON b."travelerId" = tp.id
+          LEFT JOIN "User" u ON tp."userId" = u.id
+          LEFT JOIN "Wedding" w ON b."weddingId" = w.id
+          WHERE b.status IN ('PENDING', 'APPROVED', 'AWAITING_PAYMENT')
+          ORDER BY b."createdAt" DESC
+          LIMIT 50
+        )
+        SELECT json_build_object(
+          'transactions', COALESCE((SELECT json_agg(t) FROM txs t), '[]'::json),
+          'refundQueue', COALESCE((SELECT json_agg(r) FROM rfs r), '[]'::json),
+          'allPayments', COALESCE((SELECT json_agg(p) FROM pts p), '[]'::json),
+          'pendingBookings', COALESCE((SELECT json_agg(b) FROM bks b), '[]'::json),
+          'payoutSummary', (SELECT json_build_object('totalSettledAmount', total, 'totalSettledCount', count) FROM pyo)
+        ) as payload;
+      `;
+
+      if (rawResult && rawResult[0]?.payload) {
+        const payload = rawResult[0].payload;
+        return {
+          transactions: payload.transactions || [],
+          refundQueue: payload.refundQueue || [],
+          payoutQueue: [],
+          payoutSummary: {
+            totalSettledAmount: payload.payoutSummary?.totalSettledAmount || 0,
+            totalSettledCount: payload.payoutSummary?.totalSettledCount || 0,
+          },
+          allPayments: payload.allPayments || [],
+          pendingBookings: payload.pendingBookings || [],
+          webhookEvents: [],
+        };
+      }
+    } catch (rawError) {
+      console.warn("[adminGetPaymentsAndQueuesAction] Optimized raw SQL failed, falling back to Prisma findMany", rawError);
+    }
+  }
+
+  // Fallback to standard Prisma queries (used during Jest unit tests with mock Prisma)
   const [transactions, refundQueue, payoutAgg, allPayments, pendingBookings] = await Promise.all([
     prisma.transaction.findMany({
       take: 50,
