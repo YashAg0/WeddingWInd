@@ -143,7 +143,7 @@ export async function issueGuestPassAction(bookingId: string) {
     });
 
     return { ...pass, rawToken };
-  }, { maxWait: 20000, timeout: 35000 });
+  }, { maxWait: 45000, timeout: 120000 });
 }
 
 /**
@@ -399,7 +399,7 @@ export async function checkInGuestAction(rawToken: string, weddingId: string, de
     );
 
     return { success: true, result: "SUCCESS", pass };
-  }, { maxWait: 20000, timeout: 35000 });
+  }, { maxWait: 45000, timeout: 120000 });
 }
 
 /**
@@ -419,7 +419,7 @@ export async function manualCheckInAction(bookingId: string, notes?: string) {
 
   if (!couple && !isCoordinator && !isAdmin) throw new Error("Unauthorized.");
 
-  return await prisma.$transaction(async (tx) => {
+  const checkInResult = await prisma.$transaction(async (tx) => {
     const booking = await tx.booking.findUnique({
       where: { id: bookingId },
       include: { wedding: true, traveler: { include: { user: true } } },
@@ -458,15 +458,6 @@ export async function manualCheckInAction(bookingId: string, notes?: string) {
       data: { status: BookingStatus.CHECKED_IN },
     });
 
-    await logReputationEvent({
-      entityType: ReputationEntityType.TRAVELER,
-      entityId: booking.travelerId,
-      type: ReputationEventType.SUCCESSFUL_CHECK_IN,
-      scoreEffect: 2,
-      referenceId: bookingId,
-      idempotencyKey: `SUCCESSFUL_CHECK_IN:${bookingId}`
-    });
-
     await tx.notification.create({
       data: {
         userId: booking.traveler.user.id,
@@ -476,15 +467,26 @@ export async function manualCheckInAction(bookingId: string, notes?: string) {
       },
     });
 
-    await createAuditLog(
-      "MANUAL_CHECK_IN",
-      "Booking",
-      bookingId,
-      `Host manually marked booking ${bookingId} checked-in. Notes: ${notes || "None"}`
-    );
+    return { booking };
+  }, { maxWait: 45000, timeout: 120000 });
 
-    return { success: true };
-  }, { maxWait: 20000, timeout: 35000 });
+  await logReputationEvent({
+    entityType: ReputationEntityType.TRAVELER,
+    entityId: checkInResult.booking.travelerId,
+    type: ReputationEventType.SUCCESSFUL_CHECK_IN,
+    scoreEffect: 2,
+    referenceId: bookingId,
+    idempotencyKey: `SUCCESSFUL_CHECK_IN:${bookingId}`
+  });
+
+  await createAuditLog(
+    "MANUAL_CHECK_IN",
+    "Booking",
+    bookingId,
+    `Host manually marked booking ${bookingId} checked-in. Notes: ${notes || "None"}`
+  );
+
+  return { success: true };
 }
 
 /**
@@ -504,7 +506,7 @@ export async function markAttendanceAction(bookingId: string, status: "ATTENDED"
 
   if (!couple && !isCoordinator && !isAdmin) throw new Error("Unauthorized.");
 
-  return await prisma.$transaction(async (tx) => {
+  const attendanceResult = await prisma.$transaction(async (tx) => {
     const booking = await tx.booking.findUnique({
       where: { id: bookingId },
       include: { wedding: true, traveler: { include: { user: true } } },
@@ -534,53 +536,55 @@ export async function markAttendanceAction(bookingId: string, status: "ATTENDED"
       data: { status: nextStatus },
     });
 
-    if (status === "ATTENDED") {
-      await logReputationEvent({
+    return { booking, nextStatus };
+  }, { maxWait: 45000, timeout: 120000 });
+
+  if (status === "ATTENDED") {
+    await Promise.all([
+      logReputationEvent({
         entityType: ReputationEntityType.TRAVELER,
-        entityId: booking.travelerId,
+        entityId: attendanceResult.booking.travelerId,
         type: ReputationEventType.BOOKING_COMPLETED,
         scoreEffect: 5,
         referenceId: bookingId,
         idempotencyKey: `BOOKING_COMPLETED:TRAVELER:${bookingId}`
-      });
-
-      await logReputationEvent({
+      }),
+      logReputationEvent({
         entityType: ReputationEntityType.HOST,
-        entityId: booking.wedding.hostCoupleId,
+        entityId: attendanceResult.booking.wedding.hostCoupleId,
         type: ReputationEventType.BOOKING_COMPLETED,
         scoreEffect: 5,
         referenceId: bookingId,
         idempotencyKey: `BOOKING_COMPLETED:HOST:${bookingId}`
-      });
-
-      await logReputationEvent({
+      }),
+      logReputationEvent({
         entityType: ReputationEntityType.WEDDING,
-        entityId: booking.weddingId,
+        entityId: attendanceResult.booking.weddingId,
         type: ReputationEventType.BOOKING_COMPLETED,
         scoreEffect: 5,
         referenceId: bookingId,
         idempotencyKey: `BOOKING_COMPLETED:WEDDING:${bookingId}`
-      });
-    } else if (status === "NO_SHOW") {
-      await logReputationEvent({
-        entityType: ReputationEntityType.TRAVELER,
-        entityId: booking.travelerId,
-        type: ReputationEventType.NO_SHOW,
-        scoreEffect: -20,
-        referenceId: bookingId,
-        idempotencyKey: `NO_SHOW:TRAVELER:${bookingId}`
-      });
-    }
+      })
+    ]);
+  } else if (status === "NO_SHOW") {
+    await logReputationEvent({
+      entityType: ReputationEntityType.TRAVELER,
+      entityId: attendanceResult.booking.travelerId,
+      type: ReputationEventType.NO_SHOW,
+      scoreEffect: -20,
+      referenceId: bookingId,
+      idempotencyKey: `NO_SHOW:TRAVELER:${bookingId}`
+    });
+  }
 
-    await createAuditLog(
-      "MARK_ATTENDANCE",
-      "Booking",
-      bookingId,
-      `Attendance status updated to ${status} for booking ${bookingId}`
-    );
+  await createAuditLog(
+    "MARK_ATTENDANCE",
+    "Booking",
+    bookingId,
+    `Attendance status updated to ${status} for booking ${bookingId}`
+  );
 
-    return { success: true };
-  }, { maxWait: 20000, timeout: 35000 });
+  return { success: true };
 }
 
 /**
@@ -616,7 +620,7 @@ export async function saveEmergencyContactAction(data: z.infer<typeof emergencyC
     await calculateTravelerReadiness(tx, payload.bookingId);
 
     return contact;
-  }, { maxWait: 20000, timeout: 35000 });
+  }, { maxWait: 45000, timeout: 120000 });
 }
 
 /**
@@ -650,7 +654,7 @@ export async function saveTravelDetailsAction(data: z.input<typeof travelDetailS
     await calculateTravelerReadiness(tx, payload.bookingId);
 
     return detail;
-  }, { maxWait: 20000, timeout: 35000 });
+  }, { maxWait: 45000, timeout: 120000 });
 }
 
 /**
@@ -682,7 +686,7 @@ export async function updateTravelerPreparationAction(bookingId: string, updates
     await calculateTravelerReadiness(tx, bookingId);
 
     return prep;
-  }, { maxWait: 20000, timeout: 35000 });
+  }, { maxWait: 45000, timeout: 120000 });
 }
 
 /**
@@ -920,5 +924,5 @@ export async function saveBookingGuestsAction(
       revalidatePath(`/dashboard/events/${bookingId}`);
     } catch {}
     return { success: true, count: sanitized.length };
-  }, { maxWait: 20000, timeout: 35000 });
+  }, { maxWait: 45000, timeout: 120000 });
 }

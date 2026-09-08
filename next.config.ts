@@ -205,6 +205,11 @@ const nextConfig: NextConfig = {
         destination: "/trust?tab=safety#guest-guide",
         permanent: true,
       },
+      {
+        source: "/dashboard/admin/settings",
+        destination: "/dashboard/admin/founder",
+        permanent: false,
+      },
     ];
   },
 

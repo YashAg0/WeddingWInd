@@ -14,21 +14,34 @@ import { PrismaClient } from "@prisma/client";
  * 15 seconds gives a comfortable margin without hanging indefinitely.
  */
 function buildDatasourceUrl(): string | undefined {
-  let url = process.env.DATABASE_URL;
-  if (!url) return undefined;
-  if (!url.includes("connect_timeout=")) {
-    const separator = url.includes("?") ? "&" : "?";
-    url = `${url}${separator}connect_timeout=30`;
+  const rawUrl = process.env.DATABASE_URL;
+  if (!rawUrl) return undefined;
+
+  try {
+    const parsed = new URL(rawUrl);
+    // In serverless / Vercel, connection_limit should be 2 to prevent pool exhaustion across lambdas
+    const isServerless = process.env.VERCEL === "1" || process.env.AWS_LAMBDA_FUNCTION_NAME !== undefined;
+    const defaultLimit = isServerless ? "2" : (process.env.NODE_ENV === "test" ? "10" : "5");
+
+    // Enforce pgbouncer=true on transaction pooler (port 6543)
+    if (parsed.port === "6543" || parsed.pathname.includes("pooler") || parsed.hostname.includes("pooler")) {
+      parsed.searchParams.set("pgbouncer", "true");
+    }
+
+    // Set connect_timeout (15s)
+    parsed.searchParams.set("connect_timeout", "15");
+
+    // Set pool_timeout (15s serverless / 20s dev/test — eliminates 45-second latency hangs while allowing handshake to complete)
+    const poolTimeout = isServerless ? "15" : "20";
+    parsed.searchParams.set("pool_timeout", poolTimeout);
+
+    // Set connection_limit
+    parsed.searchParams.set("connection_limit", defaultLimit);
+
+    return parsed.toString();
+  } catch {
+    return rawUrl;
   }
-  if (!url.includes("pool_timeout=")) {
-    const separator = url.includes("?") ? "&" : "?";
-    url = `${url}${separator}pool_timeout=45`;
-  }
-  if (!url.includes("connection_limit=")) {
-    const separator = url.includes("?") ? "&" : "?";
-    url = `${url}${separator}connection_limit=15`;
-  }
-  return url;
 }
 
 const prismaClientSingleton = () => {

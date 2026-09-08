@@ -8,6 +8,9 @@ const originalResolveFilename = (module as any)._resolveFilename;
   if (request === "server-only") {
     return path.resolve(__dirname, "scripts/noop.js");
   }
+  if (request === "next/cache") {
+    return path.resolve(__dirname, "scripts/mock-next-cache.js");
+  }
   if (request.startsWith("@/")) {
     request = path.resolve(__dirname, request.slice(2));
   }
@@ -57,7 +60,7 @@ export default defineConfig({
   webServer: {
     command: "node --env-file=.env node_modules/next/dist/bin/next start",
     url: "http://localhost:3000",
-    reuseExistingServer: false,
+    reuseExistingServer: true,
     timeout: 120000,
     env: {
       ...process.env,

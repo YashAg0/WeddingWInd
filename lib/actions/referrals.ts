@@ -358,7 +358,7 @@ export async function adminReviewPayoutRequestAction(data: z.infer<typeof payout
     });
 
     return updatedRequest;
-  });
+  }, { maxWait: 45000, timeout: 120000 });
 
   if (updated.status === "APPROVED") {
     await logReputationEvent({

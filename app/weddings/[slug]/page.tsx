@@ -10,31 +10,52 @@ import { StickyBookingCard } from "@/components/wedding/StickyBookingCard";
 import { WeddingCard } from "@/components/wedding/WeddingCard";
 import { WeddingDetailReviews } from "@/components/wedding/WeddingDetailReviews";
 import type { Metadata } from 'next';
-import { getDbUser } from "@/lib/auth";
 
 import { isWeddingIndexable, isSyntheticTestSlug } from "@/lib/seo/indexability";
+import { prisma } from "@/lib/prisma";
+
+export const revalidate = 3600;
+export const dynamicParams = true;
+
+export async function generateStaticParams() {
+  try {
+    const published = await prisma.wedding.findMany({
+      where: {
+        status: "PUBLISHED",
+        deletedAt: null,
+        suspended: false,
+      },
+      select: { slug: true },
+      take: 50,
+    });
+    if (published.length > 0) {
+      return published.map((w) => ({ slug: w.slug }));
+    }
+  } catch (err) {
+    console.warn("[generateStaticParams] Could not fetch slugs from DB, falling back to static list", err);
+  }
+  const { featuredWeddings } = await import("@/lib/data");
+  return featuredWeddings.map((w) => ({ slug: w.slug }));
+}
+
+interface PageProps {
+  params: Promise<{ slug: string }>;
+}
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const resolvedParams = await params;
   if (isSyntheticTestSlug(resolvedParams.slug)) {
     return {
       title: 'Wedding Experience Not Found',
-      robots: {
-        index: false,
-        follow: false,
-      },
+      robots: { index: false, follow: false },
     };
   }
 
   const wedding = await getWeddingBySlug(resolvedParams.slug);
-  
   if (!wedding) {
     return {
       title: 'Wedding Experience Not Found',
-      robots: {
-        index: false,
-        follow: false,
-      },
+      robots: { index: false, follow: false },
     };
   }
 
@@ -42,10 +63,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   if (!isIndexable) {
     return {
       title: `${wedding.title} | WeddingWithIndia`,
-      robots: {
-        index: false,
-        follow: false,
-      },
+      robots: { index: false, follow: false },
     };
   }
 
@@ -57,9 +75,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   return {
     title: pageTitle,
     description: pageDescription,
-    alternates: {
-      canonical: canonicalUrl,
-    },
+    alternates: { canonical: canonicalUrl },
     openGraph: {
       title: `${pageTitle} | WeddingWithIndia`,
       description: pageDescription,
@@ -88,12 +104,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-export const dynamic = "force-dynamic";
-
-interface PageProps {
-  params: Promise<{ slug: string }>;
-}
-
 export default async function WeddingDetailPage({ params }: PageProps) {
   const { slug } = await params;
   
@@ -107,12 +117,9 @@ export default async function WeddingDetailPage({ params }: PageProps) {
     notFound();
   }
 
-  // Parallelize user session and bounded related weddings queries
-  const [dbUser, relatedWeddings] = await Promise.all([
-    getDbUser().catch(() => null),
-    getRelatedWeddings(wedding.category, wedding.id, 3),
-  ]);
-  const userId = dbUser?.id || null;
+  // Fetch bounded related weddings
+  const relatedWeddings = await getRelatedWeddings(wedding.category, wedding.id, 3);
+  const userId = null;
 
   const eventJsonLd = {
     "@context": "https://schema.org",

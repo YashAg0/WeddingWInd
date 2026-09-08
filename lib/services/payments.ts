@@ -109,10 +109,11 @@ export function calculatePaymentBreakdown(params: {
 /**
  * Retrieves global system configuration for PayPal processing fees and domain allowlist.
  */
-export async function getPaymentSystemConfig() {
-  const config = await prisma.systemConfig.findUnique({
+export async function getPaymentSystemConfig(txClient?: any) {
+  const client = (txClient && txClient.systemConfig) ? txClient : prisma;
+  const config = await client?.systemConfig?.findUnique?.({
     where: { id: "global" },
-  });
+  }).catch?.(() => null) ?? null;
 
   return {
     feePercent: config?.paypalProcessingFeePercent ?? 0.0,
@@ -174,7 +175,7 @@ export async function createOrUpdatePaymentRequestAtomic(
   }
 
   // Domain validation
-  const sysConfig = await getPaymentSystemConfig();
+  const sysConfig = await getPaymentSystemConfig(tx);
   const urlCheck = validatePaymentLink(params.paymentLink, sysConfig.domainAllowlist);
   if (!urlCheck.valid) {
     throw new Error(urlCheck.reason || "Invalid payment URL.");
@@ -378,9 +379,11 @@ export async function markPaymentPaidAtomic(
 
   // 4. Idempotent GuestPass Generation (AES-256-GCM encrypted QR token)
   let guestPassCreated = false;
-  const existingPass = await tx.guestPass.findFirst({
-    where: { bookingId: booking.id },
-  });
+  const existingPass = (booking.guestPasses && booking.guestPasses.length > 0)
+    ? booking.guestPasses[0]
+    : await tx.guestPass.findFirst({
+        where: { bookingId: booking.id },
+      });
 
   if (!existingPass) {
     const rawToken = crypto.randomBytes(32).toString("hex");

@@ -657,8 +657,7 @@ export async function replyToReview(reviewId: string, reply: string) {
  * Discovery Admin stats & boosts
  */
 export async function adminGetDiscoveryStats() {
-  const user = await requireAuth();
-  if (user.role !== UserRole.ADMIN) throw new Error("Admin only.");
+  await requireRole([UserRole.ADMIN]);
 
   const analytics = await prisma.searchAnalytics.findMany({
     orderBy: { createdAt: "desc" },
@@ -693,13 +692,30 @@ export async function adminGetDiscoveryStats() {
   };
 }
 
+export async function adminGetDiscoveryWeddings() {
+  await requireRole([UserRole.ADMIN]);
+
+  return await prisma.wedding.findMany({
+    where: { status: "PUBLISHED", deletedAt: null },
+    select: {
+      id: true,
+      title: true,
+      location: true,
+      manualTrendingBoost: true,
+      status: true,
+    },
+    orderBy: { createdAt: "desc" },
+    take: 20,
+  });
+}
+
 export async function adminSetManualBoost(weddingId: string, boostScore: number) {
   const admin = await requireRole([UserRole.ADMIN]);
 
   const updated = await prisma.wedding.update({
     where: { id: weddingId },
     data: {
-      manualTrendingBoost: Math.max(0.0, Math.min(boostScore, 5.0)),
+      manualTrendingBoost: Math.max(0.0, Math.min(boostScore, 10.0)),
     },
   });
 

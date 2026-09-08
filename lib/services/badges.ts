@@ -5,7 +5,10 @@ import { calculateBayesianRating } from "./trust-score";
 /**
  * Initializes the default Quality Badges if they don't exist in the database.
  */
+let badgesInitialized = false;
+
 export async function initializeDefaultBadges() {
+  if (badgesInitialized) return;
   const defaultBadges = [
     {
       key: "verified-host",
@@ -59,6 +62,7 @@ export async function initializeDefaultBadges() {
       create: b
     });
   }
+  badgesInitialized = true;
 }
 
 /**

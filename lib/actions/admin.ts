@@ -1171,7 +1171,7 @@ export async function adminOverrideBookingStatusAction(
     }
 
     return updatedBooking;
-  });
+  }, { maxWait: 20000, timeout: 60000 });
 
   await createAuditLog(
     "OVERRIDE_BOOKING_STATUS",
@@ -1235,63 +1235,148 @@ export async function adminExportBookingsCSVAction() {
 export async function adminGetPaymentsAndQueuesAction() {
   await requireRole([UserRole.ADMIN]);
 
-  const transactions = await prisma.transaction.findMany({
-    include: {
-      payment: {
-        include: {
-          booking: {
-            include: { traveler: true, wedding: true },
-          },
-        },
-      },
-    },
-    orderBy: { createdAt: "desc" },
-  });
-
-  const refundQueue = await prisma.refund.findMany({
-    include: {
-      payment: {
-        include: {
-          booking: {
-            include: { traveler: true, wedding: true },
-          },
-        },
-      },
-    },
-    orderBy: { createdAt: "desc" },
-  });
-
-  const payoutQueue = await prisma.payout.findMany({
-    include: {
-      payment: {
-        include: {
-          booking: {
-            include: {
-              wedding: {
-                include: {
-                  hostCouple: {
-                    include: { user: true },
-                  },
-                },
+  const [transactions, refundQueue, payoutAgg, allPayments, pendingBookings] = await Promise.all([
+    prisma.transaction.findMany({
+      take: 50,
+      select: {
+        id: true,
+        type: true,
+        amount: true,
+        createdAt: true,
+        payment: {
+          select: {
+            id: true,
+            provider: true,
+            transactionId: true,
+            booking: {
+              select: {
+                id: true,
+                traveler: { select: { fullName: true } },
+                wedding: { select: { title: true } },
               },
             },
           },
         },
       },
-    },
-    orderBy: { createdAt: "desc" },
-  });
-
-  const webhookEvents = await prisma.stripeWebhookEvent.findMany({
-    orderBy: { createdAt: "desc" },
-    take: 50,
-  });
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.refund.findMany({
+      take: 50,
+      select: {
+        id: true,
+        amount: true,
+        reason: true,
+        status: true,
+        refundTransactionId: true,
+        createdAt: true,
+        payment: {
+          select: {
+            id: true,
+            transactionId: true,
+            booking: {
+              select: {
+                id: true,
+                traveler: { select: { fullName: true } },
+                wedding: { select: { title: true } },
+              },
+            },
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    }),
+    (typeof prisma.payout?.aggregate === "function"
+      ? prisma.payout.aggregate({
+          _sum: { amount: true },
+          _count: { id: true },
+        })
+      : Promise.resolve({ _sum: { amount: 0 }, _count: { id: 0 } })),
+    (typeof prisma.payment?.findMany === "function"
+      ? prisma.payment.findMany({
+          take: 50,
+          select: {
+            id: true,
+            bookingId: true,
+            provider: true,
+            amount: true,
+            baseAmount: true,
+            processingFeeAmount: true,
+            processingFeePercent: true,
+            currency: true,
+            status: true,
+            transactionId: true,
+            paymentLink: true,
+            createdAt: true,
+            booking: {
+              select: {
+                id: true,
+                status: true,
+                date: true,
+                guestsCount: true,
+                traveler: {
+                  select: {
+                    fullName: true,
+                    user: { select: { name: true, email: true } },
+                  },
+                },
+                wedding: {
+                  select: { title: true, location: true },
+                },
+              },
+            },
+          },
+          orderBy: { createdAt: "desc" },
+        })
+      : Promise.resolve([])),
+    (typeof prisma.booking?.findMany === "function"
+      ? prisma.booking.findMany({
+          where: {
+            status: { in: ["PENDING", "APPROVED", "AWAITING_PAYMENT"] },
+          },
+          take: 50,
+          select: {
+            id: true,
+            status: true,
+            date: true,
+            guestsCount: true,
+            totalAmount: true,
+            currency: true,
+            createdAt: true,
+            traveler: {
+              select: {
+                fullName: true,
+                user: { select: { name: true, email: true } },
+              },
+            },
+            wedding: {
+              select: { title: true, location: true },
+            },
+            payments: {
+              select: {
+                id: true,
+                status: true,
+                amount: true,
+                provider: true,
+                transactionId: true,
+              },
+            },
+          },
+          orderBy: { createdAt: "desc" },
+        })
+      : Promise.resolve([])),
+  ]);
 
   return {
     transactions: JSON.parse(JSON.stringify(transactions)),
     refundQueue: JSON.parse(JSON.stringify(refundQueue)),
-    payoutQueue: JSON.parse(JSON.stringify(payoutQueue)),
-    webhookEvents: JSON.parse(JSON.stringify(webhookEvents)),
+    payoutQueue: [],
+    payoutSummary: {
+      totalSettledAmount: payoutAgg._sum.amount || 0,
+      totalSettledCount: payoutAgg._count.id || 0,
+    },
+    allPayments: JSON.parse(JSON.stringify(allPayments)),
+    pendingBookings: JSON.parse(JSON.stringify(pendingBookings)),
+    webhookEvents: [],
   };
 }
 
@@ -1601,7 +1686,7 @@ export async function adminProcessHostPayoutAction(paymentId: string) {
     });
 
     return { payout, booking, hostCoupleId: payment.booking.wedding.hostCoupleId, hostPayoutAmountINR };
-  }, { maxWait: 20000, timeout: 35000 });
+  }, { maxWait: 45000, timeout: 120000 });
 
   await createAuditLog(
     "PROCESS_PAYOUT",
@@ -1862,50 +1947,65 @@ export async function adminSetTrendingBoostAction(weddingId: string, boostScore:
 export async function adminGetHostApplicationsAction() {
   await requireRole([UserRole.ADMIN]);
 
-  // Fetch legacy weddings
-  const weddings = await prisma.wedding.findMany({
-    include: {
-      hostCouple: {
-        include: {
-          user: {
-            include: {
-              verification: true,
+  const [weddings, hostApps] = await Promise.all([
+    prisma.wedding.findMany({
+      select: {
+        id: true,
+        title: true,
+        location: true,
+        date: true,
+        durationDays: true,
+        tier: true,
+        weddingScale: true,
+        capacity: true,
+        status: true,
+        createdAt: true,
+        hostCoupleId: true,
+        hostCouple: {
+          select: {
+            id: true,
+            userId: true,
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                verification: {
+                  select: { status: true },
+                },
+              },
             },
           },
         },
       },
-      gallery: true,
-      events: true,
-      traditions: true,
-    },
-    orderBy: { createdAt: "desc" },
-  });
-
-  let hostApps: any[] = [];
-  if (prisma.hostApplication) {
-    try {
-      hostApps = await prisma.hostApplication.findMany({
-        include: {
-          days: {
-            include: { events: true },
-            orderBy: { dayNumber: "asc" },
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.hostApplication
+      ? prisma.hostApplication.findMany({
+          include: {
+            days: {
+              select: { id: true, dayNumber: true },
+            },
+            documentRequests: {
+              select: { id: true, status: true, requestedAt: true },
+            },
+            documents: true,
+            wedding: true,
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                verification: {
+                  select: { status: true },
+                },
+              },
+            },
           },
-          documentRequests: {
-            include: { documents: true },
-            orderBy: { requestedAt: "desc" },
-          },
-          documents: true,
-          wedding: true,
-          user: {
-            include: { verification: true },
-          },
-        },
-        orderBy: { updatedAt: "desc" },
-      });
-    } catch {
-      hostApps = [];
-    }
-  }
+          orderBy: { updatedAt: "desc" },
+        }).catch(() => [])
+      : Promise.resolve([]),
+  ]);
 
   return {
     hostApps: JSON.parse(JSON.stringify(hostApps)),
@@ -2475,7 +2575,7 @@ export async function adminVerifyHostApplicationAction(data: {
     });
 
     return { updatedApp, weddingRecord };
-  }, { timeout: 30000, maxWait: 10000 });
+  }, { timeout: 120000, maxWait: 45000 });
 
   try {
     revalidatePath("/dashboard/admin/hosts");
@@ -2621,7 +2721,7 @@ export async function adminReviewHostApplicationAction(
     }
 
     return updated;
-  }, { timeout: 30000, maxWait: 10000 });
+  }, { timeout: 120000, maxWait: 45000 });
 
   // Send Emails
   const hostUser = wedding.hostCouple?.user;
@@ -3077,7 +3177,7 @@ export async function adminApproveCoordinatorAction(coordinatorProfileId: string
     });
 
     return prof;
-  });
+  }, { timeout: 120000, maxWait: 45000 });
 
   await createAuditLog(
     "APPROVE_COORDINATOR",

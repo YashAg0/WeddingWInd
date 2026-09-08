@@ -187,7 +187,7 @@ export async function reportIncidentAction({
     });
 
     return safetyCase;
-  });
+  }, { maxWait: 45000, timeout: 120000 });
 
   if (safetyCase.subjectUserId) {
     const subjectUser = await prisma.user.findUnique({
@@ -239,7 +239,7 @@ export async function adminTriageCaseAction(
 ) {
   const admin = await requireRole([UserRole.ADMIN]);
 
-  return await prisma.$transaction(async (tx) => {
+  const updated = await prisma.$transaction(async (tx) => {
     const safetyCase = await tx.safetyCase.findUnique({
       where: { id: caseId },
     });
@@ -265,10 +265,12 @@ export async function adminTriageCaseAction(
       },
     });
 
-    await AuditLogger.logAdminAction(admin.id, "TRIAGE_SAFETY_CASE", "SafetyCase", caseId, `Triaged case ${caseId} to severity ${severity} and status ${status}`, { severity, status, assignedAdminId });
-
     return updated;
-  });
+  }, { maxWait: 45000, timeout: 120000 });
+
+  await AuditLogger.logAdminAction(admin.id, "TRIAGE_SAFETY_CASE", "SafetyCase", caseId, `Triaged case ${caseId} to severity ${severity} and status ${status}`, { severity, status, assignedAdminId });
+
+  return updated;
 }
 
 /**
@@ -277,7 +279,7 @@ export async function adminTriageCaseAction(
 export async function adminToggleFinancialHoldAction(caseId: string, enable: boolean) {
   const admin = await requireRole([UserRole.ADMIN]);
 
-  return await prisma.$transaction(async (tx) => {
+  await prisma.$transaction(async (tx) => {
     const safetyCase = await tx.safetyCase.findUnique({
       where: { id: caseId },
     });
@@ -296,9 +298,9 @@ export async function adminToggleFinancialHoldAction(caseId: string, enable: boo
         safeSummary: enable ? "A financial hold has been applied." : "The financial hold has been released.",
       },
     });
+  }, { maxWait: 45000, timeout: 120000 });
 
-    await AuditLogger.logAdminAction(admin.id, "TOGGLE_FINANCIAL_HOLD", "SafetyCase", caseId, `Toggled financial hold for case ${caseId} to ${enable}`, { enable });
-  });
+  await AuditLogger.logAdminAction(admin.id, "TOGGLE_FINANCIAL_HOLD", "SafetyCase", caseId, `Toggled financial hold for case ${caseId} to ${enable}`, { enable });
 }
 
 /**
@@ -321,7 +323,7 @@ export async function adminRestrictUserAction({
 }) {
   const admin = await requireRole([UserRole.ADMIN]);
 
-  return await prisma.$transaction(async (tx) => {
+  const restriction = await prisma.$transaction(async (tx) => {
     const restriction = await tx.userRestriction.create({
       data: {
         userId,
@@ -346,16 +348,18 @@ export async function adminRestrictUserAction({
       });
     }
 
-    await AuditLogger.logAdminAction(admin.id, "RESTRICT_USER", "User", userId, `Restricted user ${userId} for capability: ${type}`, { type, reasonCode });
-
     return restriction;
-  });
+  }, { maxWait: 45000, timeout: 120000 });
+
+  await AuditLogger.logAdminAction(admin.id, "RESTRICT_USER", "User", userId, `Restricted user ${userId} for capability: ${type}`, { type, reasonCode });
+
+  return restriction;
 }
 
 export async function adminRevokeRestrictionAction(restrictionId: string, caseId?: string) {
   const admin = await requireRole([UserRole.ADMIN]);
 
-  return await prisma.$transaction(async (tx) => {
+  const updated = await prisma.$transaction(async (tx) => {
     const updated = await tx.userRestriction.update({
       where: { id: restrictionId },
       data: {
@@ -375,10 +379,12 @@ export async function adminRevokeRestrictionAction(restrictionId: string, caseId
       });
     }
 
-    await AuditLogger.logAdminAction(admin.id, "REVOKE_RESTRICTION", "UserRestriction", restrictionId, `Revoked restriction ${restrictionId}`);
-
     return updated;
-  });
+  }, { maxWait: 45000, timeout: 120000 });
+
+  await AuditLogger.logAdminAction(admin.id, "REVOKE_RESTRICTION", "UserRestriction", restrictionId, `Revoked restriction ${restrictionId}`);
+
+  return updated;
 }
 
 /**
@@ -387,7 +393,7 @@ export async function adminRevokeRestrictionAction(restrictionId: string, caseId
 export async function adminToggleWeddingSuspensionAction(weddingId: string, suspend: boolean, caseId?: string) {
   const admin = await requireRole([UserRole.ADMIN]);
 
-  return await prisma.$transaction(async (tx) => {
+  await prisma.$transaction(async (tx) => {
     await tx.wedding.update({
       where: { id: weddingId },
       data: { suspended: suspend },
@@ -403,9 +409,9 @@ export async function adminToggleWeddingSuspensionAction(weddingId: string, susp
         },
       });
     }
+  }, { maxWait: 45000, timeout: 120000 });
 
-    await AuditLogger.logAdminAction(admin.id, "TOGGLE_WEDDING_SUSPENSION", "Wedding", weddingId, `Toggled suspension for wedding ${weddingId} to ${suspend}`, { suspend });
-  });
+  await AuditLogger.logAdminAction(admin.id, "TOGGLE_WEDDING_SUSPENSION", "Wedding", weddingId, `Toggled suspension for wedding ${weddingId} to ${suspend}`, { suspend });
 }
 
 /**
@@ -435,10 +441,10 @@ export async function adminResolveCaseAction(caseId: string, resolutionCode: str
       },
     });
 
-    await AuditLogger.logAdminAction(admin.id, "RESOLVE_SAFETY_CASE", "SafetyCase", caseId, `Resolved case ${caseId} with code ${resolutionCode}`, { resolutionCode });
-
     return safetyCase;
-  });
+  }, { maxWait: 45000, timeout: 120000 });
+
+  await AuditLogger.logAdminAction(admin.id, "RESOLVE_SAFETY_CASE", "SafetyCase", caseId, `Resolved case ${caseId} with code ${resolutionCode}`, { resolutionCode });
 
   if (result.subjectUserId) {
     const subjectUser = await prisma.user.findUnique({
@@ -607,7 +613,7 @@ export async function submitCaseAppealAction(caseId: string, reason: string) {
     });
 
     return appeal;
-  });
+  }, { maxWait: 45000, timeout: 120000 });
 }
 
 /**
@@ -663,7 +669,7 @@ export async function adminReviewAppealAction(
     });
 
     return updatedAppeal;
-  });
+  }, { maxWait: 45000, timeout: 120000 });
 }
 
 /**

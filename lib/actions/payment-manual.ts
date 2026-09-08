@@ -63,7 +63,7 @@ export async function adminRequestPaymentAction(params: {
       adminUserId: admin.id,
       adminEmail: admin.email,
     });
-  }, { maxWait: 20000, timeout: 35000 });
+  }, { maxWait: 45000, timeout: 120000 });
 
   const auditNote = params.allowOverride
     ? `Admin (${admin.email}) requested OVERRIDDEN payment of ${result.currency} $${result.breakdown.totalAmount} (Reason: ${params.overrideReason || "Manual override"}) for Booking ${params.bookingId}`
@@ -168,7 +168,7 @@ export async function adminUpdatePaymentRequestAction(params: {
     });
 
     return p;
-  }, { maxWait: 20000, timeout: 35000 });
+  }, { maxWait: 45000, timeout: 120000 });
 
   await createAuditLog(
     "PAYMENT_REQUEST_UPDATED",
@@ -200,18 +200,13 @@ export async function adminMarkPaymentPaidAction(params: {
     throw new Error("PayPal Transaction ID is required to confirm payment.");
   }
 
-  const result = await prisma.$transaction(
-    async (tx) => {
-      return await markPaymentPaidAtomic(tx, {
-        paymentId: params.paymentId,
-        transactionId: cleanTxnId,
-        paymentNotes: params.paymentNotes,
-        adminUserId: admin.id,
-        adminEmail: admin.email,
-      });
-    },
-    { maxWait: 20000, timeout: 35000 }
-  );
+  const result = await markPaymentPaidAtomic(prisma, {
+    paymentId: params.paymentId,
+    transactionId: cleanTxnId,
+    paymentNotes: params.paymentNotes,
+    adminUserId: admin.id,
+    adminEmail: admin.email,
+  });
 
   if (!result.alreadyPaid) {
     await createAuditLog(
@@ -276,7 +271,7 @@ export async function adminRecordManualRefundAction(params: {
         adminEmail: admin.email,
       });
     },
-    { maxWait: 20000, timeout: 35000 }
+    { maxWait: 10000, timeout: 20000 }
   );
 
   await createAuditLog(

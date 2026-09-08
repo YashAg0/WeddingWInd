@@ -1881,43 +1881,40 @@ export async function getRelatedWeddings(category: string, excludeWeddingId: str
             deletedAt: null,
             id: { not: excludeWeddingId },
           },
-          take: limit * 2,
+          take: limit,
           orderBy: [
             { category: category ? "asc" : "desc" },
             { sponsored: "desc" },
             { featured: "desc" },
             { createdAt: "desc" },
           ],
-          include: {
+          select: {
+            id: true,
+            slug: true,
+            title: true,
+            category: true,
+            tier: true,
+            location: true,
+            religion: true,
+            region: true,
+            community: true,
+            date: true,
+            durationDays: true,
+            capacity: true,
+            pricePerGuest: true,
+            mainImageUrl: true,
+            isDemo: true,
+            featured: true,
+            sponsored: true,
+            sponsorshipStart: true,
+            sponsorshipEnd: true,
             hostCouple: {
-              include: {
+              select: {
                 user: {
-                  include: {
-                    verification: true,
-                    badges: {
-                      where: { revokedAt: null },
-                      include: { badge: true },
-                    },
+                  select: {
+                    name: true,
                   },
                 },
-              },
-            },
-            gallery: true,
-            events: true,
-            traditions: true,
-            sponsorshipRequests: {
-              where: {
-                status: { in: ["ACTIVE", "PAID"] },
-              },
-              select: {
-                id: true,
-                status: true,
-                promotionType: true,
-                paymentRequired: true,
-                paymentStatus: true,
-                startsAt: true,
-                endsAt: true,
-                revokedAt: true,
               },
             },
             _count: {
@@ -1925,13 +1922,13 @@ export async function getRelatedWeddings(category: string, excludeWeddingId: str
                 bookings: {
                   where: {
                     status: {
-                      in: ["APPROVED", "PAID", "CONFIRMED", "COMPLETED", "CHECKED_IN", "ATTENDED", "READY_FOR_EVENT"]
-                    }
-                  }
-                }
-              }
-            }
-          }
+                      in: ["APPROVED", "PAID", "CONFIRMED", "COMPLETED", "CHECKED_IN", "ATTENDED", "READY_FOR_EVENT"],
+                    },
+                  },
+                },
+              },
+            },
+          },
         }),
       { label: "getRelatedWeddings", maxRetries: 3 }
     );
@@ -1944,13 +1941,13 @@ export async function getRelatedWeddings(category: string, excludeWeddingId: str
     const weddingIds = weddings.map((w) => w.id);
     const ratingsMap = await getBatchWeddingRatingAggregates(weddingIds);
 
-    const mapped = weddings.map((w) => {
+    const mapped = weddings.map((w: any) => {
       const ratings = ratingsMap.get(w.id) || { bayesianRating: 0, reviewCount: 0 };
       return toWeddingDTO({
         ...w,
         rating: ratings.reviewCount > 0 ? ratings.bayesianRating : 0,
         reviewCount: ratings.reviewCount,
-        guestsBooked: w._count.bookings,
+        guestsBooked: w._count?.bookings || 0,
       });
     });
 
@@ -2022,156 +2019,119 @@ const SLUG_ALIASES: Record<string, string> = {
   "chennai-coastal-temple-wedding": "tamil-brahmin-wedding-madurai",
 };
 
-export const getWeddingBySlug = unstable_cache(
-  async (slug: string) => {
-  try {
-    const effectiveSlug = SLUG_ALIASES[slug] || slug;
-    let w = await prisma.wedding.findUnique({
+const getCachedPublicWedding = unstable_cache(
+  async (effectiveSlug: string) => {
+    const w = await prisma.wedding.findUnique({
       where: { slug: effectiveSlug },
       include: {
         hostCouple: {
-          include: {
+          select: {
+            id: true,
+            userId: true,
             user: {
-              include: {
-                verification: true,
-                badges: {
-                  where: { revokedAt: null },
-                  include: { badge: true },
-                },
+              select: {
+                id: true,
+                name: true,
               },
             },
           },
         },
         gallery: true,
         events: true,
-        traditions: true
-      }
+        traditions: true,
+      },
     });
 
-    if (!w && effectiveSlug !== slug) {
-      w = await prisma.wedding.findUnique({
-        where: { slug },
-        include: {
-          hostCouple: {
-            include: {
-              user: {
-                include: {
-                  verification: true,
-                  badges: {
-                    where: { revokedAt: null },
-                    include: { badge: true },
-                  },
-                },
-              },
-            },
-          },
-          gallery: true,
-          events: true,
-          traditions: true
-        }
-      });
-    }
-
-    if (w && Boolean(w.deletedAt)) {
+    if (!w || Boolean(w.deletedAt)) {
       return null;
     }
 
-    if (!w) {
-      const { featuredWeddings } = await import("../data");
-      return featuredWeddings.find((fw) => fw.slug === effectiveSlug || fw.slug === slug) || null;
+    const isPublished = !w.status || w.status === WeddingStatus.PUBLISHED || (w.status as string) === "PUBLISHED";
+    if (!isPublished || Boolean(w.suspended)) {
+      return null;
     }
 
-    if (w.status && w.status !== WeddingStatus.PUBLISHED && (w.status as string) !== "PUBLISHED") {
-
-      let authorized = false;
-      try {
-        const user = await requireAuth();
-        if (user.role === UserRole.ADMIN) {
-          authorized = true;
-        } else if (user.role === UserRole.COUPLE && w.hostCouple?.userId === user.id) {
-          authorized = true;
+    // Parallelize reviews, aggregate, and Bayesian rating calculations
+    const [ratings, dbReviews, agg] = await Promise.all([
+      (async () => {
+        try {
+          const { calculateBayesianRating } = await import("../services/trust-score");
+          return await calculateBayesianRating(w.id);
+        } catch {
+          return { bayesianRating: 0, reviewCount: 0 };
         }
-      } catch {
-        authorized = false;
-      }
-      if (!authorized) return null;
-    }
-
-
-    let ratings = { bayesianRating: 0, reviewCount: 0 };
-    try {
-      const { calculateBayesianRating } = await import("../services/trust-score");
-      ratings = await calculateBayesianRating(w.id);
-    } catch {}
-
-    let dbReviews: any[] = [];
-    try {
-      dbReviews = await prisma.review.findMany({
-        where: getPublishedReviewWhere({
-          booking: { weddingId: w.id },
-          type: "TRAVELER_TO_WEDDING"
-        }),
-        include: {
-          traveler: {
-            include: {
-              user: true
-            }
-          },
-          repliesList: {
-            where: { deletedAt: null },
-            include: {
-              user: true
-            }
-          }
-        },
-        orderBy: { createdAt: "desc" }
-      });
-    } catch {}
-
-    // Real confirmed guests booked count
-    let confirmedGuestsBooked = 0;
-    try {
-      const agg = await prisma.booking.aggregate({
-        where: {
-          weddingId: w.id,
-          status: { in: [BookingStatus.APPROVED, BookingStatus.PAID, BookingStatus.CONFIRMED, BookingStatus.COMPLETED, BookingStatus.CHECKED_IN, BookingStatus.ATTENDED, BookingStatus.READY_FOR_EVENT] }
-        },
-        _sum: { guestsCount: true }
-      });
-      confirmedGuestsBooked = agg._sum.guestsCount || 0;
-    } catch {}
-
-    if (w.suspended) {
-      let authorized = false;
-      try {
-        const user = await requireAuth();
-        if (user.role === UserRole.ADMIN) {
-          authorized = true;
-        } else if (user.role === UserRole.COUPLE && w.hostCouple.userId === user.id) {
-          authorized = true;
-        } else {
-          const activeBooking = await prisma.booking.findFirst({
+      })(),
+      (async () => {
+        try {
+          return await prisma.review.findMany({
+            where: getPublishedReviewWhere({
+              booking: { weddingId: w.id },
+              type: "TRAVELER_TO_WEDDING",
+            }),
+            select: {
+              id: true,
+              rating: true,
+              comment: true,
+              createdAt: true,
+              helpfulVotes: true,
+              ratingFood: true,
+              ratingHospitality: true,
+              ratingExperience: true,
+              ratingCulture: true,
+              ratingSafety: true,
+              ratingAccommodation: true,
+              ratingOrganization: true,
+              ratingValue: true,
+              ratingCommunication: true,
+              status: true,
+              traveler: {
+                select: {
+                  fullName: true,
+                  user: { select: { name: true, avatar: true, status: true } },
+                },
+              },
+              repliesList: {
+                where: { deletedAt: null },
+                select: {
+                  id: true,
+                  content: true,
+                  createdAt: true,
+                  user: { select: { name: true, avatar: true } },
+                },
+              },
+            },
+            orderBy: { createdAt: "desc" },
+          });
+        } catch {
+          return [];
+        }
+      })(),
+      (async () => {
+        try {
+          return await prisma.booking.aggregate({
             where: {
               weddingId: w.id,
-              traveler: { userId: user.id },
               status: {
                 in: [
-                  BookingStatus.PAID,
                   BookingStatus.APPROVED,
+                  BookingStatus.PAID,
+                  BookingStatus.CONFIRMED,
+                  BookingStatus.COMPLETED,
                   BookingStatus.CHECKED_IN,
-                  BookingStatus.COMPLETED
-                ]
-              }
-            }
+                  BookingStatus.ATTENDED,
+                  BookingStatus.READY_FOR_EVENT,
+                ],
+              },
+            },
+            _sum: { guestsCount: true },
           });
-          if (activeBooking) authorized = true;
+        } catch {
+          return { _sum: { guestsCount: 0 } };
         }
-      } catch {
-        authorized = false;
-      }
-      if (!authorized) return null;
-    }
+      })(),
+    ]);
 
+    const confirmedGuestsBooked = agg._sum.guestsCount || 0;
     const reviews = dbReviews.map(mapToPublicReviewDTO);
 
     const authenticInclusions = [
@@ -2197,13 +2157,104 @@ export const getWeddingBySlug = unstable_cache(
       included: authenticInclusions,
       reviews,
     });
+  },
+  ["cached-public-wedding-v2"],
+  { revalidate: 3600, tags: ["weddings"] }
+);
+
+export async function getWeddingBySlug(slug: string) {
+  try {
+    const effectiveSlug = SLUG_ALIASES[slug] || slug;
+    
+    // 1. Fetch from public cache (only published, non-suspended, non-deleted)
+    let wedding = await getCachedPublicWedding(effectiveSlug);
+    if (!wedding && effectiveSlug !== slug) {
+      wedding = await getCachedPublicWedding(slug);
+    }
+
+    if (wedding) {
+      return wedding;
+    }
+
+    // 2. Private preview for drafts or suspended weddings (strictly uncached, verified auth)
+    let user: any = null;
+    try {
+      user = await requireAuth();
+    } catch {
+      user = null;
+    }
+
+    if (user) {
+      const privateWedding = await prisma.wedding.findFirst({
+        where: {
+          OR: [{ slug: effectiveSlug }, { slug }],
+          deletedAt: null,
+        },
+        include: {
+          hostCouple: {
+            select: {
+              id: true,
+              userId: true,
+              user: {
+                select: { id: true, name: true },
+              },
+            },
+          },
+          gallery: true,
+          events: true,
+          traditions: true,
+        },
+      });
+
+      if (privateWedding) {
+        let authorized = false;
+        if (user.role === UserRole.ADMIN) {
+          authorized = true;
+        } else if (user.role === UserRole.COUPLE && privateWedding.hostCouple?.userId === user.id) {
+          authorized = true;
+        } else if (privateWedding.suspended) {
+          const activeBooking = await prisma.booking.findFirst({
+            where: {
+              weddingId: privateWedding.id,
+              traveler: { userId: user.id },
+              status: {
+                in: [
+                  BookingStatus.PAID,
+                  BookingStatus.APPROVED,
+                  BookingStatus.CHECKED_IN,
+                  BookingStatus.COMPLETED,
+                ],
+              },
+            },
+          });
+          if (activeBooking) authorized = true;
+        }
+
+        if (authorized) {
+          return toWeddingDTO({
+            ...privateWedding,
+            reviews: [],
+            included: [
+              "Honorary guest entry pass",
+              "Celebration banquets & beverage service",
+              "Dedicated English-speaking cultural host/concierge",
+            ],
+          });
+        }
+        return null;
+      }
+    }
+
+    // 3. Static fallback for predefined marketing slugs
+    const { featuredWeddings } = await import("../data");
+    return featuredWeddings.find((fw) => fw.slug === effectiveSlug || fw.slug === slug) || null;
   } catch (err) {
-    console.warn(`[getWeddingBySlug] Database query failed for slug '${slug}'. Serving static fallback.`, err);
+    console.warn(`[getWeddingBySlug] Query failed for slug '${slug}'. Serving static fallback.`, err);
     const { featuredWeddings } = await import("../data");
     const effectiveSlug = SLUG_ALIASES[slug] || slug;
     return featuredWeddings.find((fw) => fw.slug === effectiveSlug || fw.slug === slug) || null;
   }
-}, ["wedding-by-slug"], { revalidate: 3600, tags: ["weddings"] });
+}
 
 // ─── Sponsorship Request Actions ──────────────────────────────────────────────
 

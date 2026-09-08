@@ -728,7 +728,6 @@ export async function adminModerateReviewAction(params: {
     deletedAt = new Date();
   }
 
-  // Create audit log
   await prisma.reviewModerationAction.create({
     data: {
       reviewId: params.reviewId,
