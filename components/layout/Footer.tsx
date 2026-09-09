@@ -4,12 +4,14 @@ import {
   Mail,
   Phone,
   MapPin,
-  Instagram,
-  Facebook,
-  Youtube,
-  Linkedin,
   Globe2,
 } from "lucide-react";
+import {
+  InstagramIcon,
+  FacebookIcon,
+  YoutubeIcon,
+  LinkedinIcon,
+} from "@/components/ui/BrandIcons";
 import { NewsletterForm } from "@/components/ui/NewsletterForm";
 import { InstallButton } from "@/components/pwa/InstallButton";
 import { LEGAL_CONFIG } from "@/lib/constants/legal";
@@ -105,22 +107,22 @@ const socialLinks = [
   {
     label: "Instagram",
     href: "https://instagram.com/weddingwithindia",
-    icon: Instagram,
+    icon: InstagramIcon,
   },
   {
     label: "Facebook",
     href: "https://facebook.com/weddingwithindia",
-    icon: Facebook,
+    icon: FacebookIcon,
   },
   {
     label: "YouTube",
     href: "https://youtube.com/@weddingwithindia",
-    icon: Youtube,
+    icon: YoutubeIcon,
   },
   {
     label: "LinkedIn",
     href: "https://linkedin.com/company/weddingwithindia",
-    icon: Linkedin,
+    icon: LinkedinIcon,
   },
 ];
 

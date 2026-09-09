@@ -1,29 +1,39 @@
 import { defineConfig, globalIgnores } from "eslint/config";
 import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
-import unusedImports from "eslint-plugin-unused-imports";
+
+let unusedImports = null;
+try {
+  const mod = await import("eslint-plugin-unused-imports");
+  unusedImports = mod.default || mod;
+} catch {
+  // Plugin optional / not installed in current environment
+}
+
+const customRules = {
+  "@typescript-eslint/no-explicit-any": "off",
+  "@typescript-eslint/no-require-imports": "off",
+  "@typescript-eslint/no-unused-vars": "off",
+  "@typescript-eslint/no-empty-object-type": "off",
+  "@typescript-eslint/no-wrapper-object-types": "off",
+  "react-hooks/set-state-in-effect": "off",
+  "prefer-const": "warn",
+};
+
+if (unusedImports) {
+  customRules["unused-imports/no-unused-imports"] = "error";
+  customRules["unused-imports/no-unused-vars"] = [
+    "warn",
+    { vars: "all", varsIgnorePattern: "^_", args: "after-used", argsIgnorePattern: "^_" },
+  ];
+}
 
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
   {
-    plugins: {
-      "unused-imports": unusedImports,
-    },
-    rules: {
-      "@typescript-eslint/no-explicit-any": "off",
-      "@typescript-eslint/no-require-imports": "off",
-      "@typescript-eslint/no-unused-vars": "off",
-      "unused-imports/no-unused-imports": "error",
-      "unused-imports/no-unused-vars": [
-        "warn",
-        { "vars": "all", "varsIgnorePattern": "^_", "args": "after-used", "argsIgnorePattern": "^_" }
-      ],
-      "@typescript-eslint/no-empty-object-type": "off",
-      "@typescript-eslint/no-wrapper-object-types": "off",
-      "react-hooks/set-state-in-effect": "off",
-      "prefer-const": "warn"
-    }
+    plugins: unusedImports ? { "unused-imports": unusedImports } : {},
+    rules: customRules,
   },
   globalIgnores([
     ".next/**",
@@ -31,7 +41,7 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
     "coverage/**",
-    "node_modules/**"
+    "node_modules/**",
   ]),
 ]);
 

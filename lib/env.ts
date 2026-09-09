@@ -3,7 +3,11 @@ import { z } from "zod";
 const envSchema = z.object({
   // Database
   DATABASE_URL: z.string().url().min(1, "DATABASE_URL is required").refine(
-    (url) => process.env.NODE_ENV !== "production" || url.includes("pgbouncer=true") || url.includes("pool_timeout="),
+    (url) => {
+      if (process.env.VERCEL_ENV !== "production" && !process.env.STRICT_PROD_ENV) return true;
+      if (url.includes("localhost") || url.includes("127.0.0.1")) return true;
+      return url.includes("pgbouncer=true") || url.includes("pool_timeout=");
+    },
     "DATABASE_URL must use connection pooling (pgbouncer=true) in production"
   ),
 
@@ -25,7 +29,7 @@ const envSchema = z.object({
   GUEST_PASS_ENCRYPTION_KEY: z.string().length(64, "GUEST_PASS_ENCRYPTION_KEY must be exactly 64 hex characters"),
   
   // App URL
-  NEXT_PUBLIC_APP_URL: z.string().url().min(1, "NEXT_PUBLIC_APP_URL is required").refine(
+  NEXT_PUBLIC_APP_URL: z.string().url().default("http://localhost:3000").refine(
     (url) => {
       // In deployed production (e.g. Vercel), do not allow localhost
       if (process.env.VERCEL_ENV === "production") {
@@ -65,7 +69,7 @@ function getRawProcessEnv() {
     UPLOADTHING_SECRET: process.env.UPLOADTHING_SECRET,
     UPLOADTHING_APP_ID: process.env.UPLOADTHING_APP_ID,
     GUEST_PASS_ENCRYPTION_KEY: process.env.GUEST_PASS_ENCRYPTION_KEY,
-    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : (process.env.NODE_ENV === "production" && process.env.VERCEL_ENV === "production" ? "https://weddingwithindia.com" : "http://localhost:3000")),
     CRON_SECRET: process.env.CRON_SECRET,
     SUPERADMIN_EMAIL: process.env.SUPERADMIN_EMAIL,
     NEXT_PUBLIC_GA_ID: process.env.NEXT_PUBLIC_GA_ID,

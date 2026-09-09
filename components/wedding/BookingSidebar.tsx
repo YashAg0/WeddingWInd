@@ -28,6 +28,7 @@ export function BookingSidebar({ wedding }: BookingSidebarProps) {
   const [attendanceSide, setAttendanceSide] = useState<WeddingSideValue>("BRIDE_SIDE");
   const [isSaved, setIsSaved] = useState(false);
   const [isShared, setIsShared] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const availableSlots = Math.max(0, wedding.guestsAllowed - wedding.guestsBooked);
@@ -88,6 +89,8 @@ export function BookingSidebar({ wedding }: BookingSidebarProps) {
       toast.error("Only traveler accounts can request booking spots for wedding experiences.");
       return;
     }
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     setErrorMessage(null);
     try {
       await addBooking({
@@ -105,6 +108,8 @@ export function BookingSidebar({ wedding }: BookingSidebarProps) {
       router.push("/dashboard/bookings");
     } catch (err: any) {
       setErrorMessage(err.message || "Failed to submit booking request. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -241,9 +246,20 @@ export function BookingSidebar({ wedding }: BookingSidebarProps) {
         ) : (
           <button
             onClick={handleBook}
-            className="btn btn-primary w-full py-4 text-base shadow-lg justify-center font-bold"
+            disabled={isSubmitting}
+            className={cn(
+              "btn btn-primary w-full py-4 text-base shadow-lg justify-center font-bold flex items-center gap-2",
+              isSubmitting && "opacity-75 cursor-not-allowed"
+            )}
           >
-            Reserve Invitation — ${subtotalUSD}
+            {isSubmitting ? (
+              <>
+                <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                Securing Reservation...
+              </>
+            ) : (
+              `Reserve Invitation — $${subtotalUSD}`
+            )}
           </button>
         )}
 
