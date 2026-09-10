@@ -2,16 +2,22 @@
 
 import { useAuth } from "@/context/AuthContext";
 import { getWeddings } from "@/lib/actions";
+import { getCachedWeddings, setCachedWeddings } from "@/lib/client-cache";
 import WishlistCard from "@/components/dashboard/WishlistCard";
 import EmptyState from "@/components/dashboard/EmptyState";
 import { useState, useEffect } from "react";
 
 export default function WishlistPage() {
   const { wishlist, toggleWishlist } = useAuth();
-  const [weddings, setWeddings] = useState<any[]>([]);
+  const [weddings, setWeddings] = useState<any[]>(() => getCachedWeddings() || []);
 
   useEffect(() => {
-    getWeddings().then(setWeddings).catch(console.error);
+    getWeddings()
+      .then((data) => {
+        setWeddings(data);
+        setCachedWeddings(data);
+      })
+      .catch(console.error);
   }, []);
 
   // Match active wishlist IDs or slugs with weddings

@@ -18,7 +18,19 @@ const CurrencyContext = createContext<CurrencyContextType>({
 const STORAGE_KEY = "wwi_user_currency_pref";
 
 export function CurrencyProvider({ children }: { children: React.ReactNode }) {
-  const [currency, setCurrencyState] = useState<Currency>("USD");
+  const [currency, setCurrencyState] = useState<Currency>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem(STORAGE_KEY) as Currency | null;
+        if (stored && ["INR", "USD", "EUR"].includes(stored)) {
+          return stored;
+        }
+      } catch {
+        // Safe fallback if localStorage is blocked
+      }
+    }
+    return "USD";
+  });
 
   useEffect(() => {
     // 1. Check stored user preference
