@@ -8,7 +8,11 @@ export const metadata: Metadata = {
   description:
     "Statutory Grievance Redressal mechanism, Grievance Officer contact details, and compliance disclosures under the Information Technology Rules, 2021 and Consumer Protection (E-Commerce) Rules, 2020.",
   alternates: {
-    canonical: "https://weddingwithindia.com/grievance",
+    canonical: "https://weddingwithindia.com/trust?tab=safety#grievance",
+  },
+  robots: {
+    index: false,
+    follow: true,
   },
 };
 

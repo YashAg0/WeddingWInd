@@ -25,6 +25,7 @@ import {
 import crypto from "crypto";
 import { rateLimit } from "../rate-limit";
 import { AuditLogger } from "../security/audit";
+import { HOST_CANCELLATION_AFFECTED_STATUSES } from "../booking-statuses";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. Restriction Assertions
@@ -186,7 +187,7 @@ export async function reportIncidentAction({
     });
 
     return safetyCase;
-  });
+  }, { maxWait: 45000, timeout: 120000 });
 
   if (safetyCase.subjectUserId) {
     const subjectUser = await prisma.user.findUnique({
@@ -238,7 +239,7 @@ export async function adminTriageCaseAction(
 ) {
   const admin = await requireRole([UserRole.ADMIN]);
 
-  return await prisma.$transaction(async (tx) => {
+  const updated = await prisma.$transaction(async (tx) => {
     const safetyCase = await tx.safetyCase.findUnique({
       where: { id: caseId },
     });
@@ -264,10 +265,12 @@ export async function adminTriageCaseAction(
       },
     });
 
-    await AuditLogger.logAdminAction(admin.id, "TRIAGE_SAFETY_CASE", "SafetyCase", caseId, `Triaged case ${caseId} to severity ${severity} and status ${status}`, { severity, status, assignedAdminId });
-
     return updated;
-  });
+  }, { maxWait: 45000, timeout: 120000 });
+
+  await AuditLogger.logAdminAction(admin.id, "TRIAGE_SAFETY_CASE", "SafetyCase", caseId, `Triaged case ${caseId} to severity ${severity} and status ${status}`, { severity, status, assignedAdminId });
+
+  return updated;
 }
 
 /**
@@ -276,7 +279,7 @@ export async function adminTriageCaseAction(
 export async function adminToggleFinancialHoldAction(caseId: string, enable: boolean) {
   const admin = await requireRole([UserRole.ADMIN]);
 
-  return await prisma.$transaction(async (tx) => {
+  await prisma.$transaction(async (tx) => {
     const safetyCase = await tx.safetyCase.findUnique({
       where: { id: caseId },
     });
@@ -295,9 +298,9 @@ export async function adminToggleFinancialHoldAction(caseId: string, enable: boo
         safeSummary: enable ? "A financial hold has been applied." : "The financial hold has been released.",
       },
     });
+  }, { maxWait: 45000, timeout: 120000 });
 
-    await AuditLogger.logAdminAction(admin.id, "TOGGLE_FINANCIAL_HOLD", "SafetyCase", caseId, `Toggled financial hold for case ${caseId} to ${enable}`, { enable });
-  });
+  await AuditLogger.logAdminAction(admin.id, "TOGGLE_FINANCIAL_HOLD", "SafetyCase", caseId, `Toggled financial hold for case ${caseId} to ${enable}`, { enable });
 }
 
 /**
@@ -320,7 +323,7 @@ export async function adminRestrictUserAction({
 }) {
   const admin = await requireRole([UserRole.ADMIN]);
 
-  return await prisma.$transaction(async (tx) => {
+  const restriction = await prisma.$transaction(async (tx) => {
     const restriction = await tx.userRestriction.create({
       data: {
         userId,
@@ -345,16 +348,18 @@ export async function adminRestrictUserAction({
       });
     }
 
-    await AuditLogger.logAdminAction(admin.id, "RESTRICT_USER", "User", userId, `Restricted user ${userId} for capability: ${type}`, { type, reasonCode });
-
     return restriction;
-  });
+  }, { maxWait: 45000, timeout: 120000 });
+
+  await AuditLogger.logAdminAction(admin.id, "RESTRICT_USER", "User", userId, `Restricted user ${userId} for capability: ${type}`, { type, reasonCode });
+
+  return restriction;
 }
 
 export async function adminRevokeRestrictionAction(restrictionId: string, caseId?: string) {
   const admin = await requireRole([UserRole.ADMIN]);
 
-  return await prisma.$transaction(async (tx) => {
+  const updated = await prisma.$transaction(async (tx) => {
     const updated = await tx.userRestriction.update({
       where: { id: restrictionId },
       data: {
@@ -374,10 +379,12 @@ export async function adminRevokeRestrictionAction(restrictionId: string, caseId
       });
     }
 
-    await AuditLogger.logAdminAction(admin.id, "REVOKE_RESTRICTION", "UserRestriction", restrictionId, `Revoked restriction ${restrictionId}`);
-
     return updated;
-  });
+  }, { maxWait: 45000, timeout: 120000 });
+
+  await AuditLogger.logAdminAction(admin.id, "REVOKE_RESTRICTION", "UserRestriction", restrictionId, `Revoked restriction ${restrictionId}`);
+
+  return updated;
 }
 
 /**
@@ -386,7 +393,7 @@ export async function adminRevokeRestrictionAction(restrictionId: string, caseId
 export async function adminToggleWeddingSuspensionAction(weddingId: string, suspend: boolean, caseId?: string) {
   const admin = await requireRole([UserRole.ADMIN]);
 
-  return await prisma.$transaction(async (tx) => {
+  await prisma.$transaction(async (tx) => {
     await tx.wedding.update({
       where: { id: weddingId },
       data: { suspended: suspend },
@@ -402,9 +409,9 @@ export async function adminToggleWeddingSuspensionAction(weddingId: string, susp
         },
       });
     }
+  }, { maxWait: 45000, timeout: 120000 });
 
-    await AuditLogger.logAdminAction(admin.id, "TOGGLE_WEDDING_SUSPENSION", "Wedding", weddingId, `Toggled suspension for wedding ${weddingId} to ${suspend}`, { suspend });
-  });
+  await AuditLogger.logAdminAction(admin.id, "TOGGLE_WEDDING_SUSPENSION", "Wedding", weddingId, `Toggled suspension for wedding ${weddingId} to ${suspend}`, { suspend });
 }
 
 /**
@@ -434,10 +441,10 @@ export async function adminResolveCaseAction(caseId: string, resolutionCode: str
       },
     });
 
-    await AuditLogger.logAdminAction(admin.id, "RESOLVE_SAFETY_CASE", "SafetyCase", caseId, `Resolved case ${caseId} with code ${resolutionCode}`, { resolutionCode });
-
     return safetyCase;
-  });
+  }, { maxWait: 45000, timeout: 120000 });
+
+  await AuditLogger.logAdminAction(admin.id, "RESOLVE_SAFETY_CASE", "SafetyCase", caseId, `Resolved case ${caseId} with code ${resolutionCode}`, { resolutionCode });
 
   if (result.subjectUserId) {
     const subjectUser = await prisma.user.findUnique({
@@ -606,7 +613,7 @@ export async function submitCaseAppealAction(caseId: string, reason: string) {
     });
 
     return appeal;
-  });
+  }, { maxWait: 45000, timeout: 120000 });
 }
 
 /**
@@ -662,7 +669,7 @@ export async function adminReviewAppealAction(
     });
 
     return updatedAppeal;
-  });
+  }, { maxWait: 45000, timeout: 120000 });
 }
 
 /**
@@ -683,19 +690,14 @@ export async function hostCancelWeddingAction(weddingId: string, reasonText?: st
       bookings: {
         where: {
           status: {
-            in: [
-              BookingStatus.PENDING,
-              BookingStatus.AWAITING_PAYMENT,
-              BookingStatus.APPROVED,
-              BookingStatus.PAID
-            ]
-          }
+            in: HOST_CANCELLATION_AFFECTED_STATUSES,
+          },
         },
         include: {
-          traveler: { include: { user: true } }
-        }
-      }
-    }
+          traveler: { include: { user: true } },
+        },
+      },
+    },
   });
 
   if (!wedding) throw new Error("Wedding not found or unauthorized.");
@@ -705,7 +707,7 @@ export async function hostCancelWeddingAction(weddingId: string, reasonText?: st
   // 1. Suspend the wedding experience
   await prisma.wedding.update({
     where: { id: weddingId },
-    data: { suspended: true, status: "DRAFT" }
+    data: { suspended: true, status: "DRAFT" },
   });
 
   // 2. Create Safety Incident Report automatically against the host
@@ -714,7 +716,7 @@ export async function hostCancelWeddingAction(weddingId: string, reasonText?: st
     title: `Host Cancelled Wedding Event: ${wedding.title}`,
     description: `Host couple has cancelled the wedding event scheduled on ${wedding.date.toLocaleDateString()}. Reason: ${reasonText || "None provided"}. All ${wedding.bookings.length} active bookings are flagged for refunds.`,
     weddingId,
-    subjectUserId: user.id
+    subjectUserId: user.id,
   });
 
   // 3. Process cancellations and refunds per-booking (resumable, not in a single big database transaction)
@@ -726,17 +728,27 @@ export async function hostCancelWeddingAction(weddingId: string, reasonText?: st
         requestedById: user.id,
         actorRole: "HOST",
         reasonCode: "HOST_CANCELLED",
-        reasonText: reasonText || "Host cancelled wedding event."
+        reasonText: reasonText || "Host cancelled wedding event.",
       });
 
-      if (booking.status === BookingStatus.PAID) {
-        // paid booking: trigger refund orchestration
+      const isPaidBooking = (
+        [BookingStatus.PAID, BookingStatus.CONFIRMED, BookingStatus.READY_FOR_EVENT] as BookingStatus[]
+      ).includes(booking.status);
+
+      if (isPaidBooking) {
+        // paid/confirmed booking: trigger refund orchestration (also revokes active passes)
         await processApprovedRefund(request.id, user.id);
       } else {
-        // unpaid booking: auto-approved will transition booking status directly
-        await prisma.booking.update({
-          where: { id: booking.id },
-          data: { status: BookingStatus.CANCELLED }
+        // unpaid booking: transition to CANCELLED and revoke passes atomically
+        await prisma.$transaction(async (tx) => {
+          await tx.booking.update({
+            where: { id: booking.id },
+            data: { status: BookingStatus.CANCELLED },
+          });
+          await tx.guestPass.updateMany({
+            where: { bookingId: booking.id, status: "ACTIVE" },
+            data: { status: "REVOKED" },
+          });
         });
       }
 

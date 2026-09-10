@@ -14,12 +14,34 @@ import { PrismaClient } from "@prisma/client";
  * 15 seconds gives a comfortable margin without hanging indefinitely.
  */
 function buildDatasourceUrl(): string | undefined {
-  const url = process.env.DATABASE_URL;
-  if (!url) return undefined;
-  // Only append if not already present in the URL
-  if (url.includes("connect_timeout=")) return url;
-  const separator = url.includes("?") ? "&" : "?";
-  return `${url}${separator}connect_timeout=15`;
+  const rawUrl = process.env.DATABASE_URL;
+  if (!rawUrl) return undefined;
+
+  try {
+    const parsed = new URL(rawUrl);
+    // In serverless / Vercel, connection_limit should be 2 to prevent pool exhaustion across lambdas
+    const isServerless = process.env.VERCEL === "1" || process.env.AWS_LAMBDA_FUNCTION_NAME !== undefined;
+    const defaultLimit = isServerless ? "2" : (process.env.NODE_ENV === "test" ? "10" : "5");
+
+    // Enforce pgbouncer=true on transaction pooler (port 6543)
+    if (parsed.port === "6543" || parsed.pathname.includes("pooler") || parsed.hostname.includes("pooler")) {
+      parsed.searchParams.set("pgbouncer", "true");
+    }
+
+    // Set connect_timeout (15s)
+    parsed.searchParams.set("connect_timeout", "15");
+
+    // Set pool_timeout (15s serverless / 20s dev/test — eliminates 45-second latency hangs while allowing handshake to complete)
+    const poolTimeout = isServerless ? "15" : "20";
+    parsed.searchParams.set("pool_timeout", poolTimeout);
+
+    // Set connection_limit
+    parsed.searchParams.set("connection_limit", defaultLimit);
+
+    return parsed.toString();
+  } catch {
+    return rawUrl;
+  }
 }
 
 const prismaClientSingleton = () => {
@@ -35,7 +57,7 @@ declare const globalThis: {
 
 const prisma = globalThis.prismaGlobal ?? prismaClientSingleton();
 
-if (process.env.NODE_ENV !== "production") globalThis.prismaGlobal = prisma;
+globalThis.prismaGlobal = prisma;
 
 let dbAliveCache: { status: boolean; timestamp: number } | null = null;
 
@@ -80,9 +102,6 @@ export async function isDatabaseAvailable(): Promise<boolean> {
   }
 }
 
-/**
- * Checks if a Prisma or database error is transient (connectivity, pool exhaustion, network blip).
- */
 export function isTransientDbError(err: any): boolean {
   if (!err) return false;
   const msg = (err.message || "").toLowerCase();
@@ -90,18 +109,22 @@ export function isTransientDbError(err: any): boolean {
   const code = err.code || "";
 
   if (name === "PrismaClientInitializationError") return true;
-  if (["P1000", "P1001", "P1002", "P1008", "P1011", "P1017"].includes(code)) return true;
+  if (["P1000", "P1001", "P1002", "P1008", "P1011", "P1017", "P2024", "P2028", "P2034"].includes(code)) return true;
   if (
     msg.includes("can't reach database server") ||
     msg.includes("cannot reach database server") ||
     msg.includes("connection pool exhausted") ||
     msg.includes("connection closed") ||
     msg.includes("connection timeout") ||
+    msg.includes("timed out") ||
+    msg.includes("pool timeout") ||
     msg.includes("etimedout") ||
     msg.includes("econnreset") ||
     msg.includes("econnrefused") ||
     msg.includes("socket has been ended") ||
-    msg.includes("terminating connection due to administrator command")
+    msg.includes("terminating connection due to administrator command") ||
+    msg.includes("service_unavailable") ||
+    msg.includes("temporarily unavailable")
   ) {
     return true;
   }
@@ -116,9 +139,8 @@ export async function withDbRetry<T>(
   fn: () => Promise<T>,
   options: { maxRetries?: number; initialDelayMs?: number; label?: string } = {}
 ): Promise<T> {
-  const isTest = process.env.NODE_ENV === "test";
-  const maxRetries = isTest ? (options.maxRetries ?? 1) : (options.maxRetries ?? 3);
-  const initialDelayMs = options.initialDelayMs ?? (isTest ? 0 : 200);
+  const maxRetries = options.maxRetries ?? 3;
+  const initialDelayMs = options.initialDelayMs ?? 200;
   const label = options.label ? `[${options.label}] ` : "";
 
   let lastError: any;
@@ -131,7 +153,7 @@ export async function withDbRetry<T>(
       if (!isTransientDbError(err) || attempt >= maxRetries) {
         throw err;
       }
-      const delay = isTest ? (options.initialDelayMs ?? 0) : (initialDelayMs * Math.pow(2, attempt - 1) + Math.random() * 100);
+      const delay = initialDelayMs * Math.pow(2, attempt - 1) + Math.random() * 100;
       if (delay > 0) {
         console.warn(`${label}Transient DB error on attempt ${attempt}/${maxRetries}. Retrying in ${Math.round(delay)}ms...`);
         await new Promise((resolve) => setTimeout(resolve, delay));

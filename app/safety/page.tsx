@@ -23,13 +23,13 @@ export const metadata: Metadata = {
     "Indian wedding tourism safety",
   ],
   alternates: {
-    canonical: "https://weddingwithindia.com/safety",
+    canonical: "https://weddingwithindia.com/trust?tab=safety",
   },
   openGraph: {
     title: "Safety & Security Standards | WeddingWithIndia",
     description:
       "Our approach to identity verification, safer bookings, guest and host trust, reporting, and support.",
-    url: "https://weddingwithindia.com/safety",
+    url: "https://weddingwithindia.com/trust?tab=safety",
     siteName: "WeddingWithIndia",
     type: "website",
   },
@@ -40,7 +40,7 @@ export const metadata: Metadata = {
       "Our approach to identity verification, safer bookings, guest and host trust, reporting, and support.",
   },
   robots: {
-    index: true,
+    index: false,
     follow: true,
   },
 };

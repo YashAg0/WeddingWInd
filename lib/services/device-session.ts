@@ -123,32 +123,80 @@ export async function validateOrCreateDeviceSession(params: {
         };
       }
 
-      // 4. Create new device session
-      const created = await tx.userDeviceSession.create({
-        data: {
-          userId,
-          deviceId,
-          deviceName: deviceName || "Unknown Device",
-          ipAddress: ipAddress || null,
-          userAgent: userAgent || null,
-          lastActiveAt: now,
-        },
-      });
+      // 4. Create or update new device session idempotently
+      let sessionRecord = null;
+      if (typeof tx.userDeviceSession.upsert === "function") {
+        sessionRecord = await tx.userDeviceSession.upsert({
+          where: {
+            userId_deviceId: {
+              userId,
+              deviceId,
+            },
+          },
+          create: {
+            userId,
+            deviceId,
+            deviceName: deviceName || "Unknown Device",
+            ipAddress: ipAddress || null,
+            userAgent: userAgent || null,
+            lastActiveAt: now,
+          },
+          update: {
+            lastActiveAt: now,
+            revokedAt: null,
+            deviceName: deviceName || undefined,
+            ipAddress: ipAddress || undefined,
+            userAgent: userAgent || undefined,
+          },
+        });
+      } else {
+        const existingSession = await tx.userDeviceSession.findUnique({
+          where: {
+            userId_deviceId: {
+              userId,
+              deviceId,
+            },
+          },
+        });
+        if (existingSession) {
+          sessionRecord = await tx.userDeviceSession.update({
+            where: { id: existingSession.id },
+            data: {
+              lastActiveAt: now,
+              revokedAt: null,
+              deviceName: deviceName || undefined,
+              ipAddress: ipAddress || undefined,
+              userAgent: userAgent || undefined,
+            },
+          });
+        } else {
+          sessionRecord = await tx.userDeviceSession.create({
+            data: {
+              userId,
+              deviceId,
+              deviceName: deviceName || "Unknown Device",
+              ipAddress: ipAddress || null,
+              userAgent: userAgent || null,
+              lastActiveAt: now,
+            },
+          });
+        }
+      }
 
       return {
         status: "ACTIVE",
         session: {
-          id: created.id,
-          deviceId: created.deviceId,
-          deviceName: created.deviceName,
-          ipAddress: created.ipAddress,
-          userAgent: created.userAgent,
-          lastActiveAt: created.lastActiveAt,
-          createdAt: created.createdAt,
+          id: sessionRecord.id,
+          deviceId: sessionRecord.deviceId,
+          deviceName: sessionRecord.deviceName,
+          ipAddress: sessionRecord.ipAddress,
+          userAgent: sessionRecord.userAgent,
+          lastActiveAt: sessionRecord.lastActiveAt,
+          createdAt: sessionRecord.createdAt,
           isCurrent: true,
         },
       };
-    }, { maxWait: 10000, timeout: 20000 });
+    }, { maxWait: 20000, timeout: 60000 });
   }, { label: "validateOrCreateDeviceSession" });
 }
 

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { adminGetDiscoveryStats, adminSetManualBoost, searchWeddingsAction } from "@/lib/actions/discovery";
+import { adminGetDiscoveryStats, adminSetManualBoost, adminGetDiscoveryWeddings } from "@/lib/actions/discovery";
 import {
   TrendingUp,
   Search,
@@ -27,14 +27,16 @@ export default function AdminDiscoveryPage() {
     try {
       if (user?.role?.toLowerCase() !== "admin") return;
       
-      const statsData = await adminGetDiscoveryStats();
+      const [statsData, weddingsRes] = await Promise.all([
+        adminGetDiscoveryStats(),
+        adminGetDiscoveryWeddings(),
+      ]);
       setStats(statsData);
-
-      const weddingsRes = await searchWeddingsAction({});
-      setWeddings(weddingsRes.weddings);
+      const list = weddingsRes || [];
+      setWeddings(list);
       
       const initialBoosts: Record<string, number> = {};
-      weddingsRes.weddings.forEach((w) => {
+      list.forEach((w: any) => {
         initialBoosts[w.id] = w.manualTrendingBoost;
       });
       setBoostValues(initialBoosts);

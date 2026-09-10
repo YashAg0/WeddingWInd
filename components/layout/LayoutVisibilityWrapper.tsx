@@ -3,12 +3,14 @@
 import { usePathname } from "next/navigation";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
+import BottomNav from "./BottomNav";
 
 /**
  * LayoutVisibilityWrapper
  *
  * Controls which routes show the main Navbar and Footer.
- * Also renders the skip-to-main-content accessibility link.
+ * Also renders the skip-to-main-content accessibility link
+ * and the mobile bottom navigation bar.
  */
 export default function LayoutVisibilityWrapper({
   children,
@@ -51,6 +53,9 @@ export default function LayoutVisibilityWrapper({
       </main>
 
       {!isDashboardRoute && <Footer />}
+
+      {/* Mobile bottom navigation — only visible on < lg screens */}
+      <BottomNav />
     </>
   );
 }

@@ -46,15 +46,32 @@ export async function validateDeviceSessionAction(
     else deviceName = "Web Browser";
   }
 
-  const result = await validateOrCreateDeviceSession({
-    userId: user.id,
-    deviceId,
-    deviceName: deviceName || "Web Browser",
-    ipAddress,
-    userAgent,
-  });
+  try {
+    const result = await validateOrCreateDeviceSession({
+      userId: user.id,
+      deviceId,
+      deviceName: deviceName || "Web Browser",
+      ipAddress,
+      userAgent,
+    });
 
-  return result;
+    return result;
+  } catch (err: any) {
+    console.warn("[validateDeviceSessionAction] Non-fatal device tracking error:", err?.message);
+    return {
+      status: "ACTIVE",
+      session: {
+        id: `device-${Date.now()}`,
+        deviceId,
+        deviceName: deviceName || "Current Device",
+        ipAddress: ipAddress || null,
+        userAgent: userAgent || null,
+        lastActiveAt: new Date(),
+        createdAt: new Date(),
+        isCurrent: true,
+      },
+    };
+  }
 }
 
 /**

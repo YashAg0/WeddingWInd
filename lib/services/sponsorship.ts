@@ -946,7 +946,7 @@ export async function adminDirectAddSponsorship(input: AdminDirectSponsorshipInp
     }
 
     return record;
-  });
+  }, { maxWait: 45000, timeout: 120000 });
 
   await createAuditLog(
     "ADMIN_DIRECT_SPONSORSHIP_ADDED",
@@ -1016,7 +1016,7 @@ export async function adminUpdatePromotionParameters(input: AdminUpdatePromotion
         });
       }
     }
-  });
+  }, { maxWait: 45000, timeout: 120000 });
 
   await createAuditLog(
     "ADMIN_PROMOTION_PARAMETERS_UPDATED",
@@ -1165,7 +1165,7 @@ export async function adminVerifyAndActivatePayment(input: AdminVerifyPaymentInp
     }
 
     return updated;
-  });
+  }, { maxWait: 45000, timeout: 120000 });
 
   await createAuditLog(
     "PAYMENT_VERIFIED_AND_ACTIVATED",
@@ -1302,7 +1302,7 @@ export async function verifyAndActivateSponsorshipPayment(params: {
     }
 
     return req;
-  });
+  }, { maxWait: 45000, timeout: 120000 });
 
   await createAuditLog(
     "SPONSORSHIP_PAID_AND_ACTIVATED",
@@ -1434,7 +1434,7 @@ export async function adminRevokeSponsorship(sponsorshipId: string, reason: stri
         },
       });
     }
-  });
+  }, { maxWait: 45000, timeout: 120000 });
 
   await createAuditLog(
     "ADMIN_SPONSORSHIP_REVOKED",
@@ -1508,7 +1508,7 @@ export async function adminExtendSponsorship(sponsorshipId: string, extensionDay
         },
       });
     }
-  });
+  }, { maxWait: 45000, timeout: 120000 });
 
   await createAuditLog(
     "ADMIN_SPONSORSHIP_EXTENDED",

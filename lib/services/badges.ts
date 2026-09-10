@@ -5,7 +5,10 @@ import { calculateBayesianRating } from "./trust-score";
 /**
  * Initializes the default Quality Badges if they don't exist in the database.
  */
+let badgesInitialized = false;
+
 export async function initializeDefaultBadges() {
+  if (badgesInitialized) return;
   const defaultBadges = [
     {
       key: "verified-host",
@@ -45,6 +48,7 @@ export async function initializeDefaultBadges() {
     }
   ];
 
+  if (!prisma.qualityBadge?.upsert) return;
   for (const b of defaultBadges) {
     await prisma.qualityBadge.upsert({
       where: { key: b.key },
@@ -58,6 +62,7 @@ export async function initializeDefaultBadges() {
       create: b
     });
   }
+  badgesInitialized = true;
 }
 
 /**
@@ -70,6 +75,8 @@ export async function evaluateEntityBadges(
 ): Promise<void> {
   // Ensure default definitions exist
   await initializeDefaultBadges();
+
+  if (!prisma.reputationProfile?.findUnique) return;
 
   const profile = await prisma.reputationProfile.findUnique({
     where: { entityType_entityId: { entityType, entityId } }

@@ -3,11 +3,12 @@ import Link from "next/link";
 import { Compass, Sparkles, HelpCircle, ArrowRight } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "How to Attend an Indian Wedding as a Tourist: Complete Step-by-Step Guide",
+  title: "How to Attend an Indian Wedding as a Foreigner: Step-by-Step Guide",
   description:
-    "Learn step-by-step how to find, book, and attend an authentic Indian wedding celebration as an international tourist with WeddingWithIndia.",
+    "Step-by-step guide for international tourists to find, book, and attend authentic Indian weddings. Learn invitation etiquette, ceremony schedules, and safety.",
   keywords: [
     "how to attend an Indian wedding",
+    "how to attend an Indian wedding as a foreigner",
     "how can a tourist attend an Indian wedding",
     "attend an Indian wedding in India",
     "how to go to an Indian wedding as a foreigner",
@@ -17,9 +18,9 @@ export const metadata: Metadata = {
     canonical: "https://weddingwithindia.com/learn/how-to-attend-an-indian-wedding",
   },
   openGraph: {
-    title: "How to Attend an Indian Wedding as a Tourist | WeddingWithIndia",
+    title: "How to Attend an Indian Wedding as a Foreigner: Step-by-Step Guide | WeddingWithIndia",
     description:
-      "Step-by-step traveler guide to finding, reserving, and experiencing a real Indian wedding celebration in India.",
+      "Step-by-step guide for international tourists to find, book, and attend authentic Indian weddings. Learn invitation etiquette, ceremony schedules, and safety.",
     url: "https://weddingwithindia.com/learn/how-to-attend-an-indian-wedding",
     siteName: "WeddingWithIndia",
     type: "article",
@@ -34,9 +35,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "How to Attend an Indian Wedding as a Tourist | WeddingWithIndia",
+    title: "How to Attend an Indian Wedding as a Foreigner: Step-by-Step Guide | WeddingWithIndia",
     description:
-      "Step-by-step traveler guide to attending an authentic Indian wedding in India.",
+      "Step-by-step guide for international tourists to find, book, and attend authentic Indian weddings.",
     images: ["https://weddingwithindia.com/og-image.jpg"],
   },
 };
@@ -181,7 +182,7 @@ export default function HowToAttendPage() {
             <Compass size={13} /> Step-by-Step Guest Guide
           </div>
           <h1 className="font-display font-bold text-3xl sm:text-4xl lg:text-5xl text-charcoal-900 leading-tight">
-            How to Attend an Indian Wedding as a Tourist: Complete Step-by-Step Guide
+            How to Attend an Indian Wedding as an International Guest
           </h1>
           <p className="text-sm text-charcoal-500 font-medium">
             Published by WeddingWithIndia Editorial Team • Updated August 2026
@@ -210,9 +211,53 @@ export default function HowToAttendPage() {
                 <span className="w-10 h-10 rounded-2xl bg-maroon-50 text-[var(--color-brand-primary)] font-bold text-lg flex items-center justify-center shrink-0 border border-maroon-100">
                   {s.step}
                 </span>
-                <div className="space-y-1">
+                <div className="space-y-2">
                   <h3 className="font-display font-bold text-lg text-charcoal-900">{s.title}</h3>
                   <p className="text-sm text-charcoal-600 leading-relaxed">{s.desc}</p>
+                  {s.step === "1" && (
+                    <p className="text-xs text-charcoal-500 pt-1">
+                      Explore options in our{" "}
+                      <Link href="/weddings" className="text-[var(--color-brand-primary)] font-semibold underline">
+                        live weddings directory
+                      </Link>{" "}
+                      or read our guide on{" "}
+                      <Link href="/learn/can-foreigners-attend-indian-weddings" className="text-[var(--color-brand-primary)] font-semibold underline">
+                        foreign guest participation
+                      </Link>.
+                    </p>
+                  )}
+                  {s.step === "2" && (
+                    <p className="text-xs text-charcoal-500 pt-1">
+                      Learn how pricing tiers work in our{" "}
+                      <Link href="/learn/indian-wedding-experience-cost" className="text-[var(--color-brand-primary)] font-semibold underline">
+                        complete cost breakdown guide
+                      </Link>.
+                    </p>
+                  )}
+                  {s.step === "3" && (
+                    <p className="text-xs text-charcoal-500 pt-1">
+                      Review safety verification in our{" "}
+                      <Link href="/trust?tab=safety" className="text-[var(--color-brand-primary)] font-semibold underline">
+                        Trust &amp; Safety Center
+                      </Link>{" "}
+                      and visa requirements in our{" "}
+                      <Link href="/travel-visa" className="text-[var(--color-brand-primary)] font-semibold underline">
+                        travel visa guide
+                      </Link>.
+                    </p>
+                  )}
+                  {s.step === "4" && (
+                    <p className="text-xs text-charcoal-500 pt-1">
+                      Check ceremonial dress codes in our{" "}
+                      <Link href="/learn/what-to-wear-to-an-indian-wedding" className="text-[var(--color-brand-primary)] font-semibold underline">
+                        what to wear guide
+                      </Link>{" "}
+                      and review{" "}
+                      <Link href="/learn/indian-wedding-etiquette-for-foreigners" className="text-[var(--color-brand-primary)] font-semibold underline">
+                        wedding etiquette dos and don&apos;ts
+                      </Link>.
+                    </p>
+                  )}
                 </div>
               </div>
             ))}

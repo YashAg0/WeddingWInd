@@ -20,17 +20,73 @@ const isProtectedRoute = createRouteMatcher([
   "/api/agent-application(.*)"
 ]);
 
-// Clerk handler — only used for protected/admin routes
+// Clerk handler — handles protected and admin routes with explicit API 401 and page redirects
 const clerkHandler = clerkMiddleware(async (auth, req) => {
   if (isProtectedRoute(req) || isAdminRoute(req)) {
-    await auth.protect();
+    const { userId } = await auth();
+    const pathname = req.nextUrl?.pathname || new URL(req.url).pathname;
+
+    if (!userId) {
+      // 1. API routes must receive clean 401 JSON, never 404 HTML
+      if (pathname.startsWith("/api/")) {
+        return NextResponse.json(
+          { error: "UNAUTHORIZED: Authentication required." },
+          { status: 401 }
+        );
+      }
+
+      // 2. Prefetch / RSC navigation requests receive clean 401 without 404 HTML rendering
+      const isPrefetch =
+        req.headers.get("next-router-prefetch") === "1" ||
+        req.headers.get("purpose") === "prefetch";
+
+      if (isPrefetch) {
+        return new NextResponse(null, { status: 401 });
+      }
+
+      // 3. Browser page navigation: redirect to /login with redirect_url
+      const signInUrl = new URL("/login", req.url);
+      signInUrl.searchParams.set("redirect_url", req.url);
+      return NextResponse.redirect(signInUrl);
+    }
   }
 });
 
 export async function proxy(req: NextRequest, event: NextFetchEvent) {
+  // 0. Canonical Host & Protocol Enforcement (Production only; skip localhost / test / preview deployments)
+  const host = req.headers.get("host") || "";
+  const forwardedProto = req.headers.get("x-forwarded-proto");
+  const proto = forwardedProto || req.nextUrl.protocol.replace(":", "");
+
+  if (
+    process.env.NODE_ENV === "production" &&
+    !host.includes("localhost") &&
+    !host.includes("127.0.0.1") &&
+    !host.endsWith(".vercel.app")
+  ) {
+    const isWww = host.startsWith("www.");
+    const isHttp = proto === "http";
+
+    if (isWww || isHttp) {
+      const cleanHost = host.replace(/^www\./i, "");
+      const canonicalUrl = new URL(
+        req.nextUrl.pathname + req.nextUrl.search,
+        `https://${cleanHost}`
+      );
+      return NextResponse.redirect(canonicalUrl, { status: 301 });
+    }
+  }
+
   // 1. E2E Testing Authenticated Session Handling (Local/Test environments ONLY)
   if (isE2ETestAuthEnabled()) {
-    const e2eCookie = req.cookies.get("__wwi_e2e_session")?.value;
+    let e2eCookie = req.cookies.get("__wwi_e2e_session")?.value;
+    if (!e2eCookie) {
+      const cookieHeader = req.headers.get("cookie") || "";
+      const match = cookieHeader.match(/__wwi_e2e_session=([^;]+)/);
+      if (match) {
+        e2eCookie = match[1];
+      }
+    }
     if (e2eCookie) {
       const session = verifyE2ETestSessionToken(e2eCookie);
       if (session) {
@@ -47,44 +103,7 @@ export async function proxy(req: NextRequest, event: NextFetchEvent) {
     }
   }
 
-  // 2. For PUBLIC routes (not protected, not admin), skip Clerk entirely.
-  // This prevents Clerk's token handshake from blocking public marketing pages
-  // when running with development/mock keys in production-mode servers.
-  const isPublicRoute = !isProtectedRoute(req) && !isAdminRoute(req);
-
-  if (isPublicRoute) {
-    // Handle affiliate referral tracking for public routes
-    const response = NextResponse.next();
-    const rawRefCode = req.nextUrl?.searchParams?.get("ref");
-    if (rawRefCode) {
-      const cleanRefCode = rawRefCode.trim().toUpperCase();
-      if (/^[A-Z0-9_-]{3,50}$/.test(cleanRefCode)) {
-        const existingCookie = req.cookies.get("wwi_ref");
-        if (!existingCookie) {
-          const attributionPayload = JSON.stringify({
-            referralCode: cleanRefCode,
-            visitorId: Math.random().toString(36).substring(2, 15),
-            source: req.nextUrl.searchParams.get("utm_source")?.substring(0, 100) || undefined,
-            medium: req.nextUrl.searchParams.get("utm_medium")?.substring(0, 100) || undefined,
-            campaign: req.nextUrl.searchParams.get("utm_campaign")?.substring(0, 100) || undefined,
-            landingPage: req.nextUrl.pathname.substring(0, 200),
-            firstTouchAt: new Date().toISOString(),
-            lastTouchAt: new Date().toISOString(),
-          });
-          response.cookies.set("wwi_ref", attributionPayload, {
-            maxAge: 30 * 24 * 60 * 60,
-            path: "/",
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "lax",
-          });
-        }
-      }
-    }
-    return response;
-  }
-
-  // 3. Protected/Admin routes — invoke Clerk
+  // 2. Invoke Clerk Middleware to establish session context for all routes and Server Actions
   let response = NextResponse.next();
   try {
     const clerkRes = await clerkHandler(req, event);

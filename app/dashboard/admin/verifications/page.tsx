@@ -303,7 +303,8 @@ export default async function AdminVerificationsPage() {
                       )}
                     </div>
 
-                    <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center">
+                    <form className="flex flex-col md:flex-row gap-3 items-stretch md:items-center">
+                      <input type="hidden" name="id" value={v.id} />
                       <div className="flex-1">
                         <input
                           type="text"
@@ -317,82 +318,42 @@ export default async function AdminVerificationsPage() {
 
                       <div className="flex flex-wrap gap-2 justify-end">
                         {/* Under Review */}
-                        <form
-                          action={handleMarkUnderReview}
-                          onSubmit={(e) => {
-                            const input = document.getElementById(`notes-${v.id}`) as HTMLInputElement;
-                            const hidden = e.currentTarget.querySelector("input[name='notes']") as HTMLInputElement;
-                            hidden.value = input?.value || "";
-                          }}
+                        <button
+                          type="submit"
+                          formAction={handleMarkUnderReview}
+                          className="px-3.5 py-2 rounded-xl bg-purple-50 text-purple-700 hover:bg-purple-600 hover:text-white border border-purple-200 font-bold uppercase tracking-wider text-[0.625rem] cursor-pointer transition-colors"
                         >
-                          <input type="hidden" name="id" value={v.id} />
-                          <input type="hidden" name="notes" value="" />
-                          <button
-                            type="submit"
-                            className="px-3.5 py-2 rounded-xl bg-purple-50 text-purple-700 hover:bg-purple-600 hover:text-white border border-purple-200 font-bold uppercase tracking-wider text-[0.625rem] cursor-pointer transition-colors"
-                          >
-                            Under Review
-                          </button>
-                        </form>
+                          Under Review
+                        </button>
 
                         {/* Request Info / Need More Docs */}
-                        <form
-                          action={handleRequestMoreDocs}
-                          onSubmit={(e) => {
-                            const input = document.getElementById(`notes-${v.id}`) as HTMLInputElement;
-                            const hidden = e.currentTarget.querySelector("input[name='notes']") as HTMLInputElement;
-                            hidden.value = input?.value || "";
-                          }}
+                        <button
+                          type="submit"
+                          formAction={handleRequestMoreDocs}
+                          className="px-3.5 py-2 rounded-xl bg-amber-50 text-amber-800 hover:bg-amber-600 hover:text-white border border-amber-200 font-bold uppercase tracking-wider text-[0.625rem] cursor-pointer transition-colors"
                         >
-                          <input type="hidden" name="id" value={v.id} />
-                          <input type="hidden" name="notes" value="" />
-                          <button
-                            type="submit"
-                            className="px-3.5 py-2 rounded-xl bg-amber-50 text-amber-800 hover:bg-amber-600 hover:text-white border border-amber-200 font-bold uppercase tracking-wider text-[0.625rem] cursor-pointer transition-colors"
-                          >
-                            Need More Docs
-                          </button>
-                        </form>
+                          Need More Docs
+                        </button>
 
                         {/* Reject */}
-                        <form
-                          action={handleReject}
-                          onSubmit={(e) => {
-                            const input = document.getElementById(`notes-${v.id}`) as HTMLInputElement;
-                            const hidden = e.currentTarget.querySelector("input[name='notes']") as HTMLInputElement;
-                            hidden.value = input?.value || "";
-                          }}
+                        <button
+                          type="submit"
+                          formAction={handleReject}
+                          className="px-3.5 py-2 rounded-xl bg-rose-50 text-rose-700 hover:bg-rose-600 hover:text-white border border-rose-200 font-bold uppercase tracking-wider text-[0.625rem] cursor-pointer transition-colors"
                         >
-                          <input type="hidden" name="id" value={v.id} />
-                          <input type="hidden" name="notes" value="" />
-                          <button
-                            type="submit"
-                            className="px-3.5 py-2 rounded-xl bg-rose-50 text-rose-700 hover:bg-rose-600 hover:text-white border border-rose-200 font-bold uppercase tracking-wider text-[0.625rem] cursor-pointer transition-colors"
-                          >
-                            Reject
-                          </button>
-                        </form>
+                          Reject
+                        </button>
 
                         {/* Approve */}
-                        <form
-                          action={handleApprove}
-                          onSubmit={(e) => {
-                            const input = document.getElementById(`notes-${v.id}`) as HTMLInputElement;
-                            const hidden = e.currentTarget.querySelector("input[name='notes']") as HTMLInputElement;
-                            hidden.value = input?.value || "";
-                          }}
+                        <button
+                          type="submit"
+                          formAction={handleApprove}
+                          className="px-3.5 py-2 rounded-xl bg-emerald-50 text-emerald-700 hover:bg-emerald-600 hover:text-white border border-emerald-200 font-bold uppercase tracking-wider text-[0.625rem] cursor-pointer transition-colors"
                         >
-                          <input type="hidden" name="id" value={v.id} />
-                          <input type="hidden" name="notes" value="" />
-                          <button
-                            type="submit"
-                            className="px-3.5 py-2 rounded-xl bg-emerald-50 text-emerald-700 hover:bg-emerald-600 hover:text-white border border-emerald-200 font-bold uppercase tracking-wider text-[0.625rem] cursor-pointer transition-colors"
-                          >
-                            Approve Profile
-                          </button>
-                        </form>
+                          Approve Profile
+                        </button>
                       </div>
-                    </div>
+                    </form>
                   </div>
 
                 </div>

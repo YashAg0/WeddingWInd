@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const preferredRegion = "syd1";
 
 export async function GET() {
   const startTime = Date.now();

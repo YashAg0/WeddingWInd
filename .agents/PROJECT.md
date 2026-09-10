@@ -1,55 +1,62 @@
-# Project: WeddingWithIndia End-to-End Recovery
+# Project: WeddingWithIndia Remediation & Verification
 
 ## Architecture
-- Framework: Next.js 14+ (App Router) / React 18 / TypeScript / Tailwind CSS
+- Framework: Next.js 14+ / 16 (App Router) / React 18 / TypeScript / Tailwind CSS
 - Data & ORM: PostgreSQL / Prisma ORM (`lib/prisma.ts`)
-- Authentication: Clerk Auth (`lib/auth.ts`, `syncAndGetDbUser()`)
-- Storage: UploadThing (`lib/storage/index.ts`)
-- Payments: Stripe SDK (`lib/stripe.ts`, `app/api/webhooks/stripe/route.ts`)
-- Testing: Jest (`npm test -- --no-coverage`)
+- Authentication: Clerk Auth (`lib/auth.ts`, `lib/test-auth.ts`, `proxy.ts`, `app/api/test/auth/route.ts`)
+- Storage & Reports: CSV Reporting (`app/api/reports/host/[weddingId]/route.ts`)
+- Payments & Currency: Stripe/Razorpay (`lib/stripe.ts`), Multi-Currency Engine (`lib/currency.ts`)
+- Quality & Verification: TypeScript (`npx tsc --noEmit`), Jest (`npm test` / `npx jest`), Next Build (`npm run build`)
 
 ## Feature Inventory
-| # | Feature | Description | Milestone | Source |
-|---|---------|-------------|-----------|--------|
-| 1 | P2002 Email Error Fix | Normalize emails, reconcile Clerk ID vs DB email without duplicate email errors | M1 | R3 / Survey |
-| 2 | Founder Canonical Truth | Protect founder DB row from role downgrade, duplicate creation, or clerk mismatch | M1 | R3 / Survey |
-| 3 | Concurrent Signup Race Protection | Wrap `tx.user.create()` in P2002 catch to fetch existing user on race | M1 | R3 / Survey |
-| 4 | Stripe Webhook Transaction Atomicity | Move `sendInvoiceEmail` network call outside `prisma.$transaction` callback | M2 | R4 / Survey |
-| 5 | Refund Action Transaction Atomicity | Move `stripe.refunds.create` network call outside `prisma.$transaction` callback | M2 | R4 / Survey |
-| 6 | Listing Document Zod Fix | Transform empty string `""` to `null` in `verificationSchema` URL fields | M3 | R5 / Survey |
-| 7 | Dashboard Edit Link Fix | Preserve query parameters on `/dashboard/listings` edit button links | M3 | R5 / Survey |
-| 8 | Wedding Lifecycle Verification | Validate DRAFT -> SUBMITTED -> Admin Review -> APPROVED/REJECTED -> PUBLISHED | M3 | R5 / Survey |
-| 9 | SSR Hydration Mismatch Fix | Eliminate locale/date hydration mismatches in client components without `suppressHydrationWarning` | M4 | R6 / Survey |
-| 10| UI & Brand Color Alignment | Verify Admin portal and dashboards match homepage luxury gold & royal maroon tokens | M4 | R6 / Survey |
-| 11| Quad-Verification Suite | Verify clean exit code 0 for type-check, lint, test, and build | M5 | R2, R8 / Survey |
-| 12| Single Dev Server Behavioral Test | Verify end-to-end user workflows on a single Next.js dev server instance | M5 | R8 / Survey |
-| 13| Forensic Integrity Audit | Execute `teamwork_preview_auditor` to guarantee genuine, non-cheating code implementation | M6 | Forensic Audit |
+| # | Feature | Description | Milestone | Status | Source |
+|---|---------|-------------|-----------|--------|--------|
+| 1 | SEC-01: E2E Auth Bypass Remediation | Gate `isE2ETestAuthEnabled()` strictly to test env (`NODE_ENV === 'test' && PLAYWRIGHT_TEST === 'true'`) | M1 | DONE | ORIGINAL_REQUEST R1.1 |
+| 2 | UX-01: Structured Dietary Allergen Pipeline | Structured dietary allergen chips in onboarding & Event Hub; serialize dietary requirements in host catering CSV | M1 | DONE | ORIGINAL_REQUEST R1.2 |
+| 3 | OPS-01: Server Process Resilience | Remove `process.exit(0)` on `unhandledRejection` in `instrumentation.ts`; add structured `logger.error()` | M1 | DONE | ORIGINAL_REQUEST R1.3 |
+| 4 | SEC-02: CSV Formula Injection Neutralization | Escape formula characters (`=`, `+`, `-`, `@`, `\t`, `\r`) with single quotes in `escapeCsv` in host export | M1 | DONE | ORIGINAL_REQUEST R1.4 |
+| 5 | TRU-01: Truthful Trust Badge Binding | Bind `isVerified` strictly to approved database KYC records in `lib/wedding-dto.ts` and `WeddingCard.tsx` | M2 | DONE | ORIGINAL_REQUEST R2.1 |
+| 6 | UX-03: Cancellation & Escrow Protection Drawer | Embed expandable Cancellation & Escrow Protection drawer in `components/wedding/BookingSidebar.tsx` | M2 | DONE | ORIGINAL_REQUEST R2.2 |
+| 7 | UX-02: Multi-Guest Attendee Manifest Cards | Dynamic `BookingGuest` attendee card collection (names, dietary restrictions) in `BookingSidebar.tsx` & Event Hub | M2 | DONE | ORIGINAL_REQUEST R2.3 |
+| 8 | FIN-01: Native Multi-Currency Engine | Support GBP, AUD, CAD, SGD, AED display estimates in `lib/currency.ts` & `Navbar.tsx` (INR authoritative) | M2 | DONE | ORIGINAL_REQUEST R2.4 |
+| 9 | ROU-01: Route Shadowing Resolution | Remove shadowed redirect from `next.config.ts` to unshadow `app/destinations/page.tsx` | M2 | DONE | ORIGINAL_REQUEST R2.5 |
+| 10| PRF-01: Standardized Suspense Skeletons | Add `loading.tsx` skeletons to missing subtrees (`app/destinations/*`, `app/learn/*`, dashboard pages) | M3 | DONE | ORIGINAL_REQUEST R3.1 |
+| 11| PRF-02: Static Mock Data Decoupling | Decouple static mock listing data from client bundles to seed utilities | M3 | DONE | ORIGINAL_REQUEST R3.2 |
+| 12| UX-06: Marquee CPU Optimization | Replace 28s continuous repaint loop in `TrustStrip.tsx` with static 4-column trust badge grid | M3 | DONE | ORIGINAL_REQUEST R3.3 |
+| 13| UX-05: Legal Route Consolidation | Consolidate 27+ legal pages into unified 3-tab `/trust` portal | M3 | DONE | ORIGINAL_REQUEST R3.4 |
+| 14| M4-01: Mission-Critical Invariant Verification | Verify `SELECT FOR UPDATE` booking locking, AES-256-GCM encryption, webhook HMAC, Bayesian review ratings | M4 | DONE | ORIGINAL_REQUEST R4.1 |
+| 15| M4-02: Quad-Verification Suite | Verify clean exit code 0 for `tsc --noEmit`, `jest`, `next build`, and zero extraneous diffs | M4 | DONE | ORIGINAL_REQUEST R4.2 |
+| 16| M4-03: Forensic Integrity Audit | Independent `teamwork_preview_auditor` verification for CLEAN verdict | M4 | DONE | Forensic Audit |
 
 ## Milestones
 | # | Name | Scope | Dependencies | Status |
 |---|------|-------|-------------|--------|
-| M1 | Identity & Auth Hardening | `syncAndGetDbUser()` P2002 fix, email normalization, Clerk ID reconciliation, founder protection | None | DONE |
-| M2 | Database & Transaction Integrity | Refactor transaction atomicity in Stripe webhook & refund action | M1 | DONE |
-| M3 | Wedding Lifecycle & Listing Creation Repair | Fix Zod empty string URL parsing in `verificationSchema`, fix edit link query params | M2 | DONE |
-| M4 | Dashboard Repair & UI/Hydration Stabilization | Fix client component SSR date hydration mismatches, verify design token consistency | M3 | DONE |
-| M5 | Financial, Security & Quad-Verification Run | Server-authoritative pricing verification, run type-check, lint, test, build & runtime test | M4 | DONE |
-| M6 | Forensic Integrity Audit | Independent `teamwork_preview_auditor` verification for CLEAN verdict | M5 | DONE |
+| M1 | Critical Security, Medical Safety & Resilience | SEC-01, UX-01, OPS-01, SEC-02 | None | DONE |
+| M2 | Booking, Trust Verification & Multi-Currency | TRU-01, UX-03, UX-02, FIN-01, ROU-01 | M1 | DONE |
+| M3 | Performance, Skeletons & UX Simplification | PRF-01, PRF-02, UX-06, UX-05 | M2 | DONE |
+| M4 | Verification, Quality Gates & Regression Protection | Invariant Verification, tsc, jest, next build, Forensic Audit | M1, M2, M3 | DONE |
 
 ## Interface Contracts
-### Clerk ↔ Prisma Sync (`lib/auth.ts`)
-- `syncAndGetDbUser()` accepts authenticated Clerk user and returns canonical Prisma `User`.
-- Normalizes `clerkUser.email` using `.toLowerCase().trim()`.
-- Looks up `existingByClerkId` and `existingByEmail`. If `existingByEmail` exists, links `clerkUserId` to `existingByEmail` without overwriting `role` or `status`.
+### Auth Bypass Gating (`lib/test-auth.ts`, `proxy.ts`, `app/api/test/auth/route.ts`, `lib/auth.ts`)
+- `isE2ETestAuthEnabled()` returns true ONLY when `process.env.NODE_ENV === 'test' && process.env.PLAYWRIGHT_TEST === 'true'`.
 
-### Stripe Webhook Handler (`app/api/webhooks/stripe/route.ts`)
-- Webhook events process idempotently via `prisma.stripeWebhookEvent`.
-- Database transaction updates booking status to `CONFIRMED`; email dispatch (`sendInvoiceEmail`) is triggered post-transaction commit.
+### Host Catering CSV Export (`app/api/reports/host/[weddingId]/route.ts`)
+- `escapeCsv(val)` escapes formula injection prefix characters (`=`, `+`, `-`, `@`, `\t`, `\r`) with a leading single quote `'`.
+- Includes dietary requirements from `TravelDetail` and attendee guest alerts.
+
+### Currency Conversion (`lib/currency.ts`)
+- Exchange rates for GBP, AUD, CAD, SGD, AED, USD, EUR relative to INR.
+- Settlement remains strictly INR.
 
 ## Code Layout
-- `lib/auth.ts`: Authentication & Clerk user synchronization logic
-- `lib/prisma.ts`: Prisma Client singleton & connection health
-- `lib/validation/index.ts`: Zod schema definitions for verification & listings
-- `app/api/webhooks/stripe/route.ts`: Stripe webhook handler
-- `lib/actions/index.ts`: Server Actions for bookings, listings, and refunds
-- `app/dashboard/**/*`: User, Host, Agent, Coordinator dashboards
-- `app/admin/**/*`: Admin portal sub-routes (19 routes)
+- `lib/test-auth.ts`, `proxy.ts`, `app/api/test/auth/route.ts`, `lib/auth.ts`: Auth & test auth gating
+- `app/onboarding/page.tsx`, `app/event-hub/**/*`: Onboarding & event attendee UX
+- `instrumentation.ts`: Server lifecycle & error handling
+- `app/api/reports/host/[weddingId]/route.ts`: Host export & CSV serialization
+- `lib/wedding-dto.ts`, `components/wedding/WeddingCard.tsx`: Verification & badge rendering
+- `components/wedding/BookingSidebar.tsx`: Booking drawer, multi-guest manifest, cancellation policy
+- `lib/currency.ts`, `components/layout/Navbar.tsx`: Currency selector & conversion
+- `next.config.ts`: Next.js redirects and configurations
+- `app/destinations/**/loading.tsx`, `app/learn/**/loading.tsx`: Suspense boundaries
+- `components/landing/TrustStrip.tsx`: Trust badges grid
+- `app/trust/page.tsx`: Unified 3-tab legal portal

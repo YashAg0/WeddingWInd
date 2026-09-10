@@ -117,7 +117,24 @@ export function toWeddingDTO(rawWedding: any): Wedding {
   }
 
   // 6. Visual Profile & Canonical Image Resolution (1 Wedding = 1 Canonical Image Everywhere)
-  const isVerifiedHostMedia = !rawWedding.isDemo && (rawWedding.status === "VERIFIED" || rawWedding.status === "PUBLISHED" || !!rawWedding.isVerified);
+  const hasApprovedVerification =
+    rawWedding.hostCouple?.user?.verification?.status === "APPROVED" ||
+    rawWedding.verification?.status === "APPROVED";
+
+  const hasVerifiedQualityBadge =
+    Array.isArray(rawWedding.hostCouple?.user?.badges) &&
+    rawWedding.hostCouple.user.badges.some(
+      (b: any) =>
+        (b.badge?.key === "verified-host" || b.badgeKey === "verified-host" || b.key === "verified-host") &&
+        !b.revokedAt
+    );
+
+  const isExplicitlyVerified = Boolean(rawWedding.isVerified);
+
+  const isVerified =
+    !rawWedding.isDemo && (hasApprovedVerification || hasVerifiedQualityBadge || isExplicitlyVerified);
+
+  const isVerifiedHostMedia = isVerified;
   const visualProfile = resolveWeddingVisualProfile({
     slug: rawWedding.slug,
     id: rawWedding.id,
@@ -225,7 +242,7 @@ export function toWeddingDTO(rawWedding: any): Wedding {
     languages: Array.isArray(rawWedding.languages)
       ? rawWedding.languages
       : rawWedding.hostCouple?.languagesSpoken?.split(",").map((l: string) => l.trim()) || ["English", "Hindi"],
-    isVerified: !rawWedding.isDemo && (rawWedding.status === "VERIFIED" || rawWedding.status === "PUBLISHED" || !!rawWedding.isVerified),
+    isVerified,
     isCurated: !!(activeSponsored || activeFeatured || rawWedding.isCurated),
     curatedBadge: activeSponsored ? "Sponsored" : activeFeatured ? "Featured" : undefined,
     gallery,

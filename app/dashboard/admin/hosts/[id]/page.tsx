@@ -74,11 +74,16 @@ export default function AdminHostDetailPage() {
   const [expandedDay, setExpandedDay] = useState<number>(1);
 
   const loadDetail = useCallback(async () => {
+    if (!id) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       const res: any = await adminGetHostApplicationByIdAction(id);
       if (!res) {
         toast.error("Host application record not found.");
+        setData(null);
       } else {
         setData(res);
         if (res.isHostApp && res.hostApp) {
@@ -96,13 +101,18 @@ export default function AdminHostDetailPage() {
       }
     } catch (err: any) {
       toast.error(err.message || "Failed to load application.");
+      setData(null);
     } finally {
       setLoading(false);
     }
   }, [id]);
 
   useEffect(() => {
-    if (id) loadDetail();
+    if (id) {
+      loadDetail();
+    } else {
+      setLoading(false);
+    }
   }, [id, loadDetail]);
 
   const handleDecision = async (

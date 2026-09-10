@@ -1,29 +1,45 @@
-# Master Orchestration Plan — WeddingWithIndia End-to-End Recovery
+# Master Forensic Audit Plan — WeddingWithIndia Marketplace
 
 ## Objective
-Make the existing WeddingWithIndia application genuinely work end-to-end as a coherent production marketplace, recovering it autonomously through rigorous testing, root-cause fixes, and comprehensive verifications.
+Execute an independent verification, hostile red-team, real-user, and marketplace forensic audit of the WeddingWithIndia codebase, reconciling all Audit Pass 1 findings with rigorous line-level proof, discovering everything Pass 1 missed, and delivering a comprehensive 16-section Master Audit Report (Sections A–P) without modifying any source files or databases.
 
-## Phase 0: Survey & Technical Investigation
-- Spawn 3 parallel Explorers / Spec Miners to investigate current codebase state:
-  1. `explorer_auth_db`: Focus on Auth & DB Integrity (`P2002` error in `syncAndGetDbUser()`, Clerk ID vs verified email reconciliation, Prisma singleton, connection/transaction timeouts, `Promise.race` leaks, transaction atomicity).
-  2. `explorer_wedding_dashboards`: Focus on Wedding Lifecycle & Dashboards ("document type error" blocking listing creation, approval/rejection workflows, resubmission flow, Host/Traveler/Agent/Coordinator/Admin dashboard state fetching).
-  3. `explorer_financial_ux`: Focus on Financial, Security, UI & Hydration Consistency (Stripe pricing/webhooks, KYC/uploads, messaging with PII moderation, homepage brand color/typography matching across dashboards, SSR hydration error elimination without `suppressHydrationWarning`).
+## Workstreams & Deliverables
 
-## Phase 1: Feature Inventory & Milestone Decomposition
-Merge Survey findings into `PROJECT.md § Feature Inventory` and establish concrete Milestones:
-- **M1: Identity & Auth Hardening (R3)**: `P2002` email error resolution, founder DB row canonical reconciliation, Clerk ID matching via verified email, fail-closed DB auth.
-- **M2: Database & Transaction Integrity (R4)**: Strict Prisma singleton, connection/transaction timeouts, removal of `Promise.race` leaks, transaction atomicity enforcement.
-- **M3: Wedding Lifecycle & Admin Controls (R5)**: "Document type error" fix, listing creation flow, Admin approval/rejection/resubmission workflows, Admin portal route/control repairs.
-- **M4: Dashboard Repair & UI/Hydration Consistency (R5, R6)**: Host/Traveler/Agent/Coordinator/Admin dashboards backend state integration, homepage brand color/typography alignment, deterministic SSR hydration fix.
-- **M5: Financial, Security & Data Integrity (R5, R7)**: Server-authoritative Stripe pricing/checkout/webhooks idempotency, KYC upload gating, messaging PII moderation, data corruption safety.
-- **M6: Quad-Verification & Single-Dev-Server Behavioral Testing (R2, R8)**: `npm run type-check`, `npm run lint`, `npm test`, `npm run build`, and single-dev-server runtime browser testing.
-- **M7: Forensic Audit Verification**: `teamwork_preview_auditor` verification for clean implementation (0 integrity violations, 0 cheating).
+### Workstream 1: Independent P0/P1 Finding Re-verification & Reconciliation (R1)
+- Independently test and trace every finding from Pass 1 through the code paths:
+  - **SEC-01**: Hardcoded test auth bypass in `lib/test-auth.ts`, reachability via `proxy.ts`, `app/api/test/auth/route.ts`, and Clerk bypass.
+  - **UX-01**: Dietary restrictions disconnect & free-text input in `app/onboarding` vs `app/api/reports/host/[weddingId]`.
+  - **OPS-01**: Server process termination on `unhandledRejection` via `cleanup()` calling `process.exit(0)` in `instrumentation.ts`.
+  - **SEC-02**: CSV formula injection (DDE) in `app/api/reports/host/[weddingId]/route.ts`.
+  - **TRU-01**: Synthetic green verified badge decoupling in `lib/wedding-dto.ts:228`.
+  - **FIN-01**: Static multi-currency engine (`USD: 95.50`, `EUR: 108.00`) in `lib/currency.ts`.
+  - **UX-02**: Multi-guest attendee manifest blindspot in `BookingSidebar.tsx`.
+  - **UX-03**: Missing checkout cancellation & escrow drawer in `BookingSidebar.tsx`.
+- Assign exact verdict tags: `VERIFIED`, `PARTIALLY VERIFIED`, `FALSE POSITIVE`, `OUTDATED`, `UNVERIFIED`.
 
-## Dual Track Strategy
-- **Implementation Track**: Executes M1 through M6 sequentially or in parallel dependency order, closing with E2E integration and adversarial hardening.
-- **E2E Testing Track**: Maintains opaque-box test suite covering Tiers 1-4 based on user requirements.
+### Workstream 2: Hostile Red-Team & Adversarial Invariant Testing (R2)
+- Horizontal & vertical authorization matrix analysis across all 113 pages and 21 API endpoints.
+- Defensive concurrency probing (`SELECT FOR UPDATE`, atomic seat decrement, idempotent Stripe webhook handling, double refund prevention).
+- State machine invariant validation across 5 domain state machines (Auth, Booking, Payment/Escrow, Listing, KYC).
 
-## Verification & Audit Gates
-- Build & Verification: `npm run type-check`, `npm run lint`, `npm test`, `npm run build`.
-- Behavioral Verification: Single dev server runtime verification (e.g. login -> Admin -> manage weddings -> public listing).
-- Forensic Audit: `teamwork_preview_auditor` verification for clean implementation (NO hardcoded expected values, facade implementations, or cheating).
+### Workstream 3: Performance Root-Cause Forensics (R3)
+- Profile bundle sizes, client vs server component boundaries, hydration costs, sequential query waterfalls, 16 missing `loading.tsx` Suspense boundaries.
+- Trace static mock data bloat in `lib/data.ts` and continuous CSS marquee animation repaints in `TrustStrip.tsx`.
+
+### Workstream 4: Real-User Foreign Traveler Experience & Marketplace Inventory (R4)
+- Psychological anxiety micro-moments: dietary allergy safety, solo female traveler security, emergency support, cultural dress codes.
+- Component classification: KEEP / REDUCE / COMBINE / MOVE / REMOVE / ADD ("Too Much Website" vs "Too Little Website").
+- Inventory realism & mobile viewport ergonomics audit.
+
+### Workstream 5: Pass 1 Blindspot Discovery & Master Report Generation (R5)
+- Compile complete Sections A through P in `MASTER_AUDIT_REPORT.md`.
+- 11-dimension forensic scorecard with 0–100 scores and grades.
+- Regression Risk Map & Dependency Graph.
+- Mission-critical Do-Not-Touch list.
+- Top 20 Actionable Recommendations with Sprint Work Packages (WP-01 to WP-07).
+- Direct, explicit answers to Part 31 Top 10 Forensic Questions.
+
+## Audit & Verification Gates
+- **Zero Modification Integrity**: Strict validation of 0 file modifications outside `.agents/`.
+- **Forensic Auditor Gate**: `teamwork_preview_auditor` verification for clean citations, non-fabrication, and completeness.
+- **Sentinel Victory Gate**: Independent confirmation of all audit requirements and acceptance criteria.

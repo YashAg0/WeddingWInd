@@ -1,85 +1,120 @@
-"use client";
+import { ShieldCheck, Lock, Headset, QrCode, ArrowRight } from "lucide-react";
+import Link from "next/link";
 
-import { ShieldCheck, HeartHandshake, Ticket, Headset, Globe, BadgeCheck } from "lucide-react";
+interface TrustPillar {
+  icon: typeof ShieldCheck;
+  title: string;
+  badge: string;
+  description: string;
+  linkHref: string;
+  linkLabel: string;
+}
 
-const TRUST_ITEMS = [
+const TRUST_PILLARS: TrustPillar[] = [
   {
-    icon: <ShieldCheck size={18} aria-hidden="true" />,
-    text: "Verified Host Families",
+    icon: ShieldCheck,
+    title: "100% KYC Verified Hosts",
+    badge: "Vetted Celebrations",
+    description:
+      "Every host couple undergoes multi-point government ID, background, and venue sanctity verification.",
+    linkHref: "/trust?tab=safety#verification",
+    linkLabel: "Verification standards",
   },
   {
-    icon: <HeartHandshake size={18} aria-hidden="true" />,
-    text: "Authentic Traditions",
+    icon: Lock,
+    title: "Escrow & 4-Tier Refund",
+    badge: "Payment Protection",
+    description:
+      "Host payouts are held secure in escrow until ceremony check-in with transparent 90%/70%/40% refund tiers.",
+    linkHref: "/trust?tab=terms#cancellation",
+    linkLabel: "Refund terms",
   },
   {
-    icon: <Ticket size={18} aria-hidden="true" />,
-    text: "All-Inclusive Guest Pass",
+    icon: Headset,
+    title: "Dedicated Cultural Concierge",
+    badge: "24/7 Guest Liaison",
+    description:
+      "On-ground coordinator guidance for attire, ritual etiquette, schedule navigation, and live assistance.",
+    linkHref: "/trust?tab=safety#guest-guide",
+    linkLabel: "Guest safety guide",
   },
   {
-    icon: <Headset size={18} aria-hidden="true" />,
-    text: "Dedicated Concierge",
-  },
-  {
-    icon: <Globe size={18} aria-hidden="true" />,
-    text: "Guests from 48+ Nations",
-  },
-  {
-    icon: <BadgeCheck size={18} aria-hidden="true" />,
-    text: "Transparent USD Pricing",
+    icon: QrCode,
+    title: "All-Inclusive Guest Pass",
+    badge: "AES-256 Encrypted",
+    description:
+      "Cryptographic QR passes covering all ceremonies, feasts, and hospitality with zero hidden fees.",
+    linkHref: "/trust?tab=terms#booking-terms",
+    linkLabel: "Pass details",
   },
 ];
 
 export function TrustStrip() {
-  // Duplicate items for seamless loop
-  const items = [...TRUST_ITEMS, ...TRUST_ITEMS, ...TRUST_ITEMS];
-
   return (
     <section
-      className="overflow-hidden py-4 sm:py-5 border-y border-warm-200/60"
-      style={{ background: "linear-gradient(90deg, var(--color-warm-100) 0%, #fff 50%, var(--color-warm-100) 100%)" }}
-      aria-label="Platform trust signals"
+      className="relative z-10 -mt-8 sm:-mt-12 mb-6 sm:mb-12 container-luxury"
+      aria-label="Platform Trust & Safety Guarantees"
     >
-      <style>{`
-        @keyframes marqueeScroll {
-          0%   { transform: translateX(0); }
-          100% { transform: translateX(-33.333%); }
-        }
-        .trust-marquee {
-          display: flex;
-          width: max-content;
-          animation: marqueeScroll 28s linear infinite;
-          will-change: transform;
-        }
-        @media (prefers-reduced-motion: reduce) {
-          .trust-marquee { animation: none; }
-        }
-      `}</style>
-
-      <div className="trust-marquee" aria-hidden="true">
-        {items.map((item, i) => (
-          <div
-            key={i}
-            className="inline-flex items-center gap-2.5 px-6 sm:px-8 flex-shrink-0"
-          >
-            <span
-              className="flex h-8 w-8 items-center justify-center rounded-full border border-maroon-200/60 bg-maroon-50 text-[var(--color-brand-primary)] flex-shrink-0"
-            >
-              {item.icon}
+      <div className="bg-white/95 backdrop-blur-md border border-warm-200/80 rounded-2xl sm:rounded-3xl p-6 sm:p-8 shadow-xl shadow-charcoal-900/5">
+        {/* Header Eyebrow */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-6 mb-6 border-b border-warm-200/60">
+          <div className="flex items-center gap-2">
+            <span className="flex h-2 w-2 rounded-full bg-[var(--color-brand-primary)]" />
+            <span className="text-xs font-bold tracking-widest uppercase text-charcoal-500">
+              WeddingWithIndia Traveler Guarantee
             </span>
-            <span className="text-sm font-semibold text-charcoal-700 whitespace-nowrap">
-              {item.text}
-            </span>
-            <span className="text-warm-300 text-xl ml-4" aria-hidden="true">·</span>
           </div>
-        ))}
-      </div>
+          <Link
+            href="/trust"
+            className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--color-brand-primary)] hover:text-maroon-700 transition-colors"
+          >
+            <span>Explore our full Trust & Safety Portal</span>
+            <ArrowRight size={13} aria-hidden="true" />
+          </Link>
+        </div>
 
-      {/* Screen-reader accessible list */}
-      <ul className="sr-only" aria-label="Trust signals">
-        {TRUST_ITEMS.map((item) => (
-          <li key={item.text}>{item.text}</li>
-        ))}
-      </ul>
+        {/* 4-Column Static Trust Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
+          {TRUST_PILLARS.map((pillar) => {
+            const Icon = pillar.icon;
+            return (
+              <div
+                key={pillar.title}
+                className="group flex flex-col justify-between p-4 rounded-xl bg-warm-50/50 hover:bg-warm-50 border border-warm-200/50 hover:border-amber-300 transition-all duration-200"
+              >
+                <div>
+                  <div className="flex items-center justify-between gap-2 mb-3">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white border border-warm-200/80 text-[var(--color-brand-primary)] shadow-2xs group-hover:bg-maroon-50 transition-colors">
+                      <Icon size={20} aria-hidden="true" />
+                    </span>
+                    <span className="text-[0.625rem] font-bold uppercase tracking-wider text-amber-900 bg-amber-100/80 px-2 py-0.5 rounded-full border border-amber-200/60">
+                      {pillar.badge}
+                    </span>
+                  </div>
+
+                  <h3 className="font-display font-bold text-sm sm:text-base text-charcoal-900 mb-1 leading-snug">
+                    {pillar.title}
+                  </h3>
+
+                  <p className="text-xs text-charcoal-600 leading-relaxed">
+                    {pillar.description}
+                  </p>
+                </div>
+
+                <div className="mt-4 pt-3 border-t border-warm-200/40">
+                  <Link
+                    href={pillar.linkHref}
+                    className="inline-flex items-center gap-1 text-[0.6875rem] font-bold text-charcoal-700 hover:text-[var(--color-brand-primary)] transition-colors"
+                  >
+                    <span>{pillar.linkLabel}</span>
+                    <ArrowRight size={11} className="transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+                  </Link>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
     </section>
   );
 }

@@ -127,7 +127,7 @@ function DashboardShellContent({ children }: { children: React.ReactNode }) {
 
 
   return (
-    <div className="flex h-screen bg-warm-50 overflow-hidden font-sans">
+    <div className="flex min-h-[100dvh] bg-warm-50 font-sans">
       {/* Desktop Sidebar */}
       <div className="hidden lg:block h-full flex-shrink-0">
         <Sidebar />
@@ -160,7 +160,7 @@ function DashboardShellContent({ children }: { children: React.ReactNode }) {
       </AnimatePresence>
 
       {/* Main viewport */}
-      <div className="flex flex-col flex-1 overflow-hidden min-w-0 h-full">
+      <div className="flex flex-col flex-1 min-w-0 min-h-[100dvh] overflow-hidden">
         <DashboardHeader onOpenMobileSidebar={() => setMobileSidebarOpen(true)} />
         {dbOffline && user && (
           // DB went offline AFTER the user was already synced — show a non-blocking banner
@@ -174,8 +174,8 @@ function DashboardShellContent({ children }: { children: React.ReactNode }) {
             </button>
           </div>
         )}
-        <div className="flex-1 overflow-y-auto min-h-0 bg-warm-50 p-4 sm:p-6 md:p-8 focus:outline-none" role="region" aria-label="Dashboard Content">
-          <div className="max-w-6xl mx-auto w-full pb-16">
+        <div className="flex-1 overflow-y-auto bg-warm-50 p-4 sm:p-6 md:p-8 focus:outline-none" role="region" aria-label="Dashboard Content">
+          <div className="max-w-6xl mx-auto w-full pb-24 lg:pb-16 pb-bottom-nav">
             {children}
           </div>
         </div>

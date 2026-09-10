@@ -1,7 +1,6 @@
 import { requireRole } from "@/lib/auth";
 import { UserRole } from "@prisma/client";
 import { adminGetPaymentsAndQueuesAction } from "@/lib/actions/admin";
-import { prisma } from "@/lib/prisma";
 import AdminManualPaymentManager from "@/components/dashboard/AdminManualPaymentManager";
 import { CreditCard, RefreshCcw, Landmark, AlertTriangle, ShieldCheck, DollarSign } from "lucide-react";
 
@@ -18,35 +17,10 @@ export default async function AdminPaymentsPage() {
   let fetchError: string | null = null;
 
   try {
-    const [queueData, paymentsList, bookingsList] = await Promise.all([
-      adminGetPaymentsAndQueuesAction(),
-      prisma.payment.findMany({
-        include: {
-          booking: {
-            include: {
-              traveler: { include: { user: true } },
-              wedding: true,
-            },
-          },
-        },
-        orderBy: { createdAt: "desc" },
-      }),
-      prisma.booking.findMany({
-        where: {
-          status: { in: ["PENDING", "APPROVED", "AWAITING_PAYMENT"] },
-        },
-        include: {
-          traveler: { include: { user: true } },
-          wedding: true,
-          payments: true,
-        },
-        orderBy: { createdAt: "desc" },
-      }),
-    ]);
-
+    const queueData = await adminGetPaymentsAndQueuesAction();
     data = queueData;
-    allPayments = JSON.parse(JSON.stringify(paymentsList));
-    pendingBookings = JSON.parse(JSON.stringify(bookingsList));
+    allPayments = (queueData as any).allPayments || [];
+    pendingBookings = (queueData as any).pendingBookings || [];
   } catch (err: any) {
     console.error("[AdminPaymentsPage] Error fetching payments data:", err);
     fetchError = err?.message || "Failed to retrieve financial records from database.";
@@ -91,8 +65,7 @@ export default async function AdminPaymentsPage() {
   const totalGrossVolumeUSD = data.transactions
     .filter((t: any) => t.type === "CHARGE")
     .reduce((sum: number, t: any) => sum + (t.amount || 0), 0);
-  const totalHostPayoutsSettledINR = data.payoutQueue
-    .reduce((sum: number, p: any) => sum + (p.amount || 0), 0);
+  const totalHostPayoutsSettledINR = (data as any).payoutSummary?.totalSettledAmount ?? 0;
 
   return (
     <div className="space-y-8 animate-fade-in">
@@ -145,7 +118,7 @@ export default async function AdminPaymentsPage() {
           </div>
           <div>
             <span className="text-[0.6875rem] font-bold text-charcoal-400 uppercase tracking-widest block">Payout Ledger</span>
-            <span className="font-display font-bold text-xl text-charcoal-900">{data.payoutQueue.length} Settled</span>
+            <span className="font-display font-bold text-xl text-charcoal-900">{(data as any).payoutSummary?.totalSettledCount ?? data.payoutQueue?.length ?? 0} Settled</span>
           </div>
         </div>
 

@@ -102,7 +102,7 @@ export default function BookingCard({ booking, onCancel }: BookingCardProps) {
     if (url) {
       window.location.href = url;
     } else {
-      toast.error("Failed to initiate payment checkout. Please verify Stripe configuration.");
+      toast.error("Payment link is not yet ready. Your host concierge will provide payment instructions shortly.");
       setPaying(false);
     }
   };

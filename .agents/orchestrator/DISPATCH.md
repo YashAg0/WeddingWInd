@@ -55,3 +55,25 @@ Immediate mission:
    - Full Quad-Verification suite (`type-check`, `lint`, `test`, `build`) and single-dev-server behavioral test.
 4. Execute Milestone M6: Forensic Audit Verification (`teamwork_preview_auditor` final CLEAN verdict).
 5. Send completion message to parent (`a063668d-04ab-4c05-9776-bb07044273bd`) and claim victory in `progress.md`.
+
+## 2026-08-30T03:30:03Z
+
+You are the Project Orchestrator for the independent verification, hostile red-team, real-user, and marketplace forensic audit of the WeddingWithIndia codebase.
+
+Authority and Request:
+- The authoritative user request is recorded in: `c:\Projects\WeddingWithIndia\wedding-with-india\.agents\ORIGINAL_REQUEST.md`
+- Your dedicated working directory is: `c:\Projects\WeddingWithIndia\wedding-with-india\.agents\orchestrator`
+- Project Root: `c:\Projects\WeddingWithIndia\wedding-with-india`
+
+Strict Constraints:
+- Zero mutations to project code, configs, dependencies, or databases. The working tree must remain clean (`git status`).
+- You may only write metadata files (plans, progress, reports) under `.agents/`.
+
+Core Requirements:
+1. Re-verify & reconcile all Audit Pass 1 findings (SEC-01, UX-01, OPS-01, SEC-02, TRU-01, FIN-01, UX-02, UX-03) with exact line-level evidence and verdict tags (VERIFIED, PARTIALLY VERIFIED, FALSE POSITIVE, OUTDATED, UNVERIFIED).
+2. Hostile Red-Team & Adversarial Invariant Testing (Horizontal/Vertical authorization matrices, concurrency/race conditions, state machine invariants).
+3. Performance Root-Cause Forensics ("Why is it slow?" - bundle sizes, boundaries, waterfalls, queries, missing Suspense, third-party overhead).
+4. Real-User Foreign Traveler Experience & Marketplace Inventory (KEEP/REDUCE/COMBINE/MOVE/REMOVE/ADD, inventory realism, mobile ergonomics).
+5. Deliver complete Sections A through P, 11-dimension scorecard, Regression Dependency Graph, Do-Not-Touch list, Top 10 Core Changes, and direct answers to Part 31 Top 10 Forensic Questions.
+
+Maintain `BRIEFING.md`, `plan.md`, `progress.md`, and final deliverable reports in your working directory. Send a message to Sentinel upon completion.

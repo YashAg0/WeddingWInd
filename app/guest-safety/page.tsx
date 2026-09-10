@@ -8,7 +8,11 @@ export const metadata: Metadata = {
   description:
     "Comprehensive safety guidelines, cultural etiquette, and emergency protocols for international travelers attending Indian wedding experiences through WeddingWithIndia.",
   alternates: {
-    canonical: "https://weddingwithindia.com/guest-safety",
+    canonical: "https://weddingwithindia.com/trust?tab=safety#guest-guide",
+  },
+  robots: {
+    index: false,
+    follow: true,
   },
 };
 

@@ -8,7 +8,11 @@ export const metadata: Metadata = {
   description:
     "Community standards and mutual expectations for travelers, host families, and coordinators participating in WeddingWithIndia experiences.",
   alternates: {
-    canonical: "https://weddingwithindia.com/community-guidelines",
+    canonical: "https://weddingwithindia.com/trust?tab=safety#guest-guide",
+  },
+  robots: {
+    index: false,
+    follow: true,
   },
 };
 

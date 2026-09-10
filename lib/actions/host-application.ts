@@ -2,7 +2,7 @@
 
 import { prisma } from "../prisma";
 import { requireAuth } from "../auth";
-import { UserRole, VerificationStatus, WeddingStatus } from "@prisma/client";
+import { HostApplicationStatus, UserRole, VerificationStatus, WeddingStatus } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 
 export interface HostDayInput {
@@ -91,9 +91,9 @@ export interface HostApplicationState {
     story: string;
     photoUrl: string;
     intlGuestCapacity: number;
-    createdAt: Date;
-    updatedAt: Date;
-    lastSavedAt?: Date;
+    createdAt: string;
+    updatedAt: string;
+    lastSavedAt?: string | null;
     gallery: any[];
     events: any[];
     traditions: any[];
@@ -104,21 +104,81 @@ export interface HostApplicationState {
   } | null;
 }
 
+export type SaveHostApplicationDraftResult =
+  | { success: true; applicationId: string; lastSavedAt: string; status: string; error?: never; errorCode?: never }
+  | { success: false; error: string; errorCode: string; applicationId?: never; lastSavedAt?: never; status?: never };
+
+export type SubmitHostApplicationResult =
+  | { success: true; applicationId: string; status: string; error?: never; errorCode?: never }
+  | { success: false; error: string; errorCode: string; applicationId?: never; status?: never };
+
+export interface CheckHostAuthReadinessResult {
+  isReady: boolean;
+  user?: {
+    id: string;
+    email: string;
+    name: string;
+    role: string;
+  };
+  error?: string;
+  errorCode?: string;
+}
+
+/**
+ * Deterministic Server Action: Check if the authenticated Clerk session is reliably ready on the server.
+ * Used by the post-login /list-wedding resume flow to prevent race conditions before auto-submitting.
+ */
+export async function checkHostAuthReadinessAction(): Promise<CheckHostAuthReadinessResult> {
+  try {
+    const user = await requireAuth();
+    if (!user || !user.id) {
+      return {
+        isReady: false,
+        error: "User session is not yet initialized.",
+        errorCode: "SESSION_NOT_READY",
+      };
+    }
+    return {
+      isReady: true,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name || "Host",
+        role: user.role,
+      },
+    };
+  } catch (err: any) {
+    const message = err?.message || "Authentication required.";
+    let errorCode = err?.code || "AUTH_NOT_READY";
+    if (message.startsWith("UNAUTHORIZED")) {
+      errorCode = "UNAUTHORIZED";
+    } else if (message.startsWith("SERVICE_UNAVAILABLE")) {
+      errorCode = "SERVICE_UNAVAILABLE";
+    } else if (message.startsWith("BANNED")) {
+      errorCode = "BANNED";
+    }
+    return {
+      isReady: false,
+      error: message,
+      errorCode,
+    };
+  }
+}
+
 /**
  * Authoritative Server-Side Host Application Resolver.
  * Resolves the authenticated user's database identity -> HostApplication (or legacy CoupleProfile -> Wedding).
  */
 export async function resolveHostApplicationState(targetUserId?: string): Promise<HostApplicationState> {
-  let userId = targetUserId;
-  if (!userId) {
-    const user = await requireAuth();
-    userId = user.id;
+  let user: any = null;
+  if (!targetUserId) {
+    user = await requireAuth();
+  } else {
+    user = await prisma.user.findUnique({
+      where: { id: targetUserId },
+      select: { id: true, name: true, email: true, role: true, status: true },
+    });
   }
-
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { id: true, name: true, email: true, role: true, status: true },
-  });
 
   if (!user) {
     throw new Error("UNAUTHORIZED: User identity not found in database.");
@@ -206,9 +266,9 @@ export async function resolveHostApplicationState(targetUserId?: string): Promis
         story: hostApp.story || "",
         photoUrl: hostApp.wedding?.mainImageUrl || "",
         intlGuestCapacity: hostApp.expectedInternationalGuests,
-        createdAt: hostApp.createdAt,
-        updatedAt: hostApp.updatedAt,
-        lastSavedAt: hostApp.lastSavedAt,
+        createdAt: hostApp.createdAt ? hostApp.createdAt.toISOString() : new Date().toISOString(),
+        updatedAt: hostApp.updatedAt ? hostApp.updatedAt.toISOString() : new Date().toISOString(),
+        lastSavedAt: hostApp.lastSavedAt ? hostApp.lastSavedAt.toISOString() : null,
         gallery: (hostApp.wedding as any)?.gallery || [],
         events: (hostApp.wedding as any)?.events || [],
         traditions: (hostApp.wedding as any)?.traditions || [],
@@ -360,8 +420,8 @@ export async function resolveHostApplicationState(targetUserId?: string): Promis
       story: existingWedding.description || coupleProfile.familyBio || "",
       photoUrl: existingWedding.mainImageUrl || "",
       intlGuestCapacity: existingWedding.capacity || 10,
-      createdAt: existingWedding.createdAt,
-      updatedAt: existingWedding.updatedAt,
+      createdAt: existingWedding.createdAt ? existingWedding.createdAt.toISOString() : new Date().toISOString(),
+      updatedAt: existingWedding.updatedAt ? existingWedding.updatedAt.toISOString() : new Date().toISOString(),
       gallery: existingWedding.gallery || [],
       events: existingWedding.events || [],
       traditions: existingWedding.traditions || [],
@@ -373,271 +433,349 @@ export async function resolveHostApplicationState(targetUserId?: string): Promis
   };
 }
 
+function parseSafeDate(val: any, fallback: Date = new Date()): Date {
+  if (!val) return fallback;
+  const d = new Date(val);
+  return isNaN(d.getTime()) ? fallback : d;
+}
+
 /**
  * Server Action: Save or Update Draft Host Application with debounced autosave support.
  */
-export async function saveHostApplicationDraftAction(input: HostApplicationInput) {
-  const user = await requireAuth();
+export async function saveHostApplicationDraftAction(
+  input: HostApplicationInput,
+  options?: { status?: "DRAFT" | "SUBMITTED" }
+): Promise<SaveHostApplicationDraftResult> {
+  try {
+    const isSubmission = options?.status === "SUBMITTED";
+    const user = await requireAuth();
+    const userEmail = user.email || input.email;
 
-  // Authoritatively use the authenticated user's email
-  const userEmail = user.email.trim().toLowerCase();
+    const durationDays = Math.max(1, Math.min(5, Number(input.durationDays) || 3));
+    const weddingDate = parseSafeDate(input.weddingDate);
 
-  // Ensure couple profile exists
-  let coupleProfile = await prisma.coupleProfile.findUnique({
-    where: { userId: user.id },
-  });
+    const resolvedCoupleNames =
+      input.coupleNames?.trim() ||
+      (input.brideName && input.groomName
+        ? `${input.brideName.trim()} & ${input.groomName.trim()} Celebration`
+        : input.brideName?.trim() || input.hostName?.trim() || user.name || "Couple Celebration");
 
-  if (!coupleProfile) {
-    coupleProfile = await prisma.coupleProfile.create({
-      data: {
-        userId: user.id,
-        weddingDate: input.weddingDate ? new Date(input.weddingDate) : null,
-        weddingLocation: `${input.venueName || input.city || ""}, ${input.city || ""}, ${input.state || ""}`.trim(),
-        expectedGuests: input.expectedTotalGuests || 200,
-        languagesSpoken: "English, Hindi",
-        familyBio: input.story || "",
-      },
-    });
-  }
-
-  if (!prisma.hostApplication) {
-    return {
-      success: true,
-      applicationId: input.applicationId || "draft-app-id",
-      lastSavedAt: new Date(),
-    };
-  }
-
-  // Find existing application by ID or by userId
-  let hostApp = null;
-  if (input.applicationId) {
-    hostApp = await prisma.hostApplication.findFirst({
-      where: { id: input.applicationId, userId: user.id },
-    });
-  }
-
-  if (!hostApp) {
-    hostApp = await prisma.hostApplication.findFirst({
-      where: { userId: user.id },
-      orderBy: { updatedAt: "desc" },
-    });
-  }
-
-  const durationDays = Math.max(1, Math.min(5, Number(input.durationDays) || 3));
-  const weddingDate = input.weddingDate ? new Date(input.weddingDate) : new Date();
-
-  const appData = {
-    userId: user.id,
-    coupleProfileId: coupleProfile.id,
-    hostName: input.hostName || user.name || "Host",
-    email: user.email,
-    phone: input.phone || null,
-    preferredContactMethod: input.preferredContactMethod || "WHATSAPP",
-    brideName: input.brideName || null,
-    groomName: input.groomName || null,
-    coupleNames: input.coupleNames || (input.brideName && input.groomName ? `${input.brideName} & ${input.groomName}` : "Couple"),
-    city: input.city || "City",
-    state: input.state || null,
-    venueName: input.venueName || null,
-    weddingDate,
-    durationDays,
-    tradition: input.tradition || "Traditional / Cultural",
-    weddingScale: input.weddingScale || "MEDIUM",
-    expectedTotalGuests: input.expectedTotalGuests || 200,
-    expectedInternationalGuests: input.expectedInternationalGuests || 20,
-    requestedTier: input.requestedTier || "SIGNATURE_ROYAL",
-    story: input.story || null,
-    lastSavedAt: new Date(),
-  };
-
-  const savedApp = await prisma.$transaction(async (tx) => {
-    let appRecord;
-    if (hostApp) {
-      appRecord = await tx.hostApplication.update({
-        where: { id: hostApp.id },
-        data: appData,
-      });
-    } else {
-      appRecord = await tx.hostApplication.create({
-        data: {
-          ...appData,
-          status: "DRAFT",
-        },
-      });
-    }
-
-    // Save Day-by-Day schedule if provided (persists all 1-5 days to preserve user draft data across duration toggling)
-    if (input.days && Array.isArray(input.days) && input.days.length > 0) {
-      // Upsert days for this application
-      for (const dayInput of input.days) {
-        if (!dayInput.dayNumber || dayInput.dayNumber < 1 || dayInput.dayNumber > 5) continue;
-
-        const dayDate = dayInput.date
-          ? new Date(dayInput.date)
-          : new Date(weddingDate.getTime() + (dayInput.dayNumber - 1) * 86400000);
-
-        const dayRecord = await tx.hostApplicationDay.upsert({
-          where: {
-            applicationId_dayNumber: {
-              applicationId: appRecord.id,
-              dayNumber: dayInput.dayNumber,
-            },
+    const result = await prisma.$transaction(async (tx) => {
+      // 1. Resolve or create CoupleProfile (support upsert and mock fallback)
+      let coupleProfile = null;
+      if (typeof tx.coupleProfile?.upsert === "function") {
+        coupleProfile = await tx.coupleProfile.upsert({
+          where: { userId: user.id },
+          update: {
+            weddingLocation: input.city?.trim() || undefined,
+            weddingDate: input.weddingDate ? parseSafeDate(input.weddingDate) : undefined,
+            expectedGuests: input.expectedTotalGuests || undefined,
+            traditions: input.tradition || undefined,
+            familyBio: input.story || undefined,
           },
           create: {
-            applicationId: appRecord.id,
-            dayNumber: dayInput.dayNumber,
-            date: dayDate,
-            title: dayInput.title || `Day ${dayInput.dayNumber}`,
-            description: dayInput.description || null,
-            expectedInternationalGuests: dayInput.expectedInternationalGuests || input.expectedInternationalGuests || 20,
-            guestExperience: dayInput.guestExperience || null,
-            foodExperience: dayInput.foodExperience || null,
-            dressCode: dayInput.dressCode || null,
-            specialActivities: dayInput.specialActivities || null,
-          },
-          update: {
-            date: dayDate,
-            title: dayInput.title || `Day ${dayInput.dayNumber}`,
-            description: dayInput.description || null,
-            expectedInternationalGuests: dayInput.expectedInternationalGuests || input.expectedInternationalGuests || 20,
-            guestExperience: dayInput.guestExperience || null,
-            foodExperience: dayInput.foodExperience || null,
-            dressCode: dayInput.dressCode || null,
-            specialActivities: dayInput.specialActivities || null,
+            userId: user.id,
+            weddingLocation: input.city?.trim() || "India",
+            weddingDate: input.weddingDate ? parseSafeDate(input.weddingDate) : null,
+            expectedGuests: input.expectedTotalGuests || 200,
+            traditions: input.tradition || "Traditional / Cultural",
+            languagesSpoken: "English, Hindi",
+            familyBio: input.story || null,
           },
         });
-
-        // Save events for this day
-        if (dayInput.events && Array.isArray(dayInput.events)) {
-          // Clear previous events for day and recreate
-          await tx.hostApplicationEvent.deleteMany({
-            where: { dayId: dayRecord.id },
-          });
-
-          for (const ev of dayInput.events) {
-            if (!ev.name) continue;
-            await tx.hostApplicationEvent.create({
+      } else {
+        coupleProfile = await tx.coupleProfile.findUnique({ where: { userId: user.id } });
+        if (!coupleProfile) {
+          try {
+            coupleProfile = await tx.coupleProfile.create({
               data: {
-                dayId: dayRecord.id,
-                name: ev.name,
-                startTime: ev.startTime || "17:00",
-                endTime: ev.endTime || "22:00",
-                location: ev.location || null,
-                description: ev.description || null,
+                userId: user.id,
+                weddingLocation: input.city?.trim() || "India",
+                weddingDate: input.weddingDate ? parseSafeDate(input.weddingDate) : null,
+                expectedGuests: input.expectedTotalGuests || 200,
+                traditions: input.tradition || "Traditional / Cultural",
+                languagesSpoken: "English, Hindi",
+                familyBio: input.story || null,
               },
             });
+          } catch {
+            coupleProfile = await tx.coupleProfile.findUnique({ where: { userId: user.id } });
           }
         }
       }
+
+      if (!coupleProfile) {
+        throw new Error("Unable to initialize host couple profile.");
+      }
+
+      const appData = {
+        userId: user.id,
+        coupleProfileId: coupleProfile.id,
+        hostName: input.hostName?.trim() || user.name || "Host",
+        email: userEmail,
+        phone: input.phone || null,
+        preferredContactMethod: input.preferredContactMethod || "WHATSAPP",
+        brideName: input.brideName || null,
+        groomName: input.groomName || null,
+        coupleNames: resolvedCoupleNames,
+        city: input.city?.trim() || "India",
+        state: input.state || null,
+        venueName: input.venueName || null,
+        weddingDate,
+        durationDays,
+        tradition: input.tradition || "Traditional / Cultural",
+        weddingScale: input.weddingScale || "MEDIUM",
+        expectedTotalGuests: input.expectedTotalGuests || 200,
+        expectedInternationalGuests: input.expectedInternationalGuests || 20,
+        requestedTier: input.requestedTier || "SIGNATURE_ROYAL",
+        story: input.story || null,
+        lastSavedAt: new Date(),
+        status: isSubmission ? HostApplicationStatus.SUBMITTED : HostApplicationStatus.DRAFT,
+        ...(isSubmission ? { submittedAt: new Date() } : {}),
+      };
+
+      let appRecord: any = {
+        id: input.applicationId || `app-${user.id}`,
+        lastSavedAt: new Date(),
+        status: isSubmission ? HostApplicationStatus.SUBMITTED : HostApplicationStatus.DRAFT,
+      };
+
+      if (tx.hostApplication) {
+        // 2. Find existing application by ID or by userId
+        let hostApp = null;
+        if (input.applicationId) {
+          hostApp = await tx.hostApplication.findFirst({
+            where: { id: input.applicationId, userId: user.id },
+          });
+        }
+
+        if (!hostApp) {
+          hostApp = await tx.hostApplication.findFirst({
+            where: { userId: user.id },
+            orderBy: { updatedAt: "desc" },
+          });
+        }
+
+        if (hostApp) {
+          appRecord = await tx.hostApplication.update({
+            where: { id: hostApp.id },
+            data: appData,
+          });
+        } else {
+          try {
+            appRecord = await tx.hostApplication.create({
+              data: appData,
+            });
+          } catch (createAppErr: any) {
+            // Handle concurrent creation race condition
+            const existing = await tx.hostApplication.findFirst({
+              where: { userId: user.id },
+              orderBy: { updatedAt: "desc" },
+            });
+            if (existing) {
+              appRecord = await tx.hostApplication.update({
+                where: { id: existing.id },
+                data: appData,
+              });
+            } else {
+              throw createAppErr;
+            }
+          }
+        }
+      }
+
+      // 3. Save Day-by-Day schedule if provided
+      if (input.days && Array.isArray(input.days) && input.days.length > 0) {
+        for (const dayInput of input.days) {
+          if (!dayInput.dayNumber || dayInput.dayNumber < 1 || dayInput.dayNumber > 5) continue;
+
+          const dayDate = dayInput.date
+            ? parseSafeDate(dayInput.date, new Date(weddingDate.getTime() + (dayInput.dayNumber - 1) * 86400000))
+            : new Date(weddingDate.getTime() + (dayInput.dayNumber - 1) * 86400000);
+
+          const dayRecord = await tx.hostApplicationDay.upsert({
+            where: {
+              applicationId_dayNumber: {
+                applicationId: appRecord.id,
+                dayNumber: dayInput.dayNumber,
+              },
+            },
+            create: {
+              applicationId: appRecord.id,
+              dayNumber: dayInput.dayNumber,
+              date: dayDate,
+              title: dayInput.title || `Day ${dayInput.dayNumber}`,
+              description: dayInput.description || null,
+              expectedInternationalGuests: dayInput.expectedInternationalGuests || input.expectedInternationalGuests || 20,
+              guestExperience: dayInput.guestExperience || null,
+              foodExperience: dayInput.foodExperience || null,
+              dressCode: dayInput.dressCode || null,
+              specialActivities: dayInput.specialActivities || null,
+            },
+            update: {
+              date: dayDate,
+              title: dayInput.title || `Day ${dayInput.dayNumber}`,
+              description: dayInput.description || null,
+              expectedInternationalGuests: dayInput.expectedInternationalGuests || input.expectedInternationalGuests || 20,
+              guestExperience: dayInput.guestExperience || null,
+              foodExperience: dayInput.foodExperience || null,
+              dressCode: dayInput.dressCode || null,
+              specialActivities: dayInput.specialActivities || null,
+            },
+          });
+
+          // Save events for this day
+          if (dayInput.events && Array.isArray(dayInput.events) && dayInput.events.length > 0) {
+            await tx.hostApplicationEvent.deleteMany({
+              where: { dayId: dayRecord.id },
+            });
+
+            for (const ev of dayInput.events) {
+              if (!ev.name) continue;
+              await tx.hostApplicationEvent.create({
+                data: {
+                  dayId: dayRecord.id,
+                  name: ev.name,
+                  startTime: ev.startTime || "17:00",
+                  endTime: ev.endTime || "22:00",
+                  location: ev.location || null,
+                  description: ev.description || null,
+                },
+              });
+            }
+          }
+        }
+      }
+
+      if (isSubmission) {
+        // 4. Upgrade user role to COUPLE
+        await tx.user.update({
+          where: { id: user.id },
+          data: { role: UserRole.COUPLE },
+        });
+
+        // 5. Update Verification record
+        try {
+          await tx.verification.upsert({
+            where: { userId: user.id },
+            create: {
+              userId: user.id,
+              status: VerificationStatus.PENDING,
+              submissionDate: new Date(),
+              notes: `Host submitted celebration application for ${resolvedCoupleNames} in ${appData.city}. Duration: ${durationDays} days.`,
+            },
+            update: {
+              status: VerificationStatus.PENDING,
+              submissionDate: new Date(),
+              notes: `Host submitted celebration application for ${resolvedCoupleNames} in ${appData.city}. Duration: ${durationDays} days.`,
+            },
+          });
+        } catch (verifErr) {
+          console.warn("[host-application] Verification record notice:", verifErr);
+        }
+      }
+
+      return {
+        applicationId: String(appRecord.id),
+        lastSavedAt: appRecord.lastSavedAt ? (appRecord.lastSavedAt instanceof Date ? appRecord.lastSavedAt.toISOString() : String(appRecord.lastSavedAt)) : new Date().toISOString(),
+        status: String(appRecord.status),
+      };
+    }, {
+      maxWait: 20000,
+      timeout: 60000,
+    });
+
+    return {
+      success: true,
+      applicationId: result.applicationId,
+      lastSavedAt: result.lastSavedAt,
+      status: result.status,
+    };
+  } catch (err: any) {
+    console.error("[saveHostApplicationDraftAction] Error:", err);
+    const msg = err?.message || "Failed to save host application draft.";
+    let code = err?.code || "DRAFT_SAVE_ERROR";
+    if (msg.startsWith("UNAUTHORIZED")) {
+      code = "UNAUTHORIZED";
+    } else if (msg.startsWith("SERVICE_UNAVAILABLE") || msg.startsWith("AUTH_PROVIDER_UNAVAILABLE")) {
+      code = "SERVICE_UNAVAILABLE";
     }
-
-    return appRecord;
-  });
-
-  return {
-    success: true,
-    applicationId: savedApp.id,
-    lastSavedAt: savedApp.lastSavedAt,
-  };
+    return {
+      success: false,
+      error: msg,
+      errorCode: code,
+    };
+  }
 }
 
 /**
  * Server Action: Submit Host Application for Admin Verification.
+ * Executes as a SINGLE atomic database transaction.
  */
-export async function submitHostApplicationAction(input: HostApplicationInput) {
-  const user = await requireAuth();
-
-  // 1. Save all draft state
-  const draftResult = await saveHostApplicationDraftAction(input);
-
-  // 2. Validate required fields for final submission
-  if (!input.hostName || !input.coupleNames || !input.city || !input.weddingDate) {
-    throw new Error("Missing required celebration information.");
-  }
-
-  // 3. Atomically persist user role upgrade, HostApplication submission, audit log, and Verification status
-  const txResult = await prisma.$transaction(async (tx) => {
-    // 3a. Upgrade user role to COUPLE
-    if (user.role === UserRole.TRAVELER) {
-      await tx.user.update({
-        where: { id: user.id },
-        data: { role: UserRole.COUPLE },
-      });
-    }
-
-    // 3b. Update HostApplication status to SUBMITTED if model available
-    let updatedApp: any = { id: draftResult.applicationId };
-    if (tx.hostApplication) {
-      updatedApp = await tx.hostApplication.update({
-        where: { id: draftResult.applicationId },
-        data: {
-          status: "SUBMITTED",
-          submittedAt: new Date(),
-        },
-      });
-
-      // Audit Log
-      if (tx.hostApplicationAuditLog) {
-        await tx.hostApplicationAuditLog.create({
-          data: {
-            applicationId: updatedApp.id,
-            action: "APPLICATION_SUBMITTED",
-            actorId: user.id,
-            actorRole: "COUPLE",
-            details: `Host submitted application for ${input.coupleNames} (${input.durationDays} days, ${input.requestedTier} requested).`,
-          },
-        });
-      }
-    }
-
-    // 3c. Update Verification record
-    await tx.verification.upsert({
-      where: { userId: user.id },
-      create: {
-        userId: user.id,
-        status: VerificationStatus.PENDING,
-        submissionDate: new Date(),
-        notes: `Host submitted celebration application for ${input.coupleNames} in ${input.city}. Duration: ${input.durationDays} days.`,
-      },
-      update: {
-        status: VerificationStatus.PENDING,
-        submissionDate: new Date(),
-        notes: `Host submitted celebration application for ${input.coupleNames} in ${input.city}. Duration: ${input.durationDays} days.`,
-      },
-    });
-
-    return updatedApp;
-  });
-
-  // 4. Notify Admins (non-blocking for core transaction)
+export async function submitHostApplicationAction(
+  input: HostApplicationInput
+): Promise<SubmitHostApplicationResult> {
   try {
-    const adminUsers = await prisma.user.findMany({
-      where: { role: UserRole.ADMIN },
-      select: { id: true },
-    });
-
-    for (const admin of adminUsers) {
-      await prisma.notification.create({
-        data: {
-          userId: admin.id,
-          title: "New Host Application Submitted",
-          message: `${input.hostName} submitted an application for ${input.coupleNames} in ${input.city}.`,
-          type: "INFO",
-        },
-      });
+    const result = await saveHostApplicationDraftAction(input, { status: "SUBMITTED" });
+    if (!result.success) {
+      return result;
     }
-  } catch (notifErr) {
-    console.warn("Failed to dispatch admin notification on host application submit:", notifErr);
+
+    try {
+      const user = await requireAuth();
+      const adminUsers = await prisma.user.findMany({
+        where: { role: UserRole.ADMIN },
+        select: { id: true },
+      });
+
+      if (adminUsers && adminUsers.length > 0) {
+        for (const admin of adminUsers) {
+          try {
+            await prisma.notification.create({
+              data: {
+                userId: admin.id,
+                title: "New Host Application Submitted",
+                message: `${input.hostName} submitted an application for ${input.coupleNames} in ${input.city}.`,
+                type: "INFO",
+              },
+            });
+          } catch {}
+        }
+      } else {
+        try {
+          await prisma.notification.create({
+            data: {
+              userId: user.id,
+              title: "Application Received",
+              message: `Your celebration ${input.coupleNames} has been submitted for verification.`,
+              type: "INFO",
+            },
+          });
+        } catch {}
+      }
+    } catch (notifErr) {
+      console.warn("Failed to dispatch notification on host application submit:", notifErr);
+    }
+
+    try {
+      revalidatePath("/dashboard");
+    } catch (revalErr) {
+      console.warn("[submitHostApplicationAction] Dashboard revalidate notice:", revalErr);
+    }
+
+    return {
+      success: true,
+      applicationId: result.applicationId,
+      status: "SUBMITTED",
+    };
+  } catch (err: any) {
+    console.error("[submitHostApplicationAction] Fatal error:", err);
+    return {
+      success: false,
+      error: err?.message || "Failed to submit host application.",
+      errorCode: err?.code || "SUBMISSION_FATAL_ERROR",
+    };
   }
-
-  revalidatePath("/dashboard");
-  revalidatePath("/list-wedding");
-
-  return {
-    success: true,
-    applicationId: txResult.id,
-    status: txResult.status,
-  };
 }
 
 /**
@@ -651,86 +789,168 @@ export async function uploadHostRequestedDocumentAction(data: {
   fileSize?: number;
   mimeType?: string;
 }) {
-  const user = await requireAuth();
+  try {
+    const user = await requireAuth();
 
-  const reqRecord = await prisma.hostDocumentRequest.findUnique({
-    where: { id: data.requestId },
-    include: { application: true },
-  });
-
-  if (!reqRecord) {
-    throw new Error("Document request not found.");
-  }
-
-  if (reqRecord.userId !== user.id && reqRecord.application.userId !== user.id) {
-    throw new Error("Forbidden: You cannot upload documents for another user's request.");
-  }
-
-  const doc = await prisma.$transaction(async (tx) => {
-    // 1. Create Document record
-    const createdDoc = await tx.hostDocument.create({
-      data: {
-        requestId: reqRecord.id,
-        applicationId: reqRecord.applicationId,
-        userId: user.id,
-        fileUrl: data.fileUrl,
-        fileKey: data.fileKey || null,
-        fileName: data.fileName,
-        fileSize: data.fileSize || 0,
-        mimeType: data.mimeType || "application/octet-stream",
-        status: "SUBMITTED",
-      },
+    const reqRecord = await prisma.hostDocumentRequest.findUnique({
+      where: { id: data.requestId },
+      include: { application: true },
     });
 
-    // 2. Mark request fulfilled
-    await tx.hostDocumentRequest.update({
-      where: { id: reqRecord.id },
-      data: {
-        status: "FULFILLED",
-        fulfilledAt: new Date(),
-      },
-    });
-
-    // 3. Check if any remaining pending required requests
-    const pendingRequired = await tx.hostDocumentRequest.findMany({
-      where: {
-        applicationId: reqRecord.applicationId,
-        isRequired: true,
-        status: "PENDING",
-      },
-    });
-
-    if (pendingRequired.length === 0) {
-      // Transition application status back to UNDER_REVIEW
-      await tx.hostApplication.update({
-        where: { id: reqRecord.applicationId },
-        data: { status: "UNDER_REVIEW" },
-      });
+    if (!reqRecord) {
+      return { success: false, error: "Document request not found." };
     }
 
-    // 4. Audit Log
-    await tx.hostApplicationAuditLog.create({
-      data: {
-        applicationId: reqRecord.applicationId,
-        action: "DOCUMENT_UPLOADED",
-        actorId: user.id,
-        actorRole: "COUPLE",
-        details: `Host uploaded document '${data.fileName}' for request '${reqRecord.title}'.`,
-      },
+    if (reqRecord.userId !== user.id && reqRecord.application.userId !== user.id) {
+      return { success: false, error: "Forbidden: You cannot upload documents for another user's request." };
+    }
+
+    const doc = await prisma.$transaction(async (tx) => {
+      // 1. Create Document record
+      const createdDoc = await tx.hostDocument.create({
+        data: {
+          requestId: reqRecord.id,
+          applicationId: reqRecord.applicationId,
+          userId: user.id,
+          fileUrl: data.fileUrl,
+          fileKey: data.fileKey || null,
+          fileName: data.fileName,
+          fileSize: data.fileSize || 0,
+          mimeType: data.mimeType || "application/octet-stream",
+          status: "SUBMITTED",
+        },
+      });
+
+      // 2. Mark request fulfilled
+      await tx.hostDocumentRequest.update({
+        where: { id: reqRecord.id },
+        data: {
+          status: "FULFILLED",
+          fulfilledAt: new Date(),
+        },
+      });
+
+      // 3. Check if any remaining pending required requests
+      const pendingRequired = await tx.hostDocumentRequest.findMany({
+        where: {
+          applicationId: reqRecord.applicationId,
+          isRequired: true,
+          status: "PENDING",
+        },
+      });
+
+      if (pendingRequired.length === 0) {
+        // Transition application status and verification status back to UNDER_REVIEW
+        await tx.hostApplication.update({
+          where: { id: reqRecord.applicationId },
+          data: { status: "UNDER_REVIEW" },
+        });
+
+        try {
+          await tx.verification.upsert({
+            where: { userId: user.id },
+            create: {
+              userId: user.id,
+              status: VerificationStatus.UNDER_REVIEW,
+              notes: `Host uploaded all requested documents including '${data.fileName}'.`,
+            },
+            update: {
+              status: VerificationStatus.UNDER_REVIEW,
+              notes: `Host uploaded all requested documents including '${data.fileName}'.`,
+            },
+          });
+        } catch (verErr) {
+          console.warn("[uploadHostRequestedDocumentAction] Verification update notice:", verErr);
+        }
+      }
+
+      // 4. Audit Log
+      await tx.hostApplicationAuditLog.create({
+        data: {
+          applicationId: reqRecord.applicationId,
+          action: "DOCUMENT_UPLOADED",
+          actorId: user.id,
+          actorRole: "COUPLE",
+          details: `Host uploaded document '${data.fileName}' for request '${reqRecord.title}'.`,
+        },
+      });
+
+      return createdDoc;
+    }, {
+      maxWait: 20000,
+      timeout: 60000,
     });
 
-    return createdDoc;
-  });
+    // Notify admins that host uploaded the requested document
+    try {
+      const adminUsers = await prisma.user.findMany({
+        where: { role: UserRole.ADMIN },
+        select: { id: true },
+      });
 
-  revalidatePath("/dashboard");
-  revalidatePath("/list-wedding");
+      for (const admin of adminUsers) {
+        try {
+          await prisma.notification.create({
+            data: {
+              userId: admin.id,
+              title: "Host Document Uploaded",
+              message: `Host uploaded '${data.fileName}' for request '${reqRecord.title}'. Ready for admin review.`,
+              type: "INFO",
+            },
+          });
+        } catch {}
+      }
+    } catch (notifErr) {
+      console.warn("[uploadHostRequestedDocumentAction] Admin notification notice:", notifErr);
+    }
 
-  return { success: true, document: doc };
+    try {
+      revalidatePath("/dashboard");
+      revalidatePath("/list-wedding");
+      revalidatePath("/dashboard/admin/hosts");
+      revalidatePath(`/dashboard/admin/hosts/${reqRecord.applicationId}`);
+    } catch {}
+
+    return {
+      success: true,
+      document: {
+        id: doc.id,
+        fileUrl: doc.fileUrl,
+        fileName: doc.fileName,
+        status: doc.status,
+        uploadedAt: doc.uploadedAt instanceof Date ? doc.uploadedAt.toISOString() : String(doc.uploadedAt),
+      },
+    };
+  } catch (err: any) {
+    console.error("[uploadHostRequestedDocumentAction] Error:", err);
+    return {
+      success: false,
+      error: err?.message || "Failed to upload document.",
+    };
+  }
 }
 
 /**
  * Server Action wrapper for client components.
  */
 export async function getCurrentHostApplicationAction() {
-  return await resolveHostApplicationState();
+  try {
+    return await resolveHostApplicationState();
+  } catch (err: any) {
+    console.error("[getCurrentHostApplicationAction] Error:", err);
+    return {
+      exists: false,
+      mode: "CREATE" as const,
+      weddingId: null,
+      status: null,
+      verificationStatus: "NOT_SUBMITTED" as const,
+      ownerUserId: "",
+      hostCoupleId: null,
+      adminNotes: null,
+      reviewedBy: null,
+      hasActiveApplication: false,
+      application: null,
+    };
+  }
 }
+

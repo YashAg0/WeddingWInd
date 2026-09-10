@@ -18,6 +18,7 @@ export async function GET(
         bookings: {
           include: {
             traveler: { include: { user: true } },
+            travelDetails: true,
             guests: true,
           },
         },
@@ -35,7 +36,20 @@ export async function GET(
       return NextResponse.json({ error: "Forbidden: You do not own this wedding." }, { status: 403 });
     }
 
-    const escapeCsv = (value: string | number) => `"${String(value).replace(/"/g, '""')}"`;
+    const escapeCsv = (value: unknown) => {
+      if (value === null || value === undefined) return '""';
+      let str = String(value);
+      const trimmed = str.trimStart();
+      const dangerousChars = ["=", "+", "-", "@", "\t", "\r"];
+      if (
+        dangerousChars.some((ch) => str.startsWith(ch)) ||
+        (trimmed.length > 0 && dangerousChars.some((ch) => trimmed.startsWith(ch)))
+      ) {
+        str = `'${str}`;
+      }
+      return `"${str.replace(/"/g, '""')}"`;
+    };
+
     const header = "Booking ID,Primary Guest,Guests Count,Amount Paid,Status,Dietary Notes,Booking Date\n";
     const rows = wedding.bookings
       .map((b) => {
@@ -43,7 +57,19 @@ export async function GET(
         const count = b.guestsCount;
         const amount = b.totalAmount;
         const status = b.status;
-        const notes = b.traveler.foodPreferences || "None";
+
+        // Prioritize specific travelDetails, fallback to profile foodPreferences
+        const primaryDiet = b.travelDetails?.dietaryRequirements || b.traveler.foodPreferences || "No Restrictions";
+
+        // Aggregate accompanying guests
+        const guestDiets = b.guests && b.guests.length > 0
+          ? b.guests.map((g) => `${g.fullName} (${g.foodPreference || "No Restrictions"})`).join("; ")
+          : "";
+
+        const notes = guestDiets
+          ? `Primary: ${primaryDiet} | Accompanying: ${guestDiets}`
+          : primaryDiet;
+
         const date = new Date(b.createdAt).toISOString().split("T")[0];
         return [b.id, guestName, count, amount, status, notes, date].map(escapeCsv).join(",");
       })

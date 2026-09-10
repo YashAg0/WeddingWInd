@@ -21,13 +21,13 @@ export const metadata: Metadata = {
     "WeddingWithIndia DPDP",
   ],
   alternates: {
-    canonical: "https://weddingwithindia.com/privacy",
+    canonical: "https://weddingwithindia.com/trust?tab=privacy",
   },
   openGraph: {
     title: "Privacy Policy | WeddingWithIndia",
     description:
       "How WeddingWithIndia handles personal information, verification data, bookings, payments, communications, and cookies.",
-    url: "https://weddingwithindia.com/privacy",
+    url: "https://weddingwithindia.com/trust?tab=privacy",
     siteName: "WeddingWithIndia",
     type: "website",
   },
@@ -38,7 +38,7 @@ export const metadata: Metadata = {
       "How WeddingWithIndia handles personal information, verification data, bookings, payments, and communications.",
   },
   robots: {
-    index: true,
+    index: false,
     follow: true,
   },
 };

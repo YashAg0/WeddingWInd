@@ -52,8 +52,14 @@ export async function register() {
         cleanup("uncaughtException");
       });
       process.on("unhandledRejection", (reason) => {
-        logger.error("Unhandled Rejection", undefined, reason);
-        cleanup("unhandledRejection");
+        logger.error(
+          "Unhandled Promise Rejection detected - server process liveness maintained",
+          {
+            type: "unhandledRejection",
+            reason: reason instanceof Error ? reason.message : String(reason),
+          },
+          reason instanceof Error ? reason : new Error(String(reason))
+        );
       });
     }
   }

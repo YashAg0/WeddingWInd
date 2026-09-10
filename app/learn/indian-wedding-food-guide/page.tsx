@@ -192,19 +192,47 @@ export default function FoodGuidePage() {
           </p>
         </div>
 
+        {/* Contextual Guide Navigation */}
+        <div className="bg-warm-100/70 border border-warm-200/80 rounded-2xl p-4 sm:p-5 text-xs sm:text-sm text-charcoal-700 leading-relaxed space-y-1">
+          <p>
+            <strong>Dining Etiquette:</strong> Traditional banquets often observe specific social customs, such as eating with your right hand and respecting vegetarian sanctity. Read our{" "}
+            <Link href="/learn/indian-wedding-etiquette-for-foreigners" className="text-[var(--color-brand-primary)] font-semibold underline underline-offset-2">
+              Indian wedding etiquette guide
+            </Link>{" "}
+            to learn more, or see our{" "}
+            <Link href="/learn/what-to-wear-to-an-indian-wedding" className="text-[var(--color-brand-primary)] font-semibold underline underline-offset-2">
+              what to wear guide
+            </Link>{" "}
+            for comfortable banquet attire.
+          </p>
+        </div>
+
         {/* Regional Feasts Breakdown */}
         <div className="space-y-6">
           <h2 className="font-display font-bold text-2xl text-charcoal-900">
             Regional Feasts Across India
           </h2>
           <div className="space-y-4">
-            {REGIONAL_FEASTS.map((rf, idx) => (
-              <div key={idx} className="bg-white border border-warm-200/80 rounded-3xl p-6 space-y-2 shadow-xs">
-                <h3 className="font-display font-bold text-lg text-charcoal-900">{rf.region}</h3>
-                <p className="text-xs sm:text-sm text-charcoal-700"><strong>Key Dishes:</strong> {rf.highlights}</p>
-                <p className="text-xs text-charcoal-500"><strong>Dining Format:</strong> {rf.style}</p>
-              </div>
-            ))}
+            {REGIONAL_FEASTS.map((rf, idx) => {
+              const destLink =
+                rf.region.includes("Rajasthan") ? "/destinations/rajasthan" :
+                rf.region.includes("Punjab") ? "/destinations/punjab" :
+                rf.region.includes("Kerala") ? "/destinations/kerala" :
+                rf.region.includes("Goa") ? "/destinations/goa" : "/destinations";
+
+              return (
+                <div key={idx} className="bg-white border border-warm-200/80 rounded-3xl p-6 space-y-2 shadow-xs">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-display font-bold text-lg text-charcoal-900">{rf.region}</h3>
+                    <Link href={destLink} className="text-xs font-semibold text-[var(--color-brand-primary)] hover:underline inline-flex items-center gap-1">
+                      Explore Region <ArrowRight size={11} />
+                    </Link>
+                  </div>
+                  <p className="text-xs sm:text-sm text-charcoal-700"><strong>Key Dishes:</strong> {rf.highlights}</p>
+                  <p className="text-xs text-charcoal-500"><strong>Dining Format:</strong> {rf.style}</p>
+                </div>
+              );
+            })}
           </div>
         </div>
 

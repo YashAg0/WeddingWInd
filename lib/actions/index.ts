@@ -1,9 +1,19 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
+import { z } from "zod";
 import { prisma, withDbRetry } from "../prisma";
-import { requireAuth, syncAndGetDbUser } from "../auth";
-export { syncAndGetDbUser };
+import { requireAuth, syncAndGetDbUser as authSyncAndGetDbUser } from "../auth";
+export async function syncAndGetDbUser() {
+  try {
+    const user = await authSyncAndGetDbUser();
+    if (!user) return null;
+    return JSON.parse(JSON.stringify(user));
+  } catch (err) {
+    console.error("[syncAndGetDbUser Server Action] Error:", err);
+    return null;
+  }
+}
 import { UserRole, BookingStatus, PaymentStatus, VerificationStatus, WeddingStatus, ReferralStatus, CancellationReasonCode, CancellationActor, WeddingSide } from "@prisma/client";
 import { rateLimit } from "../rate-limit";
 import { getBatchWeddingRatingAggregates, getPublishedReviewWhere } from "../services/trust-score";
@@ -19,9 +29,9 @@ import {
   travelerProfileSchema,
   coupleProfileSchema,
   agentProfileSchema,
-  weddingSchema
+  weddingSchema,
+  verificationSchema
 } from "../validation";
-import { unstable_cache } from "next/cache";
 import { env } from "../env";
 import { toWeddingDTO } from "../wedding-dto";
 import { sortWeddingsByDiscoveryPriority } from "../marketplace/ranking";
@@ -37,10 +47,21 @@ import { calculateBookingPricing } from "../services/pricing-engine";
 export async function updateUserRoleAction(role: UserRole) {
   const dbUser = await requireAuth();
 
-  // Security: Prevent self-elevation to ADMIN via client-controlled role update.
-  // Admin roles can only be assigned directly in the database by a platform operator.
-  if (role === UserRole.ADMIN) {
-    throw new Error("FORBIDDEN: Cannot self-assign administrative roles.");
+  // Explicit Self-Onboarding Role Whitelist:
+  // Only TRAVELER and COUPLE can be self-selected during initial onboarding.
+  // Privileged and vetted roles (ADMIN, COORDINATOR, AGENT) require explicit administrative workflows.
+  const ALLOWED_SELF_ONBOARDING_ROLES: UserRole[] = [UserRole.TRAVELER, UserRole.COUPLE];
+  if (!ALLOWED_SELF_ONBOARDING_ROLES.includes(role)) {
+    if (role === UserRole.ADMIN) {
+      throw new Error("FORBIDDEN: Cannot self-assign administrative roles.");
+    }
+    if (role === UserRole.COORDINATOR) {
+      throw new Error("FORBIDDEN: Cannot self-assign COORDINATOR role. Requires official application and administrative approval.");
+    }
+    if (role === UserRole.AGENT) {
+      throw new Error("FORBIDDEN: Cannot self-assign AGENT role. Requires official agent application and administrative verification.");
+    }
+    throw new Error(`FORBIDDEN: Role ${role} cannot be self-selected during onboarding.`);
   }
 
   // Prevent role change if user has already completed onboarding
@@ -176,13 +197,28 @@ export interface UpdateProfileInput {
 export async function updateProfileDetails(data: UpdateProfileInput) {
   const dbUser = await requireAuth();
 
+  let emailToUpdate = dbUser.email;
+  if (data.email && data.email.trim() !== "" && data.email.trim() !== dbUser.email) {
+    const emailParsed = z.string().email("Invalid email address format").safeParse(data.email.trim());
+    if (!emailParsed.success) {
+      throw new Error("Invalid email address format.");
+    }
+    const existingUser = await prisma.user.findFirst({
+      where: { email: emailParsed.data, NOT: { id: dbUser.id } }
+    });
+    if (existingUser) {
+      throw new Error("This email address is already in use by another account.");
+    }
+    emailToUpdate = emailParsed.data;
+  }
+
   await prisma.$transaction(async (tx) => {
     // Update base user details
     await tx.user.update({
       where: { id: dbUser.id },
       data: {
         name: data.name ?? dbUser.name,
-        email: data.email ?? dbUser.email
+        email: emailToUpdate
       }
     });
 
@@ -298,6 +334,12 @@ export async function createWedding(data: any) {
 
   revalidatePath("/weddings");
   revalidatePath("/dashboard/celebrations");
+  if (typeof revalidateTag === "function") {
+    try {
+      revalidateTag("weddings", "max");
+      revalidateTag("homepage", "max");
+    } catch {}
+  }
   return { success: true, wedding };
 }
 
@@ -334,15 +376,30 @@ export async function editWedding(weddingId: string, data: any) {
     }
   }
 
+  const parsedPrice = data.pricePerGuest !== undefined && data.pricePerGuest !== null && String(data.pricePerGuest).trim() !== ""
+    ? parseFloat(data.pricePerGuest)
+    : existing.pricePerGuest;
+
+  const parsedCapacity = data.capacity !== undefined && data.capacity !== null && String(data.capacity).trim() !== ""
+    ? parseInt(data.capacity, 10)
+    : existing.capacity;
+
+  const parsedRequiredGuests = data.requiredGuests !== undefined && data.requiredGuests !== null && String(data.requiredGuests).trim() !== ""
+    ? parseInt(data.requiredGuests, 10)
+    : (existing.requiredGuests || 0);
+
+  const parsedDate = data.date ? new Date(data.date) : existing.date;
+
   const parsed = weddingSchema.parse({
+    ...existing,
     ...data,
     status: resolvedStatus,
     slug: existing.slug,
     hostCoupleId: coupleProfile.id,
-    pricePerGuest: parseFloat(data.pricePerGuest),
-    capacity: parseInt(data.capacity),
-    requiredGuests: parseInt(data.requiredGuests || "0"),
-    date: new Date(data.date)
+    pricePerGuest: parsedPrice,
+    capacity: parsedCapacity,
+    requiredGuests: parsedRequiredGuests,
+    date: parsedDate
   });
 
   const wedding = await prisma.wedding.update({
@@ -353,6 +410,12 @@ export async function editWedding(weddingId: string, data: any) {
   revalidatePath(`/weddings/${wedding.slug}`);
   revalidatePath("/weddings");
   revalidatePath("/dashboard/celebrations");
+  if (typeof revalidateTag === "function") {
+    try {
+      revalidateTag("weddings", "max");
+      revalidateTag("homepage", "max");
+    } catch {}
+  }
   return { success: true, wedding };
 }
 
@@ -369,7 +432,7 @@ export async function deleteWedding(weddingId: string) {
 
   const existing = await prisma.wedding.findUnique({
     where: { id: weddingId },
-    include: { bookings: true }
+    include: { bookings: true, safetyCases: true }
   });
   if (!existing) throw new Error("Wedding experience not found.");
   if (existing.hostCoupleId !== coupleProfile.id) {
@@ -384,8 +447,8 @@ export async function deleteWedding(weddingId: string) {
     throw new Error("Cannot delete a wedding experience with active, paid, or confirmed guest bookings. Please contact support to cancel or archive this event.");
   }
 
-  if (existing.bookings.length > 0) {
-    // Soft delete to maintain historical booking and financial integrity
+  if (existing.bookings.length > 0 || (existing.safetyCases && existing.safetyCases.length > 0)) {
+    // Soft delete to maintain historical booking, safety, and financial integrity
     await prisma.wedding.update({
       where: { id: weddingId },
       data: {
@@ -395,7 +458,12 @@ export async function deleteWedding(weddingId: string) {
       }
     });
   } else {
-    // Hard delete is safe only when zero historical booking records exist
+    // Clean up dependent sponsorship requests (which have onDelete: Restrict) before hard deleting
+    await prisma.sponsorshipRequest.deleteMany({
+      where: { weddingId }
+    });
+
+    // Hard delete is safe only when zero historical booking or safety records exist
     await prisma.wedding.delete({
       where: { id: weddingId }
     });
@@ -403,6 +471,12 @@ export async function deleteWedding(weddingId: string) {
 
   revalidatePath("/weddings");
   revalidatePath("/dashboard/celebrations");
+  if (typeof revalidateTag === "function") {
+    try {
+      revalidateTag("weddings", "max");
+      revalidateTag("homepage", "max");
+    } catch {}
+  }
   return { success: true };
 }
 
@@ -528,16 +602,26 @@ export async function toggleWishlistAction(slug: string) {
   });
 
   if (existing) {
-    await prisma.wishlist.delete({
-      where: { id: existing.id }
-    });
+    try {
+      await prisma.wishlist.delete({
+        where: { id: existing.id }
+      });
+    } catch (err: any) {
+      // If already deleted by concurrent action (P2025), ignore
+      if (err?.code !== "P2025") throw err;
+    }
   } else {
-    await prisma.wishlist.create({
-      data: {
-        travelerId: traveler.id,
-        weddingId: wedding.id
-      }
-    });
+    try {
+      await prisma.wishlist.create({
+        data: {
+          travelerId: traveler.id,
+          weddingId: wedding.id
+        }
+      });
+    } catch (err: any) {
+      // If already created by concurrent action (P2002), ignore
+      if (err?.code !== "P2002") throw err;
+    }
   }
 
   revalidatePath("/dashboard/wishlist");
@@ -552,6 +636,14 @@ export async function createBookingAction(data: {
   date: string;
   guestsCount: number;
   attendanceSide?: string;
+  guests?: Array<{
+    fullName: string;
+    email?: string | null;
+    age?: number | null;
+    gender?: string | null;
+    foodPreference?: string;
+    accessibilityNeed?: string;
+  }>;
   // NOTE: pricePerGuest and totalAmount are intentionally NOT accepted from the client.
   // The server recalculates authoritative pricing from the database to prevent price injection.
 }) {
@@ -665,6 +757,20 @@ export async function createBookingAction(data: {
         : WeddingSide.BRIDE_SIDE
     );
 
+    // Sanitize and validate accompanying guests if present (seats 2..N)
+    const rawGuests = Array.isArray(data.guests) ? data.guests : [];
+    const sanitizedGuests = rawGuests
+      .slice(0, Math.max(0, data.guestsCount - 1))
+      .filter((g) => g && typeof g.fullName === "string" && g.fullName.trim().length > 0)
+      .map((g) => ({
+        fullName: g.fullName.trim().slice(0, 100),
+        email: typeof g.email === "string" && g.email.trim().length > 0 ? g.email.trim().slice(0, 150) : null,
+        age: typeof g.age === "number" && !isNaN(g.age) && g.age > 0 && g.age < 120 ? Math.floor(g.age) : null,
+        gender: typeof g.gender === "string" && g.gender.trim().length > 0 ? g.gender.trim().slice(0, 30) : null,
+        foodPreference: typeof g.foodPreference === "string" && g.foodPreference.trim().length > 0 ? g.foodPreference.trim().slice(0, 500) : "No Restrictions",
+        accessibilityNeed: typeof g.accessibilityNeed === "string" && g.accessibilityNeed.trim().length > 0 ? g.accessibilityNeed.trim().slice(0, 500) : "None",
+      }));
+
     const createdBooking = await tx.booking.create({
       data: {
         travelerId: traveler.id,
@@ -688,6 +794,9 @@ export async function createBookingAction(data: {
         currency: "USD",
         status: BookingStatus.PENDING,
         attendanceSide: sanitizedSide,
+        guests: sanitizedGuests.length > 0 ? {
+          create: sanitizedGuests,
+        } : undefined,
       }
     });
 
@@ -858,7 +967,7 @@ export async function handleGuestApplicationAction(appId: string, status: "appro
   const { assertCanHost } = require("./safety");
   await assertCanHost(user.id);
 
-  await prisma.$transaction(async (tx) => {
+  const emailData = await prisma.$transaction(async (tx) => {
     // 1. Fetch booking with wedding
     const booking = await tx.booking.findUnique({
       where: { id: appId },
@@ -881,7 +990,6 @@ export async function handleGuestApplicationAction(appId: string, status: "appro
     if (booking.status !== BookingStatus.PENDING) {
       throw new Error("Only pending booking requests can be approved or declined.");
     }
-
 
     if (status === "approved") {
       // Concurrency lock on Wedding row to serialize simultaneous approvals
@@ -917,15 +1025,15 @@ export async function handleGuestApplicationAction(appId: string, status: "appro
         }
       });
 
-      // Send host approval with payment link email
-      // ENV-001: Use validated env to prevent localhost URLs in production transactional emails.
       const dashboardUrl = `${env.NEXT_PUBLIC_APP_URL}/dashboard/bookings`;
-      await sendHostApprovalWithPaymentLinkEmail(
-        booking.traveler.user.email,
-        booking.traveler.fullName,
-        booking.wedding.title,
-        dashboardUrl
-      );
+
+      return {
+        isApproved: true,
+        email: booking.traveler.user.email,
+        fullName: booking.traveler.fullName,
+        weddingTitle: booking.wedding.title,
+        dashboardUrl,
+      };
     } else {
       await tx.booking.update({
         where: { id: appId },
@@ -942,13 +1050,36 @@ export async function handleGuestApplicationAction(appId: string, status: "appro
         }
       });
 
-      await sendHostRejectionEmail(
-        booking.traveler.user.email,
-        booking.traveler.fullName,
-        booking.wedding.title
-      );
+      return {
+        isApproved: false,
+        email: booking.traveler.user.email,
+        fullName: booking.traveler.fullName,
+        weddingTitle: booking.wedding.title,
+      };
     }
   });
+
+  // Post-commit external email dispatch (releases database row lock before network I/O)
+  if (emailData) {
+    try {
+      if (emailData.isApproved && emailData.dashboardUrl) {
+        await sendHostApprovalWithPaymentLinkEmail(
+          emailData.email,
+          emailData.fullName,
+          emailData.weddingTitle,
+          emailData.dashboardUrl
+        );
+      } else {
+        await sendHostRejectionEmail(
+          emailData.email,
+          emailData.fullName,
+          emailData.weddingTitle
+        );
+      }
+    } catch (emailErr) {
+      console.error("[handleGuestApplicationAction] Non-blocking email dispatch error:", emailErr);
+    }
+  }
 
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/bookings");
@@ -1090,10 +1221,26 @@ export async function submitVerificationAction(data: Record<string, any>) {
     }
   }
 
+  // Whitelist and parse only client-submittable fields against verificationSchema
+  // (omit admin/server-controlled fields: reviewedBy, expiryDate, status, notes, id, userId)
+  const clientVerificationSchema = verificationSchema.omit({
+    id: true,
+    userId: true,
+    status: true,
+    reviewedBy: true,
+    expiryDate: true,
+    notes: true,
+    submissionDate: true,
+    phoneVerified: true,
+    emailVerified: true,
+  });
+
+  const parsedData = clientVerificationSchema.parse(sanitizedData);
+
   const verification = await prisma.verification.update({
     where: { userId: user.id },
     data: {
-      ...sanitizedData,
+      ...parsedData,
       status: VerificationStatus.PENDING,
       submissionDate: new Date(),
     },
@@ -1262,21 +1409,31 @@ export async function fetchDashboardDataAction() {
   let refundQueue: any[] = [];
   let pendingVerifications: any[] = [];
 
-  if (dbUser.role === UserRole.TRAVELER && dbUser.travelerProfile) {
-    const [travelerBookings, wishEntries] = await Promise.all([
-      withDbRetry(() => prisma.booking.findMany({
-        where: { travelerId: dbUser.travelerProfile!.id },
-        include: { wedding: true, payments: { include: { refunds: true } } },
-        orderBy: { createdAt: "desc" },
-      }), { label: "fetchDash:travelerBookings" }).catch(() => []),
-      withDbRetry(() => prisma.wishlist.findMany({
-        where: { travelerId: dbUser.travelerProfile!.id },
-        include: { wedding: true },
-      }), { label: "fetchDash:wishlist" }).catch(() => []),
-    ]);
+  if (dbUser.role === UserRole.TRAVELER) {
+    let travelerProfileId = dbUser.travelerProfile?.id;
+    if (!travelerProfileId) {
+      const tp = await withDbRetry(
+        () => prisma.travelerProfile.findUnique({ where: { userId: dbUser.id } }),
+        { label: "fetchDash:tpFallback" }
+      ).catch(() => null);
+      travelerProfileId = tp?.id;
+    }
+    if (travelerProfileId) {
+      const [travelerBookings, wishEntries] = await Promise.all([
+        withDbRetry(() => prisma.booking.findMany({
+          where: { travelerId: travelerProfileId },
+          include: { wedding: true, payments: { include: { refunds: true } } },
+          orderBy: { createdAt: "desc" },
+        }), { label: "fetchDash:travelerBookings" }),
+        withDbRetry(() => prisma.wishlist.findMany({
+          where: { travelerId: travelerProfileId },
+          include: { wedding: true },
+        }), { label: "fetchDash:wishlist" }).catch(() => []),
+      ]);
 
-    bookings = travelerBookings;
-    wishlist = wishEntries.map((w: any) => w.wedding.slug);
+      bookings = travelerBookings;
+      wishlist = wishEntries.map((w: any) => w.wedding?.slug).filter(Boolean);
+    }
   } else if (dbUser.role === UserRole.COUPLE) {
     let coupleProfileId = dbUser.coupleProfile?.id;
     if (!coupleProfileId) {
@@ -1288,7 +1445,7 @@ export async function fetchDashboardDataAction() {
         where: { wedding: { hostCoupleId: coupleProfileId } },
         include: { wedding: true, traveler: { include: { user: true } }, payments: true },
         orderBy: { createdAt: "desc" },
-      }), { label: "fetchDash:coupleBookings" }).catch(() => []),
+      }), { label: "fetchDash:coupleBookings" }),
       withDbRetry(() => prisma.wedding.findFirst({
         where: { hostCoupleId: coupleProfileId },
       }), { label: "fetchDash:hosted" }).catch(() => null),
@@ -1536,7 +1693,17 @@ export const getWeddings = unstable_cache(
             ],
             include: {
               hostCouple: {
-                include: { user: true }
+                include: {
+                  user: {
+                    include: {
+                      verification: true,
+                      badges: {
+                        where: { revokedAt: null },
+                        include: { badge: true },
+                      },
+                    },
+                  },
+                },
               },
               gallery: true,
               events: true,
@@ -1603,7 +1770,7 @@ export const getWeddings = unstable_cache(
 );
 
 export const getHomepageWeddings = unstable_cache(
-  async (limit: number = 6) => {
+  async (limit: number = 8) => {
     try {
       const now = new Date();
       const weddings = await withDbRetry(
@@ -1624,7 +1791,17 @@ export const getHomepageWeddings = unstable_cache(
             ],
             include: {
               hostCouple: {
-                include: { user: true },
+                include: {
+                  user: {
+                    include: {
+                      verification: true,
+                      badges: {
+                        where: { revokedAt: null },
+                        include: { badge: true },
+                      },
+                    },
+                  },
+                },
               },
               gallery: true,
               events: true,
@@ -1704,31 +1881,40 @@ export async function getRelatedWeddings(category: string, excludeWeddingId: str
             deletedAt: null,
             id: { not: excludeWeddingId },
           },
-          take: limit * 2,
+          take: limit,
           orderBy: [
             { category: category ? "asc" : "desc" },
             { sponsored: "desc" },
             { featured: "desc" },
             { createdAt: "desc" },
           ],
-          include: {
-            hostCouple: { include: { user: true } },
-            gallery: true,
-            events: true,
-            traditions: true,
-            sponsorshipRequests: {
-              where: {
-                status: { in: ["ACTIVE", "PAID"] },
-              },
+          select: {
+            id: true,
+            slug: true,
+            title: true,
+            category: true,
+            tier: true,
+            location: true,
+            religion: true,
+            region: true,
+            community: true,
+            date: true,
+            durationDays: true,
+            capacity: true,
+            pricePerGuest: true,
+            mainImageUrl: true,
+            isDemo: true,
+            featured: true,
+            sponsored: true,
+            sponsorshipStart: true,
+            sponsorshipEnd: true,
+            hostCouple: {
               select: {
-                id: true,
-                status: true,
-                promotionType: true,
-                paymentRequired: true,
-                paymentStatus: true,
-                startsAt: true,
-                endsAt: true,
-                revokedAt: true,
+                user: {
+                  select: {
+                    name: true,
+                  },
+                },
               },
             },
             _count: {
@@ -1736,13 +1922,13 @@ export async function getRelatedWeddings(category: string, excludeWeddingId: str
                 bookings: {
                   where: {
                     status: {
-                      in: ["APPROVED", "PAID", "CONFIRMED", "COMPLETED", "CHECKED_IN", "ATTENDED", "READY_FOR_EVENT"]
-                    }
-                  }
-                }
-              }
-            }
-          }
+                      in: ["APPROVED", "PAID", "CONFIRMED", "COMPLETED", "CHECKED_IN", "ATTENDED", "READY_FOR_EVENT"],
+                    },
+                  },
+                },
+              },
+            },
+          },
         }),
       { label: "getRelatedWeddings", maxRetries: 3 }
     );
@@ -1755,13 +1941,13 @@ export async function getRelatedWeddings(category: string, excludeWeddingId: str
     const weddingIds = weddings.map((w) => w.id);
     const ratingsMap = await getBatchWeddingRatingAggregates(weddingIds);
 
-    const mapped = weddings.map((w) => {
+    const mapped = weddings.map((w: any) => {
       const ratings = ratingsMap.get(w.id) || { bayesianRating: 0, reviewCount: 0 };
       return toWeddingDTO({
         ...w,
         rating: ratings.reviewCount > 0 ? ratings.bayesianRating : 0,
         reviewCount: ratings.reviewCount,
-        guestsBooked: w._count.bookings,
+        guestsBooked: w._count?.bookings || 0,
       });
     });
 
@@ -1833,136 +2019,119 @@ const SLUG_ALIASES: Record<string, string> = {
   "chennai-coastal-temple-wedding": "tamil-brahmin-wedding-madurai",
 };
 
-export const getWeddingBySlug = unstable_cache(
-  async (slug: string) => {
-  try {
-    const effectiveSlug = SLUG_ALIASES[slug] || slug;
-    let w = await prisma.wedding.findUnique({
+const getCachedPublicWedding = unstable_cache(
+  async (effectiveSlug: string) => {
+    const w = await prisma.wedding.findUnique({
       where: { slug: effectiveSlug },
       include: {
         hostCouple: {
-          include: { user: true }
+          select: {
+            id: true,
+            userId: true,
+            user: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
         },
         gallery: true,
         events: true,
-        traditions: true
-      }
+        traditions: true,
+      },
     });
 
-    if (!w && effectiveSlug !== slug) {
-      w = await prisma.wedding.findUnique({
-        where: { slug },
-        include: {
-          hostCouple: {
-            include: { user: true }
-          },
-          gallery: true,
-          events: true,
-          traditions: true
-        }
-      });
-    }
-
-    if (w && Boolean(w.deletedAt)) {
+    if (!w || Boolean(w.deletedAt)) {
       return null;
     }
 
-    if (!w) {
-      const { featuredWeddings } = await import("../data");
-      return featuredWeddings.find((fw) => fw.slug === effectiveSlug || fw.slug === slug) || null;
+    const isPublished = !w.status || w.status === WeddingStatus.PUBLISHED || (w.status as string) === "PUBLISHED";
+    if (!isPublished || Boolean(w.suspended)) {
+      return null;
     }
 
-    if (w.status && w.status !== WeddingStatus.PUBLISHED && (w.status as string) !== "PUBLISHED") {
-
-      let authorized = false;
-      try {
-        const user = await requireAuth();
-        if (user.role === UserRole.ADMIN) {
-          authorized = true;
-        } else if (user.role === UserRole.COUPLE && w.hostCouple?.userId === user.id) {
-          authorized = true;
+    // Parallelize reviews, aggregate, and Bayesian rating calculations
+    const [ratings, dbReviews, agg] = await Promise.all([
+      (async () => {
+        try {
+          const { calculateBayesianRating } = await import("../services/trust-score");
+          return await calculateBayesianRating(w.id);
+        } catch {
+          return { bayesianRating: 0, reviewCount: 0 };
         }
-      } catch {
-        authorized = false;
-      }
-      if (!authorized) return null;
-    }
-
-
-    let ratings = { bayesianRating: 0, reviewCount: 0 };
-    try {
-      const { calculateBayesianRating } = await import("../services/trust-score");
-      ratings = await calculateBayesianRating(w.id);
-    } catch {}
-
-    let dbReviews: any[] = [];
-    try {
-      dbReviews = await prisma.review.findMany({
-        where: getPublishedReviewWhere({
-          booking: { weddingId: w.id },
-          type: "TRAVELER_TO_WEDDING"
-        }),
-        include: {
-          traveler: {
-            include: {
-              user: true
-            }
-          },
-          repliesList: {
-            where: { deletedAt: null },
-            include: {
-              user: true
-            }
-          }
-        },
-        orderBy: { createdAt: "desc" }
-      });
-    } catch {}
-
-    // Real confirmed guests booked count
-    let confirmedGuestsBooked = 0;
-    try {
-      const agg = await prisma.booking.aggregate({
-        where: {
-          weddingId: w.id,
-          status: { in: [BookingStatus.APPROVED, BookingStatus.PAID, BookingStatus.CONFIRMED, BookingStatus.COMPLETED, BookingStatus.CHECKED_IN, BookingStatus.ATTENDED, BookingStatus.READY_FOR_EVENT] }
-        },
-        _sum: { guestsCount: true }
-      });
-      confirmedGuestsBooked = agg._sum.guestsCount || 0;
-    } catch {}
-
-    if (w.suspended) {
-      let authorized = false;
-      try {
-        const user = await requireAuth();
-        if (user.role === UserRole.ADMIN) {
-          authorized = true;
-        } else if (user.role === UserRole.COUPLE && w.hostCouple.userId === user.id) {
-          authorized = true;
-        } else {
-          const activeBooking = await prisma.booking.findFirst({
+      })(),
+      (async () => {
+        try {
+          return await prisma.review.findMany({
+            where: getPublishedReviewWhere({
+              booking: { weddingId: w.id },
+              type: "TRAVELER_TO_WEDDING",
+            }),
+            select: {
+              id: true,
+              rating: true,
+              comment: true,
+              createdAt: true,
+              helpfulVotes: true,
+              ratingFood: true,
+              ratingHospitality: true,
+              ratingExperience: true,
+              ratingCulture: true,
+              ratingSafety: true,
+              ratingAccommodation: true,
+              ratingOrganization: true,
+              ratingValue: true,
+              ratingCommunication: true,
+              status: true,
+              traveler: {
+                select: {
+                  fullName: true,
+                  user: { select: { name: true, avatar: true, status: true } },
+                },
+              },
+              repliesList: {
+                where: { deletedAt: null },
+                select: {
+                  id: true,
+                  content: true,
+                  createdAt: true,
+                  user: { select: { name: true, avatar: true } },
+                },
+              },
+            },
+            orderBy: { createdAt: "desc" },
+          });
+        } catch {
+          return [];
+        }
+      })(),
+      (async () => {
+        try {
+          return await prisma.booking.aggregate({
             where: {
               weddingId: w.id,
-              traveler: { userId: user.id },
               status: {
                 in: [
-                  BookingStatus.PAID,
                   BookingStatus.APPROVED,
+                  BookingStatus.PAID,
+                  BookingStatus.CONFIRMED,
+                  BookingStatus.COMPLETED,
                   BookingStatus.CHECKED_IN,
-                  BookingStatus.COMPLETED
-                ]
-              }
-            }
+                  BookingStatus.ATTENDED,
+                  BookingStatus.READY_FOR_EVENT,
+                ],
+              },
+            },
+            _sum: { guestsCount: true },
           });
-          if (activeBooking) authorized = true;
+        } catch {
+          return { _sum: { guestsCount: 0 } };
         }
-      } catch {
-        authorized = false;
-      }
-      if (!authorized) return null;
-    }
+      })(),
+    ]);
 
+    const confirmedGuestsBooked = agg._sum.guestsCount || 0;
     const reviews = dbReviews.map(mapToPublicReviewDTO);
 
     const authenticInclusions = [
@@ -1988,13 +2157,104 @@ export const getWeddingBySlug = unstable_cache(
       included: authenticInclusions,
       reviews,
     });
+  },
+  ["cached-public-wedding-v2"],
+  { revalidate: 3600, tags: ["weddings"] }
+);
+
+export async function getWeddingBySlug(slug: string) {
+  try {
+    const effectiveSlug = SLUG_ALIASES[slug] || slug;
+    
+    // 1. Fetch from public cache (only published, non-suspended, non-deleted)
+    let wedding = await getCachedPublicWedding(effectiveSlug);
+    if (!wedding && effectiveSlug !== slug) {
+      wedding = await getCachedPublicWedding(slug);
+    }
+
+    if (wedding) {
+      return wedding;
+    }
+
+    // 2. Private preview for drafts or suspended weddings (strictly uncached, verified auth)
+    let user: any = null;
+    try {
+      user = await authSyncAndGetDbUser();
+    } catch {
+      user = null;
+    }
+
+    if (user) {
+      const privateWedding = await prisma.wedding.findFirst({
+        where: {
+          OR: [{ slug: effectiveSlug }, { slug }],
+          deletedAt: null,
+        },
+        include: {
+          hostCouple: {
+            select: {
+              id: true,
+              userId: true,
+              user: {
+                select: { id: true, name: true },
+              },
+            },
+          },
+          gallery: true,
+          events: true,
+          traditions: true,
+        },
+      });
+
+      if (privateWedding) {
+        let authorized = false;
+        if (user.role === UserRole.ADMIN) {
+          authorized = true;
+        } else if (user.role === UserRole.COUPLE && privateWedding.hostCouple?.userId === user.id) {
+          authorized = true;
+        } else if (privateWedding.suspended) {
+          const activeBooking = await prisma.booking.findFirst({
+            where: {
+              weddingId: privateWedding.id,
+              traveler: { userId: user.id },
+              status: {
+                in: [
+                  BookingStatus.PAID,
+                  BookingStatus.APPROVED,
+                  BookingStatus.CHECKED_IN,
+                  BookingStatus.COMPLETED,
+                ],
+              },
+            },
+          });
+          if (activeBooking) authorized = true;
+        }
+
+        if (authorized) {
+          return toWeddingDTO({
+            ...privateWedding,
+            reviews: [],
+            included: [
+              "Honorary guest entry pass",
+              "Celebration banquets & beverage service",
+              "Dedicated English-speaking cultural host/concierge",
+            ],
+          });
+        }
+        return null;
+      }
+    }
+
+    // 3. Static fallback for predefined marketing slugs
+    const { featuredWeddings } = await import("../data");
+    return featuredWeddings.find((fw) => fw.slug === effectiveSlug || fw.slug === slug) || null;
   } catch (err) {
-    console.warn(`[getWeddingBySlug] Database query failed for slug '${slug}'. Serving static fallback.`, err);
+    console.warn(`[getWeddingBySlug] Query failed for slug '${slug}'. Serving static fallback.`, err);
     const { featuredWeddings } = await import("../data");
     const effectiveSlug = SLUG_ALIASES[slug] || slug;
     return featuredWeddings.find((fw) => fw.slug === effectiveSlug || fw.slug === slug) || null;
   }
-}, ["wedding-by-slug"], { revalidate: 3600, tags: ["weddings"] });
+}
 
 // ─── Sponsorship Request Actions ──────────────────────────────────────────────
 

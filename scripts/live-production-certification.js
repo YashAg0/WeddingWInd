@@ -7,7 +7,6 @@
 
 const { PrismaClient, UserRole, BookingStatus, PaymentStatus, WeddingStatus, VerificationStatus } = require("@prisma/client");
 const https = require("https");
-const http = require("http");
 const crypto = require("crypto");
 
 const prisma = new PrismaClient();
@@ -128,19 +127,6 @@ function encryptPass(rawToken) {
   ciphertext += cipher.final("hex");
   const authTag = cipher.getAuthTag();
   return `${iv.toString("hex")}:${authTag.toString("hex")}:${ciphertext}`;
-}
-
-function decryptPass(stored) {
-  const parts = stored.split(":");
-  if (parts.length !== 3) throw new Error("Invalid stored token format.");
-  const [ivHex, authTagHex, ciphertextHex] = parts;
-  const iv = Buffer.from(ivHex, "hex");
-  const authTag = Buffer.from(authTagHex, "hex");
-  const decipher = crypto.createDecipheriv(ALGORITHM, ENCRYPTION_KEY, iv);
-  decipher.setAuthTag(authTag);
-  let plaintext = decipher.update(ciphertextHex, "hex", "utf8");
-  plaintext += decipher.final("utf8");
-  return plaintext;
 }
 
 async function runLiveProductionCertification() {

@@ -10,7 +10,7 @@ interface FeaturedWeddingsProps {
 
 export function FeaturedWeddings({ weddings }: FeaturedWeddingsProps) {
   const sortedWeddings = sortWeddingsByDiscoveryPriority(weddings);
-  const displayWeddings = sortedWeddings.slice(0, 4);
+  const displayWeddings = sortedWeddings.slice(0, 8);
 
   return (
     <section
@@ -87,23 +87,43 @@ export function FeaturedWeddings({ weddings }: FeaturedWeddingsProps) {
           </div>
         ) : (
           <>
-            {/* Mobile: horizontal snap scroll */}
-            <div
-              className="flex sm:hidden gap-4 overflow-x-auto snap-x snap-mandatory pb-3 -mx-5 px-5 scrollbar-none"
-              role="list"
-              aria-label="Featured wedding listings"
-              style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-            >
-              {displayWeddings.map((wedding) => (
-                <div
-                  key={wedding.id}
-                  role="listitem"
-                  className="snap-start flex-none w-[82vw] max-w-[320px]"
-                >
-                  <WeddingCard wedding={wedding} hidePrice />
-                </div>
-              ))}
-              <div className="flex-none w-4 flex-shrink-0" aria-hidden="true" />
+            {/* Mobile: horizontal snap scroll with peek affordance */}
+            <div className="sm:hidden relative">
+              {/* Right-edge fade to indicate more cards */}
+              <div
+                className="absolute right-0 top-0 bottom-3 w-16 z-10 pointer-events-none"
+                style={{
+                  background: "linear-gradient(to left, var(--color-warm-100), transparent)",
+                }}
+                aria-hidden="true"
+              />
+              <div
+                className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-3 -mx-5 px-5"
+                role="list"
+                aria-label="Featured wedding listings — scroll to see more"
+                style={{ scrollbarWidth: "none", msOverflowStyle: "none", WebkitOverflowScrolling: "touch" }}
+              >
+                {displayWeddings.map((wedding) => (
+                  <div
+                    key={wedding.id}
+                    role="listitem"
+                    className="snap-start flex-none w-[82vw] max-w-[320px]"
+                  >
+                    <WeddingCard wedding={wedding} hidePrice />
+                  </div>
+                ))}
+                {/* Trailing space so last card clears the peek fade */}
+                <div className="flex-none w-8 flex-shrink-0" aria-hidden="true" />
+              </div>
+              {/* Scroll dots indicator */}
+              <div className="flex justify-center gap-1.5 mt-3" aria-hidden="true">
+                {displayWeddings.slice(0, 5).map((_, i) => (
+                  <span
+                    key={i}
+                    className={`block rounded-full transition-all ${i === 0 ? "w-4 h-1.5 bg-[var(--color-brand-primary)]" : "w-1.5 h-1.5 bg-charcoal-200"}`}
+                  />
+                ))}
+              </div>
             </div>
 
             {/* Tablet + Desktop: grid layout */}

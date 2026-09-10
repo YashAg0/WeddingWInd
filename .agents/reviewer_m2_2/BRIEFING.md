@@ -1,48 +1,49 @@
-# BRIEFING — 2026-08-10T17:11:12Z
+# BRIEFING — 2026-08-30T04:45:34Z
 
 ## Mission
-Review Milestone M2 (Database & Transaction Integrity) changes made in worker_m2_v2, verify transaction atomicity, connection timeout parameters (`maxWait: 10000, timeout: 15000`), idempotency, network call isolation, run build/test verification, check for integrity violations, and render verdict.
+Adversarial and quality review of Milestone 2 (Phase 2: Booking, Trust Verification & Multi-Currency Architecture) for WeddingWithIndia.
 
 ## 🔒 My Identity
-- Archetype: reviewer / critic
+- Archetype: reviewer_critic
 - Roles: reviewer, critic
 - Working directory: c:\Projects\WeddingWithIndia\wedding-with-india\.agents\reviewer_m2_2
-- Original parent: aab74dd5-dc0b-4693-b07d-07bb9ebb7e15
-- Milestone: M2
+- Original parent: 2bef5307-2898-47cb-b043-393c117215ef
+- Milestone: Milestone 2
 - Instance: 2 of 2
 
 ## 🔒 Key Constraints
 - Review-only — do NOT modify implementation code
-- Check for integrity violations (hardcoded test results, facade implementations, shortcuts, self-certifying work)
-- Verify `app/api/webhooks/stripe/route.ts` and `lib/actions/index.ts`
-- Run `npm run type-check`, `npm run lint`, and `npm test`
+- Check for integrity violations (hardcoded test data, facades, shortcuts, fabricated verification)
+- Thoroughly verify TRU-01, ROU-01, UX-03, UX-02, FIN-01, and test suites.
 
 ## Current Parent
-- Conversation ID: aab74dd5-dc0b-4693-b07d-07bb9ebb7e15
-- Updated: 2026-08-10T17:11:12Z
+- Conversation ID: 2bef5307-2898-47cb-b043-393c117215ef
+- Updated: 2026-08-30T04:45:34Z
 
 ## Review Scope
-- **Files to review**: `app/api/webhooks/stripe/route.ts`, `lib/actions/index.ts`
-- **Worker Handoff Report**: `c:\Projects\WeddingWithIndia\wedding-with-india\.agents\worker_m2_v2\handoff.md`
-- **Original Request**: `c:\Projects\WeddingWithIndia\wedding-with-india\.agents\ORIGINAL_REQUEST.md`
-
-## Key Decisions Made
-- Independent code audit confirmed strict transaction atomicity, explicit timeout parameters `{ maxWait: 10000, timeout: 15000 }`, complete isolation of network operations (`sendInvoiceEmail` and `stripe.refunds.create`), and status-based idempotency.
-- Verification commands executed: `npm run type-check` (passed), `npm run lint` (passed), `npm test` (30 test suites, 175 tests passed).
-- Final Verdict: APPROVE.
-
-## Artifact Index
-- `.agents/reviewer_m2_2/DISPATCH.md` — Dispatch log
-- `.agents/reviewer_m2_2/BRIEFING.md` — Persistent briefing
-- `.agents/reviewer_m2_2/progress.md` — Progress tracker and liveness heartbeat
-- `.agents/reviewer_m2_2/handoff.md` — Handoff report and detailed review
+- **Files to review**:
+  - `lib/db/repositories/wedding.repository.ts` & trust verification mapping
+  - `app/destinations/page.tsx` & routing/redirects
+  - `components/booking/BookingSidebar.tsx` (cancellation policy & escrow terms)
+  - `components/booking/AttendeeForm.tsx`, `app/actions/booking.ts`, `lib/validations/booking.ts` (multi-guest cards 2-10, atomic create)
+  - `lib/currency.ts` & multi-currency selector/estimates engine
+  - Test suites: `__tests__/`
+- **Interface contracts**: `PROJECT.md`, `ORIGINAL_REQUEST.md`
+- **Review criteria**: correctness, integrity, adversarial edge cases, TypeScript/Jest pass
 
 ## Review Checklist
-- **Items reviewed**: `app/api/webhooks/stripe/route.ts`, `lib/actions/index.ts`, unit & challenger tests
-- **Verdict**: APPROVE
-- **Unverified claims**: none remaining — all claims verified empirically
+- **Items reviewed**: [Pending]
+- **Verdict**: PENDING
+- **Unverified claims**: [Pending verification]
 
 ## Attack Surface
-- **Hypotheses tested**: network call latency during transactions, transaction rollback on email failure, double refund race conditions, missing timeout parameters
-- **Vulnerabilities found**: none in implementation code
-- **Untested angles**: none within M2 scope
+- **Hypotheses tested**: [Pending]
+- **Vulnerabilities found**: [Pending]
+- **Untested angles**: [Pending]
+
+## Key Decisions Made
+- Starting independent review and verification.
+
+## Artifact Index
+- `.agents/reviewer_m2_2/handoff.md` — Final review report and verdict
+- `.agents/reviewer_m2_2/progress.md` — Liveness and progress tracking

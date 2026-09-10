@@ -647,14 +647,14 @@ export default function VerificationForm({ initialVerification, userRole }: Veri
         )}
 
         {/* Submit Actions */}
-        <div className="pt-6 border-t border-warm-100 flex items-center justify-between">
+        <div className="pt-6 border-t border-warm-100 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
           <p className="text-xs text-charcoal-400 font-medium">
             All submitted identity records are encrypted and audited by strict compliance policies.
           </p>
           <button
             type="submit"
             disabled={loading || currentStatus === "APPROVED" || currentStatus === "UNDER_REVIEW"}
-            className="btn btn-primary btn-md shadow-sm flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            className="btn btn-primary btn-md shadow-sm flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] w-full sm:w-auto"
           >
             {loading ? (
               <span>Submitting Files...</span>

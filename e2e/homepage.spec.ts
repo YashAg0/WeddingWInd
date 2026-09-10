@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 
-const BASE_URL = process.env.BASE_URL || "http://localhost:3000";
+const BASE_URL = process.env.PLAYWRIGHT_TEST_BASE_URL || process.env.BASE_URL || "http://localhost:3000";
 
 test.describe("Phase 3: Homepage Verification", () => {
   test.beforeEach(async ({ page }) => {
@@ -54,5 +54,34 @@ test.describe("Phase 3: Homepage Verification", () => {
     // Verify H1 exists and there is exactly one
     const h1Count = await page.locator("h1").count();
     expect(h1Count).toBe(1);
+  });
+
+  test("Featured Indian Weddings renders 8 cards in 2 rows of 4 with valid links and metadata", async ({ page }) => {
+    const section = page.locator("#featured-weddings");
+    await expect(section).toBeVisible();
+    await expect(section.locator("h2")).toContainText("Featured Indian");
+
+    // Check desktop grid cards
+    const desktopGrid = section.locator(".hidden.sm\\:grid");
+    await expect(desktopGrid).toBeVisible();
+
+    const cards = desktopGrid.locator('[role="listitem"]');
+    const cardCount = await cards.count();
+    expect(cardCount).toBe(8);
+
+    // Verify all 8 card links point to /weddings/... without empty hrefs
+    for (let i = 0; i < cardCount; i++) {
+      const cardLink = cards.nth(i).locator('a[href^="/weddings/"]').first();
+      await expect(cardLink).toBeVisible();
+      const href = await cardLink.getAttribute("href");
+      expect(href).toMatch(/^\/weddings\/[a-z0-9-]+$/);
+    }
+
+    // Verify "View all celebrations" and "Browse all celebrations" links exist
+    const topAction = section.locator('a[href="/weddings"]').filter({ hasText: /View all celebrations/i });
+    await expect(topAction).toBeVisible();
+
+    const bottomAction = section.locator('a[href="/weddings"]').filter({ hasText: /Browse all celebrations/i });
+    await expect(bottomAction).toBeVisible();
   });
 });

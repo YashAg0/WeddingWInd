@@ -14,6 +14,10 @@ export const metadata: Metadata = {
     "what is Baraat at Indian wedding",
     "Saptapadi seven vows Indian wedding",
     "what happens at an Indian wedding",
+    "7 circles indian wedding",
+    "vatna ceremony",
+    "vidhi ceremony",
+    "indian wedding vows",
   ],
   alternates: {
     canonical: "https://weddingwithindia.com/learn/indian-wedding-rituals-explained",
@@ -209,6 +213,30 @@ export default function RitualsPage() {
           </div>
           <p className="text-charcoal-900 font-medium text-base sm:text-lg leading-relaxed">
             Indian weddings consist of distinct, meaningful milestones: <strong>Haldi</strong> (turmeric blessings), <strong>Mehndi</strong> (henna celebration), <strong>Sangeet</strong> (musical dance party), <strong>Baraat</strong> (groom&apos;s procession), <strong>Varmala</strong> (garland exchange), and <strong>Saptapadi</strong> (the seven sacred vows taken around the holy fire).
+          </p>
+        </div>
+
+        {/* Contextual Guide Navigation */}
+        <div className="bg-warm-100/70 border border-warm-200/80 rounded-2xl p-4 sm:p-5 text-xs sm:text-sm text-charcoal-700 leading-relaxed space-y-1">
+          <p>
+            <strong>Guest Preparation:</strong> Planning to attend one of these ceremonies? Check our{" "}
+            <Link href="/learn/what-to-wear-to-an-indian-wedding" className="text-[var(--color-brand-primary)] font-semibold underline underline-offset-2">
+              ceremony dress code guide
+            </Link>{" "}
+            to pick appropriate outfits for Haldi, Sangeet, and the wedding day, and read our{" "}
+            <Link href="/learn/indian-wedding-food-guide" className="text-[var(--color-brand-primary)] font-semibold underline underline-offset-2">
+              wedding food guide
+            </Link>{" "}
+            for dining etiquette.
+          </p>
+          <p>
+            To witness royal Rajput rituals, browse our{" "}
+            <Link href="/destinations/rajasthan" className="text-[var(--color-brand-primary)] font-semibold underline underline-offset-2">
+              Rajasthan palace weddings
+            </Link>, or experience coastal temple customs in{" "}
+            <Link href="/destinations/kerala" className="text-[var(--color-brand-primary)] font-semibold underline underline-offset-2">
+              Kerala
+            </Link>.
           </p>
         </div>
 

@@ -1,51 +1,44 @@
-# BRIEFING — 2026-08-10T17:10:20Z
+# BRIEFING — 2026-08-30T04:45:35Z
 
 ## Mission
-Adversarial challenge and empirical verification of Milestone M2 (Database & Transaction Integrity) changes by worker_m2_v2.
+Adversarially challenge and empirically test Milestone 2 deliverables (Booking manifest, atomic booking actions, concurrency/locking, /destinations route, tests and typecheck) for WeddingWithIndia.
 
 ## 🔒 My Identity
 - Archetype: EMPIRICAL CHALLENGER
 - Roles: critic, specialist
 - Working directory: c:\Projects\WeddingWithIndia\wedding-with-india\.agents\challenger_m2_2
-- Original parent: aab74dd5-dc0b-4693-b07d-07bb9ebb7e15
-- Milestone: M2 (Database & Transaction Integrity)
-- Instance: 1 of 1
+- Original parent: 2bef5307-2898-47cb-b043-393c117215ef
+- Milestone: Milestone 2 (Phase 2)
+- Instance: 2 of 2
 
 ## 🔒 Key Constraints
-- Review-only — do NOT modify implementation code
-- Rely on empirical verification (running tests, creating stress tests / test harnesses)
+- Review-only — do NOT modify implementation code (tests/harnesses created in designated test dirs or run via vitest/scripts)
+- .agents/ must contain only metadata — NEVER place source code, tests, or data files in .agents/
+- Write only to .agents/challenger_m2_2/ folder for agent metadata
+- Empirical verification required: write and execute tests, harnesses, oracles directly
 
 ## Current Parent
-- Conversation ID: aab74dd5-dc0b-4693-b07d-07bb9ebb7e15
-- Updated: 2026-08-10T17:10:20Z
+- Conversation ID: 2bef5307-2898-47cb-b043-393c117215ef
+- Updated: 2026-08-30T04:45:35Z
 
 ## Review Scope
-- **Files to review**:
-  - `app/api/webhooks/stripe/route.ts`
-  - `lib/actions/index.ts`
-  - worker handoff report: `.agents/worker_m2_v2/handoff.md`
-- **Interface contracts**: PROJECT.md / ORIGINAL_REQUEST.md
-- **Review criteria**: Correctness, transaction atomicity, external API execution outside database transaction, error resilience.
+- **Files to review**: `src/components/booking/BookingSidebar.tsx`, `src/actions/booking.ts`, `src/app/destinations/page.tsx`, `src/db/schema.ts`, `src/lib/currency.ts`
+- **Interface contracts**: `c:\Projects\WeddingWithIndia\wedding-with-india\.agents\PROJECT.md`, `c:\Projects\WeddingWithIndia\wedding-with-india\.agents\ORIGINAL_REQUEST.md`
+- **Review criteria**: Atomic integrity, `SELECT FOR UPDATE` locking, UX-03/UX-02 attendee manifest inputs & validation, ROU-01 destinations route, vitest tests and TypeScript typechecking
 
 ## Attack Surface
-- **Hypotheses tested**:
-  - Stripe API call inside transaction vs outside: Verified `stripe.refunds.create` executes outside `$transaction`.
-  - Failed Stripe call: Verified zero database state mutations occur if Stripe call throws error.
-  - Email failure resilience: Verified DB commits cleanly and email failure is non-blocking.
-  - Webhook idempotency: Verified `checkout.session.completed` processes inside `$transaction` and dispatches email outside.
-- **Vulnerabilities found**: None.
-- **Untested angles**: None.
+- **Hypotheses tested**: TBD
+- **Vulnerabilities found**: TBD
+- **Untested angles**: TBD
 
 ## Loaded Skills
-- None loaded.
+- None
 
 ## Key Decisions Made
-- Executed `npm run type-check` (PASS, 0 errors).
-- Executed `npm test` across all 30 test suites / 175 tests (PASS, 100%).
-- Rendered Verdict: **APPROVE**.
+- Initialized briefing and task setup
 
 ## Artifact Index
-- `c:\Projects\WeddingWithIndia\wedding-with-india\.agents\challenger_m2_2\DISPATCH.md` — Log of dispatch instructions
-- `c:\Projects\WeddingWithIndia\wedding-with-india\.agents\challenger_m2_2\BRIEFING.md` — Active working memory briefing
-- `c:\Projects\WeddingWithIndia\wedding-with-india\.agents\challenger_m2_2\progress.md` — Liveness and task progress tracking
-- `c:\Projects\WeddingWithIndia\wedding-with-india\.agents\challenger_m2_2\handoff.md` — Handoff report with explicit verdict
+- `c:\Projects\WeddingWithIndia\wedding-with-india\.agents\challenger_m2_2\DISPATCH.md` — Incoming instructions
+- `c:\Projects\WeddingWithIndia\wedding-with-india\.agents\challenger_m2_2\BRIEFING.md` — Agent briefing & situational awareness
+- `c:\Projects\WeddingWithIndia\wedding-with-india\.agents\challenger_m2_2\progress.md` — Heartbeat log
+- `c:\Projects\WeddingWithIndia\wedding-with-india\.agents\challenger_m2_2\handoff.md` — Final report and verdict

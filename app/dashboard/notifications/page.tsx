@@ -3,11 +3,13 @@
 import { useAuth } from "@/context/AuthContext";
 import NotificationCard from "@/components/dashboard/NotificationCard";
 import EmptyState from "@/components/dashboard/EmptyState";
+import { DashboardLoadingState, DashboardErrorState } from "@/components/dashboard/DashboardDataState";
 import { Check, Bell } from "lucide-react";
 
 export default function NotificationsPage() {
-  const { notifications, markNotificationsRead } = useAuth();
+  const { notifications, markNotificationsRead, loading, dataLoading, dataError, refreshData } = useAuth();
 
+  const isBusyLoading = loading || dataLoading;
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   return (
@@ -35,7 +37,18 @@ export default function NotificationsPage() {
         )}
       </div>
 
-      {notifications.length === 0 ? (
+      {isBusyLoading && notifications.length === 0 ? (
+        <DashboardLoadingState
+          message="Loading your notifications..."
+          subMessage="Checking for platform alerts and updates..."
+        />
+      ) : dataError && notifications.length === 0 ? (
+        <DashboardErrorState
+          title="Unable to load notifications"
+          message={dataError}
+          onRetry={refreshData}
+        />
+      ) : notifications.length === 0 ? (
         <EmptyState
           title="All caught up!"
           description="You do not have any notification alerts or timelines at the moment."

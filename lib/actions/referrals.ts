@@ -121,7 +121,7 @@ export async function trackReferralVisitAction(
 }
 
 /**
- * Associates user with referral attribution on signup.
+ * Associates user with referral attribution on signup or subsequent referred visits.
  */
 export async function associateReferralOnSignup(userId: string, refCookieData: any) {
   try {
@@ -133,7 +133,21 @@ export async function associateReferralOnSignup(userId: string, refCookieData: a
     });
     if (!agent) return;
 
-    // Create signup referral linkage
+    // Security: Do not link if agent is referring themselves
+    if (agent.userId === userId) return;
+
+    // Check if user already has an active pending referral for this agent
+    const existingActive = await prisma.agentReferral.findFirst({
+      where: {
+        agentId: agent.id,
+        referredUserId: userId,
+        status: { in: [ReferralStatus.SIGNED_UP, ReferralStatus.ONBOARDED, ReferralStatus.QUALIFIED] },
+      },
+    });
+
+    if (existingActive) return existingActive;
+
+    // Create referral linkage
     const referral = await prisma.agentReferral.create({
       data: {
         agentId: agent.id,
@@ -150,8 +164,12 @@ export async function associateReferralOnSignup(userId: string, refCookieData: a
       },
     });
 
-    // Run basic fraud detection checks
-    await detectReferralFraudAction(referral.id);
+    // Run basic fraud detection checks safely
+    try {
+      await detectReferralFraudAction(referral.id);
+    } catch (fraudErr) {
+      console.warn("[associateReferralOnSignup] Non-blocking fraud check:", fraudErr);
+    }
 
     return referral;
   } catch (error) {
@@ -340,7 +358,7 @@ export async function adminReviewPayoutRequestAction(data: z.infer<typeof payout
     });
 
     return updatedRequest;
-  });
+  }, { maxWait: 45000, timeout: 120000 });
 
   if (updated.status === "APPROVED") {
     await logReputationEvent({
@@ -660,13 +678,28 @@ export async function generateBookingCommissionAction(
 /**
  * Handles reversals / refunds of payments.
  */
-export async function reverseBookingCommissionAction(tx: any, paymentId: string, refundId?: string) {
+export async function reverseBookingCommissionAction(
+  tx: any,
+  paymentId: string,
+  refundId?: string,
+  isFullRefund: boolean = true
+) {
   try {
+    // Authoritative Invariant: Partial refunds do not reverse fixed agent commission.
+    // Fixed commissions are only reversed when a booking is fully refunded or cancelled.
+    if (!isFullRefund) {
+      return { success: true, reason: "Partial refund does not cancel fixed attendance commission." };
+    }
+
     const commissions = await tx.commission.findMany({
       where: { paymentId },
     });
 
     for (const c of commissions) {
+      if (c.status === CommissionStatus.CANCELLED || c.status === CommissionStatus.REVERSED) {
+        continue;
+      }
+
       if (c.status === CommissionStatus.PAID) {
         // Already paid: generate negative balance adjustment ledger
         const idempotencyKey = refundId 
@@ -700,14 +733,16 @@ export async function reverseBookingCommissionAction(tx: any, paymentId: string,
 
       // Notify agent of reversal
       const agent = await tx.agentProfile.findUnique({ where: { id: c.agentId } });
-      await tx.notification.create({
-        data: {
-          userId: agent.userId,
-          title: "Commission Reversal",
-          message: `Commission of $${c.commissionAmount} has been reversed due to traveler refund.`,
-          type: "ALERT",
-        },
-      });
+      if (agent) {
+        await tx.notification.create({
+          data: {
+            userId: agent.userId,
+            title: "Commission Reversal",
+            message: `Commission of ₹${c.commissionAmount.toLocaleString("en-IN")} INR has been reversed due to booking cancellation/refund.`,
+            type: "ALERT",
+          },
+        });
+      }
     }
 
     return { success: true };

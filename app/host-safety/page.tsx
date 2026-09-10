@@ -8,7 +8,11 @@ export const metadata: Metadata = {
   description:
     "Safety guidelines, guest vetting principles, household boundaries, and coordinator support for Indian host families welcoming international guests.",
   alternates: {
-    canonical: "https://weddingwithindia.com/host-safety",
+    canonical: "https://weddingwithindia.com/trust?tab=safety#guest-guide",
+  },
+  robots: {
+    index: false,
+    follow: true,
   },
 };
 

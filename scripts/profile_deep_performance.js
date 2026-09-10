@@ -33,14 +33,14 @@ async function profileRoute(browser, route) {
         resourceType: req.resourceType(),
         size: contentLength
       });
-    } catch (_) {}
+    } catch {}
   });
 
   const startNav = Date.now();
   await page.goto(`${BASE_URL}${route}`, { waitUntil: "commit", timeout: 20000 });
   try {
     await page.waitForLoadState("domcontentloaded", { timeout: 10000 });
-  } catch (_) {}
+  } catch {}
   await page.waitForTimeout(600);
   const navDuration = Date.now() - startNav;
 

@@ -20,13 +20,13 @@ export const metadata: Metadata = {
     "WeddingWithIndia refund",
   ],
   alternates: {
-    canonical: "https://weddingwithindia.com/cancellation-policy",
+    canonical: "https://weddingwithindia.com/trust?tab=terms#cancellation",
   },
   openGraph: {
     title: "Cancellation Policy | WeddingWithIndia",
     description:
       "Understand cancellation, event changes, host cancellations, and refund procedures for WeddingWithIndia experiences.",
-    url: "https://weddingwithindia.com/cancellation-policy",
+    url: "https://weddingwithindia.com/trust?tab=terms#cancellation",
     siteName: "WeddingWithIndia",
     type: "website",
   },
@@ -37,7 +37,7 @@ export const metadata: Metadata = {
       "Understand cancellation, event changes, host cancellations, and refund procedures for WeddingWithIndia experiences.",
   },
   robots: {
-    index: true,
+    index: false,
     follow: true,
   },
 };

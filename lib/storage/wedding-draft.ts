@@ -42,7 +42,21 @@ export interface HostDraftPayload {
 export function saveLocalWeddingDraft(data: HostDraftPayload): void {
   if (typeof localStorage === "undefined") return;
   try {
-    localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(data));
+    const raw = localStorage.getItem(DRAFT_STORAGE_KEY);
+    const merged = { ...data };
+    if (raw) {
+      try {
+        const existing = JSON.parse(raw);
+        if (existing && typeof existing === "object") {
+          for (const key of Object.keys(existing) as Array<keyof HostDraftPayload>) {
+            if (!merged[key] && existing[key]) {
+              (merged as any)[key] = existing[key];
+            }
+          }
+        }
+      } catch {}
+    }
+    localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(merged));
   } catch (e) {
     console.warn("[wedding-draft-storage] Unable to save draft to localStorage:", e);
   }
@@ -57,7 +71,7 @@ export function getLocalWeddingDraft(): HostDraftPayload | null {
     const raw = localStorage.getItem(DRAFT_STORAGE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw);
-    if (parsed && typeof parsed === "object" && (parsed.coupleNames || parsed.city || parsed.hostName)) {
+    if (parsed && typeof parsed === "object" && (parsed.coupleNames || parsed.city || parsed.hostName || parsed.venueName || parsed.state || parsed.story)) {
       return parsed as HostDraftPayload;
     }
     return null;
@@ -103,7 +117,7 @@ export function hasAutoSubmitIntent(): boolean {
   if (typeof localStorage === "undefined") return false;
   try {
     return localStorage.getItem(INTENT_STORAGE_KEY) === "true";
-  } catch (e) {
+  } catch {
     return false;
   }
 }

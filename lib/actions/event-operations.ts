@@ -13,6 +13,11 @@ import {
   decryptPass,
   hashPassToken,
 } from "@/lib/security/guest-pass-crypto";
+import {
+  canIssueGuestPass,
+  canAdmitGuest,
+  canMarkAttendance,
+} from "@/lib/booking-statuses";
 
 // Zod validation schemas
 const itineraryItemSchema = z.object({
@@ -90,6 +95,11 @@ export async function issueGuestPassAction(bookingId: string) {
       }
     }
 
+    // Enforce authoritative business predicate: booking must be in paid/confirmed/ready state
+    if (!canIssueGuestPass(booking.status)) {
+      throw new Error(`Cannot issue Guest Pass for booking in ${booking.status} status. Payment must be verified first.`);
+    }
+
     // Check if pass already exists
     const existing = await tx.guestPass.findFirst({
       where: { bookingId },
@@ -133,7 +143,7 @@ export async function issueGuestPassAction(bookingId: string) {
     });
 
     return { ...pass, rawToken };
-  });
+  }, { maxWait: 45000, timeout: 120000 });
 }
 
 /**
@@ -255,7 +265,7 @@ export async function checkInGuestAction(rawToken: string, weddingId: string, de
       throw new Error("Unauthorized for this wedding event.");
     }
 
-    // Handle non-ACTIVE pass statuses (no write needed — log only)
+    // Handle non-ACTIVE pass statuses (REVOKED)
     if (pass.status === "REVOKED") {
       await tx.guestCheckIn.create({
         data: {
@@ -271,7 +281,15 @@ export async function checkInGuestAction(rawToken: string, weddingId: string, de
       return { success: false, result: "REVOKED", pass };
     }
 
-    if (pass.status === "EXPIRED") {
+    // Handle pass expiration
+    const isPassExpired = pass.status === "EXPIRED" || (pass.expiresAt && new Date(pass.expiresAt).getTime() < Date.now());
+    if (isPassExpired) {
+      if (pass.status === "ACTIVE") {
+        await tx.guestPass.update({
+          where: { id: pass.id },
+          data: { status: "EXPIRED" },
+        });
+      }
       await tx.guestCheckIn.create({
         data: {
           guestPassId: pass.id,
@@ -286,17 +304,46 @@ export async function checkInGuestAction(rawToken: string, weddingId: string, de
       return { success: false, result: "EXPIRED", pass };
     }
 
-    // ATOMIC check-in: only updates the pass when its current status is ACTIVE.
+    // Enforce authoritative business predicate: booking must be in an admissible state (PAID, CONFIRMED, READY_FOR_EVENT)
+    // Terminal or refunded bookings can NEVER be admitted.
+    if (!canAdmitGuest(pass.booking.status, pass.status)) {
+      await tx.guestCheckIn.create({
+        data: {
+          guestPassId: pass.id,
+          bookingId: pass.bookingId,
+          weddingId,
+          scannedByUserId: user.id,
+          scanType: "ENTRY",
+          result: "BOOKING_INELIGIBLE",
+          deviceMetadata,
+        },
+      });
+      return {
+        success: false,
+        result: "BOOKING_INELIGIBLE",
+        reason: `Booking is in ${pass.booking.status} status. Only valid active bookings can be admitted.`,
+        pass,
+      };
+    }
+
+    // ATOMIC check-in: only updates the pass when its current status is ACTIVE AND not expired.
     // If two scanners race on the same token, only one updateMany can match
-    // status = ACTIVE and return count = 1. The other gets count = 0 and
-    // correctly returns ALREADY_USED. This eliminates the TOCTOU race condition.
+    // and return count = 1. The other gets count = 0 and correctly returns ALREADY_USED.
+    const now = new Date();
     const updated = await tx.guestPass.updateMany({
-      where: { id: pass.id, status: "ACTIVE" },
+      where: {
+        id: pass.id,
+        status: "ACTIVE",
+        OR: [
+          { expiresAt: null },
+          { expiresAt: { gte: now } },
+        ],
+      },
       data: {
         status: "USED",
         scanCount: { increment: 1 },
-        firstScannedAt: new Date(),
-        lastScannedAt: new Date(),
+        firstScannedAt: now,
+        lastScannedAt: now,
       },
     });
 
@@ -352,7 +399,7 @@ export async function checkInGuestAction(rawToken: string, weddingId: string, de
     );
 
     return { success: true, result: "SUCCESS", pass };
-  });
+  }, { maxWait: 45000, timeout: 120000 });
 }
 
 /**
@@ -372,7 +419,7 @@ export async function manualCheckInAction(bookingId: string, notes?: string) {
 
   if (!couple && !isCoordinator && !isAdmin) throw new Error("Unauthorized.");
 
-  return await prisma.$transaction(async (tx) => {
+  const checkInResult = await prisma.$transaction(async (tx) => {
     const booking = await tx.booking.findUnique({
       where: { id: bookingId },
       include: { wedding: true, traveler: { include: { user: true } } },
@@ -390,18 +437,25 @@ export async function manualCheckInAction(bookingId: string, notes?: string) {
       throw new Error("Unauthorized.");
     }
 
+    // Enforce authoritative business predicate: booking must be in an admissible state
+    if (!canAdmitGuest(booking.status, "ACTIVE")) {
+      throw new Error(`Cannot manually check in booking in ${booking.status} status. Only valid paid bookings can be checked in.`);
+    }
+
+    // Invalidate/consume any active guest pass to prevent subsequent replay at gate
+    await tx.guestPass.updateMany({
+      where: { bookingId, status: "ACTIVE" },
+      data: {
+        status: "USED",
+        scanCount: { increment: 1 },
+        firstScannedAt: new Date(),
+        lastScannedAt: new Date(),
+      },
+    });
+
     await tx.booking.update({
       where: { id: bookingId },
       data: { status: BookingStatus.CHECKED_IN },
-    });
-
-    await logReputationEvent({
-      entityType: ReputationEntityType.TRAVELER,
-      entityId: booking.travelerId,
-      type: ReputationEventType.SUCCESSFUL_CHECK_IN,
-      scoreEffect: 2,
-      referenceId: bookingId,
-      idempotencyKey: `SUCCESSFUL_CHECK_IN:${bookingId}`
     });
 
     await tx.notification.create({
@@ -413,15 +467,26 @@ export async function manualCheckInAction(bookingId: string, notes?: string) {
       },
     });
 
-    await createAuditLog(
-      "MANUAL_CHECK_IN",
-      "Booking",
-      bookingId,
-      `Host manually marked booking ${bookingId} checked-in. Notes: ${notes || "None"}`
-    );
+    return { booking };
+  }, { maxWait: 45000, timeout: 120000 });
 
-    return { success: true };
+  await logReputationEvent({
+    entityType: ReputationEntityType.TRAVELER,
+    entityId: checkInResult.booking.travelerId,
+    type: ReputationEventType.SUCCESSFUL_CHECK_IN,
+    scoreEffect: 2,
+    referenceId: bookingId,
+    idempotencyKey: `SUCCESSFUL_CHECK_IN:${bookingId}`
   });
+
+  await createAuditLog(
+    "MANUAL_CHECK_IN",
+    "Booking",
+    bookingId,
+    `Host manually marked booking ${bookingId} checked-in. Notes: ${notes || "None"}`
+  );
+
+  return { success: true };
 }
 
 /**
@@ -441,7 +506,7 @@ export async function markAttendanceAction(bookingId: string, status: "ATTENDED"
 
   if (!couple && !isCoordinator && !isAdmin) throw new Error("Unauthorized.");
 
-  return await prisma.$transaction(async (tx) => {
+  const attendanceResult = await prisma.$transaction(async (tx) => {
     const booking = await tx.booking.findUnique({
       where: { id: bookingId },
       include: { wedding: true, traveler: { include: { user: true } } },
@@ -459,6 +524,11 @@ export async function markAttendanceAction(bookingId: string, status: "ATTENDED"
       throw new Error("Unauthorized.");
     }
 
+    // Enforce authoritative business predicate: booking must be CHECKED_IN first
+    if (!canMarkAttendance(booking.status)) {
+      throw new Error(`Cannot mark attendance for booking in ${booking.status} status. Booking must be CHECKED_IN first.`);
+    }
+
     const nextStatus = status === "ATTENDED" ? BookingStatus.ATTENDED : BookingStatus.NO_SHOW;
 
     await tx.booking.update({
@@ -466,53 +536,55 @@ export async function markAttendanceAction(bookingId: string, status: "ATTENDED"
       data: { status: nextStatus },
     });
 
-    if (status === "ATTENDED") {
-      await logReputationEvent({
+    return { booking, nextStatus };
+  }, { maxWait: 45000, timeout: 120000 });
+
+  if (status === "ATTENDED") {
+    await Promise.all([
+      logReputationEvent({
         entityType: ReputationEntityType.TRAVELER,
-        entityId: booking.travelerId,
+        entityId: attendanceResult.booking.travelerId,
         type: ReputationEventType.BOOKING_COMPLETED,
         scoreEffect: 5,
         referenceId: bookingId,
         idempotencyKey: `BOOKING_COMPLETED:TRAVELER:${bookingId}`
-      });
-
-      await logReputationEvent({
+      }),
+      logReputationEvent({
         entityType: ReputationEntityType.HOST,
-        entityId: booking.wedding.hostCoupleId,
+        entityId: attendanceResult.booking.wedding.hostCoupleId,
         type: ReputationEventType.BOOKING_COMPLETED,
         scoreEffect: 5,
         referenceId: bookingId,
         idempotencyKey: `BOOKING_COMPLETED:HOST:${bookingId}`
-      });
-
-      await logReputationEvent({
+      }),
+      logReputationEvent({
         entityType: ReputationEntityType.WEDDING,
-        entityId: booking.weddingId,
+        entityId: attendanceResult.booking.weddingId,
         type: ReputationEventType.BOOKING_COMPLETED,
         scoreEffect: 5,
         referenceId: bookingId,
         idempotencyKey: `BOOKING_COMPLETED:WEDDING:${bookingId}`
-      });
-    } else if (status === "NO_SHOW") {
-      await logReputationEvent({
-        entityType: ReputationEntityType.TRAVELER,
-        entityId: booking.travelerId,
-        type: ReputationEventType.NO_SHOW,
-        scoreEffect: -20,
-        referenceId: bookingId,
-        idempotencyKey: `NO_SHOW:TRAVELER:${bookingId}`
-      });
-    }
+      })
+    ]);
+  } else if (status === "NO_SHOW") {
+    await logReputationEvent({
+      entityType: ReputationEntityType.TRAVELER,
+      entityId: attendanceResult.booking.travelerId,
+      type: ReputationEventType.NO_SHOW,
+      scoreEffect: -20,
+      referenceId: bookingId,
+      idempotencyKey: `NO_SHOW:TRAVELER:${bookingId}`
+    });
+  }
 
-    await createAuditLog(
-      "MARK_ATTENDANCE",
-      "Booking",
-      bookingId,
-      `Attendance status updated to ${status} for booking ${bookingId}`
-    );
+  await createAuditLog(
+    "MARK_ATTENDANCE",
+    "Booking",
+    bookingId,
+    `Attendance status updated to ${status} for booking ${bookingId}`
+  );
 
-    return { success: true };
-  });
+  return { success: true };
 }
 
 /**
@@ -548,7 +620,7 @@ export async function saveEmergencyContactAction(data: z.infer<typeof emergencyC
     await calculateTravelerReadiness(tx, payload.bookingId);
 
     return contact;
-  });
+  }, { maxWait: 45000, timeout: 120000 });
 }
 
 /**
@@ -582,7 +654,7 @@ export async function saveTravelDetailsAction(data: z.input<typeof travelDetailS
     await calculateTravelerReadiness(tx, payload.bookingId);
 
     return detail;
-  });
+  }, { maxWait: 45000, timeout: 120000 });
 }
 
 /**
@@ -614,7 +686,7 @@ export async function updateTravelerPreparationAction(bookingId: string, updates
     await calculateTravelerReadiness(tx, bookingId);
 
     return prep;
-  });
+  }, { maxWait: 45000, timeout: 120000 });
 }
 
 /**
@@ -790,4 +862,67 @@ export async function publishWeddingAnnouncementAction(data: z.infer<typeof anno
 
   revalidatePath(`/dashboard/operations`);
   return announcement;
+}
+
+/**
+ * Saves or updates accompanying BookingGuest records for a booking manifest.
+ */
+export async function saveBookingGuestsAction(
+  bookingId: string,
+  guests: Array<{
+    id?: string;
+    fullName: string;
+    email?: string | null;
+    age?: number | null;
+    gender?: string | null;
+    foodPreference?: string;
+    accessibilityNeed?: string;
+  }>
+) {
+  const user = await requireAuth();
+
+  return await prisma.$transaction(async (tx) => {
+    const booking = await tx.booking.findUnique({
+      where: { id: bookingId },
+      include: { traveler: { include: { user: true } } },
+    });
+
+    if (!booking) throw new Error("Booking not found.");
+    if (booking.traveler.user.id !== user.id && user.role !== UserRole.ADMIN) {
+      throw new Error("Unauthorized access to booking.");
+    }
+
+    if (guests.length > Math.max(0, booking.guestsCount - 1)) {
+      throw new Error(`Cannot register more than ${Math.max(0, booking.guestsCount - 1)} accompanying guests.`);
+    }
+
+    // Delete existing accompanying guest records for this booking and re-create cleanly
+    await tx.bookingGuest.deleteMany({
+      where: { bookingId },
+    });
+
+    const sanitized = (guests || [])
+      .slice(0, Math.max(0, booking.guestsCount - 1))
+      .filter((g) => g && typeof g.fullName === "string" && g.fullName.trim().length > 0)
+      .map((g) => ({
+        bookingId,
+        fullName: g.fullName.trim().slice(0, 100),
+        email: typeof g.email === "string" && g.email.trim().length > 0 ? g.email.trim().slice(0, 150) : null,
+        age: typeof g.age === "number" && !isNaN(g.age) && g.age > 0 && g.age < 120 ? Math.floor(g.age) : null,
+        gender: typeof g.gender === "string" && g.gender.trim().length > 0 ? g.gender.trim().slice(0, 30) : null,
+        foodPreference: typeof g.foodPreference === "string" && g.foodPreference.trim().length > 0 ? g.foodPreference.trim().slice(0, 500) : "No Restrictions",
+        accessibilityNeed: typeof g.accessibilityNeed === "string" && g.accessibilityNeed.trim().length > 0 ? g.accessibilityNeed.trim().slice(0, 500) : "None",
+      }));
+
+    if (sanitized.length > 0) {
+      await tx.bookingGuest.createMany({
+        data: sanitized,
+      });
+    }
+
+    try {
+      revalidatePath(`/dashboard/events/${bookingId}`);
+    } catch {}
+    return { success: true, count: sanitized.length };
+  }, { maxWait: 45000, timeout: 120000 });
 }

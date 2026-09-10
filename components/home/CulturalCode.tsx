@@ -44,7 +44,7 @@ export function CulturalCode() {
       aria-labelledby="cultural-code-heading"
     >
       <div className="container-luxury relative z-10">
-        <div className="relative rounded-3xl p-6 sm:p-10 lg:p-12 overflow-hidden shadow-2xl min-h-[460px] lg:min-h-[500px]">
+        <div className="relative rounded-3xl p-6 sm:p-10 lg:p-12 overflow-hidden shadow-2xl min-h-[460px] lg:min-h-[500px] bg-charcoal-950">
           {/* Background */}
           <Image
             src="https://images.unsplash.com/photo-1735052712464-9d24b69be5f5?auto=format&fit=crop&w=1920&q=80"

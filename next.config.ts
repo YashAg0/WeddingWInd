@@ -66,7 +66,7 @@ const nextConfig: NextConfig = {
               "frame-ancestors 'none'",
               // Form submissions
               "form-action 'self'",
-              ...(process.env.NODE_ENV === "production" ? ["upgrade-insecure-requests"] : []),
+              ...(process.env.NODE_ENV === "production" && !process.env.PLAYWRIGHT_TEST && !process.env.NEXT_PUBLIC_APP_URL?.includes("localhost") ? ["upgrade-insecure-requests"] : []),
             ].join("; "),
           },
         ],
@@ -102,7 +102,7 @@ const nextConfig: NextConfig = {
     ];
   },
 
-  // ─── Canonical Redirects for Common Marketing Aliases ─────────────────────
+  // ─── Canonical Redirects & Legal Route Consolidation ─────────────────────
   async redirects() {
     return [
       {
@@ -121,11 +121,6 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
       {
-        source: "/destinations",
-        destination: "/weddings",
-        permanent: true,
-      },
-      {
         source: "/about-us",
         destination: "/about",
         permanent: true,
@@ -137,18 +132,83 @@ const nextConfig: NextConfig = {
       },
       {
         source: "/terms-of-service",
-        destination: "/terms",
+        destination: "/trust?tab=terms",
         permanent: true,
       },
       {
         source: "/privacy-policy",
-        destination: "/privacy",
+        destination: "/trust?tab=privacy",
         permanent: true,
       },
       {
         source: "/faq",
         destination: "/how-it-works",
         permanent: true,
+      },
+      {
+        source: "/terms",
+        destination: "/trust?tab=terms",
+        permanent: true,
+      },
+      {
+        source: "/privacy",
+        destination: "/trust?tab=privacy",
+        permanent: true,
+      },
+      {
+        source: "/safety",
+        destination: "/trust?tab=safety",
+        permanent: true,
+      },
+      {
+        source: "/guest-safety",
+        destination: "/trust?tab=safety#guest-guide",
+        permanent: true,
+      },
+      {
+        source: "/host-safety",
+        destination: "/trust?tab=safety#guest-guide",
+        permanent: true,
+      },
+      {
+        source: "/incident-report",
+        destination: "/trust?tab=safety#emergency",
+        permanent: true,
+      },
+      {
+        source: "/grievance",
+        destination: "/trust?tab=safety#grievance",
+        permanent: true,
+      },
+      {
+        source: "/cancellation-policy",
+        destination: "/trust?tab=terms#cancellation",
+        permanent: true,
+      },
+      {
+        source: "/refund-policy",
+        destination: "/trust?tab=terms#cancellation",
+        permanent: true,
+      },
+      {
+        source: "/dpdp",
+        destination: "/trust?tab=privacy#dpdp",
+        permanent: true,
+      },
+      {
+        source: "/gdpr",
+        destination: "/trust?tab=privacy#gdpr",
+        permanent: true,
+      },
+      {
+        source: "/community-guidelines",
+        destination: "/trust?tab=safety#guest-guide",
+        permanent: true,
+      },
+      {
+        source: "/dashboard/admin/settings",
+        destination: "/dashboard/admin/founder",
+        permanent: false,
       },
     ];
   },
@@ -157,12 +217,11 @@ const nextConfig: NextConfig = {
   compress: true,
   experimental: {
     optimizePackageImports: ["lucide-react", "framer-motion", "date-fns"],
-    cpus: 1,
   },
 
   // ─── Images ──────────────────────────────────────────────────────────────
   images: {
-    qualities: [75, 90],
+    qualities: [70, 75, 80, 85, 90, 95],
     formats: ["image/avif", "image/webp"],
     minimumCacheTTL: 31536000,
     deviceSizes: [640, 750, 828, 1080, 1200, 1920],

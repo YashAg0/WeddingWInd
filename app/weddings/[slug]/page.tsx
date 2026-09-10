@@ -10,31 +10,60 @@ import { StickyBookingCard } from "@/components/wedding/StickyBookingCard";
 import { WeddingCard } from "@/components/wedding/WeddingCard";
 import { WeddingDetailReviews } from "@/components/wedding/WeddingDetailReviews";
 import type { Metadata } from 'next';
-import { getDbUser } from "@/lib/auth";
+
+import { isWeddingIndexable, isSyntheticTestSlug } from "@/lib/seo/indexability";
+import { prisma } from "@/lib/prisma";
+
+export const revalidate = 3600;
+export const dynamicParams = true;
+
+export async function generateStaticParams() {
+  try {
+    const published = await prisma.wedding.findMany({
+      where: {
+        status: "PUBLISHED",
+        deletedAt: null,
+        suspended: false,
+      },
+      select: { slug: true },
+      take: 50,
+    });
+    if (published.length > 0) {
+      return published.map((w) => ({ slug: w.slug }));
+    }
+  } catch (err) {
+    console.warn("[generateStaticParams] Could not fetch slugs from DB, falling back to static list", err);
+  }
+  const { featuredWeddings } = await import("@/lib/data");
+  return featuredWeddings.map((w) => ({ slug: w.slug }));
+}
+
+interface PageProps {
+  params: Promise<{ slug: string }>;
+}
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const resolvedParams = await params;
-  const wedding = await getWeddingBySlug(resolvedParams.slug);
-  
-  if (!wedding) {
+  if (isSyntheticTestSlug(resolvedParams.slug)) {
     return {
       title: 'Wedding Experience Not Found',
-      robots: {
-        index: false,
-        follow: false,
-      },
+      robots: { index: false, follow: false },
     };
   }
 
-  const wAny = wedding as any;
-  const isIndexable = !wAny.suspended && !wAny.deletedAt && (wAny.status === "PUBLISHED" || !wAny.status);
+  const wedding = await getWeddingBySlug(resolvedParams.slug);
+  if (!wedding) {
+    return {
+      title: 'Wedding Experience Not Found',
+      robots: { index: false, follow: false },
+    };
+  }
+
+  const isIndexable = isWeddingIndexable(wedding as any);
   if (!isIndexable) {
     return {
       title: `${wedding.title} | WeddingWithIndia`,
-      robots: {
-        index: false,
-        follow: false,
-      },
+      robots: { index: false, follow: false },
     };
   }
 
@@ -46,9 +75,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   return {
     title: pageTitle,
     description: pageDescription,
-    alternates: {
-      canonical: canonicalUrl,
-    },
+    alternates: { canonical: canonicalUrl },
     openGraph: {
       title: `${pageTitle} | WeddingWithIndia`,
       description: pageDescription,
@@ -77,27 +104,22 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-export const dynamic = "force-dynamic";
-
-interface PageProps {
-  params: Promise<{ slug: string }>;
-}
-
 export default async function WeddingDetailPage({ params }: PageProps) {
   const { slug } = await params;
   
+  if (isSyntheticTestSlug(slug)) {
+    notFound();
+  }
+
   // Find wedding
   const wedding = await getWeddingBySlug(slug);
   if (!wedding) {
     notFound();
   }
 
-  // Parallelize user session and bounded related weddings queries
-  const [dbUser, relatedWeddings] = await Promise.all([
-    getDbUser().catch(() => null),
-    getRelatedWeddings(wedding.category, wedding.id, 3),
-  ]);
-  const userId = dbUser?.id || null;
+  // Fetch bounded related weddings
+  const relatedWeddings = await getRelatedWeddings(wedding.category, wedding.id, 3);
+  const userId = null;
 
   const eventJsonLd = {
     "@context": "https://schema.org",
@@ -158,7 +180,7 @@ export default async function WeddingDetailPage({ params }: PageProps) {
   };
 
   return (
-    <div className="min-h-screen bg-warm-50 pt-28 pb-20">
+    <div className="min-h-[100dvh] bg-warm-50 pt-20 sm:pt-28 pb-[calc(5rem+env(safe-area-inset-bottom,0px))] lg:pb-20">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(eventJsonLd).replace(/</g, "\\u003c") }}
@@ -168,7 +190,7 @@ export default async function WeddingDetailPage({ params }: PageProps) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd).replace(/</g, "\\u003c") }}
       />
 
-      <header className="container-luxury mt-4 flex flex-col gap-4">
+      <header className="container-luxury mt-2 sm:mt-4 flex flex-col gap-3 sm:gap-4">
         {/* Breadcrumbs */}
         <nav aria-label="Breadcrumb" className="text-xs font-semibold text-charcoal-400 uppercase tracking-wider flex items-center gap-1.5">
           <Link href="/" className="hover:text-[var(--color-brand-primary)] transition-colors">Home</Link>
@@ -192,7 +214,7 @@ export default async function WeddingDetailPage({ params }: PageProps) {
                 </span>
               )}
             </div>
-            <h1 className="font-display font-bold text-3xl md:text-4xl text-charcoal-900 leading-tight">
+            <h1 className="font-display font-bold text-2xl md:text-4xl text-charcoal-900 leading-tight">
               {wedding.title}
             </h1>
             <div className="flex flex-wrap items-center gap-3 text-xs font-medium text-charcoal-500">
@@ -233,17 +255,17 @@ export default async function WeddingDetailPage({ params }: PageProps) {
       </header>
 
       {/* ─── IMMERSIVE GALLERY HERO ─── */}
-      <div className="container-luxury mt-6">
+      <div className="container-luxury mt-4 sm:mt-6 overflow-visible">
         <WeddingGallery images={wedding.gallery} title={wedding.title} />
         {(!wedding.isVerifiedRealMedia || wedding.coverImageType === "representative") && (
-          <p className="text-[0.6875rem] text-charcoal-400 mt-2 text-right">
+          <p className="text-[0.6875rem] text-charcoal-400 mt-2 text-right px-4 sm:px-0">
             Representative cultural imagery — host family photos and specific ceremony schedules are shared with confirmed guests.
           </p>
         )}
       </div>
 
       {/* ─── Main 2-col layout ─── */}
-      <div className="container-luxury mt-10">
+      <div className="container-luxury mt-6 sm:mt-10">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 lg:gap-16">
 
           {/* LEFT: Story + Details */}

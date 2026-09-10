@@ -129,7 +129,7 @@ export async function getOperationsDashboardAction() {
     recentCheckIns
   ] = await Promise.all([
     withDbRetry(() => prisma.verification.count({ where: { status: "PENDING" } }), { label: "ops:verifCount" }).catch(() => 0),
-    withDbRetry(() => prisma.wedding.count({ where: { status: "PUBLISHED" } }), { label: "ops:weddingCount" }).catch(() => 0),
+    withDbRetry(() => prisma.wedding.count({ where: { status: "PUBLISHED", deletedAt: null } }), { label: "ops:weddingCount" }).catch(() => 0),
     withDbRetry(() => prisma.guestCheckIn.count(), { label: "ops:checkinCount" }).catch(() => 0),
     withDbRetry(() => prisma.verification.findMany({
       take: 20,
@@ -139,7 +139,7 @@ export async function getOperationsDashboardAction() {
     }), { label: "ops:pendingVerifs" }).catch(() => []),
     withDbRetry(() => prisma.wedding.findMany({
       take: 20,
-      where: { status: "PUBLISHED" },
+      where: { status: "PUBLISHED", deletedAt: null },
       include: { hostCouple: { include: { user: true } } },
       orderBy: { createdAt: "desc" },
     }), { label: "ops:weddings" }).catch(() => []),

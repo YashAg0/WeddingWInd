@@ -1,34 +1,27 @@
-## 2026-08-09T20:14:01Z
+## 2026-08-30T03:13:52Z
+You are the Forensic Integrity Auditor for the WeddingWithIndia marketplace master audit.
+Your working directory is: c:\Projects\WeddingWithIndia\wedding-with-india\.agents\auditor_1\
 
-<USER_REQUEST>
-You are auditor_1 (teamwork_preview_auditor).
-Your working directory is: c:\Projects\WeddingWithIndia\wedding-with-india\.agents\auditor_1
+Read the authoritative user request at:
+c:\Projects\WeddingWithIndia\wedding-with-india\.agents\ORIGINAL_REQUEST.md
 
-TASK OBJECTIVE:
-Perform a comprehensive Forensic Integrity Audit of the WeddingWithIndia marketplace codebase for Milestones M1 through M7 and Acceptance Criteria.
+Read the Master Audit Report at:
+c:\Projects\WeddingWithIndia\wedding-with-india\.agents\orchestrator_1\MASTER_AUDIT_REPORT.md
 
-INPUTS:
-- Read `c:\Projects\WeddingWithIndia\wedding-with-india\.agents\ORIGINAL_REQUEST.md` first.
-- Read `c:\Projects\WeddingWithIndia\wedding-with-india\.agents\PROJECT.md`.
-- Read `c:\Projects\WeddingWithIndia\wedding-with-india\TEST_READY.md`.
+Your Mission:
+Perform an independent forensic audit of the audit execution and deliverables:
+1. Verify Non-Destructive Integrity:
+   - Check git status or workspace changes to confirm that ZERO source code, database, config, or business logic files were modified outside `.agents/`.
+2. Verify Deliverable Completeness:
+   - Verify that all 16 required sections (Sections A through P) are populated with concrete, evidence-backed findings.
+   - Verify that Section C inventories every route in `app/` and API endpoint.
+   - Verify that Section E defines explicit valid vs invalid state machine transitions for Auth, Booking, Payment, Wedding, and Host Verification.
+   - Verify that Section P details all 20 actionable recommendations with Problem, Evidence, Recommended Change, Benefit, Risk, and Dependencies.
+3. Verify Evidence Authenticity:
+   - Cross-check critical P0/P1 citations (e.g. `lib/test-auth.ts:5-7`, `app/api/reports/host/[weddingId]/route.ts:46`, `instrumentation.ts:54-57`, `lib/wedding-dto.ts:228`, `lib/currency.ts:5-9`, `next.config.ts:124`) to confirm they accurately reflect the codebase without fabrication.
 
-AUDIT VERIFICATION STEPS:
-1. **Authenticity & Integrity Check**:
-   - Check for hardcoded test results, mock fallbacks in production paths, dummy/facade implementations, or `Math.random` usage.
-   - Verify `as any` type assertions are eliminated in `app/`, `components/`, and `lib/`.
-   - Verify security gates for Admin authorization (`founder@weddingwithindia.com`), UploadThing storage locks, host KYC publishing gates, PII protection, and contact moderation.
-2. **Financial Calculations & Security**:
-   - Inspect `createBookingAction` in `lib/actions/index.ts` for positive integer `guestsCount >= 1` validation.
-   - Inspect `processPartialRefundAction` in `lib/actions/stripe.ts` for cumulative partial refund summation and limit checks.
-3. **Execution & Build Verification**:
-   - Execute/Verify `npm run type-check` (`npx tsc --noEmit`).
-   - Execute/Verify `npm run lint` (`npx eslint`).
-   - Execute/Verify `npm test -- --no-coverage` (`npx jest --passWithNoTests`).
-   - Execute/Verify `npx playwright test --list` discovery.
-4. **Documentation Audit**:
-   - Verify existence and accuracy of `FINAL_ROUTE_MAP.md`, `ADMIN_OPERATIONS_GUIDE.md`, `USER_FLOWS.md`, and `FINAL_PRODUCTION_AUDIT.md`.
-
-DELIVERABLES:
-Write your detailed Forensic Audit Report to `c:\Projects\WeddingWithIndia\wedding-with-india\.agents\auditor_1\handoff.md`.
-State your explicit verdict as either `CLEAN` or `INTEGRITY_VIOLATION`. Notify parent when complete.
-</USER_REQUEST>
+Deliverable:
+Write your audit verdict report to:
+c:\Projects\WeddingWithIndia\wedding-with-india\.agents\auditor_1\handoff.md
+Maintain progress.md in your working directory.
+When finished, send a message back with your final audit verdict (CLEAN vs INTEGRITY VIOLATION).

@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireRole } from "@/lib/auth";
-import { UserRole } from "@prisma/client";
+import { requireAuth } from "@/lib/auth";
 
 // POST /api/agent-application — submit a new agent application
 // Creates User + AgentProfile (not verified yet — admin reviews)
 export async function POST(req: NextRequest) {
   try {
-    const user = await requireRole([UserRole.AGENT]);
+    const user = await requireAuth();
     const body = await req.json();
     const { fullName, email, phone: _phone, country, city, focusArea, networkType, networkDetails } = body;
 

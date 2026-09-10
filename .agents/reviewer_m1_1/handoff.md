@@ -1,149 +1,169 @@
-# Review Handoff Report — Milestone M1 (Identity & Auth Hardening)
+# Review Handoff Report: Milestone 1 (Phase 1: Critical Security, Medical Safety & Server Resilience)
+
+**Reviewer**: Reviewer 1 (`reviewer_m1_1`)  
+**Roles**: Reviewer, Critic  
+**Date**: 2026-08-30T04:28:00Z  
+**Verdict**: **APPROVE**  
+**Integrity Status**: CLEAN (0 Integrity Violations, 0 Facades, 0 Mock Shortcuts)
+
+---
 
 ## 1. Observation
 
-### Implementation & Verification Findings
-- **Target Source File**: `lib/auth.ts` (lines 50–239)
-- **Unit Test File**: `__tests__/lib/auth-reconciliation.test.ts`
-- **Related Auth Tests**: `__tests__/lib/auth-db-availability.test.ts`, `__tests__/lib/m1-m4-hardening.test.ts`
+Direct empirical inspection of the source files, routes, and test suites for Milestone 1 was conducted:
 
-#### Key Code Implementation Observations in `lib/auth.ts`:
+### 1.1 SEC-01: E2E Auth Bypass Remediation
+- **`lib/test-auth.ts` (lines 5–7)**:
+  ```typescript
+  export function isE2ETestAuthEnabled(): boolean {
+    return process.env.NODE_ENV === "test" && process.env.PLAYWRIGHT_TEST === "true";
+  }
+  ```
+- **`proxy.ts` (lines 56–80)**:
+  Guarded with `if (isE2ETestAuthEnabled())`. When disabled (e.g. in production), `__wwi_e2e_session` cookies are bypassed and standard Clerk middleware (`clerkHandler`) executes unconditionally.
+- **`app/api/test/auth/route.ts` (lines 8–10, 43–45)**:
+  Both `GET` and `POST` handlers immediately return `NextResponse.json({ error: "Not found" }, { status: 404 })` if `!isE2ETestAuthEnabled()`.
+- **`lib/auth.ts` (lines 28–32)**:
+  `getE2ETestDbUser()` returns `null` if `!isE2ETestAuthEnabled()`, preventing any test user resolution in production or non-test environments.
+- **`playwright.config.ts` (lines 36, 64)**:
+  Explicitly configures `NODE_ENV: "test"` and `PLAYWRIGHT_TEST: "true"` for local Playwright test execution.
 
-1. **Email Normalization** (lines 70-71):
-   ```typescript
-   const rawEmail = clerkUser.emailAddresses[0]?.emailAddress || `${clerkUser.id}@guest.weddingwithindia.com`;
-   const email = rawEmail.toLowerCase().trim();
-   ```
-   *Verification*: Ensures consistent casing and whitespace removal before any database query or record mutation.
+### 1.2 UX-01: Medical Safety & Structured Dietary Pipeline
+- **`lib/dietary.ts`**:
+  - Defines all 8 standardized categories in `DIETARY_OPTIONS`: `Strict Veg` (🌱), `Vegan` (🌿), `Jain` (🕉️), `Halal` (☪️), `Celiac / Gluten-Free` (🌾, `isMedical: true`), `Nut Allergies` (🥜, `isMedical: true`), `Dairy-Free` (🥛), `Mild / Non-Spicy` (🌶️).
+  - Implements `formatDietaryRequirements` to serialize selections (`Chips | Notes: ...` or `Chips` or `Notes: ...`).
+  - Implements `parseDietaryRequirements` supporting structured deserialization as well as robust regex-based legacy text parsing (e.g. `"Vegetarian only"`, `"Gluten-free and peanuts"`).
+- **`components/dietary/DietaryAllergenSelector.tsx`**:
+  - Interactive multi-select chip grid with distinct medical alert styling (`bg-rose-50 border-rose-500 text-rose-950 font-bold`).
+  - High-contrast Medical Safety Alert Banner (`role="alert"`) displayed whenever `Celiac` or `Nut Allergies` is selected.
+  - Dedicated `<textarea>` for custom medical exclusions, EpiPen indicators, and cross-contamination guidelines.
+- **Integration Points**:
+  - Traveler Onboarding: `app/onboarding/page.tsx` (line 307)
+  - Profile Editor: `app/dashboard/profile/page.tsx` (line 179)
+  - Booking Event Hub: `app/dashboard/events/[bookingId]/ClientEventHubForm.tsx` (line 506)
+  - Operations Center: `app/dashboard/operations/ClientOperationsCenter.tsx` (lines 576–578) safely accessing `selectedBooking.travelDetails` whether represented as a single object or 1:1 array.
+- **Host Catering CSV Export (`app/api/reports/host/[weddingId]/route.ts`)**:
+  - Prisma query includes `travelDetails: true` and `guests: true`.
+  - Prioritizes `b.travelDetails?.dietaryRequirements` over profile fallback `b.traveler.foodPreferences`.
+  - Aggregates accompanying guests' dietary requirements (`b.guests.map(g => \`\${g.fullName} (\${g.foodPreference || "No Restrictions"})\`).join("; ")`).
+  - Outputs combined notes: `Primary: ${primaryDiet} | Accompanying: ${guestDiets}`.
 
-2. **Identity Reconciliation State Machine** (lines 89-174):
-   - Queries `existingByClerkId = await tx.user.findUnique({ where: { clerkUserId: clerkUser.id } })` and `existingByEmail = await tx.user.findUnique({ where: { email } })`.
-   - **Branch 1 (Both exist & mismatch)**: Unlinks `clerkUserId` on `existingByClerkId` by setting `clerkUserId: unlinked_${existingByClerkId.id}_${Date.now()}`. Then updates `existingByEmail` with `clerkUserId: clerkUser.id`, `name`, `avatar`. Excludes `role` and `status` from the update payload.
-   - **Branch 2 (Both exist & match)**: Updates `existingByEmail` with `name` and `avatar`.
-   - **Branch 3 (Only `existingByEmail` exists)**: Updates `existingByEmail` with `clerkUserId: clerkUser.id`, `name`, `avatar`. Leaves `role` and `status` untouched.
-   - **Branch 4 (Only `existingByClerkId` exists)**: Updates `existingByClerkId` with `email`, `name`, `avatar`.
-   - **Branch 5 (Neither exists)**: Creates new user record (`role: "TRAVELER"`, `status: "ONBOARDING"`). Catches Prisma `P2002` constraint error (concurrent signup race condition) and retrieves the created record via `tx.user.findUnique({ where: { email } })` or `tx.user.findUnique({ where: { clerkUserId: clerkUser.id } })`.
+### 1.3 OPS-01: Server Process Resilience
+- **`instrumentation.ts` (lines 48–64)**:
+  - Removed `process.exit(0)` and `cleanup("unhandledRejection")` on unhandled promise rejections.
+  - Added structured error logging:
+    ```typescript
+    if (env.NODE_ENV === "production") {
+      process.on("uncaughtException", (error) => {
+        logger.error("Uncaught Exception", undefined, error);
+        cleanup("uncaughtException");
+      });
+      process.on("unhandledRejection", (reason) => {
+        logger.error(
+          "Unhandled Promise Rejection detected - server process liveness maintained",
+          {
+            type: "unhandledRejection",
+            reason: reason instanceof Error ? reason.message : String(reason),
+          },
+          reason instanceof Error ? reason : new Error(String(reason))
+        );
+      });
+    }
+    ```
 
-3. **Fail-Closed DB Security (SEC-002)** (lines 227-238):
-   - Errors caught during `syncAndGetDbUser()` re-throw `SERVICE_UNAVAILABLE`. Synthetic guest users or fallback roles are strictly prevented.
+### 1.4 SEC-02: CSV Formula Injection Neutralization
+- **`app/api/reports/host/[weddingId]/route.ts` (lines 39–51)** and **`lib/actions/admin.ts` (lines 1170–1182)**:
+  ```typescript
+  const escapeCsv = (value: unknown) => {
+    if (value === null || value === undefined) return '""';
+    let str = String(value);
+    const trimmed = str.trimStart();
+    const dangerousChars = ["=", "+", "-", "@", "\t", "\r"];
+    if (
+      dangerousChars.some((ch) => str.startsWith(ch)) ||
+      (trimmed.length > 0 && dangerousChars.some((ch) => trimmed.startsWith(ch)))
+    ) {
+      str = `'${str}`;
+    }
+    return `"${str.replace(/"/g, '""')}"`;
+  };
+  ```
+  Neutralizes `=`, `+`, `-`, `@`, `\t`, `\r`, and leading whitespace evasion by prepending a single quote `'` and wrapping in RFC 4180 escaped double quotes.
 
-4. **Referral Handling Safety** (lines 212-224):
-   - Executes `associateReferralOnSignup` post-transaction, guarded with `dbUser?.createdAt && dbUser?.updatedAt && dbUser.createdAt.getTime() === dbUser.updatedAt.getTime()`.
-
-#### Verification Command Output Logs:
-
-1. **TypeScript Compiler Check**:
-   - Command: `cmd /c "npm run type-check"` (`tsc --noEmit`)
-   - Result: **PASSED** (Exit code 0, 0 errors).
-
-2. **ESLint Check**:
-   - Command: `cmd /c "npm run lint"` (`eslint`)
-   - Result: **PASSED** (Exit code 0, 0 errors, 1 warning in a script file).
-
-3. **Jest Unit & Behavioral Tests**:
-   - Command: `cmd /c "npm test -- __tests__/lib/auth-reconciliation.test.ts __tests__/lib/auth-db-availability.test.ts __tests__/lib/m1-m4-hardening.test.ts --no-coverage"`
-   - Result: **PASSED** (3 test suites passed, 27 tests passed, 0 failed).
+### 1.5 Verification Command Executions
+1. **TypeScript Type Check**:
+   - Command: `npx tsc --noEmit`
+   - Result: Exit code 0, 0 compilation errors.
+2. **Full Jest Test Suite**:
+   - Command: `npx jest`
+   - Result: 74 test suites passed, 74 total; 694 tests passed, 694 total; exit code 0.
+3. **M1-Specific Test Suites**:
+   - Command: `npx jest __tests__/lib/sec-01-e2e-auth.test.ts __tests__/lib/sec-02-csv-injection.test.ts __tests__/lib/ops-01-resilience.test.ts __tests__/lib/ux-01-dietary.test.ts __tests__/lib/host-catering-export.test.ts __tests__/components/dietary-allergen-selector.test.tsx`
+   - Result: 6 test suites passed, 6 total; 41 tests passed, 41 total; exit code 0.
 
 ---
 
 ## 2. Logic Chain
 
-1. **Email Normalization Prevents Case/Space Duplicate Collision**:
-   - *Observation*: `rawEmail.toLowerCase().trim()` normalizes input before database lookup.
-   - *Reasoning*: Standardizing emails ensures `findUnique({ where: { email } })` matches existing pre-seeded records (such as `founder@weddingwithindia.com`), preventing duplicate account creation caused by casing variations.
-
-2. **Unlinking Stale Clerk User IDs Eliminates P2002 Violations**:
-   - *Observation*: Branch 1 updates `existingByClerkId` with `clerkUserId: unlinked_${id}_${Date.now()}` prior to assigning `clerkUser.id` to `existingByEmail`.
-   - *Reasoning*: Because `clerkUserId` has a `@unique` index in Prisma schema, assigning `clerkUser.id` to `existingByEmail` while `existingByClerkId` still holds it would trigger a `P2002` constraint failure. Unlinking `existingByClerkId` first clears the key space atomically within the transaction.
-
-3. **Canonical Founder Row Integrity**:
-   - *Observation*: Neither Branch 1 nor Branch 3 includes `role` or `status` in the `tx.user.update` data object.
-   - *Reasoning*: Omitting `role` and `status` ensures that pre-existing accounts (e.g. founder account seeded with `ADMIN`/`ACTIVE`) maintain their authoritative status and cannot be downgraded or mutated during authentication sync.
-
-4. **Race Condition Resilience**:
-   - *Observation*: Branch 5 wraps `tx.user.create` in a try/catch for error code `P2002`.
-   - *Reasoning*: If two concurrent HTTP requests for the same new user execute simultaneously, the second attempt catches `P2002` and recovers the newly created record via `findUnique`, preventing request failure.
-
-5. **No Integrity Violations Detected**:
-   - *Observation*: Code inspection reveals real Prisma transaction queries and error handling; test suite verifies behavioral matrix under Jest mock environment.
-   - *Reasoning*: Code satisfies all integrity constraints — no hardcoded mock returns, no facade logic, no bypassed checks.
+1. **SEC-01 (Auth Gating)**:
+   - *Observation*: `isE2ETestAuthEnabled()` requires `process.env.NODE_ENV === "test" && process.env.PLAYWRIGHT_TEST === "true"`.
+   - *Inference*: In production or development deployments, this returns `false`. Consequently, `/api/test/auth` returns HTTP 404, `proxy.ts` ignores session cookies, and `getE2ETestDbUser()` aborts. Remote unauthorized session generation is blocked while Playwright runs succeed when both flags are configured.
+2. **UX-01 (Medical Safety & Catering Pipeline)**:
+   - *Observation*: `DietaryAllergenSelector` collects chips and custom notes; `app/api/reports/host/[weddingId]/route.ts` serializes `TravelDetail.dietaryRequirements` and `BookingGuest` preferences.
+   - *Inference*: Free-text ambiguity is eliminated. Severe allergens (Celiac, Nut allergies) trigger high-visibility alerts in the UI and are exported directly to catering registers, mitigating anaphylaxis and food safety risks.
+3. **OPS-01 (Server Resilience)**:
+   - *Observation*: `process.exit(0)` was removed from `unhandledRejection` and replaced with structured `logger.error`.
+   - *Inference*: Non-fatal asynchronous background failures (telemetry, background tasks) will not terminate the Node.js process, preventing server downtime while retaining observability.
+4. **SEC-02 (CSV Formula Neutralization)**:
+   - *Observation*: `escapeCsv` detects formula triggers (`=`, `+`, `-`, `@`, `\t`, `\r`) and leading whitespace variants, prepending `'`.
+   - *Inference*: Spreadsheet clients (Excel, Google Sheets, LibreOffice) interpret values as literal text rather than executable formulas or DDE commands.
+5. **Integrity & Code Quality**:
+   - *Observation*: All tests execute real code without dummy shortcuts, hardcoded results, or bypassed invariants.
+   - *Inference*: Codebase satisfies all architectural, security, and quality requirements.
 
 ---
 
-## 3. Review Report & Verdict
+## 3. Caveats
 
-### Review Summary
-**Verdict**: **APPROVE**
-
-### Findings
-- **Critical Findings**: None (0).
-- **Major Findings**: None (0).
-- **Minor Findings**: None (0).
-
-### Verified Claims
-1. **Email Normalization**: `rawEmail.toLowerCase().trim()` verified in `lib/auth.ts:71` → PASS
-2. **5-Branch Reconciliation**: All branches verified in `lib/auth.ts:104-173` and tested in `auth-reconciliation.test.ts` → PASS
-3. **Founder Row Role Protection**: Omission of `role` and `status` in updates verified in `lib/auth.ts:117-120, 134-137` → PASS
-4. **P2002 Retry Catch**: Verified in `lib/auth.ts:159-168` and `auth-reconciliation.test.ts:235-271` → PASS
-5. **Fail-Closed DB Security**: Verified in `lib/auth.ts:227-238` and `auth-db-availability.test.ts:110-141` → PASS
-
----
-
-## 4. Adversarial Stress-Test / Challenge Summary
-
-**Overall Risk Assessment**: LOW
-
-### Challenges & Attack Surface Analysis
-1. **Challenge 1: Concurrent Signup Race Condition**
-   - *Attack Scenario*: Two identical requests for a new user land simultaneously.
-   - *Stress Test*: Branch 5 catches `P2002` error on `tx.user.create`, executes `findUnique` by `email` or `clerkUserId`, and returns the existing record.
-   - *Result*: PASS.
-
-2. **Challenge 2: Account Hijacking / Self-Elevation Attempt**
-   - *Attack Scenario*: Non-admin user attempts to gain ADMIN by modifying Clerk profile.
-   - *Stress Test*: `syncAndGetDbUser` only updates `clerkUserId`, `name`, and `avatar`. It never assigns `ADMIN` role unless the user row in PostgreSQL already possessed `ADMIN` role.
-   - *Result*: PASS.
-
-3. **Challenge 3: Stale Unique Key Constraint Trap**
-   - *Attack Scenario*: Re-binding a Clerk ID to a founder email when the Clerk ID was previously attached to a temporary row.
-   - *Stress Test*: Stale row's `clerkUserId` is unlinked with a unique timestamped key before updating canonical email row.
-   - *Result*: PASS.
-
----
-
-## 5. Caveats
-
-- Unit tests mock Prisma transaction callbacks and Clerk server actions. Database performance under real production PostgreSQL connection pool saturation should be monitored via staging/production telemetry.
+- In local testing, if running manual browser testing without Playwright, standard Clerk authentication must be used (as E2E test auth is strictly gated to `NODE_ENV === 'test'`).
+- Existing legacy records in PostgreSQL with unparsed food preferences are dynamically parsed into structured chips upon display via `parseDietaryRequirements`.
 - No other caveats.
 
 ---
 
-## 6. Conclusion
+## 4. Conclusion
 
-- `lib/auth.ts` implementation of `syncAndGetDbUser()` is **correct**, **complete**, **robust**, and **secure**.
-- All acceptance criteria for Milestone M1 (Requirement R3 / Identity & Auth Hardening) are satisfied.
-- **Verdict**: **`APPROVE`**
+Milestone 1 (Phase 1: Critical Security, Medical Safety & Server Resilience) has been thoroughly implemented and verified.
+
+- **SEC-01**: Complete & Verified (PASS)
+- **UX-01**: Complete & Verified (PASS)
+- **OPS-01**: Complete & Verified (PASS)
+- **SEC-02**: Complete & Verified (PASS)
+- **Quality Gates**: `tsc --noEmit` clean, 74/74 Jest suites passing (694 tests).
+
+**Final Verdict**: **`APPROVE`**
 
 ---
 
-## 7. Verification Method
+## 5. Verification Method
 
-To re-verify this assessment:
+To independently re-verify this milestone:
 
-1. **Run TypeScript Compiler**:
-   ```cmd
-   cmd /c "npm run type-check"
+1. **TypeScript Type Check**:
+   ```bash
+   npx tsc --noEmit
    ```
-   *Expected Output*: Exit code 0, 0 errors.
+   *Expected*: Exit code 0, 0 compilation errors.
 
-2. **Run ESLint**:
-   ```cmd
-   cmd /c "npm run lint"
+2. **Full Jest Test Suite**:
+   ```bash
+   npx jest
    ```
-   *Expected Output*: Exit code 0, 0 errors.
+   *Expected*: 74 passed test suites, 694 passed tests.
 
-3. **Run Jest Auth Test Suites**:
-   ```cmd
-   cmd /c "npm test -- __tests__/lib/auth-reconciliation.test.ts __tests__/lib/auth-db-availability.test.ts __tests__/lib/m1-m4-hardening.test.ts --no-coverage"
+3. **Milestone 1 Specific Test Suites**:
+   ```bash
+   npx jest __tests__/lib/sec-01-e2e-auth.test.ts __tests__/lib/sec-02-csv-injection.test.ts __tests__/lib/ops-01-resilience.test.ts __tests__/lib/ux-01-dietary.test.ts __tests__/lib/host-catering-export.test.ts __tests__/components/dietary-allergen-selector.test.tsx
    ```
-   *Expected Output*: 3 test suites passed, 27 tests passed.
+   *Expected*: 6 passed test suites, 41 passed tests.
+

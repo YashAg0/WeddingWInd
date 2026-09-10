@@ -7,6 +7,7 @@ import { MapPin, Users, Heart, Calendar, Sparkles, ShieldCheck, ArrowRight } fro
 import type { Wedding } from "@/types";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
+import { useCurrency } from "@/context/CurrencyContext";
 import { resolveWeddingVisualProfile } from "@/lib/wedding-images";
 
 const FALLBACK_IMAGE =
@@ -47,10 +48,12 @@ export function WeddingCard({ wedding, className, hidePrice = false }: WeddingCa
     wedding.availabilityStatus === "FULLY_BOOKED" ||
     (!isUnlimitedCapacity && availableSlots <= 0);
 
+  const { formatPriceFromUSD } = useCurrency();
   const displayPriceUSD =
     typeof wedding.pricePerGuest === "number" && wedding.pricePerGuest > 0
       ? wedding.pricePerGuest
       : 149;
+  const priceFormatted = formatPriceFromUSD(displayPriceUSD);
   const durationDays = wedding.durationDays || 1;
   const ceremoniesCount =
     wedding.ceremoniesCount || (wedding.timeline?.length || durationDays);
@@ -167,11 +170,11 @@ export function WeddingCard({ wedding, className, hidePrice = false }: WeddingCa
                 e.stopPropagation();
                 toggleWishlist(wedding.id);
               }}
-              className="relative z-20 p-1.5 rounded-full bg-black/45 backdrop-blur-md text-white hover:bg-black/70 hover:scale-110 active:scale-95 transition-all pointer-events-auto border border-white/15 focus:outline-none focus:ring-2 focus:ring-amber-400 cursor-pointer"
+              className="relative z-20 w-11 h-11 flex items-center justify-center rounded-full bg-black/45 backdrop-blur-md text-white hover:bg-black/70 hover:scale-110 active:scale-95 transition-all pointer-events-auto border border-white/15 focus:outline-none focus:ring-2 focus:ring-amber-400 cursor-pointer"
               aria-label={isWishlisted ? `Remove ${wedding.title} from wishlist` : `Add ${wedding.title} to wishlist`}
             >
               <Heart
-                size={14}
+                size={15}
                 className={cn("transition-colors", isWishlisted && "fill-red-500 text-red-500")}
               />
             </button>
@@ -245,8 +248,8 @@ export function WeddingCard({ wedding, className, hidePrice = false }: WeddingCa
             )}
           </div>
 
-          {/* Description — fixed 2-line slot */}
-          <p className="text-xs text-charcoal-500 line-clamp-2 leading-relaxed flex-1">
+          {/* Description — fixed 2-line slot (hidden on mobile for compact density) */}
+          <p className="hidden sm:block text-xs text-charcoal-500 line-clamp-2 leading-relaxed flex-1">
             {wedding.story || "An authentic Indian wedding celebration welcoming international guests."}
           </p>
 
@@ -298,11 +301,13 @@ export function WeddingCard({ wedding, className, hidePrice = false }: WeddingCa
                 <div className="min-w-0">
                   <div className="flex items-baseline gap-1">
                     <span className="font-display font-bold text-lg text-charcoal-900">
-                      ${displayPriceUSD.toLocaleString()}
+                      {priceFormatted.primary}
                     </span>
                     <span className="text-xs text-charcoal-500">/guest</span>
                   </div>
-                  <div className="text-[0.625rem] text-charcoal-400">Experience Pass</div>
+                  <div className="text-[0.625rem] text-charcoal-400">
+                    {priceFormatted.secondary ? `${priceFormatted.secondary} · Experience Pass` : "Experience Pass"}
+                  </div>
                 </div>
                 <div
                   className="btn btn-primary text-xs font-bold py-2 px-4 rounded-xl transition-all inline-flex items-center gap-1.5 shadow-xs group/btn flex-shrink-0 whitespace-nowrap pointer-events-none group-hover/card:bg-maroon-800"

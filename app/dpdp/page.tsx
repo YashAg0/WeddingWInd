@@ -22,13 +22,13 @@ export const metadata: Metadata = {
     "WeddingWithIndia privacy",
   ],
   alternates: {
-    canonical: "https://weddingwithindia.com/dpdp",
+    canonical: "https://weddingwithindia.com/trust?tab=privacy#dpdp",
   },
   openGraph: {
     title: "DPDP Act & India Privacy Rights | WeddingWithIndia",
     description:
       "Information about personal data protection and privacy rights for users of WeddingWithIndia in India.",
-    url: "https://weddingwithindia.com/dpdp",
+    url: "https://weddingwithindia.com/trust?tab=privacy#dpdp",
     siteName: "WeddingWithIndia",
     type: "website",
   },
@@ -39,7 +39,7 @@ export const metadata: Metadata = {
       "Information about personal data protection and privacy rights for users of WeddingWithIndia in India.",
   },
   robots: {
-    index: true,
+    index: false,
     follow: true,
   },
 };

@@ -602,7 +602,7 @@ async function testManualPayPalFullFlowAndAtomicity() {
           });
         }, { maxWait: 15000, timeout: 30000 });
         concSuccess++;
-      } catch (_err) {
+      } catch {
         concFailed++;
       }
     };

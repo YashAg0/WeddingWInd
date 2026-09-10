@@ -31,11 +31,21 @@ async function getE2ETestDbUser() {
     return null;
   }
   try {
-    const { cookies } = await import("next/headers");
-    const cookieStore = await cookies();
-    const e2eToken = cookieStore.get("__wwi_e2e_session")?.value;
+    let e2eToken: string | undefined;
+    try {
+      const { cookies } = await import("next/headers");
+      const cookieStore = await cookies();
+      e2eToken = cookieStore.get("__wwi_e2e_session")?.value;
+    } catch {
+      // Outside request scope (e.g. running directly in test process)
+    }
+
+    if (!e2eToken && process.env.__E2E_MOCK_TOKEN) {
+      e2eToken = process.env.__E2E_MOCK_TOKEN;
+    }
+
     if (!e2eToken) {
-      console.log("[E2E AUTH] No __wwi_e2e_session cookie found in cookieStore");
+      console.log("[E2E AUTH] No __wwi_e2e_session cookie or __E2E_MOCK_TOKEN found");
       return null;
     }
     const session = verifyE2ETestSessionToken(e2eToken);
@@ -44,10 +54,15 @@ async function getE2ETestDbUser() {
       return null;
     }
 
-    const user = await safeDbCall(
+    let user = await safeDbCall(
       () =>
-        prisma.user.findUnique({
-          where: { id: session.userId },
+        prisma.user.findFirst({
+          where: {
+            OR: [
+              { id: session.userId },
+              session.email ? { email: session.email } : undefined,
+            ].filter(Boolean) as any,
+          },
           include: {
             travelerProfile: true,
             coupleProfile: {
@@ -64,17 +79,82 @@ async function getE2ETestDbUser() {
             verification: true,
           },
         }),
-      { label: "getE2ETestDbUser" }
+      { label: "getE2ETestDbUser:find" }
     );
 
+    if (!user && (session.userId || session.email)) {
+      try {
+        const existing = await safeDbCall(
+          () =>
+            prisma.user.findFirst({
+              where: {
+                OR: [
+                  ...(session.userId ? [{ id: session.userId }] : []),
+                  ...(session.email ? [{ email: session.email }] : []),
+                ],
+              },
+              include: {
+                travelerProfile: true,
+                coupleProfile: {
+                  include: {
+                    weddings: {
+                      where: { isDemo: false },
+                      orderBy: { createdAt: "desc" },
+                      take: 1,
+                    },
+                  },
+                },
+                agentProfile: true,
+                coordinatorProfile: true,
+                verification: true,
+              },
+            }),
+          { label: "getE2ETestDbUser:fallbackFind" }
+        );
+
+        if (existing) {
+          user = existing;
+        } else if (session.email) {
+          user = await safeDbCall(
+            () =>
+              prisma.user.create({
+                data: {
+                  id: session.userId,
+                  email: session.email,
+                  name: session.email.split("@")[0],
+                  role: (session.role as any) || UserRole.TRAVELER,
+                  status: UserStatus.ACTIVE,
+                  clerkUserId: `clerk_e2e_${session.userId}`,
+                },
+                include: {
+                  travelerProfile: true,
+                  coupleProfile: {
+                    include: {
+                      weddings: {
+                        where: { isDemo: false },
+                        orderBy: { createdAt: "desc" },
+                        take: 1,
+                      },
+                    },
+                  },
+                  agentProfile: true,
+                  coordinatorProfile: true,
+                  verification: true,
+                },
+              }),
+            { label: "getE2ETestDbUser:provision" }
+          );
+        }
+      } catch (upsertErr) {
+        console.warn("[E2E AUTH] Provision test user fallback warning:", upsertErr);
+      }
+    }
+
     if (user && user.status !== UserStatus.BANNED) {
-      console.log("[E2E AUTH] Successfully resolved user:", user.email, "role:", user.role);
       return user;
     }
-    console.log("[E2E AUTH] User not found or banned:", session.userId);
     return null;
-  } catch (err: any) {
-    console.error("[E2E AUTH] Error resolving test user:", err?.message);
+  } catch {
     return null;
   }
 }
@@ -125,23 +205,32 @@ export async function syncAndGetDbUser() {
   let session: any = null;
   try {
     session = await getSession();
-  } catch (err) {
+  } catch (err: any) {
     console.warn("[syncAndGetDbUser] Unable to fetch Clerk session:", err);
+    const isNetworkOrProviderOutage =
+      err?.message?.includes("fetch failed") ||
+      err?.message?.includes("ETIMEDOUT") ||
+      err?.message?.includes("ECONNRESET") ||
+      err?.message?.includes("Service Unavailable") ||
+      err?.code === "UND_ERR_CONNECT_TIMEOUT";
+    if (isNetworkOrProviderOutage) {
+      const authError = new Error("AUTH_PROVIDER_UNAVAILABLE: Authentication service is temporarily unavailable. Please try again shortly.");
+      (authError as any).code = "AUTH_PROVIDER_UNAVAILABLE";
+      throw authError;
+    }
     return null;
   }
 
   if (!session?.userId) return null;
 
-  // 1. Fetch Clerk user details
-  const clerkUser = await currentUser();
-  if (!clerkUser) return null;
+  const clerkUserId = session.userId as string;
 
-  // FAST PATH: Check if user is already synced by Clerk ID (indexed lookup, zero transaction lock)
+  // FAST PATH: Check if user is already synced by Clerk ID in PostgreSQL (indexed lookup, zero network overhead)
   try {
     const fastUser = await safeDbCall(
       () =>
         prisma.user.findUnique({
-          where: { clerkUserId: clerkUser.id },
+          where: { clerkUserId },
           include: {
             travelerProfile: true,
             coupleProfile: {
@@ -166,6 +255,30 @@ export async function syncAndGetDbUser() {
     }
   } catch (fastErr) {
     console.warn("[syncAndGetDbUser] Fast path query error, falling back to sync transaction:", fastErr);
+  }
+
+  // SLOW PATH: User not yet synced; fetch Clerk user details to provision
+  const clerkUser = await currentUser();
+  if (!clerkUser) {
+    // If currentUser() network call fails, try fallback database lookup by clerkUserId
+    const fallbackUser = await safeDbCall(
+      () =>
+        prisma.user.findUnique({
+          where: { clerkUserId },
+          include: {
+            travelerProfile: true,
+            coupleProfile: true,
+            agentProfile: true,
+            coordinatorProfile: true,
+            verification: true,
+          },
+        }),
+      { label: "syncAndGetDbUser:fallbackAfterNullClerkUser" }
+    );
+    if (fallbackUser && fallbackUser.status !== UserStatus.BANNED) {
+      return fallbackUser;
+    }
+    return null;
   }
 
   // SLOW PATH: Full synchronization transaction for new users or re-linked accounts
@@ -282,26 +395,27 @@ export async function syncAndGetDbUser() {
         }
       });
     }, {
-      maxWait: 10000,
-      timeout: 15000
+      maxWait: 20000,
+      timeout: 60000
     });
 
-    // Link referral AFTER the transaction is safely committed
-    if (dbUser && dbUser.createdAt.getTime() === dbUser.updatedAt.getTime()) {
-      if (refCookie && refCookie.referralCode) {
-        try {
-          const { associateReferralOnSignup } = require("./actions/referrals");
-          await associateReferralOnSignup(dbUser.id, refCookie);
-        } catch (err) {
-          console.error("Failed to link referral cookie on signup:", err);
-        }
+    // Link referral AFTER the transaction is safely committed (for both new signups and returning referred visitors)
+    if (dbUser && refCookie && refCookie.referralCode) {
+      try {
+        const { associateReferralOnSignup } = require("./actions/referrals");
+        await associateReferralOnSignup(dbUser.id, refCookie);
+      } catch (err) {
+        console.error("Failed to link referral cookie:", err);
       }
     }
 
     return dbUser;
   } catch (err: any) {
     console.error("[AUTH DEBUG] FATAL ERROR IN syncAndGetDbUser:", err);
-    throw new Error("SERVICE_UNAVAILABLE: Authentication service is temporarily unavailable. Please try again shortly.");
+    const serviceError = new Error("SERVICE_UNAVAILABLE: Authentication service is temporarily unavailable. Please try again shortly.");
+    (serviceError as any).code = err?.code || "SERVICE_UNAVAILABLE";
+    (serviceError as any).originalError = err;
+    throw serviceError;
   }
 }
 

@@ -6,23 +6,25 @@ import type { Wedding } from "@/types";
 import { WeddingCard } from "@/components/wedding/WeddingCard";
 
 export const metadata: Metadata = {
-  title: "Goa Beach Wedding Experiences: Coastal Sunset & Indo-Portuguese Celebrations",
+  title: "Goa Beach Weddings: Attend Coastal Sunset Celebrations in Goa",
   description:
-    "Attend vibrant beach weddings in Goa. Experience coastal sunset nuptials, beachfront Sangeet music parties, and Indo-Portuguese cultural wedding traditions with verified hosts.",
+    "Attend authentic beach weddings in Goa. Experience oceanfront mandaps, sunset Sangeet parties, and Indo-Portuguese wedding traditions with verified hosts.",
   keywords: [
+    "Goa beach weddings",
     "Goa wedding experience",
     "attend beach wedding in Goa",
     "Indian wedding experience Goa",
     "Goa destination wedding tourist",
     "beachside Indian wedding",
+    "goa weddings",
   ],
   alternates: {
     canonical: "https://weddingwithindia.com/destinations/goa",
   },
   openGraph: {
-    title: "Goa Beach Wedding Experiences | WeddingWithIndia",
+    title: "Goa Beach Weddings: Attend Coastal Sunset Celebrations in Goa | WeddingWithIndia",
     description:
-      "Celebrate beachfront Indian wedding experiences in North and South Goa as an honoured guest.",
+      "Attend authentic beach weddings in Goa. Experience oceanfront mandaps, sunset Sangeet parties, and Indo-Portuguese wedding traditions with verified hosts.",
     url: "https://weddingwithindia.com/destinations/goa",
     siteName: "WeddingWithIndia",
     type: "website",
@@ -37,7 +39,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Goa Beach Wedding Experiences | WeddingWithIndia",
+    title: "Goa Beach Weddings: Attend Coastal Sunset Celebrations in Goa | WeddingWithIndia",
     description:
       "Attend sunset beach weddings in Goa with verified host families.",
     images: ["https://weddingwithindia.com/og-image.jpg"],
@@ -130,7 +132,7 @@ export default async function GoaDestinationPage() {
             <Sun size={13} /> Coastal &amp; Beach Celebrations
           </div>
           <h1 className="font-display font-bold text-3xl sm:text-4xl lg:text-5xl text-charcoal-900 leading-tight">
-            Goa Beach Indian Wedding Experiences
+            Goa Beach Weddings &amp; Coastal Celebrations
           </h1>
           <p className="text-sm sm:text-base text-charcoal-600 leading-relaxed max-w-3xl">
             Witness sunset oceanfront mandaps, bohemian beachfront Sangeets, and fusion Indo-Portuguese celebrations in North and South Goa luxury resorts.
