@@ -59,6 +59,7 @@ export type WeddingAvailabilityStatus = "AVAILABLE" | "FULLY_BOOKED" | "UNAVAILA
 export interface DemoWedding {
   id: string;
   slug: string;
+  hostCoupleId?: string;
   title: string;
   location: string;
   city: string;

@@ -26,6 +26,7 @@ export interface HostDayInput {
 
 export interface HostApplicationInput {
   applicationId?: string;
+  submissionToken?: string;
   hostName: string;
   email: string;
   phone?: string;
@@ -439,16 +440,82 @@ function parseSafeDate(val: any, fallback: Date = new Date()): Date {
   return isNaN(d.getTime()) ? fallback : d;
 }
 
+// In-memory idempotency locks and deduplication caches
+const activeSubmissionLocks = new Map<string, Promise<SaveHostApplicationDraftResult>>();
+const recentSubmissions = new Map<string, { result: SaveHostApplicationDraftResult; timestamp: number }>();
+const recentSubmittedNotifications = new Set<string>();
+
 /**
- * Server Action: Save or Update Draft Host Application with debounced autosave support.
+ * Server Action: Save or Update Draft Host Application with debounced autosave support and strict idempotency.
  */
 export async function saveHostApplicationDraftAction(
   input: HostApplicationInput,
   options?: { status?: "DRAFT" | "SUBMITTED" }
 ): Promise<SaveHostApplicationDraftResult> {
+  const isSubmission = options?.status === "SUBMITTED";
+
+  try {
+    const user = await requireAuth();
+
+    // Idempotency check for submissions: deduplicate simultaneous and rapid repeat requests
+    if (isSubmission) {
+      const tokenKey = input.submissionToken?.trim();
+      const userLockKey = `${user.id}_submission_lock`;
+
+      // 1. Return cached result if an identical submissionToken was already processed within 60 seconds
+      if (tokenKey) {
+        const cached = recentSubmissions.get(tokenKey);
+        if (cached && Date.now() - cached.timestamp < 60000) {
+          return cached.result;
+        }
+      }
+
+      // 2. Check for in-flight concurrent execution for this user or token
+      const inFlight = activeSubmissionLocks.get(userLockKey) || (tokenKey ? activeSubmissionLocks.get(tokenKey) : undefined);
+      if (inFlight) {
+        return await inFlight;
+      }
+
+      const submissionPromise = (async () => {
+        try {
+          const res = await executeSaveHostApplicationDraft(input, options, user);
+          if (res.success && tokenKey) {
+            recentSubmissions.set(tokenKey, { result: res, timestamp: Date.now() });
+            // Prune old tokens
+            if (recentSubmissions.size > 500) {
+              const cutoff = Date.now() - 120000;
+              for (const [k, v] of recentSubmissions.entries()) {
+                if (v.timestamp < cutoff) recentSubmissions.delete(k);
+              }
+            }
+          }
+          return res;
+        } finally {
+          activeSubmissionLocks.delete(userLockKey);
+          if (tokenKey) activeSubmissionLocks.delete(tokenKey);
+        }
+      })();
+
+      activeSubmissionLocks.set(userLockKey, submissionPromise);
+      if (tokenKey) activeSubmissionLocks.set(tokenKey, submissionPromise);
+      return await submissionPromise;
+    }
+
+    return await executeSaveHostApplicationDraft(input, options, user);
+  } catch (authErr: any) {
+    const msg = authErr?.message || "Failed to authenticate request.";
+    let code = authErr?.code || "UNAUTHORIZED";
+    return { success: false, error: msg, errorCode: code };
+  }
+}
+
+async function executeSaveHostApplicationDraft(
+  input: HostApplicationInput,
+  options: { status?: "DRAFT" | "SUBMITTED" } | undefined,
+  user: any
+): Promise<SaveHostApplicationDraftResult> {
   try {
     const isSubmission = options?.status === "SUBMITTED";
-    const user = await requireAuth();
     const userEmail = user.email || input.email;
 
     const durationDays = Math.max(1, Math.min(5, Number(input.durationDays) || 3));
@@ -552,6 +619,13 @@ export async function saveHostApplicationDraftAction(
         if (!hostApp) {
           hostApp = await tx.hostApplication.findFirst({
             where: { userId: user.id },
+            orderBy: { updatedAt: "desc" },
+          });
+        }
+
+        if (!hostApp && coupleProfile?.id) {
+          hostApp = await tx.hostApplication.findFirst({
+            where: { coupleProfileId: coupleProfile.id },
             orderBy: { updatedAt: "desc" },
           });
         }
@@ -722,36 +796,45 @@ export async function submitHostApplicationAction(
     }
 
     try {
-      const user = await requireAuth();
-      const adminUsers = await prisma.user.findMany({
-        where: { role: UserRole.ADMIN },
-        select: { id: true },
-      });
+      const notifKey = `${result.applicationId}_submitted`;
+      if (!recentSubmittedNotifications.has(notifKey)) {
+        recentSubmittedNotifications.add(notifKey);
+        if (recentSubmittedNotifications.size > 200) {
+          recentSubmittedNotifications.clear();
+          recentSubmittedNotifications.add(notifKey);
+        }
 
-      if (adminUsers && adminUsers.length > 0) {
-        for (const admin of adminUsers) {
+        const user = await requireAuth();
+        const adminUsers = await prisma.user.findMany({
+          where: { role: UserRole.ADMIN },
+          select: { id: true },
+        });
+
+        if (adminUsers && adminUsers.length > 0) {
+          for (const admin of adminUsers) {
+            try {
+              await prisma.notification.create({
+                data: {
+                  userId: admin.id,
+                  title: "New Host Application Submitted",
+                  message: `${input.hostName} submitted an application for ${input.coupleNames} in ${input.city}.`,
+                  type: "INFO",
+                },
+              });
+            } catch {}
+          }
+        } else {
           try {
             await prisma.notification.create({
               data: {
-                userId: admin.id,
-                title: "New Host Application Submitted",
-                message: `${input.hostName} submitted an application for ${input.coupleNames} in ${input.city}.`,
+                userId: user.id,
+                title: "Application Received",
+                message: `Your celebration ${input.coupleNames} has been submitted for verification.`,
                 type: "INFO",
               },
             });
           } catch {}
         }
-      } else {
-        try {
-          await prisma.notification.create({
-            data: {
-              userId: user.id,
-              title: "Application Received",
-              message: `Your celebration ${input.coupleNames} has been submitted for verification.`,
-              type: "INFO",
-            },
-          });
-        } catch {}
       }
     } catch (notifErr) {
       console.warn("Failed to dispatch notification on host application submit:", notifErr);

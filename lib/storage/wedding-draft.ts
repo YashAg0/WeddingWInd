@@ -11,8 +11,10 @@ import { HostDayInput } from "@/lib/actions/host-application";
 
 export const DRAFT_STORAGE_KEY = "wwi_host_application_draft_v1";
 export const INTENT_STORAGE_KEY = "wwi_host_draft_auto_submit";
+export const SUBMISSION_TOKEN_KEY = "wwi_host_submission_token_v1";
 
 export interface HostDraftPayload {
+  submissionToken?: string;
   hostName: string;
   email?: string;
   phone?: string;
@@ -37,13 +39,37 @@ export interface HostDraftPayload {
 }
 
 /**
+ * Retrieves an existing submission idempotency token or generates a cryptographically sound new one.
+ */
+export function getOrCreateSubmissionToken(): string {
+  if (typeof localStorage === "undefined") {
+    return "tok_" + Math.random().toString(36).slice(2, 11) + "_" + Date.now();
+  }
+  try {
+    const existing = localStorage.getItem(SUBMISSION_TOKEN_KEY);
+    if (existing && existing.trim().length > 0) {
+      return existing.trim();
+    }
+    const newToken =
+      typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+        ? crypto.randomUUID()
+        : "tok_" + Math.random().toString(36).slice(2, 11) + "_" + Date.now();
+    localStorage.setItem(SUBMISSION_TOKEN_KEY, newToken);
+    return newToken;
+  } catch {
+    return "tok_" + Math.random().toString(36).slice(2, 11) + "_" + Date.now();
+  }
+}
+
+/**
  * Saves a snapshot of the current wedding listing form to client storage.
  */
 export function saveLocalWeddingDraft(data: HostDraftPayload): void {
   if (typeof localStorage === "undefined") return;
   try {
     const raw = localStorage.getItem(DRAFT_STORAGE_KEY);
-    const merged = { ...data };
+    const token = data.submissionToken || getOrCreateSubmissionToken();
+    const merged = { ...data, submissionToken: token };
     if (raw) {
       try {
         const existing = JSON.parse(raw);
@@ -89,6 +115,7 @@ export function clearLocalWeddingDraft(): void {
   try {
     localStorage.removeItem(DRAFT_STORAGE_KEY);
     localStorage.removeItem(INTENT_STORAGE_KEY);
+    localStorage.removeItem(SUBMISSION_TOKEN_KEY);
   } catch (e) {
     console.warn("[wedding-draft-storage] Unable to clear draft from localStorage:", e);
   }

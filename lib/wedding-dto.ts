@@ -186,6 +186,7 @@ export function toWeddingDTO(rawWedding: any): Wedding {
   return {
     id: rawWedding.id,
     slug: rawWedding.slug,
+    hostCoupleId: rawWedding.hostCoupleId || rawWedding.hostCouple?.id || undefined,
     title: rawWedding.title,
     location: rawWedding.location || "India",
     city,
@@ -272,6 +273,9 @@ export function deduplicateWeddings<T extends {
   slug?: string;
   hostCoupleId?: string;
   title?: string;
+  coupleName?: string;
+  city?: string;
+  location?: string;
   date?: string | Date;
   isDemo?: boolean;
   [key: string]: any;
@@ -285,17 +289,33 @@ export function deduplicateWeddings<T extends {
     if (w.id) seenIds.add(w.id);
 
     // For non-demo listings, prevent duplicate cards for the same host celebration
-    if (!w.isDemo && w.hostCoupleId) {
+    if (!w.isDemo) {
+      const hostId = w.hostCoupleId || w.hostCouple?.id;
       const normTitle = (w.title || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+      const normCouple = (w.coupleName || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+      const normCity = (w.city || w.location || "").toLowerCase().replace(/[^a-z0-9]/g, "");
       const dateStr = w.date instanceof Date
         ? w.date.toISOString().split("T")[0]
         : String(w.date || "").split("T")[0];
-      const celebrationKey = `${w.hostCoupleId}_${normTitle || dateStr}`;
 
-      if (seenCelebrationKeys.has(celebrationKey)) {
+      // Primary key: hostCoupleId with title or date
+      // Secondary key: normalized couple/title + city + date
+      const keys: string[] = [];
+      if (hostId) {
+        keys.push(`host_${hostId}_${normTitle || dateStr}`);
+        if (dateStr) keys.push(`host_${hostId}_${dateStr}`);
+      }
+      if ((normTitle || normCouple) && dateStr) {
+        keys.push(`celebration_${normCouple || normTitle}_${normCity}_${dateStr}`);
+      }
+
+      const isDuplicate = keys.some((k) => seenCelebrationKeys.has(k));
+      if (isDuplicate) {
         continue;
       }
-      seenCelebrationKeys.add(celebrationKey);
+      for (const k of keys) {
+        seenCelebrationKeys.add(k);
+      }
     }
 
     unique.push(w);
@@ -303,4 +323,5 @@ export function deduplicateWeddings<T extends {
 
   return unique;
 }
+
 

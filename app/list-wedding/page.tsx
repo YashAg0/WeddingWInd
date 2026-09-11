@@ -48,6 +48,7 @@ import {
   clearLocalWeddingDraft,
   setAutoSubmitIntent,
   hasAutoSubmitIntent,
+  getOrCreateSubmissionToken,
   HostDraftPayload,
 } from "@/lib/storage/wedding-draft";
 
@@ -117,6 +118,7 @@ function ListWeddingContent() {
   const [hasAutoSubmitted, setHasAutoSubmitted] = useState(false);
   const [autoResumeError, setAutoResumeError] = useState<string | null>(null);
   const isAutoSubmittingRef = useRef(false);
+  const isSubmittingRef = useRef(false);
 
   // Authoritative Calculator State (Primary source of truth for Duration, Guests, Tier)
   const [durationDays, setDurationDays] = useState<WeddingDurationDays>(3);
@@ -582,14 +584,22 @@ function ListWeddingContent() {
   const handleSubmit = useCallback((event?: React.FormEvent<HTMLFormElement> | React.MouseEvent) => {
     if (event) {
       event.preventDefault();
+      event.stopPropagation();
     }
-    const formEl = (typeof document !== "undefined" ? document.getElementById("host-application-form") : null) as HTMLFormElement | null;
 
-    const draft = buildLocalDraft(formEl);
-    saveLocalWeddingDraft(draft);
-
+    // Synchronous guard: reject duplicate calls before any async ticks or re-renders
+    if (isSubmittingRef.current || isAutoSubmittingRef.current) {
+      return;
+    }
+    isSubmittingRef.current = true;
     setIsSubmitting(true);
     setAutoResumeError(null);
+
+    const formEl = (typeof document !== "undefined" ? document.getElementById("host-application-form") : null) as HTMLFormElement | null;
+    const draft = buildLocalDraft(formEl);
+    const subToken = draft.submissionToken || getOrCreateSubmissionToken();
+    const draftWithToken = { ...draft, submissionToken: subToken };
+    saveLocalWeddingDraft(draftWithToken);
 
     (async () => {
       try {
@@ -616,11 +626,11 @@ function ListWeddingContent() {
         }
 
         const res = await submitHostApplicationAction({
+          ...draftWithToken,
           applicationId: applicationId || undefined,
-          ...draft,
-          hostName: draft.hostName || readyName,
+          hostName: draftWithToken.hostName || readyName,
           email: readyEmail,
-          days: (draft.days || []).slice(0, draft.durationDays || 3),
+          days: (draftWithToken.days || []).slice(0, draftWithToken.durationDays || 3),
         });
         if (res && res.success) {
           setHasAutoSubmitted(true);
@@ -632,18 +642,19 @@ function ListWeddingContent() {
           window.location.href = "/dashboard";
         } else {
           // On failure: preserve local draft in storage
-          saveLocalWeddingDraft(draft);
+          saveLocalWeddingDraft(draftWithToken);
           const errorMsg = res && !res.success ? res.error : "Submission failed. Your draft is still saved.";
           setAutoResumeError(errorMsg);
           toast.error(errorMsg);
         }
       } catch (err: any) {
         console.error("[list-wedding] submitHostApplicationAction error:", err);
-        saveLocalWeddingDraft(draft);
+        saveLocalWeddingDraft(draftWithToken);
         const errorMsg = err?.message || "Submission failed. Your draft is still saved.";
         setAutoResumeError(errorMsg);
         toast.error(errorMsg);
       } finally {
+        isSubmittingRef.current = false;
         setIsSubmitting(false);
       }
     })();
@@ -667,6 +678,7 @@ function ListWeddingContent() {
     populateFieldsFromDraft(draft);
 
     isAutoSubmittingRef.current = true;
+    isSubmittingRef.current = true;
     setIsSubmitting(true);
     setAutoResumeError(null);
 
@@ -723,8 +735,10 @@ function ListWeddingContent() {
         const resolvedEmail = verifiedUser?.email || authenticatedEmail || draft.email || clerkUser?.primaryEmailAddress?.emailAddress || "";
         const resolvedDate = draft.weddingDate || new Date().toISOString().split("T")[0];
 
+        const subToken = draft.submissionToken || getOrCreateSubmissionToken();
         const payload: HostApplicationInput = {
           applicationId: applicationId || undefined,
+          submissionToken: subToken,
           hostName: resolvedHostName,
           email: resolvedEmail,
           phone: draft.phone,
@@ -815,6 +829,7 @@ function ListWeddingContent() {
         saveLocalWeddingDraft(draft);
       } finally {
         isAutoSubmittingRef.current = false;
+        isSubmittingRef.current = false;
         setIsSubmitting(false);
       }
     })();
@@ -871,6 +886,34 @@ function ListWeddingContent() {
 
   return (
     <div className="min-h-[100dvh] bg-warm-50 pt-20 sm:pt-28 pb-28 pb-bottom-nav">
+      {/* Full-Screen Loading Overlay: blocks duplicate clicks and gives authoritative feedback */}
+      {isSubmitting && (
+        <div
+          role="alert"
+          aria-live="assertive"
+          aria-busy="true"
+          className="fixed inset-0 z-50 bg-charcoal-950/75 backdrop-blur-md flex items-center justify-center p-4 transition-all animate-fade-in"
+        >
+          <div className="bg-white rounded-3xl p-8 sm:p-10 max-w-md w-full text-center shadow-2xl space-y-5 border border-warm-200">
+            <div className="w-16 h-16 rounded-2xl bg-maroon-50 text-[var(--color-brand-primary)] flex items-center justify-center mx-auto border-2 border-maroon-100 shadow-inner">
+              <RefreshCw size={28} className="animate-spin text-maroon-700" />
+            </div>
+            <div className="space-y-2">
+              <h3 className="font-display font-bold text-xl sm:text-2xl text-charcoal-900">
+                Submitting Your Celebration
+              </h3>
+              <p className="text-xs text-charcoal-600 leading-relaxed">
+                Please wait while we securely record your celebration details and establish verification records. Do not refresh or close this page.
+              </p>
+            </div>
+            <div className="pt-2 flex items-center justify-center gap-2 text-[0.6875rem] font-bold text-charcoal-500 uppercase tracking-wider bg-warm-50 py-2.5 rounded-xl border border-warm-200/60">
+              <ShieldCheck size={14} className="text-emerald-600" />
+              Duplicate-Safe &amp; Encrypted Submission
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="container-luxury max-w-4xl mx-auto space-y-8">
         {/* Page Header */}
         <div className="text-center space-y-2.5 max-w-2xl mx-auto">
@@ -1975,7 +2018,6 @@ function ListWeddingContent() {
             <div className="flex flex-col items-center sm:items-end gap-1.5 w-full sm:w-auto">
               <button
                 type="submit"
-                onClick={handleSubmit}
                 disabled={isSubmitting}
                 className="w-full sm:w-auto px-8 py-4 bg-[var(--color-brand-primary)] text-white rounded-2xl text-xs font-bold uppercase tracking-wider hover:bg-maroon-900 transition-all shadow-sm cursor-pointer disabled:opacity-50 inline-flex items-center justify-center gap-2"
               >

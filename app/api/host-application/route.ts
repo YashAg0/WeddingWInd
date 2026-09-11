@@ -29,6 +29,8 @@ export async function GET() {
   }
 }
 
+const activeApiLocks = new Map<string, Promise<NextResponse>>();
+
 /**
  * POST /api/host-application — Submit or Update a host celebration application.
  * Duplicate-safe: Updates in place and creates/updates both HostApplication and Wedding records.
@@ -36,44 +38,53 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const user = await requireAuth();
-    const body = await req.json();
-    const {
-      hostName,
-      email,
-      phone,
-      preferredContactMethod,
-      brideName,
-      groomName,
-      coupleNames,
-      city,
-      state,
-      venue,
-      venueName,
-      weddingDate,
-      durationDays,
-      religion,
-      tradition,
-      weddingScale,
-      expectedTotalGuests,
-      expectedInternationalGuests,
-      requestedTier,
-      story,
-      photoUrl,
-      intlGuestCapacity,
-      existingApplicationId,
-      days,
-      isDraft,
-    } = body;
-
-    const resolvedEmail = (email || user.email).trim().toLowerCase();
-    const resolvedHostName = hostName?.trim() || user.name || "Host";
-    const resolvedCoupleNames = coupleNames?.trim() || (brideName && groomName ? `${brideName.trim()} & ${groomName.trim()}` : "Our Wedding");
-    const resolvedCity = city?.trim() || "City";
-    const resolvedDate = weddingDate || new Date().toISOString().split("T")[0];
-
-    if (!resolvedHostName || !resolvedCoupleNames || !resolvedCity) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    const lockKey = `${user.id}_api_lock`;
+    const inFlight = activeApiLocks.get(lockKey);
+    if (inFlight) {
+      return await inFlight;
     }
+
+    const handlerPromise = (async () => {
+      try {
+        const body = await req.json();
+        const {
+          submissionToken,
+          hostName,
+          email,
+          phone,
+          preferredContactMethod,
+          brideName,
+          groomName,
+          coupleNames,
+          city,
+          state,
+          venue,
+          venueName,
+          weddingDate,
+          durationDays,
+          religion,
+          tradition,
+          weddingScale,
+          expectedTotalGuests,
+          expectedInternationalGuests,
+          requestedTier,
+          story,
+          photoUrl,
+          intlGuestCapacity,
+          existingApplicationId,
+          days,
+          isDraft,
+        } = body;
+
+        const resolvedEmail = (email || user.email).trim().toLowerCase();
+        const resolvedHostName = hostName?.trim() || user.name || "Host";
+        const resolvedCoupleNames = coupleNames?.trim() || (brideName && groomName ? `${brideName.trim()} & ${groomName.trim()}` : "Our Wedding");
+        const resolvedCity = city?.trim() || "City";
+        const resolvedDate = weddingDate || new Date().toISOString().split("T")[0];
+
+        if (!resolvedHostName || !resolvedCoupleNames || !resolvedCity) {
+          return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+        }
 
     if (email && email.trim().toLowerCase() !== user.email.trim().toLowerCase()) {
       return NextResponse.json({ error: "Use the email on your signed-in account." }, { status: 400 });
@@ -161,6 +172,21 @@ export async function POST(req: NextRequest) {
 
     if (!existingWedding && coupleProfile.weddings && coupleProfile.weddings.length > 0) {
       existingWedding = coupleProfile.weddings[0];
+    }
+
+    if (!existingWedding) {
+      existingWedding = await prisma.wedding.findFirst({
+        where: {
+          hostCoupleId: coupleProfile.id,
+          isDemo: false,
+          deletedAt: null,
+          OR: [
+            { title: { equals: `${resolvedCoupleNames} Wedding`, mode: "insensitive" as const } },
+            { date: new Date(resolvedDate) },
+          ],
+        },
+        orderBy: { updatedAt: "desc" },
+      });
     }
 
     if (!existingWedding) {
@@ -262,6 +288,7 @@ export async function POST(req: NextRequest) {
     try {
       const appInput = {
         applicationId: existingApplicationId || wedding.id,
+        submissionToken,
         hostName: resolvedHostName,
         email: resolvedEmail,
         phone,
@@ -334,18 +361,25 @@ export async function POST(req: NextRequest) {
       coupleNames: resolvedCoupleNames,
       city: resolvedCity,
     });
-  } catch (error: any) {
-    console.error("[API /host-application POST]", error);
-    const message = error?.message || "Internal server error";
-    if (message.startsWith("UNAUTHORIZED")) {
-      return NextResponse.json({ error: message }, { status: 401 });
-    }
-    if (message.startsWith("FORBIDDEN") || message.startsWith("BANNED")) {
-      return NextResponse.json({ error: message }, { status: 403 });
-    }
-    if (message.startsWith("SERVICE_UNAVAILABLE")) {
-      return NextResponse.json({ error: message }, { status: 503 });
-    }
-    return NextResponse.json({ error: message }, { status: 500 });
+  } finally {
+    activeApiLocks.delete(lockKey);
   }
+})();
+
+activeApiLocks.set(lockKey, handlerPromise);
+return await handlerPromise;
+} catch (error: any) {
+  console.error("[API /host-application POST]", error);
+  const message = error?.message || "Internal server error";
+  if (message.startsWith("UNAUTHORIZED")) {
+    return NextResponse.json({ error: message }, { status: 401 });
+  }
+  if (message.startsWith("FORBIDDEN") || message.startsWith("BANNED")) {
+    return NextResponse.json({ error: message }, { status: 403 });
+  }
+  if (message.startsWith("SERVICE_UNAVAILABLE")) {
+    return NextResponse.json({ error: message }, { status: 503 });
+  }
+  return NextResponse.json({ error: message }, { status: 500 });
+}
 }
