@@ -63,6 +63,7 @@ function UserAvatar({
     .map((n) => n[0]?.toUpperCase() ?? "")
     .join("");
 
+
   if (avatar && !imgError) {
     return (
       <div
@@ -93,7 +94,18 @@ function UserAvatar({
       }}
       aria-hidden="true"
     >
-      {initials || <User size={size * 0.5} />}
+      <span>{initials || <User size={size * 0.5} />}</span>
+      {avatar && (
+        <Image
+          src={avatar}
+          alt={name}
+          width={size}
+          height={size}
+          priority
+          unoptimized={avatar.includes("pravatar") || avatar.startsWith("data:")}
+          className="absolute inset-0 object-cover w-full h-full"
+        />
+      )}
     </div>
   );
 }
@@ -177,7 +189,8 @@ export default function Navbar() {
   const { user, loading, notifications } = useAuth();
   const { isLoaded: clerkLoaded, isSignedIn } = useUser();
   const { currency, setCurrency } = useCurrency();
-  const authPending = loading || (clerkLoaded && isSignedIn && !user);
+  // Only show skeleton if we have NO user and we are genuinely resolving authentication
+  const authPending = !user && (!clerkLoaded || (isSignedIn && loading));
 
   const currencyPickerRef = useRef<HTMLDivElement>(null);
   const mobileToggleRef = useRef<HTMLButtonElement>(null);
@@ -608,6 +621,7 @@ export default function Navbar() {
                   {/* Notification bell */}
                   <Link
                     href="/dashboard/notifications"
+                    prefetch={true}
                     className={cn(
                       "relative h-10 w-10 flex items-center justify-center rounded-full transition-colors duration-200 flex-shrink-0",
                       FOCUS_RING,
@@ -636,6 +650,7 @@ export default function Navbar() {
                   {/* Dashboard link with avatar */}
                   <Link
                     href="/dashboard"
+                    prefetch={true}
                     className={cn(
                       "flex items-center gap-2 h-10 pl-1.5 pr-3.5 rounded-full font-semibold text-sm whitespace-nowrap transition-all duration-200 flex-shrink-0",
                       FOCUS_RING,
@@ -656,6 +671,7 @@ export default function Navbar() {
                 <>
                   <Link
                     href="/login"
+                    prefetch={true}
                     className={cn(
                       "flex items-center justify-center h-10 px-4 text-sm font-semibold rounded-full whitespace-nowrap transition-colors duration-200 cursor-pointer flex-shrink-0",
                       FOCUS_RING,
@@ -668,6 +684,7 @@ export default function Navbar() {
                   </Link>
                   <Link
                     href="/weddings"
+                    prefetch={true}
                     className={cn(
                       "flex items-center justify-center gap-1.5 h-10 px-5 text-sm font-semibold rounded-full whitespace-nowrap transition-all duration-200 cursor-pointer shadow-sm flex-shrink-0",
                       FOCUS_RING,
@@ -836,6 +853,7 @@ export default function Navbar() {
                 {/* User info row */}
                 <Link
                   href="/dashboard"
+                  prefetch={true}
                   onClick={() => setIsMobileOpen(false)}
                   className={cn(
                     "flex items-center gap-3 px-4 py-3 rounded-xl bg-maroon-50 border border-maroon-100 hover:bg-maroon-100 transition-colors",
@@ -856,6 +874,7 @@ export default function Navbar() {
                 </Link>
                 <Link
                   href="/weddings"
+                  prefetch={true}
                   onClick={() => setIsMobileOpen(false)}
                   className="btn btn-primary w-full justify-center"
                 >
@@ -867,6 +886,7 @@ export default function Navbar() {
               <>
                 <Link
                   href="/weddings"
+                  prefetch={true}
                   onClick={() => setIsMobileOpen(false)}
                   className="btn btn-primary w-full justify-center"
                 >
@@ -875,6 +895,7 @@ export default function Navbar() {
                 </Link>
                 <Link
                   href="/login"
+                  prefetch={true}
                   onClick={() => setIsMobileOpen(false)}
                   className="btn btn-outline w-full justify-center"
                 >

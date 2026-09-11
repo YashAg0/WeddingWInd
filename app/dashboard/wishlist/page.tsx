@@ -2,19 +2,24 @@
 
 import { useAuth } from "@/context/AuthContext";
 import { getWeddings } from "@/lib/actions";
+import { getCachedWeddings, setCachedWeddings } from "@/lib/client-cache";
 import WishlistCard from "@/components/dashboard/WishlistCard";
 import EmptyState from "@/components/dashboard/EmptyState";
 import { DashboardLoadingState, DashboardErrorState } from "@/components/dashboard/DashboardDataState";
 import { useState, useEffect } from "react";
 
 export default function WishlistPage() {
+
   const { wishlist, toggleWishlist, loading, dataLoading, dataError, refreshData } = useAuth();
-  const [weddings, setWeddings] = useState<any[]>([]);
-  const [weddingsLoading, setWeddingsLoading] = useState(true);
+  const [weddings, setWeddings] = useState<any[]>(() => getCachedWeddings() || []);
+  const [weddingsLoading, setWeddingsLoading] = useState(() => !getCachedWeddings());
 
   useEffect(() => {
     getWeddings()
-      .then(setWeddings)
+      .then((data) => {
+        setWeddings(data);
+        setCachedWeddings(data);
+      })
       .catch(console.error)
       .finally(() => setWeddingsLoading(false));
   }, []);

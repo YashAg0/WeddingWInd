@@ -29,4 +29,12 @@ describe("In-Memory Rate Limiting Verification", () => {
     expect(fourth.success).toBe(false);
     expect(fourth.remaining).toBe(0);
   });
+
+  it("should isolate limits across distinct users and actions", async () => {
+    const opts = { limit: 1, window: 60 };
+    const resA = await rateLimit("actionA", "userA", opts);
+    const resB = await rateLimit("actionA", "userB", opts);
+    expect(resA.success).toBe(true);
+    expect(resB.success).toBe(true);
+  });
 });

@@ -7,6 +7,7 @@ import type { Wedding } from "@/types";
 import { useAuth } from "@/context/AuthContext";
 import { useCurrency } from "@/context/CurrencyContext";
 import { useRouter } from "next/navigation";
+import { cn } from "@/lib/utils";
 import { WEDDING_TIER_CONFIG, normalizeWeddingTier, normalizeDurationDays, getCustomerPriceUSD } from "@/lib/services/pricing-engine";
 
 interface StickyBookingCardProps {
@@ -26,6 +27,7 @@ export function StickyBookingCard({ wedding }: StickyBookingCardProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [guestsCount, setGuestsCount] = useState(1);
   const [isBooked, setIsBooked] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const availableSlots = Math.max(0, wedding.guestsAllowed - wedding.guestsBooked);
@@ -216,7 +218,9 @@ export function StickyBookingCard({ wedding }: StickyBookingCardProps) {
                   </div>
                 ) : (
                   <button
+                    disabled={isSubmitting}
                     onClick={async () => {
+                      if (isSubmitting) return;
                       if (!user) {
                         sessionStorage.setItem(
                           `pending_booking_${wedding.id}`,
@@ -225,6 +229,8 @@ export function StickyBookingCard({ wedding }: StickyBookingCardProps) {
                         router.push(`/login?redirect_url=${encodeURIComponent(window.location.pathname)}`);
                         return;
                       }
+                      setIsSubmitting(true);
+                      setErrorMessage(null);
                       try {
                         await addBooking({
                           weddingId: wedding.id,
@@ -240,11 +246,23 @@ export function StickyBookingCard({ wedding }: StickyBookingCardProps) {
                         setTimeout(() => setIsOpen(false), 2000);
                       } catch (err: any) {
                         setErrorMessage(err.message || "Failed to submit reservation.");
+                      } finally {
+                        setIsSubmitting(false);
                       }
                     }}
-                    className="btn btn-primary w-full py-4 text-base font-bold shadow-lg justify-center rounded-2xl"
+                    className={cn(
+                      "btn btn-primary w-full py-4 text-base font-bold shadow-lg justify-center rounded-2xl flex items-center gap-2 cursor-pointer",
+                      isSubmitting && "opacity-75 cursor-not-allowed"
+                    )}
                   >
-                    Submit Reservation — ${subtotalUSD}
+                    {isSubmitting ? (
+                      <>
+                        <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        Securing Reservation...
+                      </>
+                    ) : (
+                      `Submit Reservation — ${subtotalDisplay.primary}`
+                    )}
                   </button>
                 )}
               </div>

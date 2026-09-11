@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { getWeddings } from "@/lib/actions";
+import { getCachedWeddings, setCachedWeddings } from "@/lib/client-cache";
 import {
   getPersonalizedRecommendations,
   fetchRecentlyViewed,
@@ -365,7 +366,7 @@ export default function DashboardOverviewPage() {
   const isBusyLoading = loading || dataLoading;
   const router = useRouter();
 
-  const [weddings, setWeddings] = useState<any[]>([]);
+  const [weddings, setWeddings] = useState<any[]>(() => getCachedWeddings() || []);
   const [appFilter, setAppFilter] = useState<"pending" | "approved" | "rejected">("pending");
   const [_reviewNotes, _setReviewNotes] = useState<Record<string, string>>({});
 
@@ -388,7 +389,12 @@ export default function DashboardOverviewPage() {
   const [hostAppState, setHostAppState] = useState<any>(null);
 
   useEffect(() => {
-    getWeddings().then(setWeddings).catch(console.error);
+    getWeddings()
+      .then((data) => {
+        setWeddings(data);
+        setCachedWeddings(data);
+      })
+      .catch(console.error);
   }, []);
 
   useEffect(() => {

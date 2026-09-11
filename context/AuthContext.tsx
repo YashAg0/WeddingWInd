@@ -23,6 +23,15 @@ import {
 import { validateDeviceSessionAction, revokeDeviceSessionAction } from "@/lib/actions/device-session";
 import { DeviceSessionDTO } from "@/lib/services/device-session";
 import { getOrCreateClientDeviceId, getClientDeviceName } from "@/lib/device-client";
+import {
+  getCachedUser,
+  setCachedUser,
+  clearCachedUser,
+  getCachedDashboardData,
+  setCachedDashboardData,
+  clearCachedDashboardData,
+  hasClerkSessionCookie,
+} from "@/lib/client-cache";
 
 export type UserRole = "traveler" | "couple" | "agent" | "admin" | "coordinator";
 
@@ -117,7 +126,7 @@ interface AuthContextType {
   refundBooking: (bookingId: string) => Promise<void>;
   submitVerification: (data: any) => Promise<void>;
   reviewVerification: (verificationId: string, status: "APPROVED" | "REJECTED" | "UNDER_REVIEW", notes?: string) => Promise<void>;
-  refreshData: () => Promise<void>;
+  refreshData: (silent?: boolean) => Promise<void>;
   revokeDeviceSession: (sessionId: string) => Promise<void>;
   retryConnection: () => Promise<void>;
 }
@@ -129,31 +138,52 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const { user: clerkUser, isLoaded, isSignedIn } = useUser();
   const { signOut } = useClerk();
 
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [dataLoading, setDataLoading] = useState(true);
-  const [dataError, setDataError] = useState<string | null>(null);
+  // Instant client-side hydration from localStorage (0ms display)
+  const [user, setUser] = useState<User | null>(() => getCachedUser());
+  const [wishlist, setWishlist] = useState<string[]>(() => {
+    const dash = getCachedDashboardData();
+    return dash?.wishlist || [];
+  });
+  const [notifications, setNotifications] = useState<Notification[]>(() => {
+    const dash = getCachedDashboardData();
+    return dash?.notifications || [];
+  });
+
+  // Fast resolution: If user is cached, loading is immediately false.
+  // If no user and no Clerk cookie exists, guest visitor loading is immediately false.
+  const [loading, setLoading] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      const cached = getCachedUser();
+      if (cached) return false;
+      if (!hasClerkSessionCookie()) return false;
+    }
+    return true;
+  });
+
   const [dbOffline, setDbOffline] = useState(false);
-  const [authState, setAuthState] = useState<AuthState>("INITIALIZING");
+  const [authState, setAuthState] = useState<AuthState>(() => (getCachedUser() ? "READY" : "INITIALIZING"));
+  const [dataLoading, setDataLoading] = useState<boolean>(() => !getCachedDashboardData());
+  const [dataError, setDataError] = useState<string | null>(null);
   const [activeDeviceSessions, setActiveDeviceSessions] = useState<DeviceSessionDTO[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
-  const [wishlist, setWishlist] = useState<string[]>([]);
-  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [guestApplications, setGuestApplications] = useState<any[]>([]);
   const [hostWedding, setHostWedding] = useState<any>(null);
   const [coupleStats, setCoupleStats] = useState<any>(null);
   const [adminStats, setAdminStats] = useState<any>(null);
   const [verification, setVerification] = useState<any>(null);
 
-  const inFlightPromiseRef = useRef<Promise<void> | null>(null);
-  const pendingRefreshRef = useRef<boolean>(false);
+  const lastRefreshTimeRef = React.useRef<number>(0);
 
-  // Core function to refresh state data from Postgres and validate multi-device session.
-  const executeRefresh = useCallback(async () => {
-    setLoading(true);
-    setDataLoading(true);
-    setDataError(null);
-    setAuthState("AUTHENTICATING");
+  // Function to refresh state data from Postgres and validate multi-device session.
+  // Stale-While-Revalidate: If silent is true or user already exists, don't flip loading=true.
+  const refreshData = useCallback(async (silent = false) => {
+    const hasExistingUser = Boolean(user || getCachedUser());
+    if (!hasExistingUser && !silent) {
+      setLoading(true);
+      setAuthState("AUTHENTICATING");
+    }
+
+    lastRefreshTimeRef.current = Date.now();
 
     try {
       let dbUser = await syncAndGetDbUser().catch(() => null);
@@ -193,6 +223,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } else {
           // Unauthenticated session
           setUser(null);
+          clearCachedUser();
+          clearCachedDashboardData();
           setDbOffline(false);
           setAuthState("INITIALIZING");
         }
@@ -242,9 +274,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       };
 
       setUser(loadedUser);
-      console.log("[AuthContext] Loaded user successfully:", loadedUser.id, loadedUser.role);
+      setCachedUser(loadedUser);
+      setLoading(false);
+      setAuthState("READY");
+      setDbOffline(false);
 
-      // Validate device session atomically (max 2 active devices)
+      // Validate device session atomically (max 2 active devices) in background
       try {
         const deviceId = getOrCreateClientDeviceId();
         const deviceName = getClientDeviceName();
@@ -253,27 +288,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (deviceRes.status === "DEVICE_LIMIT_REACHED") {
           setActiveDeviceSessions(deviceRes.activeSessions);
           setAuthState("DEVICE_LIMIT_REACHED");
-          setLoading(false);
-          setDataLoading(false);
           return;
         }
 
         if (deviceRes.status === "REVOKED") {
           setAuthState("SESSION_REVOKED");
-          setLoading(false);
-          setDataLoading(false);
           return;
         }
-
-        // Active session verified
-        setAuthState("READY");
-        setDbOffline(false);
       } catch (deviceErr) {
         console.warn("Device session validation warning (graceful fallback):", deviceErr);
-        setAuthState("READY");
       }
 
-      // Load non-critical dashboard data
+      // Load non-critical dashboard data asynchronously without blocking user display
       try {
         const dashData = await fetchDashboardDataAction();
         if (dashData) {
@@ -285,7 +311,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setCoupleStats(dashData.coupleStats || null);
           setAdminStats(dashData.adminStats || null);
           setVerification(dashData.verification || null);
-          setDataError(null);
+
+          // Update client-side cache for instant display on next visit
+          setCachedDashboardData({
+            wishlist: dashData.wishlist || [],
+            notifications: dashData.notifications || [],
+            unreadCount: (dashData.notifications || []).filter((n: any) => !n.read).length,
+          });
         }
       } catch (err: any) {
         console.warn("Dashboard data fetch warning (transient DB error?):", err);
@@ -295,64 +327,69 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (err: any) {
       console.error("[AuthContext] DB unavailable during user sync:", err);
-      // Fail safely: preserve authentication state, mark connection failure
       setDbOffline(true);
-      setAuthState("TEMPORARY_CONNECTION_FAILURE");
-      setDataError("Database connection temporarily unavailable.");
-      setDataLoading(false);
+      if (!user) {
+        setAuthState("TEMPORARY_CONNECTION_FAILURE");
+      }
     } finally {
       setLoading(false);
       setDataLoading(false);
     }
-  }, [isSignedIn]);
+  }, [isSignedIn, user]);
 
-  // Request coalescing: coalesces concurrent requests and triggers a trailing call if requested
-  const refreshData = useCallback(async (): Promise<void> => {
-    if (inFlightPromiseRef.current) {
-      pendingRefreshRef.current = true;
-      return inFlightPromiseRef.current;
+  // Listen to Clerk state and perform instant fast-path or background sync
+  useEffect(() => {
+    if (!isLoaded) return;
+
+    if (!isSignedIn) {
+      // Unauthenticated visitor fast-path: NO server action roundtrip needed!
+      setUser(null);
+      clearCachedUser();
+      clearCachedDashboardData();
+      setLoading(false);
+      setDbOffline(false);
+      setAuthState("INITIALIZING");
+      return;
     }
 
-    const run = async () => {
-      try {
-        await executeRefresh();
-      } finally {
-        inFlightPromiseRef.current = null;
-        if (pendingRefreshRef.current) {
-          pendingRefreshRef.current = false;
-          // Trigger one trailing execution for pending callers
-          await refreshData();
-        }
-      }
-    };
-
-    inFlightPromiseRef.current = run();
-    return inFlightPromiseRef.current;
-  }, [executeRefresh]);
-
-  // Mount sync & session state listener
-  useEffect(() => {
-    refreshData();
-  }, [refreshData]);
-
-  useEffect(() => {
-    if (isLoaded) {
-      refreshData();
+    // Signed in with Clerk:
+    // If we don't have a DB user yet, optimistically construct baseline profile from Clerk
+    // so navbar avatar and name appear instantly while background sync runs.
+    if (!user && clerkUser) {
+      const optimisticName = `${clerkUser.firstName || ""} ${clerkUser.lastName || ""}`.trim() ||
+        clerkUser.emailAddresses[0]?.emailAddress?.split("@")[0] ||
+        "Guest";
+      const optimisticUser: User = {
+        id: clerkUser.id,
+        name: optimisticName,
+        email: clerkUser.emailAddresses[0]?.emailAddress || "",
+        role: "traveler",
+        onboarded: true,
+        avatar: clerkUser.imageUrl || "",
+      };
+      setUser(optimisticUser);
+      setLoading(false);
     }
-  }, [isLoaded, isSignedIn, clerkUser?.id, refreshData]);
 
+    refreshData(Boolean(user));
+  }, [isLoaded, isSignedIn, clerkUser]);
+
+  // Re-sync silently on tab focus / network recovery (debounced by 30 seconds)
   useEffect(() => {
     if (typeof window === "undefined") return;
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible" && isSignedIn && isLoaded) {
-        refreshData();
+        const now = Date.now();
+        if (now - lastRefreshTimeRef.current > 30000) {
+          refreshData(true);
+        }
       }
     };
 
     const handleOnline = () => {
       if (isSignedIn && isLoaded) {
-        refreshData();
+        refreshData(true);
       }
     };
 
@@ -367,11 +404,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const revokeDeviceSession = async (sessionId: string) => {
     await revokeDeviceSessionAction(sessionId);
-    await refreshData();
+    await refreshData(true);
   };
 
   const retryConnection = async () => {
-    await refreshData();
+    await refreshData(false);
   };
 
   // Auth helper redirections
@@ -385,9 +422,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async () => {
     setLoading(true);
+    clearCachedUser();
+    clearCachedDashboardData();
     await signOut();
     setUser(null);
+    setWishlist([]);
+    setNotifications([]);
     setAuthState("INITIALIZING");
+    setLoading(false);
     router.push("/");
   };
 
@@ -428,8 +470,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const toggleWishlist = async (weddingId: string) => {
-    await toggleWishlistAction(weddingId);
-    setWishlist(prev => prev.includes(weddingId) ? prev.filter(id => id !== weddingId) : [...prev, weddingId]);
+    // Instant optimistic update
+    setWishlist(prev => {
+      const next = prev.includes(weddingId) ? prev.filter(id => id !== weddingId) : [...prev, weddingId];
+      const dash = getCachedDashboardData() || { wishlist: [], notifications: [], unreadCount: 0 };
+      setCachedDashboardData({ ...dash, wishlist: next });
+      return next;
+    });
+    try {
+      await toggleWishlistAction(weddingId);
+    } catch (err) {
+      console.warn("Wishlist toggle sync failed:", err);
+    }
   };
 
   const addBooking = async (booking: Omit<Booking, "id">) => {
@@ -450,8 +502,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const markNotificationsRead = async () => {
-    await markNotificationsReadAction();
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    // Instant optimistic update
+    setNotifications(prev => {
+      const next = prev.map(n => ({ ...n, read: true }));
+      const dash = getCachedDashboardData() || { wishlist: [], notifications: [], unreadCount: 0 };
+      setCachedDashboardData({ ...dash, notifications: next, unreadCount: 0 });
+      return next;
+    });
+    try {
+      await markNotificationsReadAction();
+    } catch (err) {
+      console.warn("Mark notifications read failed:", err);
+    }
   };
 
   const handleGuestApplication = async (appId: string, status: "approved" | "rejected") => {

@@ -161,6 +161,9 @@ export function BookingSidebar({ wedding }: BookingSidebarProps) {
       toast.error("Only traveler accounts can request booking spots for wedding experiences.");
       return;
     }
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+
 
     // Validate accompanying guests if guestsCount > 1
     if (guestsCount > 1) {
@@ -494,7 +497,7 @@ export function BookingSidebar({ wedding }: BookingSidebarProps) {
           <button
             onClick={handleBook}
             disabled={isSubmitting}
-            className="btn btn-primary w-full py-4 text-base shadow-lg justify-center font-bold disabled:opacity-60"
+            className="btn btn-primary w-full py-4 text-base shadow-lg justify-center font-bold disabled:opacity-60 cursor-pointer"
           >
             {isSubmitting ? "Submitting..." : `Reserve Invitation — ${subtotalDisplay.primary}`}
           </button>
