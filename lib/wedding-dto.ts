@@ -260,3 +260,47 @@ export function toWeddingDTO(rawWedding: any): Wedding {
     faqs: Array.isArray(rawWedding.faqs) ? rawWedding.faqs : [],
   };
 }
+
+/**
+ * Deduplicates weddings to ensure a single registered wedding/booking cannot appear
+ * multiple times on marketplace or discovery pages.
+ * Preserves demo inventory, and deduplicates non-demo listings by host couple identity
+ * and normalized celebration title or date.
+ */
+export function deduplicateWeddings<T extends {
+  id?: string;
+  slug?: string;
+  hostCoupleId?: string;
+  title?: string;
+  date?: string | Date;
+  isDemo?: boolean;
+  [key: string]: any;
+}>(weddings: T[]): T[] {
+  const seenIds = new Set<string>();
+  const seenCelebrationKeys = new Set<string>();
+  const unique: T[] = [];
+
+  for (const w of weddings) {
+    if (w.id && seenIds.has(w.id)) continue;
+    if (w.id) seenIds.add(w.id);
+
+    // For non-demo listings, prevent duplicate cards for the same host celebration
+    if (!w.isDemo && w.hostCoupleId) {
+      const normTitle = (w.title || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+      const dateStr = w.date instanceof Date
+        ? w.date.toISOString().split("T")[0]
+        : String(w.date || "").split("T")[0];
+      const celebrationKey = `${w.hostCoupleId}_${normTitle || dateStr}`;
+
+      if (seenCelebrationKeys.has(celebrationKey)) {
+        continue;
+      }
+      seenCelebrationKeys.add(celebrationKey);
+    }
+
+    unique.push(w);
+  }
+
+  return unique;
+}
+

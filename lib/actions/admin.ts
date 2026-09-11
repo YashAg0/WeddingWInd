@@ -458,6 +458,7 @@ export async function adminDeleteWeddingAction(weddingId: string) {
   if (!wedding) throw new Error("Wedding not found.");
 
   if ((wedding.bookings && wedding.bookings.length > 0) || (wedding.safetyCases && wedding.safetyCases.length > 0)) {
+    // Soft-delete to preserve booking history and safety compliance records
     await prisma.wedding.update({
       where: { id: weddingId },
       data: {
@@ -467,23 +468,47 @@ export async function adminDeleteWeddingAction(weddingId: string) {
       }
     });
   } else {
-    // Clean up dependent sponsorship requests (which have onDelete: Restrict) before hard deleting
-    await prisma.sponsorshipRequest.deleteMany({
-      where: { weddingId }
-    });
+    // Clean up dependent child relations inside an atomic transaction before hard deleting
+    await prisma.$transaction(async (tx) => {
+      await tx.sponsorshipRequest.deleteMany({ where: { weddingId } });
+      await tx.recentlyViewed.deleteMany({ where: { weddingId } });
+      await tx.wishlist.deleteMany({ where: { weddingId } });
+      await tx.eventContact.deleteMany({ where: { weddingId } });
+      await tx.weddingAnnouncement.deleteMany({ where: { weddingId } });
+      await tx.weddingItineraryItem.deleteMany({ where: { weddingId } });
+      await tx.weddingQualityBadge.deleteMany({ where: { weddingId } });
 
-    await prisma.wedding.delete({
-      where: { id: weddingId },
+      await tx.coordinatorProfile.updateMany({
+        where: { assignedWeddingId: weddingId },
+        data: { assignedWeddingId: null },
+      });
+      await tx.hostApplication.updateMany({
+        where: { weddingId },
+        data: { weddingId: null },
+      });
+
+      await tx.weddingEvent.deleteMany({ where: { weddingId } });
+      await tx.weddingTradition.deleteMany({ where: { weddingId } });
+      await tx.weddingGallery.deleteMany({ where: { weddingId } });
+
+      await tx.wedding.delete({
+        where: { id: weddingId },
+      });
     });
   }
 
   await createAuditLog("DELETE_WEDDING", "Wedding", weddingId, `Admin (${admin.email}) deleted/archived wedding: "${wedding.title}"`);
+  revalidatePath(`/weddings/${wedding.slug}`);
   revalidatePath("/dashboard/admin/weddings");
   revalidatePath("/weddings");
   revalidatePath("/weddings/map");
   revalidatePath("/");
-  revalidateTag("weddings", "max");
-  revalidateTag("homepage", "max");
+  if (typeof revalidateTag === "function") {
+    try {
+      revalidateTag("weddings", "max");
+      revalidateTag("homepage", "max");
+    } catch {}
+  }
   return { success: true };
 }
 

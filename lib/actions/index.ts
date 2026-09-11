@@ -33,7 +33,7 @@ import {
   verificationSchema
 } from "../validation";
 import { env } from "../env";
-import { toWeddingDTO } from "../wedding-dto";
+import { toWeddingDTO, deduplicateWeddings } from "../wedding-dto";
 import { sortWeddingsByDiscoveryPriority } from "../marketplace/ranking";
 import {
   CAPACITY_HOLDING_BOOKING_STATUSES,
@@ -315,22 +315,61 @@ export async function createWedding(data: any) {
     }
   }
 
-  const slug = await generateUniqueWeddingSlug(data.title || "wedding");
+  const normalizedTitle = (data.title || "").trim();
+  const inputDate = new Date(data.date || Date.now());
 
-  const parsed = weddingSchema.parse({
-    ...data,
-    status: resolvedStatus,
-    slug,
-    hostCoupleId: coupleProfile.id,
-    pricePerGuest: parseFloat(data.pricePerGuest || "1000"),
-    capacity: parseInt(data.capacity || "100"),
-    requiredGuests: parseInt(data.requiredGuests || "0"),
-    date: new Date(data.date || Date.now())
-  });
+  // Check if an existing wedding already exists for this host couple with matching title or recent submission
+  const existingWedding = typeof prisma.wedding.findFirst === "function"
+    ? await prisma.wedding.findFirst({
+        where: {
+          hostCoupleId: coupleProfile.id,
+          isDemo: false,
+          deletedAt: null,
+          OR: [
+            ...(data.id ? [{ id: data.id }] : []),
+            ...(normalizedTitle ? [{ title: { equals: normalizedTitle, mode: "insensitive" as const } }] : []),
+            { date: inputDate },
+          ],
+        },
+        orderBy: { createdAt: "desc" },
+      })
+    : (data.id && typeof prisma.wedding.findUnique === "function"
+        ? await prisma.wedding.findUnique({ where: { id: data.id } })
+        : null);
 
-  const wedding = await prisma.wedding.create({
-    data: parsed
-  });
+  let wedding;
+  if (existingWedding) {
+    const parsed = weddingSchema.parse({
+      ...existingWedding,
+      ...data,
+      status: resolvedStatus,
+      slug: existingWedding.slug,
+      hostCoupleId: coupleProfile.id,
+      pricePerGuest: parseFloat(data.pricePerGuest || String(existingWedding.pricePerGuest || "1000")),
+      capacity: parseInt(data.capacity || String(existingWedding.capacity || "100")),
+      requiredGuests: parseInt(data.requiredGuests || String(existingWedding.requiredGuests || "0")),
+      date: inputDate,
+    });
+    wedding = await prisma.wedding.update({
+      where: { id: existingWedding.id },
+      data: parsed,
+    });
+  } else {
+    const slug = await generateUniqueWeddingSlug(data.title || "wedding");
+    const parsed = weddingSchema.parse({
+      ...data,
+      status: resolvedStatus,
+      slug,
+      hostCoupleId: coupleProfile.id,
+      pricePerGuest: parseFloat(data.pricePerGuest || "1000"),
+      capacity: parseInt(data.capacity || "100"),
+      requiredGuests: parseInt(data.requiredGuests || "0"),
+      date: inputDate,
+    });
+    wedding = await prisma.wedding.create({
+      data: parsed,
+    });
+  }
 
   revalidatePath("/weddings");
   revalidatePath("/dashboard/celebrations");
@@ -1758,7 +1797,8 @@ export const getWeddings = unstable_cache(
         });
       });
 
-      return sortWeddingsByDiscoveryPriority(results);
+      const uniqueResults = deduplicateWeddings(results);
+      return sortWeddingsByDiscoveryPriority(uniqueResults);
     } catch (err) {
       console.warn("[getWeddings] Database unreachable or uninitialized. Serving static fallback featured weddings.", err);
       const { featuredWeddings } = await import("../data");
@@ -1856,7 +1896,8 @@ export const getHomepageWeddings = unstable_cache(
         });
       });
 
-      return sortWeddingsByDiscoveryPriority(results).slice(0, limit);
+      const uniqueResults = deduplicateWeddings(results);
+      return sortWeddingsByDiscoveryPriority(uniqueResults).slice(0, limit);
     } catch (err) {
       console.warn("[getHomepageWeddings] Database unreachable. Serving static fallback.", err);
       const { featuredWeddings } = await import("../data");

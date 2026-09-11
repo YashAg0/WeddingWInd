@@ -9,6 +9,8 @@ import { BookingSidebar } from "@/components/wedding/BookingSidebar";
 import { StickyBookingCard } from "@/components/wedding/StickyBookingCard";
 import { WeddingCard } from "@/components/wedding/WeddingCard";
 import { WeddingDetailReviews } from "@/components/wedding/WeddingDetailReviews";
+import { AdminWeddingControls } from "@/components/wedding/AdminWeddingControls";
+import { isAdmin as checkIsAdmin } from "@/lib/auth";
 import type { Metadata } from 'next';
 
 import { isWeddingIndexable, isSyntheticTestSlug } from "@/lib/seo/indexability";
@@ -119,6 +121,7 @@ export default async function WeddingDetailPage({ params }: PageProps) {
 
   // Fetch bounded related weddings
   const relatedWeddings = await getRelatedWeddings(wedding.category, wedding.id, 3);
+  const userIsAdmin = await checkIsAdmin().catch(() => false);
   const userId = null;
 
   const eventJsonLd = {
@@ -191,6 +194,17 @@ export default async function WeddingDetailPage({ params }: PageProps) {
       />
 
       <header className="container-luxury mt-2 sm:mt-4 flex flex-col gap-3 sm:gap-4">
+        {/* Administrator Controls - strictly visible to authenticated Admins */}
+        {userIsAdmin && (
+          <AdminWeddingControls
+            weddingId={wedding.id}
+            weddingTitle={wedding.title}
+            weddingSlug={wedding.slug}
+            status={'status' in wedding ? (wedding.status as string) : "PUBLISHED"}
+            isDemo={wedding.isDemo}
+          />
+        )}
+
         {/* Breadcrumbs */}
         <nav aria-label="Breadcrumb" className="text-xs font-semibold text-charcoal-400 uppercase tracking-wider flex items-center gap-1.5">
           <Link href="/" className="hover:text-[var(--color-brand-primary)] transition-colors">Home</Link>

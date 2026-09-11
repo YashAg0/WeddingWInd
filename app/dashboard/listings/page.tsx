@@ -30,6 +30,7 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { ListingSubmitButton } from "@/components/dashboard/ListingSubmitButton";
 
 export const dynamic = "force-dynamic";
 
@@ -343,12 +344,7 @@ export default async function CoupleListingsPage({
             </div>
 
             <div className="flex gap-4 pt-4 border-t border-warm-100">
-              <button
-                type="submit"
-                className="bg-[var(--color-brand-primary)] text-white text-xs font-bold uppercase tracking-wider px-6 py-3 rounded-xl hover:opacity-90 transition-opacity cursor-pointer"
-              >
-                {editListing ? "Save Changes" : "Publish Wedding"}
-              </button>
+              <ListingSubmitButton isEdit={Boolean(editListing)} />
               <Link
                 href="/dashboard/listings"
                 className="px-6 py-3 rounded-xl text-xs font-bold text-charcoal-500 hover:text-charcoal-700 hover:bg-warm-100 transition-colors"

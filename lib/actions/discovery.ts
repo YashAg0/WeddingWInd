@@ -6,7 +6,7 @@ import { requireAuth, requireRole } from "../auth";
 import { UserRole, ReputationEntityType } from "@prisma/client";
 import { calculateBayesianRating } from "../services/trust-score";
 import { submitReviewAction, voteReviewHelpfulAction, replyToReviewAction } from "./reviews";
-import { isSponsorshipActive } from "../wedding-dto";
+import { isSponsorshipActive, deduplicateWeddings } from "../wedding-dto";
 import { createAuditLog } from "./admin";
 
 /**
@@ -243,8 +243,8 @@ export async function searchWeddingsAction(
     })
   );
 
-  // Filter out any safety excluded celebrations (nulls)
-  const weddingsWithReviews = mappedWeddings.filter((item): item is NonNullable<typeof item> => item !== null);
+  // Filter out any safety excluded celebrations (nulls) and deduplicate
+  const weddingsWithReviews = deduplicateWeddings(mappedWeddings.filter((item): item is NonNullable<typeof item> => item !== null));
 
   const { getWeddingDiscoveryPriority } = await import("../marketplace/ranking");
 
