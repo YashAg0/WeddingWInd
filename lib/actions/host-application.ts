@@ -799,8 +799,8 @@ async function executeSaveHostApplicationDraft(
         wasAlreadySubmitted: isAlreadySubmitted,
       };
     }, {
-      maxWait: 20000,
-      timeout: 60000,
+      maxWait: 60000,
+      timeout: 120000,
     });
 
     return {

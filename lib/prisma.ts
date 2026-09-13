@@ -21,7 +21,7 @@ function buildDatasourceUrl(): string | undefined {
     const parsed = new URL(rawUrl);
     // In serverless / Vercel, connection_limit should be 2 to prevent pool exhaustion across lambdas
     const isServerless = process.env.VERCEL === "1" || process.env.AWS_LAMBDA_FUNCTION_NAME !== undefined;
-    const defaultLimit = isServerless ? "2" : (process.env.NODE_ENV === "test" ? "10" : "5");
+    const defaultLimit = isServerless ? "2" : (process.env.NODE_ENV === "test" ? "25" : "5");
 
     // Enforce pgbouncer=true on transaction pooler (port 6543)
     if (parsed.port === "6543" || parsed.pathname.includes("pooler") || parsed.hostname.includes("pooler")) {
@@ -31,8 +31,8 @@ function buildDatasourceUrl(): string | undefined {
     // Set connect_timeout (15s)
     parsed.searchParams.set("connect_timeout", "15");
 
-    // Set pool_timeout (15s serverless / 20s dev/test — eliminates 45-second latency hangs while allowing handshake to complete)
-    const poolTimeout = isServerless ? "15" : "20";
+    // Set pool_timeout (15s serverless / 90s test / 20s dev — eliminates latency hangs while allowing concurrency tests to complete)
+    const poolTimeout = isServerless ? "15" : (process.env.NODE_ENV === "test" ? "90" : "20");
     parsed.searchParams.set("pool_timeout", poolTimeout);
 
     // Set connection_limit

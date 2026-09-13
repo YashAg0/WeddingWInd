@@ -278,11 +278,11 @@ function slugifyTitle(title: string) {
 
 import crypto from "crypto";
 
-async function generateUniqueWeddingSlug(title: string, excludeWeddingId?: string) {
+async function generateUniqueWeddingSlug(title: string, excludeWeddingId?: string, client: any = prisma) {
   const base = slugifyTitle(title) || "wedding";
   let slug = base;
   for (let attempt = 0; attempt < 20; attempt++) {
-    const existing = await prisma.wedding.findUnique({ where: { slug } });
+    const existing = await client.wedding.findUnique({ where: { slug } });
     if (!existing || existing.id === excludeWeddingId) return slug;
     slug = `${base}-${crypto.randomInt(1000, 10000)}`;
   }
@@ -318,58 +318,67 @@ export async function createWedding(data: any) {
   const normalizedTitle = (data.title || "").trim();
   const inputDate = new Date(data.date || Date.now());
 
-  // Check if an existing wedding already exists for this host couple with matching title or recent submission
-  const existingWedding = typeof prisma.wedding.findFirst === "function"
-    ? await prisma.wedding.findFirst({
-        where: {
-          hostCoupleId: coupleProfile.id,
-          isDemo: false,
-          deletedAt: null,
-          OR: [
-            ...(data.id ? [{ id: data.id }] : []),
-            ...(normalizedTitle ? [{ title: { equals: normalizedTitle, mode: "insensitive" as const } }] : []),
-            { date: inputDate },
-          ],
-        },
-        orderBy: { createdAt: "desc" },
-      })
-    : (data.id && typeof prisma.wedding.findUnique === "function"
-        ? await prisma.wedding.findUnique({ where: { id: data.id } })
-        : null);
+  const wedding = await prisma.$transaction(async (tx) => {
+    // 0. Concurrency serialization lock on CoupleProfile row:
+    // Guarantees that concurrent first-time submissions/autosaves for the same couple are serialized
+    // at the database level, preventing duplicate draft creations.
+    if (typeof tx.$queryRaw === "function") {
+      try {
+        await tx.$queryRaw`SELECT id FROM "CoupleProfile" WHERE id = ${coupleProfile.id} FOR UPDATE`;
+      } catch {}
+    }
 
-  let wedding;
-  if (existingWedding) {
-    const parsed = weddingSchema.parse({
-      ...existingWedding,
-      ...data,
-      status: resolvedStatus,
-      slug: existingWedding.slug,
-      hostCoupleId: coupleProfile.id,
-      pricePerGuest: parseFloat(data.pricePerGuest || String(existingWedding.pricePerGuest || "1000")),
-      capacity: parseInt(data.capacity || String(existingWedding.capacity || "100")),
-      requiredGuests: parseInt(data.requiredGuests || String(existingWedding.requiredGuests || "0")),
-      date: inputDate,
+    // Check if an existing wedding already exists for this host couple with matching title, id, or recent submission
+    const existingWedding = await tx.wedding.findFirst({
+      where: {
+        hostCoupleId: coupleProfile.id,
+        isDemo: false,
+        deletedAt: null,
+        OR: [
+          ...(data.id ? [{ id: data.id }] : []),
+          ...(normalizedTitle ? [{ title: { equals: normalizedTitle, mode: "insensitive" as const } }] : []),
+          { date: inputDate },
+        ],
+      },
+      orderBy: { createdAt: "desc" },
     });
-    wedding = await prisma.wedding.update({
-      where: { id: existingWedding.id },
-      data: parsed,
-    });
-  } else {
-    const slug = await generateUniqueWeddingSlug(data.title || "wedding");
-    const parsed = weddingSchema.parse({
-      ...data,
-      status: resolvedStatus,
-      slug,
-      hostCoupleId: coupleProfile.id,
-      pricePerGuest: parseFloat(data.pricePerGuest || "1000"),
-      capacity: parseInt(data.capacity || "100"),
-      requiredGuests: parseInt(data.requiredGuests || "0"),
-      date: inputDate,
-    });
-    wedding = await prisma.wedding.create({
-      data: parsed,
-    });
-  }
+
+    if (existingWedding) {
+      const parsed = weddingSchema.parse({
+        ...existingWedding,
+        ...data,
+        status: resolvedStatus,
+        slug: existingWedding.slug,
+        hostCoupleId: coupleProfile.id,
+        pricePerGuest: parseFloat(data.pricePerGuest || String(existingWedding.pricePerGuest || "1000")),
+        capacity: parseInt(data.capacity || String(existingWedding.capacity || "100")),
+        requiredGuests: parseInt(data.requiredGuests || String(existingWedding.requiredGuests || "0")),
+        date: inputDate,
+      });
+      return await tx.wedding.update({
+        where: { id: existingWedding.id },
+        data: parsed,
+      });
+    } else {
+      const slug = await generateUniqueWeddingSlug(data.title || "wedding", undefined, tx);
+      const parsed = weddingSchema.parse({
+        ...data,
+        status: resolvedStatus,
+        slug,
+        hostCoupleId: coupleProfile.id,
+        pricePerGuest: parseFloat(data.pricePerGuest || "1000"),
+        capacity: parseInt(data.capacity || "100"),
+        requiredGuests: parseInt(data.requiredGuests || "0"),
+        date: inputDate,
+      });
+      return await tx.wedding.create({
+        data: parsed,
+      });
+    }
+  }, {
+    maxWait: 60000,
+    timeout: 120000,
+  });
 
   revalidatePath("/weddings");
   revalidatePath("/dashboard/celebrations");
@@ -710,151 +719,161 @@ export async function createBookingAction(data: {
   const { assertCanBook } = require("./safety");
   await assertCanBook(user.id);
 
-  const booking = await prisma.$transaction(async (tx) => {
-    // 0. Concurrency lock on Wedding row to serialize simultaneous booking attempts
-    await tx.$queryRaw`SELECT id FROM "Wedding" WHERE id = ${data.weddingId} FOR UPDATE`;
+  try {
+    const booking = await prisma.$transaction(async (tx) => {
+      // 0. Concurrency lock on Wedding row to serialize simultaneous booking attempts
+      await tx.$queryRaw`SELECT id FROM "Wedding" WHERE id = ${data.weddingId} FOR UPDATE`;
 
-    // 1. Fetch wedding with host couple information
-    const wedding = await tx.wedding.findUnique({
-      where: { id: data.weddingId },
-      include: { hostCouple: { include: { user: true } } }
-    });
-    if (!wedding) throw new Error("Wedding experience not found.");
+      // 1. Fetch wedding with host couple information
+      const wedding = await tx.wedding.findUnique({
+        where: { id: data.weddingId },
+        include: { hostCouple: { include: { user: true } } }
+      });
+      if (!wedding) throw new Error("Wedding experience not found.");
 
-    if (wedding.suspended) {
-      throw new Error("This wedding experience is currently suspended and cannot accept new bookings.");
-    }
+      if (wedding.suspended) {
+        throw new Error("This wedding experience is currently suspended and cannot accept new bookings.");
+      }
 
-    if (wedding.status !== WeddingStatus.PUBLISHED) {
-      throw new Error("This wedding experience is not currently open for bookings.");
-    }
+      if (wedding.status !== WeddingStatus.PUBLISHED) {
+        throw new Error("This wedding experience is not currently open for bookings.");
+      }
 
-    // SEC-DEMO: Server-side invariant — demo weddings must NEVER be bookable.
-    // A malicious client cannot bypass this by manipulating availability state.
-    if (wedding.isDemo) {
-      throw new Error("This is a demonstration wedding experience and cannot be booked.");
-    }
+      // SEC-DEMO: Server-side invariant — demo weddings must NEVER be bookable.
+      // A malicious client cannot bypass this by manipulating availability state.
+      if (wedding.isDemo) {
+        throw new Error("This is a demonstration wedding experience and cannot be booked.");
+      }
 
-    // 2. Cannot book own wedding
-    if (wedding.hostCouple.userId === user.id) {
-      throw new Error("Cannot book your own hosted wedding experience.");
-    }
+      // 2. Cannot book own wedding
+      if (wedding.hostCouple.userId === user.id) {
+        throw new Error("Cannot book your own hosted wedding experience.");
+      }
 
-    // 3. Cannot book past dates
-    const weddingDate = new Date(wedding.date);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    if (weddingDate < today) {
-      throw new Error("Cannot book a wedding experience that occurred in the past.");
-    }
+      // 3. Cannot book past dates
+      const weddingDate = new Date(wedding.date);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (weddingDate < today) {
+        throw new Error("Cannot book a wedding experience that occurred in the past.");
+      }
 
-    // 4. No duplicate active booking (PENDING, AWAITING_PAYMENT, APPROVED, PAID, CONFIRMED, etc.)
-    const existingActive = await tx.booking.findFirst({
-      where: {
-        travelerId: traveler.id,
-        weddingId: data.weddingId,
-        status: {
-          in: ACTIVE_RESERVATION_STATUSES,
+      // 4. No duplicate active booking (PENDING, AWAITING_PAYMENT, APPROVED, PAID, CONFIRMED, etc.)
+      const existingActive = await tx.booking.findFirst({
+        where: {
+          travelerId: traveler.id,
+          weddingId: data.weddingId,
+          status: {
+            in: ACTIVE_RESERVATION_STATUSES,
+          },
         },
-      },
+      });
+      if (existingActive) {
+        throw new Error("You already have an active reservation request or booking for this wedding.");
+      }
+
+      // 5. Check guest capacity across all active reservation statuses (including pending requests)
+      const approvedGuests = await tx.booking.aggregate({
+        where: {
+          weddingId: data.weddingId,
+          status: {
+            in: ACTIVE_RESERVATION_STATUSES,
+          },
+        },
+        _sum: {
+          guestsCount: true,
+        },
+      });
+      const currentBookedCount = approvedGuests._sum.guestsCount || 0;
+      if (currentBookedCount + data.guestsCount > wedding.capacity) {
+        throw new Error(`Cannot exceed maximum wedding guest capacity. Available spots: ${wedding.capacity - currentBookedCount}.`);
+      }
+
+      // 6. Server-authoritative pricing: derive centrally from authoritative Wedding tier and duration.
+      // P0 Security: Client cannot inject a false price.
+      const pricing = calculateBookingPricing({
+        tier: wedding.tier,
+        durationDays: wedding.durationDays,
+        guestCount: data.guestsCount,
+        isAgentAttributed: false,
+      });
+
+      // 7. Validate and sanitize attendanceSide — never trust client enum strings directly.
+      const VALID_SIDES: WeddingSide[] = [WeddingSide.BRIDE_SIDE, WeddingSide.GROOM_SIDE, WeddingSide.OPEN];
+      const sanitizedSide: WeddingSide = (
+        data.attendanceSide && VALID_SIDES.includes(data.attendanceSide as WeddingSide)
+          ? (data.attendanceSide as WeddingSide)
+          : WeddingSide.BRIDE_SIDE
+      );
+
+      // Sanitize and validate accompanying guests if present (seats 2..N)
+      const rawGuests = Array.isArray(data.guests) ? data.guests : [];
+      const sanitizedGuests = rawGuests
+        .slice(0, Math.max(0, data.guestsCount - 1))
+        .filter((g) => g && typeof g.fullName === "string" && g.fullName.trim().length > 0)
+        .map((g) => ({
+          fullName: g.fullName.trim().slice(0, 100),
+          email: typeof g.email === "string" && g.email.trim().length > 0 ? g.email.trim().slice(0, 150) : null,
+          age: typeof g.age === "number" && !isNaN(g.age) && g.age > 0 && g.age < 120 ? Math.floor(g.age) : null,
+          gender: typeof g.gender === "string" && g.gender.trim().length > 0 ? g.gender.trim().slice(0, 30) : null,
+          foodPreference: typeof g.foodPreference === "string" && g.foodPreference.trim().length > 0 ? g.foodPreference.trim().slice(0, 500) : "No Restrictions",
+          accessibilityNeed: typeof g.accessibilityNeed === "string" && g.accessibilityNeed.trim().length > 0 ? g.accessibilityNeed.trim().slice(0, 500) : "None",
+        }));
+
+      const createdBooking = await tx.booking.create({
+        data: {
+          travelerId: traveler.id,
+          weddingId: data.weddingId,
+          date: new Date(data.date),
+          guestsCount: data.guestsCount,
+          pricePerGuest: pricing.customerPricePerGuestUSD,
+          totalAmount: pricing.customerTotalAmountUSD,
+          weddingTier: pricing.tier,
+          durationDays: pricing.durationDays,
+          customerPricePerGuestUSD: pricing.customerPricePerGuestUSD,
+          hostPayoutPerGuestINR: pricing.hostPayoutPerGuestINR,
+          agentPayoutPerGuestINR: pricing.agentPayoutPerGuestINR,
+          eligibleInternationalGuestCount: pricing.eligibleInternationalGuestCount,
+          totalHostPayoutINR: pricing.totalHostPayoutINR,
+          totalAgentPayoutINR: pricing.totalAgentPayoutINR,
+          pricingVersion: pricing.pricingVersion,
+          baseCustomerAmountUSD: pricing.baseCustomerAmountUSD,
+          paymentFeeAmount: 0,
+          customerTotalAmount: pricing.customerTotalAmountUSD,
+          currency: "USD",
+          status: BookingStatus.PENDING,
+          attendanceSide: sanitizedSide,
+          guests: sanitizedGuests.length > 0 ? {
+            create: sanitizedGuests,
+          } : undefined,
+        }
+      });
+
+      // 7. Dispatch Notification to Host Couple
+      await tx.notification.create({
+        data: {
+          userId: wedding.hostCouple.user.id,
+          title: "New Booking Request",
+          message: `${traveler.fullName} has requested ${data.guestsCount} spot(s) for your wedding: ${wedding.title}.`,
+          type: "REQUEST"
+        }
+      });
+
+      return createdBooking;
+    }, {
+      maxWait: 30000,
+      timeout: 60000,
     });
-    if (existingActive) {
+
+    revalidatePath("/dashboard/bookings");
+    revalidatePath("/dashboard");
+    return { success: true, booking };
+  } catch (err: any) {
+    if (err?.code === "P2002" || (err?.message && err.message.includes("Booking_one_active_booking_per_wedding_traveler_unique_idx"))) {
       throw new Error("You already have an active reservation request or booking for this wedding.");
     }
-
-    // 5. Check guest capacity across all capacity-holding statuses
-    const approvedGuests = await tx.booking.aggregate({
-      where: {
-        weddingId: data.weddingId,
-        status: {
-          in: CAPACITY_HOLDING_BOOKING_STATUSES,
-        },
-      },
-      _sum: {
-        guestsCount: true,
-      },
-    });
-    const currentBookedCount = approvedGuests._sum.guestsCount || 0;
-    if (currentBookedCount + data.guestsCount > wedding.capacity) {
-      throw new Error(`Cannot exceed maximum wedding guest capacity. Available spots: ${wedding.capacity - currentBookedCount}.`);
-    }
-
-    // 6. Server-authoritative pricing: derive centrally from authoritative Wedding tier and duration.
-    // P0 Security: Client cannot inject a false price.
-    const pricing = calculateBookingPricing({
-      tier: wedding.tier,
-      durationDays: wedding.durationDays,
-      guestCount: data.guestsCount,
-      isAgentAttributed: false,
-    });
-
-    // 7. Validate and sanitize attendanceSide — never trust client enum strings directly.
-    const VALID_SIDES: WeddingSide[] = [WeddingSide.BRIDE_SIDE, WeddingSide.GROOM_SIDE, WeddingSide.OPEN];
-    const sanitizedSide: WeddingSide = (
-      data.attendanceSide && VALID_SIDES.includes(data.attendanceSide as WeddingSide)
-        ? (data.attendanceSide as WeddingSide)
-        : WeddingSide.BRIDE_SIDE
-    );
-
-    // Sanitize and validate accompanying guests if present (seats 2..N)
-    const rawGuests = Array.isArray(data.guests) ? data.guests : [];
-    const sanitizedGuests = rawGuests
-      .slice(0, Math.max(0, data.guestsCount - 1))
-      .filter((g) => g && typeof g.fullName === "string" && g.fullName.trim().length > 0)
-      .map((g) => ({
-        fullName: g.fullName.trim().slice(0, 100),
-        email: typeof g.email === "string" && g.email.trim().length > 0 ? g.email.trim().slice(0, 150) : null,
-        age: typeof g.age === "number" && !isNaN(g.age) && g.age > 0 && g.age < 120 ? Math.floor(g.age) : null,
-        gender: typeof g.gender === "string" && g.gender.trim().length > 0 ? g.gender.trim().slice(0, 30) : null,
-        foodPreference: typeof g.foodPreference === "string" && g.foodPreference.trim().length > 0 ? g.foodPreference.trim().slice(0, 500) : "No Restrictions",
-        accessibilityNeed: typeof g.accessibilityNeed === "string" && g.accessibilityNeed.trim().length > 0 ? g.accessibilityNeed.trim().slice(0, 500) : "None",
-      }));
-
-    const createdBooking = await tx.booking.create({
-      data: {
-        travelerId: traveler.id,
-        weddingId: data.weddingId,
-        date: new Date(data.date),
-        guestsCount: data.guestsCount,
-        pricePerGuest: pricing.customerPricePerGuestUSD,
-        totalAmount: pricing.customerTotalAmountUSD,
-        weddingTier: pricing.tier,
-        durationDays: pricing.durationDays,
-        customerPricePerGuestUSD: pricing.customerPricePerGuestUSD,
-        hostPayoutPerGuestINR: pricing.hostPayoutPerGuestINR,
-        agentPayoutPerGuestINR: pricing.agentPayoutPerGuestINR,
-        eligibleInternationalGuestCount: pricing.eligibleInternationalGuestCount,
-        totalHostPayoutINR: pricing.totalHostPayoutINR,
-        totalAgentPayoutINR: pricing.totalAgentPayoutINR,
-        pricingVersion: pricing.pricingVersion,
-        baseCustomerAmountUSD: pricing.baseCustomerAmountUSD,
-        paymentFeeAmount: 0,
-        customerTotalAmount: pricing.customerTotalAmountUSD,
-        currency: "USD",
-        status: BookingStatus.PENDING,
-        attendanceSide: sanitizedSide,
-        guests: sanitizedGuests.length > 0 ? {
-          create: sanitizedGuests,
-        } : undefined,
-      }
-    });
-
-    // 7. Dispatch Notification to Host Couple
-    await tx.notification.create({
-      data: {
-        userId: wedding.hostCouple.user.id,
-        title: "New Booking Request",
-        message: `${traveler.fullName} has requested ${data.guestsCount} spot(s) for your wedding: ${wedding.title}.`,
-        type: "REQUEST"
-      }
-    });
-
-    return createdBooking;
-  });
-
-  revalidatePath("/dashboard/bookings");
-  revalidatePath("/dashboard");
-  return { success: true, booking };
+    throw err;
+  }
 }
 
 export async function cancelBookingAction(
