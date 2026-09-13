@@ -494,10 +494,43 @@ export async function adminDeleteWeddingAction(weddingId: string) {
       await tx.wedding.delete({
         where: { id: weddingId },
       });
+    }, {
+      maxWait: 15000,
+      timeout: 30000,
     });
   }
 
   await createAuditLog("DELETE_WEDDING", "Wedding", weddingId, `Admin (${admin.email}) deleted/archived wedding: "${wedding.title}"`);
+  revalidatePath(`/weddings/${wedding.slug}`);
+  revalidatePath("/dashboard/admin/weddings");
+  revalidatePath("/weddings");
+  revalidatePath("/weddings/map");
+  revalidatePath("/");
+  if (typeof revalidateTag === "function") {
+    try {
+      revalidateTag("weddings", "max");
+      revalidateTag("homepage", "max");
+    } catch {}
+  }
+  return { success: true };
+}
+
+export async function adminRestoreWeddingAction(weddingId: string) {
+  const admin = await requireRole([UserRole.ADMIN]);
+  const wedding = await prisma.wedding.findUnique({
+    where: { id: weddingId },
+  });
+  if (!wedding) throw new Error("Wedding not found.");
+
+  await prisma.wedding.update({
+    where: { id: weddingId },
+    data: {
+      deletedAt: null,
+      suspended: false,
+    },
+  });
+
+  await createAuditLog("RESTORE_WEDDING", "Wedding", weddingId, `Admin (${admin.email}) restored wedding: "${wedding.title}"`);
   revalidatePath(`/weddings/${wedding.slug}`);
   revalidatePath("/dashboard/admin/weddings");
   revalidatePath("/weddings");
