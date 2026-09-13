@@ -4,6 +4,7 @@ import { prisma } from "../prisma";
 import { requireAuth } from "../auth";
 import { HostApplicationStatus, UserRole, VerificationStatus, WeddingStatus } from "@prisma/client";
 import { revalidatePath } from "next/cache";
+import crypto from "crypto";
 
 export interface HostDayInput {
   dayNumber: number;
@@ -106,12 +107,12 @@ export interface HostApplicationState {
 }
 
 export type SaveHostApplicationDraftResult =
-  | { success: true; applicationId: string; lastSavedAt: string; status: string; error?: never; errorCode?: never }
-  | { success: false; error: string; errorCode: string; applicationId?: never; lastSavedAt?: never; status?: never };
+  | { success: true; applicationId: string; lastSavedAt: string; status: string; wasAlreadySubmitted?: boolean; error?: never; errorCode?: never }
+  | { success: false; error: string; errorCode: string; applicationId?: never; lastSavedAt?: never; status?: never; wasAlreadySubmitted?: never };
 
 export type SubmitHostApplicationResult =
-  | { success: true; applicationId: string; status: string; error?: never; errorCode?: never }
-  | { success: false; error: string; errorCode: string; applicationId?: never; status?: never };
+  | { success: true; applicationId: string; status: string; wasAlreadySubmitted?: boolean; error?: never; errorCode?: never }
+  | { success: false; error: string; errorCode: string; applicationId?: never; status?: never; wasAlreadySubmitted?: never };
 
 export interface CheckHostAuthReadinessResult {
   isReady: boolean;
@@ -440,11 +441,6 @@ function parseSafeDate(val: any, fallback: Date = new Date()): Date {
   return isNaN(d.getTime()) ? fallback : d;
 }
 
-// In-memory idempotency locks and deduplication caches
-const activeSubmissionLocks = new Map<string, Promise<SaveHostApplicationDraftResult>>();
-const recentSubmissions = new Map<string, { result: SaveHostApplicationDraftResult; timestamp: number }>();
-const recentSubmittedNotifications = new Set<string>();
-
 /**
  * Server Action: Save or Update Draft Host Application with debounced autosave support and strict idempotency.
  */
@@ -452,59 +448,12 @@ export async function saveHostApplicationDraftAction(
   input: HostApplicationInput,
   options?: { status?: "DRAFT" | "SUBMITTED" }
 ): Promise<SaveHostApplicationDraftResult> {
-  const isSubmission = options?.status === "SUBMITTED";
-
   try {
     const user = await requireAuth();
-
-    // Idempotency check for submissions: deduplicate simultaneous and rapid repeat requests
-    if (isSubmission) {
-      const tokenKey = input.submissionToken?.trim();
-      const userLockKey = `${user.id}_submission_lock`;
-
-      // 1. Return cached result if an identical submissionToken was already processed within 60 seconds
-      if (tokenKey) {
-        const cached = recentSubmissions.get(tokenKey);
-        if (cached && Date.now() - cached.timestamp < 60000) {
-          return cached.result;
-        }
-      }
-
-      // 2. Check for in-flight concurrent execution for this user or token
-      const inFlight = activeSubmissionLocks.get(userLockKey) || (tokenKey ? activeSubmissionLocks.get(tokenKey) : undefined);
-      if (inFlight) {
-        return await inFlight;
-      }
-
-      const submissionPromise = (async () => {
-        try {
-          const res = await executeSaveHostApplicationDraft(input, options, user);
-          if (res.success && tokenKey) {
-            recentSubmissions.set(tokenKey, { result: res, timestamp: Date.now() });
-            // Prune old tokens
-            if (recentSubmissions.size > 500) {
-              const cutoff = Date.now() - 120000;
-              for (const [k, v] of recentSubmissions.entries()) {
-                if (v.timestamp < cutoff) recentSubmissions.delete(k);
-              }
-            }
-          }
-          return res;
-        } finally {
-          activeSubmissionLocks.delete(userLockKey);
-          if (tokenKey) activeSubmissionLocks.delete(tokenKey);
-        }
-      })();
-
-      activeSubmissionLocks.set(userLockKey, submissionPromise);
-      if (tokenKey) activeSubmissionLocks.set(tokenKey, submissionPromise);
-      return await submissionPromise;
-    }
-
     return await executeSaveHostApplicationDraft(input, options, user);
   } catch (authErr: any) {
     const msg = authErr?.message || "Failed to authenticate request.";
-    let code = authErr?.code || "UNAUTHORIZED";
+    const code = authErr?.code || "UNAUTHORIZED";
     return { success: false, error: msg, errorCode: code };
   }
 }
@@ -528,6 +477,15 @@ async function executeSaveHostApplicationDraft(
         : input.brideName?.trim() || input.hostName?.trim() || user.name || "Couple Celebration");
 
     const result = await prisma.$transaction(async (tx) => {
+      // 0. Concurrency serialization lock on User row:
+      // Guarantees that concurrent submissions for the same user are serialized at the database level,
+      // eliminating race conditions for CoupleProfile and HostApplication creation.
+      if (typeof tx.$queryRaw === "function") {
+        try {
+          await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${user.id} FOR UPDATE`;
+        } catch {}
+      }
+
       // 1. Resolve or create CoupleProfile (support upsert and mock fallback)
       let coupleProfile = null;
       if (typeof tx.coupleProfile?.upsert === "function") {
@@ -575,6 +533,91 @@ async function executeSaveHostApplicationDraft(
         throw new Error("Unable to initialize host couple profile.");
       }
 
+      // 2. Find existing application by ID, userId, or coupleProfileId
+      let hostApp = null;
+      if (tx.hostApplication) {
+        if (input.applicationId) {
+          hostApp = await tx.hostApplication.findFirst({
+            where: { id: input.applicationId, userId: user.id },
+          });
+        }
+
+        if (!hostApp) {
+          hostApp = await tx.hostApplication.findFirst({
+            where: { userId: user.id },
+            orderBy: { updatedAt: "desc" },
+          });
+        }
+
+        if (!hostApp && coupleProfile?.id) {
+          hostApp = await tx.hostApplication.findFirst({
+            where: { coupleProfileId: coupleProfile.id },
+            orderBy: { updatedAt: "desc" },
+          });
+        }
+      }
+
+      // 2b. Idempotency Token Validation & Payload Conflict Detection
+      const sanitizedToken = typeof input.submissionToken === "string" ? input.submissionToken.trim().slice(0, 256) : null;
+      const payloadFingerprint = sanitizedToken
+        ? crypto.createHash("sha256").update(JSON.stringify({
+            coupleNames: resolvedCoupleNames,
+            city: input.city?.trim() || "India",
+            weddingDate: weddingDate.toISOString().split("T")[0],
+            durationDays,
+            requestedTier: input.requestedTier || "SIGNATURE_ROYAL",
+          })).digest("hex")
+        : null;
+
+      if (sanitizedToken && hostApp && tx.hostApplicationAuditLog) {
+        try {
+          const existingTokenLog = await tx.hostApplicationAuditLog.findFirst({
+            where: {
+              applicationId: hostApp.id,
+              details: { contains: sanitizedToken },
+            },
+            orderBy: { createdAt: "desc" },
+          });
+
+          if (existingTokenLog?.details) {
+            try {
+              const parsed = JSON.parse(existingTokenLog.details);
+              if (parsed.submissionToken === sanitizedToken && parsed.payloadFingerprint) {
+                if (parsed.payloadFingerprint !== payloadFingerprint) {
+                  throw new Error(`IDEMPOTENCY_CONFLICT: Token '${sanitizedToken}' was already used with a different application payload.`);
+                }
+              }
+            } catch (pErr: any) {
+              if (pErr?.message?.startsWith("IDEMPOTENCY_CONFLICT")) {
+                throw pErr;
+              }
+            }
+          }
+        } catch (logQueryErr: any) {
+          if (logQueryErr?.message?.startsWith("IDEMPOTENCY_CONFLICT")) {
+            throw logQueryErr;
+          }
+        }
+      }
+
+      const existingStatus = hostApp?.status || null;
+      const isAlreadySubmitted = Boolean(
+        existingStatus === HostApplicationStatus.SUBMITTED ||
+        existingStatus === HostApplicationStatus.UNDER_REVIEW ||
+        existingStatus === HostApplicationStatus.VERIFIED ||
+        existingStatus === HostApplicationStatus.APPROVED_FOR_LISTING
+      );
+
+      // Invariant: Do not downgrade an already VERIFIED or APPROVED application back to DRAFT or SUBMITTED
+      let targetStatus: HostApplicationStatus;
+      if (existingStatus === HostApplicationStatus.VERIFIED || existingStatus === HostApplicationStatus.APPROVED_FOR_LISTING) {
+        targetStatus = existingStatus;
+      } else if (isSubmission) {
+        targetStatus = HostApplicationStatus.SUBMITTED;
+      } else {
+        targetStatus = existingStatus || HostApplicationStatus.DRAFT;
+      }
+
       const appData = {
         userId: user.id,
         coupleProfileId: coupleProfile.id,
@@ -597,39 +640,17 @@ async function executeSaveHostApplicationDraft(
         requestedTier: input.requestedTier || "SIGNATURE_ROYAL",
         story: input.story || null,
         lastSavedAt: new Date(),
-        status: isSubmission ? HostApplicationStatus.SUBMITTED : HostApplicationStatus.DRAFT,
-        ...(isSubmission ? { submittedAt: new Date() } : {}),
+        status: targetStatus,
+        ...(isSubmission && !isAlreadySubmitted ? { submittedAt: new Date() } : {}),
       };
 
       let appRecord: any = {
-        id: input.applicationId || `app-${user.id}`,
+        id: input.applicationId || (hostApp ? hostApp.id : `app-${user.id}`),
         lastSavedAt: new Date(),
-        status: isSubmission ? HostApplicationStatus.SUBMITTED : HostApplicationStatus.DRAFT,
+        status: targetStatus,
       };
 
       if (tx.hostApplication) {
-        // 2. Find existing application by ID or by userId
-        let hostApp = null;
-        if (input.applicationId) {
-          hostApp = await tx.hostApplication.findFirst({
-            where: { id: input.applicationId, userId: user.id },
-          });
-        }
-
-        if (!hostApp) {
-          hostApp = await tx.hostApplication.findFirst({
-            where: { userId: user.id },
-            orderBy: { updatedAt: "desc" },
-          });
-        }
-
-        if (!hostApp && coupleProfile?.id) {
-          hostApp = await tx.hostApplication.findFirst({
-            where: { coupleProfileId: coupleProfile.id },
-            orderBy: { updatedAt: "desc" },
-          });
-        }
-
         if (hostApp) {
           appRecord = await tx.hostApplication.update({
             where: { id: hostApp.id },
@@ -641,7 +662,7 @@ async function executeSaveHostApplicationDraft(
               data: appData,
             });
           } catch (createAppErr: any) {
-            // Handle concurrent creation race condition
+            // Handle concurrent creation race condition fallback
             const existing = await tx.hostApplication.findFirst({
               where: { userId: user.id },
               orderBy: { updatedAt: "desc" },
@@ -749,10 +770,33 @@ async function executeSaveHostApplicationDraft(
         }
       }
 
+      // 4. Audit Log for tracking submissions & idempotency tokens durably
+      if (isSubmission && tx.hostApplicationAuditLog) {
+        try {
+          await tx.hostApplicationAuditLog.create({
+            data: {
+              applicationId: appRecord.id,
+              action: isAlreadySubmitted ? "RESUBMIT_IDEMPOTENT" : "SUBMIT",
+              actorId: user.id,
+              actorRole: "HOST",
+              details: sanitizedToken
+                ? JSON.stringify({
+                    submissionToken: sanitizedToken,
+                    payloadFingerprint,
+                    coupleNames: resolvedCoupleNames,
+                    isReplay: isAlreadySubmitted,
+                  })
+                : `Submitted celebration application for ${resolvedCoupleNames}`,
+            },
+          });
+        } catch {}
+      }
+
       return {
         applicationId: String(appRecord.id),
         lastSavedAt: appRecord.lastSavedAt ? (appRecord.lastSavedAt instanceof Date ? appRecord.lastSavedAt.toISOString() : String(appRecord.lastSavedAt)) : new Date().toISOString(),
         status: String(appRecord.status),
+        wasAlreadySubmitted: isAlreadySubmitted,
       };
     }, {
       maxWait: 20000,
@@ -764,6 +808,7 @@ async function executeSaveHostApplicationDraft(
       applicationId: result.applicationId,
       lastSavedAt: result.lastSavedAt,
       status: result.status,
+      wasAlreadySubmitted: result.wasAlreadySubmitted,
     };
   } catch (err: any) {
     console.error("[saveHostApplicationDraftAction] Error:", err);
@@ -771,6 +816,8 @@ async function executeSaveHostApplicationDraft(
     let code = err?.code || "DRAFT_SAVE_ERROR";
     if (msg.startsWith("UNAUTHORIZED")) {
       code = "UNAUTHORIZED";
+    } else if (msg.startsWith("IDEMPOTENCY_CONFLICT")) {
+      code = "IDEMPOTENCY_CONFLICT";
     } else if (msg.startsWith("SERVICE_UNAVAILABLE") || msg.startsWith("AUTH_PROVIDER_UNAVAILABLE")) {
       code = "SERVICE_UNAVAILABLE";
     }
@@ -795,15 +842,9 @@ export async function submitHostApplicationAction(
       return result;
     }
 
-    try {
-      const notifKey = `${result.applicationId}_submitted`;
-      if (!recentSubmittedNotifications.has(notifKey)) {
-        recentSubmittedNotifications.add(notifKey);
-        if (recentSubmittedNotifications.size > 200) {
-          recentSubmittedNotifications.clear();
-          recentSubmittedNotifications.add(notifKey);
-        }
-
+    // Only dispatch notifications on the initial submission to prevent duplicate notification flood on retries/replays
+    if (!result.wasAlreadySubmitted) {
+      try {
         const user = await requireAuth();
         const adminUsers = await prisma.user.findMany({
           where: { role: UserRole.ADMIN },
@@ -835,9 +876,9 @@ export async function submitHostApplicationAction(
             });
           } catch {}
         }
+      } catch (notifErr) {
+        console.warn("Failed to dispatch notification on host application submit:", notifErr);
       }
-    } catch (notifErr) {
-      console.warn("Failed to dispatch notification on host application submit:", notifErr);
     }
 
     try {

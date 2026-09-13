@@ -87,7 +87,7 @@ async function rateLimitRedis(
     const resetAt = Date.now() + Math.max(1, ttl) * 1000;
 
     return { success, remaining, resetAt };
-  } catch (err) {
+  } catch {
     // Network timeout or error — gracefully fall through to in-memory tier
     return null;
   }

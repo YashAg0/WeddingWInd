@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "../prisma";
 import { requireAuth, requireRole } from "../auth";
 import { UserRole, ReputationEntityType } from "@prisma/client";
-import { calculateBayesianRating } from "../services/trust-score";
+import { getBatchWeddingRatingAggregates } from "../services/trust-score";
 import { submitReviewAction, voteReviewHelpfulAction, replyToReviewAction } from "./reviews";
 import { isSponsorshipActive, deduplicateWeddings } from "../wedding-dto";
 import { createAuditLog } from "./admin";
@@ -163,85 +163,179 @@ export async function searchWeddingsAction(
     nextCursor = nextItem?.id;
   }
 
-  // Fetch reviews for rating scores calculation
-  const mappedWeddings = await Promise.all(
-    weddings.map(async (w) => {
-      // 1. Exclude if active critical safety case exists
-      const activeCriticalSafety = await prisma.safetyCase.count({
-        where: {
-          weddingId: w.id,
-          severity: "CRITICAL",
-          status: { notIn: ["RESOLVED", "CLOSED"] }
-        }
-      });
-      if (activeCriticalSafety > 0) {
-        return null;
-      }
+  if (weddings.length === 0) {
+    return {
+      weddings: [],
+      nextCursor: undefined,
+      totalCount: 0,
+    };
+  }
 
-      // 2. Fetch Bayesian Rating
-      const ratings = await calculateBayesianRating(w.id);
+  const weddingIds = weddings.map((w) => w.id);
 
-      // 3. Fetch trust score ReputationProfile
-      const profile = await prisma.reputationProfile.findUnique({
-        where: {
-          entityType_entityId: {
+  // Batch query all 5 dependencies in parallel to eliminate N+1 cascade
+  const [
+    criticalSafetyCases,
+    ratingsMap,
+    reputationProfiles,
+    guestFavoriteBadges,
+    fraudSignals,
+  ] = await Promise.all([
+    typeof prisma.safetyCase?.findMany === "function"
+      ? prisma.safetyCase.findMany({
+          where: {
+            weddingId: { in: weddingIds },
+            severity: "CRITICAL",
+            status: { notIn: ["RESOLVED", "CLOSED"] },
+          },
+          select: { weddingId: true },
+        })
+      : typeof prisma.safetyCase?.count === "function"
+        ? (async () => {
+            const results: { weddingId: string }[] = [];
+            for (const wid of weddingIds) {
+              const c = await prisma.safetyCase.count({
+                where: { weddingId: wid, severity: "CRITICAL", status: { notIn: ["RESOLVED", "CLOSED"] } },
+              });
+              if (c > 0) results.push({ weddingId: wid });
+            }
+            return results;
+          })()
+        : Promise.resolve([]),
+    getBatchWeddingRatingAggregates(weddingIds),
+    typeof prisma.reputationProfile?.findMany === "function"
+      ? prisma.reputationProfile.findMany({
+          where: {
             entityType: ReputationEntityType.WEDDING,
-            entityId: w.id
-          }
-        }
-      });
-      const trustScore = profile ? profile.overallScore : 80;
+            entityId: { in: weddingIds },
+          },
+          select: { entityId: true, overallScore: true },
+        })
+      : typeof prisma.reputationProfile?.findUnique === "function"
+        ? (async () => {
+            const results: { entityId: string; overallScore: number }[] = [];
+            for (const wid of weddingIds) {
+              const p = await prisma.reputationProfile.findUnique({
+                where: { entityType_entityId: { entityType: ReputationEntityType.WEDDING, entityId: wid } },
+              });
+              if (p) results.push({ entityId: wid, overallScore: p.overallScore });
+            }
+            return results;
+          })()
+        : Promise.resolve([]),
+    typeof prisma.weddingQualityBadge?.findMany === "function"
+      ? prisma.weddingQualityBadge.findMany({
+          where: {
+            weddingId: { in: weddingIds },
+            badge: { key: "guest-favorite" },
+            revokedAt: null,
+          },
+          select: { weddingId: true },
+        })
+      : typeof prisma.weddingQualityBadge?.findFirst === "function"
+        ? (async () => {
+            const results: { weddingId: string }[] = [];
+            for (const wid of weddingIds) {
+              const b = await prisma.weddingQualityBadge.findFirst({
+                where: { weddingId: wid, badge: { key: "guest-favorite" }, revokedAt: null },
+              });
+              if (b) results.push({ weddingId: wid });
+            }
+            return results;
+          })()
+        : Promise.resolve([]),
+    typeof prisma.reviewFraudSignal?.findMany === "function"
+      ? prisma.reviewFraudSignal.findMany({
+          where: {
+            review: { booking: { weddingId: { in: weddingIds } } },
+            severity: { in: ["HIGH", "CRITICAL"] },
+            resolvedAt: null,
+          },
+          select: {
+            review: { select: { booking: { select: { weddingId: true } } } },
+          },
+        })
+      : typeof prisma.reviewFraudSignal?.count === "function"
+        ? (async () => {
+            const results: { review: { booking: { weddingId: string } } }[] = [];
+            for (const wid of weddingIds) {
+              const c = await prisma.reviewFraudSignal.count({
+                where: {
+                  review: { booking: { weddingId: wid } },
+                  severity: { in: ["HIGH", "CRITICAL"] },
+                  resolvedAt: null,
+                },
+              });
+              if (c > 0) results.push({ review: { booking: { weddingId: wid } } });
+            }
+            return results;
+          })()
+        : Promise.resolve([]),
+  ]);
 
-      // 4. Cap manual trending boost to [0, 5]
-      const cappedBoost = Math.max(0.0, Math.min(w.manualTrendingBoost, 5.0));
-
-      // 5. Check if "guest-favorite" badge is active
-      const guestFavoriteBadge = await prisma.weddingQualityBadge.findFirst({
-        where: {
-          weddingId: w.id,
-          badge: { key: "guest-favorite" },
-          revokedAt: null
-        }
-      });
-      const isGuestFavorite = !!guestFavoriteBadge;
-
-      // 6. Check unresolved critical/high fraud signals
-      const unresolvedFraudCount = await prisma.reviewFraudSignal.count({
-        where: {
-          review: { booking: { weddingId: w.id } },
-          severity: { in: ["HIGH", "CRITICAL"] },
-          resolvedAt: null
-        }
-      });
-      const hasUnresolvedFraud = unresolvedFraudCount > 0;
-
-      // 7. Calculate relevance score
-      const lowTrustPenalty = trustScore < 50 ? 50 : 0;
-      const fraudPenalty = hasUnresolvedFraud ? 30 : 0;
-      const activeSponsored = isSponsorshipActive(w);
-
-      const relevanceScore =
-        (activeSponsored ? 1000 : 0) +
-        (w.featured ? 500 : 0) +
-        (cappedBoost * 8) +
-        (trustScore * 0.4) +
-        (ratings.bayesianRating * 4) +
-        (w.bookings.length * 1.5) +
-        (isGuestFavorite ? 25 : 0) -
-        lowTrustPenalty -
-        fraudPenalty;
-
-      return {
-        ...w,
-        avgRating: ratings.avgRating,
-        bayesianRating: ratings.bayesianRating,
-        reviewCount: ratings.reviewCount,
-        trustScore,
-        isGuestFavorite,
-        relevanceScore
-      };
-    })
+  const excludedWeddingIds = new Set(criticalSafetyCases.map((c) => c.weddingId));
+  const profileScoreMap = new Map(reputationProfiles.map((p) => [p.entityId, p.overallScore]));
+  const guestFavoriteSet = new Set(guestFavoriteBadges.map((b) => b.weddingId));
+  const fraudWeddingSet = new Set(
+    fraudSignals
+      .map((f) => f.review?.booking?.weddingId)
+      .filter((id): id is string => Boolean(id))
   );
+
+  const mappedWeddings = weddings.map((w) => {
+    // 1. Exclude if active critical safety case exists
+    if (excludedWeddingIds.has(w.id)) {
+      return null;
+    }
+
+    // 2. Fetch Bayesian Rating from batch map
+    const aggregate = ratingsMap.get(w.id) || {
+      averageRating: 4.5,
+      bayesianRating: 4.5,
+      reviewCount: 0,
+    };
+    const avgRating = aggregate.averageRating;
+    const bayesianRating = aggregate.bayesianRating;
+    const reviewCount = aggregate.reviewCount;
+
+    // 3. Fetch trust score ReputationProfile from batch map
+    const trustScore = profileScoreMap.has(w.id) ? profileScoreMap.get(w.id)! : 80;
+
+    // 4. Cap manual trending boost to [0, 5]
+    const cappedBoost = Math.max(0.0, Math.min(w.manualTrendingBoost, 5.0));
+
+    // 5. Check if "guest-favorite" badge is active
+    const isGuestFavorite = guestFavoriteSet.has(w.id);
+
+    // 6. Check unresolved critical/high fraud signals
+    const hasUnresolvedFraud = fraudWeddingSet.has(w.id);
+
+    // 7. Calculate relevance score
+    const lowTrustPenalty = trustScore < 50 ? 50 : 0;
+    const fraudPenalty = hasUnresolvedFraud ? 30 : 0;
+    const activeSponsored = isSponsorshipActive(w);
+
+    const relevanceScore =
+      (activeSponsored ? 1000 : 0) +
+      (w.featured ? 500 : 0) +
+      (cappedBoost * 8) +
+      (trustScore * 0.4) +
+      (bayesianRating * 4) +
+      (w.bookings.length * 1.5) +
+      (isGuestFavorite ? 25 : 0) -
+      lowTrustPenalty -
+      fraudPenalty;
+
+    return {
+      ...w,
+      avgRating,
+      bayesianRating,
+      reviewCount,
+      trustScore,
+      isGuestFavorite,
+      relevanceScore,
+    };
+  });
 
   // Filter out any safety excluded celebrations (nulls) and deduplicate
   const weddingsWithReviews = deduplicateWeddings(mappedWeddings.filter((item): item is NonNullable<typeof item> => item !== null));

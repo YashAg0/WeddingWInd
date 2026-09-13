@@ -44,6 +44,7 @@
     "**/*.spec.ts",
     "**/*.test.ts",
     "playwright.config.ts",
-    "playwright.prod.config.ts"
+    "playwright.prod.config.ts",
+    "scripts"
   ]
 }

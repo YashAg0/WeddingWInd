@@ -29,8 +29,6 @@ export async function GET() {
   }
 }
 
-const activeApiLocks = new Map<string, Promise<NextResponse>>();
-
 /**
  * POST /api/host-application — Submit or Update a host celebration application.
  * Duplicate-safe: Updates in place and creates/updates both HostApplication and Wedding records.
@@ -38,15 +36,7 @@ const activeApiLocks = new Map<string, Promise<NextResponse>>();
 export async function POST(req: NextRequest) {
   try {
     const user = await requireAuth();
-    const lockKey = `${user.id}_api_lock`;
-    const inFlight = activeApiLocks.get(lockKey);
-    if (inFlight) {
-      return await inFlight;
-    }
-
-    const handlerPromise = (async () => {
-      try {
-        const body = await req.json();
+    const body = await req.json();
         const {
           submissionToken,
           hostName,
@@ -361,14 +351,7 @@ export async function POST(req: NextRequest) {
       coupleNames: resolvedCoupleNames,
       city: resolvedCity,
     });
-  } finally {
-    activeApiLocks.delete(lockKey);
-  }
-})();
-
-activeApiLocks.set(lockKey, handlerPromise);
-return await handlerPromise;
-} catch (error: any) {
+  } catch (error: any) {
   console.error("[API /host-application POST]", error);
   const message = error?.message || "Internal server error";
   if (message.startsWith("UNAUTHORIZED")) {

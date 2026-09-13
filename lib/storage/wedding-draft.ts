@@ -68,19 +68,21 @@ export function saveLocalWeddingDraft(data: HostDraftPayload): void {
   if (typeof localStorage === "undefined") return;
   try {
     const raw = localStorage.getItem(DRAFT_STORAGE_KEY);
-    const token = data.submissionToken || getOrCreateSubmissionToken();
-    const merged = { ...data, submissionToken: token };
+    const merged: HostDraftPayload = { ...data };
     if (raw) {
       try {
         const existing = JSON.parse(raw);
         if (existing && typeof existing === "object") {
           for (const key of Object.keys(existing) as Array<keyof HostDraftPayload>) {
-            if (!merged[key] && existing[key]) {
+            if (merged[key] === undefined && existing[key] !== undefined) {
               (merged as any)[key] = existing[key];
             }
           }
         }
       } catch {}
+    }
+    if (!merged.submissionToken) {
+      merged.submissionToken = getOrCreateSubmissionToken();
     }
     localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(merged));
   } catch (e) {

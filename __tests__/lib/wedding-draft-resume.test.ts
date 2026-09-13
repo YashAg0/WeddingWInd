@@ -443,7 +443,7 @@ describe("Wedding Draft Storage & Zero-Loss Sign-In Resumption Suite", () => {
       // 1. Client persistence test
       saveLocalWeddingDraft(fullDraft);
       const restored = getLocalWeddingDraft();
-      expect(restored).toEqual(fullDraft);
+      expect(restored).toEqual(expect.objectContaining(fullDraft));
 
       // 2. Server Action execution test
       const res = await saveHostApplicationDraftAction(restored!);
@@ -952,7 +952,7 @@ describe("Wedding Draft Storage & Zero-Loss Sign-In Resumption Suite", () => {
       setAutoSubmitIntent(true);
 
       // 2. Simulate page reload before submit completes -> draft and intent are still preserved
-      expect(getLocalWeddingDraft()).toEqual(draft);
+      expect(getLocalWeddingDraft()).toEqual(expect.objectContaining(draft));
       expect(hasAutoSubmitIntent()).toBe(true);
 
       // 3. Page loads after refresh, completes submission

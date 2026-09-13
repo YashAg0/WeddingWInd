@@ -1724,6 +1724,7 @@ export const getWeddings = unstable_cache(
         () =>
           prisma.wedding.findMany({
             where: { status: "PUBLISHED", suspended: false, deletedAt: null },
+            take: 100,
             orderBy: [
               { sponsored: "desc" },
               { featured: "desc" },
