@@ -63,32 +63,42 @@ jest.mock("@/lib/auth", () => ({
 }));
 
 // Mock Prisma
-jest.mock("@/lib/prisma", () => ({
-  prisma: {
-    user: {
-      findUnique: jest.fn(),
-      update: jest.fn(),
-    },
-    coupleProfile: {
-      findUnique: jest.fn(),
-      upsert: jest.fn(),
-    },
-    wedding: {
-      findUnique: jest.fn(),
-      findMany: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-    },
-    verification: {
-      findUnique: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
-    },
-    notification: {
-      create: jest.fn().mockResolvedValue({ id: "notif_123" }),
-    },
+const mockPrisma: any = {
+  user: {
+    findUnique: jest.fn(),
+    update: jest.fn(),
   },
+  coupleProfile: {
+    findUnique: jest.fn(),
+    upsert: jest.fn(),
+  },
+  wedding: {
+    findUnique: jest.fn(),
+    findFirst: jest.fn(),
+    findMany: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
+    delete: jest.fn(),
+  },
+  verification: {
+    findUnique: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
+  },
+  notification: {
+    create: jest.fn().mockResolvedValue({ id: "notif_123" }),
+  },
+  $queryRaw: jest.fn().mockResolvedValue([]),
+  $transaction: jest.fn((callback: any) => {
+    if (typeof callback === "function") {
+      return callback(mockPrisma);
+    }
+    return Promise.resolve(callback);
+  }),
+};
+
+jest.mock("@/lib/prisma", () => ({
+  prisma: mockPrisma,
   isDatabaseAvailable: jest.fn().mockResolvedValue(true),
 }));
 

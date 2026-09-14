@@ -1,27 +1,16 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const preferredRegion = "syd1";
 
 /**
- * GET /api/health
+ * GET /api/version
  *
- * Health check endpoint for monitoring, load balancers, and uptime tools.
- * Returns HTTP 200 when healthy, HTTP 503 when degraded.
+ * Production version and deployment commit identification endpoint.
+ * Returns the exact git commit SHA, semantic version, and runtime environment.
  */
 export async function GET() {
-  const startTime = Date.now();
-
-  let dbHealthy = false;
-  try {
-    await prisma.$queryRaw`SELECT 1`;
-    dbHealthy = true;
-  } catch {
-    dbHealthy = false;
-  }
-
   const commitSha =
     process.env.NEXT_PUBLIC_BUILD_COMMIT_SHA ||
     process.env.VERCEL_GIT_COMMIT_SHA ||
@@ -32,21 +21,20 @@ export async function GET() {
     process.env.NEXT_PUBLIC_BUILD_COMMIT_SHORT ||
     (commitSha !== "unknown" ? commitSha.slice(0, 7) : "unknown");
 
-  // If we reach here, env validation passed at boot time.
   const payload = {
-    status: dbHealthy ? "ok" : "degraded",
-    db: dbHealthy,
-    timestamp: new Date().toISOString(),
-    latencyMs: Date.now() - startTime,
+    status: "ok",
     version: process.env.npm_package_version ?? "0.1.0",
     commit,
     commitSha,
+    environment: process.env.VERCEL_ENV || process.env.NODE_ENV || "development",
+    region: process.env.VERCEL_REGION || "syd1",
+    timestamp: new Date().toISOString(),
   };
 
   return NextResponse.json(payload, {
-    status: dbHealthy ? 200 : 503,
+    status: 200,
     headers: {
-      "Cache-Control": "no-store",
+      "Cache-Control": "no-store, no-cache, must-revalidate",
     },
   });
 }

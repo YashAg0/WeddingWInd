@@ -1,6 +1,28 @@
 import type { NextConfig } from "next";
+import { execSync } from "child_process";
+
+function getGitCommitSha(): string {
+  if (process.env.VERCEL_GIT_COMMIT_SHA) {
+    return process.env.VERCEL_GIT_COMMIT_SHA;
+  }
+  if (process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA) {
+    return process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA;
+  }
+  try {
+    return execSync("git rev-parse HEAD").toString().trim();
+  } catch {
+    return "unknown";
+  }
+}
+
+const buildCommitSha = getGitCommitSha();
+const buildCommitShort = buildCommitSha !== "unknown" ? buildCommitSha.slice(0, 7) : "unknown";
 
 const nextConfig: NextConfig = {
+  env: {
+    NEXT_PUBLIC_BUILD_COMMIT_SHA: buildCommitSha,
+    NEXT_PUBLIC_BUILD_COMMIT_SHORT: buildCommitShort,
+  },
   typescript: {
     ignoreBuildErrors: false,
   },

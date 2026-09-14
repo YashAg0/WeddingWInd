@@ -37,7 +37,10 @@ import { UserRole } from '@prisma/client';
 
 jest.setTimeout(300000);
 
-describe('STAGE 9 SECTIONS 6 & 7: DRAFT CREATION & HOST APPLICATION CONCURRENCY IDEMPOTENCY', () => {
+const isLiveDb = Boolean(process.env.DATABASE_URL && !process.env.DATABASE_URL.includes('localhost:5432'));
+const describeLive = isLiveDb ? describe : describe.skip;
+
+describeLive('STAGE 9 SECTIONS 6 & 7: DRAFT CREATION & HOST APPLICATION CONCURRENCY IDEMPOTENCY', () => {
   const runId = `stage9_draft_${Date.now()}`;
   const createdUserIds: string[] = [];
 

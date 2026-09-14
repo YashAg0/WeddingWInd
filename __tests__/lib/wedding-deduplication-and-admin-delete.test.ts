@@ -1,4 +1,4 @@
-﻿import { deduplicateWeddings } from "@/lib/wedding-dto";
+import { deduplicateWeddings } from "@/lib/wedding-dto";
 import { featuredWeddings } from "@/lib/data";
 import { UserRole, WeddingStatus } from "@prisma/client";
 
@@ -16,51 +16,67 @@ jest.mock("@/lib/auth", () => ({
   isAdmin: jest.fn(),
 }));
 
-jest.mock("@/lib/prisma", () => ({
-  prisma: {
-    coupleProfile: {
-      upsert: jest.fn(),
-      findUnique: jest.fn(),
-    },
-    wedding: {
-      findFirst: jest.fn(),
-      findUnique: jest.fn(),
-      findMany: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-    },
-    verification: {
-      findUnique: jest.fn(),
-    },
-    auditLog: {
-      create: jest.fn(),
-    },
-    sponsorshipRequest: {
-      deleteMany: jest.fn(),
-    },
-    recentlyViewed: {
-      deleteMany: jest.fn(),
-    },
-    wishlist: {
-      deleteMany: jest.fn(),
-    },
-    $transaction: jest.fn((cb: any) => cb({
-      sponsorshipRequest: { deleteMany: jest.fn() },
-      recentlyViewed: { deleteMany: jest.fn() },
-      wishlist: { deleteMany: jest.fn() },
-      eventContact: { deleteMany: jest.fn() },
-      weddingAnnouncement: { deleteMany: jest.fn() },
-      weddingItineraryItem: { deleteMany: jest.fn() },
-      weddingQualityBadge: { deleteMany: jest.fn() },
-      coordinatorProfile: { updateMany: jest.fn() },
-      hostApplication: { updateMany: jest.fn() },
-      weddingEvent: { deleteMany: jest.fn() },
-      weddingTradition: { deleteMany: jest.fn() },
-      weddingGallery: { deleteMany: jest.fn() },
-      wedding: { delete: jest.fn() },
-    })),
+const mockTx: any = {
+  sponsorshipRequest: { deleteMany: jest.fn() },
+  recentlyViewed: { deleteMany: jest.fn() },
+  wishlist: { deleteMany: jest.fn() },
+  eventContact: { deleteMany: jest.fn() },
+  weddingAnnouncement: { deleteMany: jest.fn() },
+  weddingItineraryItem: { deleteMany: jest.fn() },
+  weddingQualityBadge: { deleteMany: jest.fn() },
+  coordinatorProfile: { updateMany: jest.fn() },
+  hostApplication: { updateMany: jest.fn() },
+  weddingEvent: { deleteMany: jest.fn() },
+  weddingTradition: { deleteMany: jest.fn() },
+  weddingGallery: { deleteMany: jest.fn() },
+};
+
+const mockPrisma: any = {
+  coupleProfile: {
+    upsert: jest.fn(),
+    findUnique: jest.fn(),
   },
+  wedding: {
+    findFirst: jest.fn(),
+    findUnique: jest.fn(),
+    findMany: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
+    delete: jest.fn(),
+  },
+  verification: {
+    findUnique: jest.fn(),
+  },
+  auditLog: {
+    create: jest.fn(),
+  },
+  sponsorshipRequest: {
+    deleteMany: jest.fn(),
+  },
+  recentlyViewed: {
+    deleteMany: jest.fn(),
+  },
+  wishlist: {
+    deleteMany: jest.fn(),
+  },
+  $queryRaw: jest.fn().mockResolvedValue([]),
+  $transaction: jest.fn((cb: any) => {
+    if (typeof cb === "function") {
+      return cb({
+        ...mockPrisma,
+        ...mockTx,
+        wedding: {
+          ...mockPrisma.wedding,
+          delete: jest.fn(),
+        },
+      });
+    }
+    return Promise.all(cb);
+  }),
+};
+
+jest.mock("@/lib/prisma", () => ({
+  prisma: mockPrisma,
   withDbRetry: jest.fn((fn: any) => fn()),
 }));
 

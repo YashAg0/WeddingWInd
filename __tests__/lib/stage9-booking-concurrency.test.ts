@@ -38,7 +38,10 @@ import { UserRole, WeddingStatus } from '@prisma/client';
 // Extend timeout for DB operations
 jest.setTimeout(300000);
 
-describe('SECTION 5: REAL BOOKING APPLICATION-PATH CONCURRENCY', () => {
+const isLiveDb = Boolean(process.env.DATABASE_URL && !process.env.DATABASE_URL.includes('localhost:5432'));
+const describeLive = isLiveDb ? describe : describe.skip;
+
+describeLive('SECTION 5: REAL BOOKING APPLICATION-PATH CONCURRENCY', () => {
   const runId = `stage9_${Date.now()}`;
   let coupleUser: any;
   let wedding: any;
