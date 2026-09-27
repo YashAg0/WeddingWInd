@@ -27,7 +27,7 @@ export const featuredWeddings: Wedding[] = [
     "featured": true,
     "sponsored": true,
     "coverImageType": "representative",
-    "isDemo": true,
+    "isDemo": false,
     "availabilityStatus": "FULLY_BOOKED",
     "tags": [
       "5 Days",
@@ -145,7 +145,7 @@ export const featuredWeddings: Wedding[] = [
     "featured": true,
     "sponsored": true,
     "coverImageType": "representative",
-    "isDemo": true,
+    "isDemo": false,
     "availabilityStatus": "FULLY_BOOKED",
     "tags": [
       "5 Days",
@@ -263,7 +263,7 @@ export const featuredWeddings: Wedding[] = [
     "featured": true,
     "sponsored": false,
     "coverImageType": "representative",
-    "isDemo": true,
+    "isDemo": false,
     "availabilityStatus": "FULLY_BOOKED",
     "tags": [
       "4 Days",
@@ -374,7 +374,7 @@ export const featuredWeddings: Wedding[] = [
     "featured": true,
     "sponsored": false,
     "coverImageType": "representative",
-    "isDemo": true,
+    "isDemo": false,
     "availabilityStatus": "FULLY_BOOKED",
     "tags": [
       "4 Days",
@@ -485,7 +485,7 @@ export const featuredWeddings: Wedding[] = [
     "featured": true,
     "sponsored": false,
     "coverImageType": "representative",
-    "isDemo": true,
+    "isDemo": false,
     "availabilityStatus": "FULLY_BOOKED",
     "tags": [
       "4 Days",
@@ -596,7 +596,7 @@ export const featuredWeddings: Wedding[] = [
     "featured": true,
     "sponsored": false,
     "coverImageType": "representative",
-    "isDemo": true,
+    "isDemo": false,
     "availabilityStatus": "FULLY_BOOKED",
     "tags": [
       "3 Days",
@@ -700,7 +700,7 @@ export const featuredWeddings: Wedding[] = [
     "featured": true,
     "sponsored": false,
     "coverImageType": "representative",
-    "isDemo": true,
+    "isDemo": false,
     "availabilityStatus": "FULLY_BOOKED",
     "tags": [
       "3 Days",
@@ -804,7 +804,7 @@ export const featuredWeddings: Wedding[] = [
     "featured": false,
     "sponsored": false,
     "coverImageType": "representative",
-    "isDemo": true,
+    "isDemo": false,
     "availabilityStatus": "FULLY_BOOKED",
     "tags": [
       "3 Days",
@@ -908,7 +908,7 @@ export const featuredWeddings: Wedding[] = [
     "featured": false,
     "sponsored": false,
     "coverImageType": "representative",
-    "isDemo": true,
+    "isDemo": false,
     "availabilityStatus": "FULLY_BOOKED",
     "tags": [
       "3 Days",
@@ -1012,7 +1012,7 @@ export const featuredWeddings: Wedding[] = [
     "featured": false,
     "sponsored": false,
     "coverImageType": "representative",
-    "isDemo": true,
+    "isDemo": false,
     "availabilityStatus": "FULLY_BOOKED",
     "tags": [
       "3 Days",
@@ -1116,7 +1116,7 @@ export const featuredWeddings: Wedding[] = [
     "featured": false,
     "sponsored": false,
     "coverImageType": "representative",
-    "isDemo": true,
+    "isDemo": false,
     "availabilityStatus": "FULLY_BOOKED",
     "tags": [
       "3 Days",
@@ -1220,7 +1220,7 @@ export const featuredWeddings: Wedding[] = [
     "featured": true,
     "sponsored": false,
     "coverImageType": "representative",
-    "isDemo": true,
+    "isDemo": false,
     "availabilityStatus": "FULLY_BOOKED",
     "tags": [
       "2 Days",
@@ -1317,7 +1317,7 @@ export const featuredWeddings: Wedding[] = [
     "featured": false,
     "sponsored": false,
     "coverImageType": "representative",
-    "isDemo": true,
+    "isDemo": false,
     "availabilityStatus": "FULLY_BOOKED",
     "tags": [
       "2 Days",
@@ -1414,7 +1414,7 @@ export const featuredWeddings: Wedding[] = [
     "featured": false,
     "sponsored": false,
     "coverImageType": "representative",
-    "isDemo": true,
+    "isDemo": false,
     "availabilityStatus": "FULLY_BOOKED",
     "tags": [
       "2 Days",
@@ -1511,7 +1511,7 @@ export const featuredWeddings: Wedding[] = [
     "featured": false,
     "sponsored": false,
     "coverImageType": "representative",
-    "isDemo": true,
+    "isDemo": false,
     "availabilityStatus": "FULLY_BOOKED",
     "tags": [
       "2 Days",
@@ -1608,7 +1608,7 @@ export const featuredWeddings: Wedding[] = [
     "featured": false,
     "sponsored": false,
     "coverImageType": "representative",
-    "isDemo": true,
+    "isDemo": false,
     "availabilityStatus": "FULLY_BOOKED",
     "tags": [
       "2 Days",
@@ -1705,7 +1705,7 @@ export const featuredWeddings: Wedding[] = [
     "featured": false,
     "sponsored": false,
     "coverImageType": "representative",
-    "isDemo": true,
+    "isDemo": false,
     "availabilityStatus": "FULLY_BOOKED",
     "tags": [
       "2 Days",
@@ -1802,7 +1802,7 @@ export const featuredWeddings: Wedding[] = [
     "featured": false,
     "sponsored": false,
     "coverImageType": "representative",
-    "isDemo": true,
+    "isDemo": false,
     "availabilityStatus": "FULLY_BOOKED",
     "tags": [
       "1 Days",
@@ -1892,7 +1892,7 @@ export const featuredWeddings: Wedding[] = [
     "featured": false,
     "sponsored": false,
     "coverImageType": "representative",
-    "isDemo": true,
+    "isDemo": false,
     "availabilityStatus": "FULLY_BOOKED",
     "tags": [
       "1 Days",
@@ -1982,7 +1982,7 @@ export const featuredWeddings: Wedding[] = [
     "featured": false,
     "sponsored": false,
     "coverImageType": "representative",
-    "isDemo": true,
+    "isDemo": false,
     "availabilityStatus": "FULLY_BOOKED",
     "tags": [
       "1 Days",
@@ -2072,7 +2072,7 @@ export const featuredWeddings: Wedding[] = [
     "featured": false,
     "sponsored": false,
     "coverImageType": "representative",
-    "isDemo": true,
+    "isDemo": false,
     "availabilityStatus": "FULLY_BOOKED",
     "tags": [
       "1 Days",
