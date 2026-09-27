@@ -37,7 +37,7 @@ import { UserRole } from '@prisma/client';
 
 jest.setTimeout(300000);
 
-const isLiveDb = Boolean(process.env.DATABASE_URL && !process.env.DATABASE_URL.includes('localhost:5432'));
+const isLiveDb = Boolean(process.env.RUN_CONCURRENCY_TESTS === 'true' && process.env.DATABASE_URL && !process.env.DATABASE_URL.includes('localhost:5432'));
 const describeLive = isLiveDb ? describe : describe.skip;
 
 describeLive('STAGE 9 SECTIONS 6 & 7: DRAFT CREATION & HOST APPLICATION CONCURRENCY IDEMPOTENCY', () => {
@@ -61,8 +61,43 @@ describeLive('STAGE 9 SECTIONS 6 & 7: DRAFT CREATION & HOST APPLICATION CONCURRE
 
   afterAll(async () => {
     try {
+      if (createdUserIds.length > 0) {
+        const coupleProfiles = await prisma.coupleProfile.findMany({
+          where: { userId: { in: createdUserIds } },
+          select: { id: true },
+        });
+        const coupleProfileIds = coupleProfiles.map(cp => cp.id);
+
+        const weddings = await prisma.wedding.findMany({
+          where: { hostCoupleId: { in: coupleProfileIds } },
+          select: { id: true },
+        });
+        const weddingIds = weddings.map(w => w.id);
+
+        if (weddingIds.length > 0) {
+          await prisma.weddingEvent.deleteMany({ where: { weddingId: { in: weddingIds } } });
+          await prisma.weddingTradition.deleteMany({ where: { weddingId: { in: weddingIds } } });
+          await prisma.weddingGallery.deleteMany({ where: { weddingId: { in: weddingIds } } });
+          await prisma.weddingItineraryItem.deleteMany({ where: { weddingId: { in: weddingIds } } });
+          await prisma.weddingQualityBadge.deleteMany({ where: { weddingId: { in: weddingIds } } });
+          await prisma.weddingAnnouncement.deleteMany({ where: { weddingId: { in: weddingIds } } });
+          await prisma.eventContact.deleteMany({ where: { weddingId: { in: weddingIds } } });
+          await prisma.recentlyViewed.deleteMany({ where: { weddingId: { in: weddingIds } } });
+          await prisma.wishlist.deleteMany({ where: { weddingId: { in: weddingIds } } });
+          await prisma.sponsorshipRequest.deleteMany({ where: { weddingId: { in: weddingIds } } });
+          await prisma.auditLog.deleteMany({ where: { entityId: { in: weddingIds } } });
+          await prisma.wedding.deleteMany({ where: { id: { in: weddingIds } } });
+        }
+
+        await prisma.hostApplication.deleteMany({ where: { userId: { in: createdUserIds } } });
+        await prisma.coupleProfile.deleteMany({ where: { userId: { in: createdUserIds } } });
+        await prisma.user.deleteMany({ where: { id: { in: createdUserIds } } });
+      }
+    } catch (err) {
+      console.error('Error during draft idempotency cleanup:', err);
+    } finally {
       await prisma.$disconnect();
-    } catch {}
+    }
   });
 
   describe('SECTION 6: DRAFT CREATION IDEMPOTENCY — REAL FIRST-TIME CREATION PATH', () => {

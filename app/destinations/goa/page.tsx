@@ -8,7 +8,7 @@ import { WeddingCard } from "@/components/wedding/WeddingCard";
 export const metadata: Metadata = {
   title: "Goa Beach Weddings: Attend Coastal Sunset Celebrations in Goa",
   description:
-    "Attend authentic beach weddings in Goa. Experience oceanfront mandaps, sunset Sangeet parties, and Indo-Portuguese wedding traditions with verified hosts.",
+    "Attend authentic beach weddings in Goa. Experience oceanfront mandaps, sunset Sangeet parties, and Indo-Portuguese wedding traditions with welcoming host families.",
   keywords: [
     "Goa beach weddings",
     "Goa wedding experience",
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Goa Beach Weddings: Attend Coastal Sunset Celebrations in Goa | WeddingWithIndia",
     description:
-      "Attend authentic beach weddings in Goa. Experience oceanfront mandaps, sunset Sangeet parties, and Indo-Portuguese wedding traditions with verified hosts.",
+      "Attend authentic beach weddings in Goa. Experience oceanfront mandaps, sunset Sangeet parties, and Indo-Portuguese wedding traditions with welcoming host families.",
     url: "https://weddingwithindia.com/destinations/goa",
     siteName: "WeddingWithIndia",
     type: "website",

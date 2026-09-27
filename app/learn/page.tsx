@@ -185,6 +185,7 @@ export default function LearnHubPage() {
         {/* Hero Section */}
         <div className="max-w-3xl space-y-4">
           <SectionHeader
+            as="h1"
             label="Cultural Guides & Knowledge Hub"
             title="The Ultimate Guide to Experiencing Indian Weddings"
             description="Authoritative, step-by-step cultural guides designed to help international travelers understand, prepare for, and respectfully participate in authentic Indian wedding celebrations."

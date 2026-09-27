@@ -173,6 +173,7 @@ export default function DestinationsHubPage() {
         {/* Hero Section */}
         <div className="max-w-3xl space-y-4">
           <SectionHeader
+            as="h1"
             label="Iconic Cultural Regions"
             title="Explore Indian Wedding Destinations"
             description="India's wedding traditions vary profoundly by geography, culture, and architecture. Discover what makes celebrations in each iconic region uniquely magical."

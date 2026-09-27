@@ -20,7 +20,8 @@ export async function GET() {
     return NextResponse.json({ agents });
   } catch (error: any) {
     console.error("[API /admin/agents GET]", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const statusCode = error.message?.startsWith("FORBIDDEN") ? 403 : error.message?.startsWith("UNAUTHORIZED") ? 401 : 500;
+    return NextResponse.json({ error: error.message }, { status: statusCode });
   }
 }
 
@@ -103,6 +104,7 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: "Invalid action" }, { status: 400 });
   } catch (error: any) {
     console.error("[API /admin/agents PATCH]", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const statusCode = error.message?.startsWith("FORBIDDEN") ? 403 : error.message?.startsWith("UNAUTHORIZED") ? 401 : 500;
+    return NextResponse.json({ error: error.message }, { status: statusCode });
   }
 }

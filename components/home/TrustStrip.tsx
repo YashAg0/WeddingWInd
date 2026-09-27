@@ -13,19 +13,19 @@ interface TrustPillar {
 const TRUST_PILLARS: TrustPillar[] = [
   {
     icon: ShieldCheck,
-    title: "100% KYC Verified Hosts",
-    badge: "Vetted Celebrations",
+    title: "Vetted Host Celebrations",
+    badge: "Identity Verification",
     description:
-      "Every host couple undergoes multi-point government ID, background, and venue sanctity verification.",
+      "Host couples submit government identity documentation, venue records, and cultural verification before celebrations are confirmed.",
     linkHref: "/trust?tab=safety#verification",
     linkLabel: "Verification standards",
   },
   {
     icon: Lock,
-    title: "Escrow & 4-Tier Refund",
+    title: "Secure Payout Protection",
     badge: "Payment Protection",
     description:
-      "Host payouts are held secure in escrow until ceremony check-in with transparent 90%/70%/40% refund tiers.",
+      "Host payouts are released following ceremony check-in, supported by transparent 90%/70%/40% cancellation and refund tiers.",
     linkHref: "/trust?tab=terms#cancellation",
     linkLabel: "Refund terms",
   },

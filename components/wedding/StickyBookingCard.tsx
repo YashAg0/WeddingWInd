@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { X, Check, Minus, Plus } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Wedding } from "@/types";
@@ -73,12 +74,12 @@ export function StickyBookingCard({ wedding }: StickyBookingCardProps) {
           </div>
 
           {isShowcase ? (
-            <button
-              disabled
-              className="btn btn-sm px-5 py-3 bg-amber-50 text-amber-900 border border-amber-300 text-xs font-bold cursor-not-allowed rounded-2xl"
+            <Link
+              href={`/contact?subject=${encodeURIComponent(`Enquiry for ${wedding.title}`)}&experience=${encodeURIComponent(wedding.slug)}`}
+              className="btn btn-primary px-5 py-3 shadow-lg font-bold rounded-2xl text-xs flex items-center justify-center"
             >
-              Fully Booked
-            </button>
+              Enquire
+            </Link>
           ) : isSoldOut ? (
             <button
               disabled

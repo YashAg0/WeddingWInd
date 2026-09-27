@@ -84,13 +84,20 @@ async function runSmokeTests() {
     '/coordinator-agreement',
     '/copyright',
     '/trademark',
+    '/trust',
   ];
 
   for (const path of legalRoutes) {
     const res = await fetchRoute(path);
-    assert(res.status === 200, `${path.padEnd(25)} returned HTTP ${res.status}`);
-    const main = (res.text.match(/<main[^>]*>([\s\S]*?)<\/main>/) || [])[1] || '';
-    assert(!main.includes('Destination Uncharted'), `${path.padEnd(25)} <main> body renders authentic policy content`);
+    if (res.status === 307 || res.status === 308) {
+      assert(res.location && res.location.startsWith('/trust'), `${path.padEnd(25)} redirects canonically to Trust Portal (${res.location})`);
+      const dest = await fetchRoute(res.location.split('#')[0]);
+      assert(dest.status === 200, `${path.padEnd(25)} destination returns HTTP 200`);
+    } else {
+      assert(res.status === 200, `${path.padEnd(25)} returned HTTP ${res.status}`);
+      const main = (res.text.match(/<main[^>]*>([\s\S]*?)<\/main>/) || [])[1] || '';
+      assert(!main.includes('Destination Uncharted'), `${path.padEnd(25)} <main> body renders authentic policy content`);
+    }
   }
 
   // 4. Canonical Redirects for Common Aliases
@@ -99,11 +106,10 @@ async function runSmokeTests() {
     { from: '/signin', to: '/login' },
     { from: '/host', to: '/list-wedding' },
     { from: '/attend', to: '/weddings' },
-    { from: '/destinations', to: '/weddings' },
     { from: '/about-us', to: '/about' },
     { from: '/contact-us', to: '/contact' },
-    { from: '/terms-of-service', to: '/terms' },
-    { from: '/privacy-policy', to: '/privacy' },
+    { from: '/terms-of-service', to: '/trust?tab=terms' },
+    { from: '/privacy-policy', to: '/trust?tab=privacy' },
     { from: '/faq', to: '/how-it-works' },
   ];
 

@@ -271,12 +271,18 @@ export function BookingSidebar({ wedding }: BookingSidebarProps) {
         <span
           className={cn(
             "text-xs font-bold px-3 py-1 rounded-lg border",
-            isShowcase || isSoldOut
+            isShowcase
+              ? "bg-purple-50 text-purple-900 border-purple-200"
+              : isSoldOut
               ? "bg-amber-100 text-amber-900 border-amber-300"
               : "bg-white text-charcoal-900 border-warm-200"
           )}
         >
-          {isShowcase || isSoldOut ? "Fully Booked" : `${availableSlots} / ${wedding.guestsAllowed} Left`}
+          {isShowcase
+            ? "Curated Showcase"
+            : isSoldOut
+            ? "Fully Booked"
+            : `${availableSlots} / ${wedding.guestsAllowed} Left`}
         </span>
       </div>
 
@@ -284,7 +290,7 @@ export function BookingSidebar({ wedding }: BookingSidebarProps) {
       <WeddingSideSelector
         value={attendanceSide}
         onChange={setAttendanceSide}
-        disabled={isSoldOut}
+        disabled={isSoldOut && !isShowcase}
       />
 
       {/* Guests Count Select */}
@@ -297,12 +303,19 @@ export function BookingSidebar({ wedding }: BookingSidebarProps) {
         </label>
         <select
           id="booking-guests"
-          value={isSoldOut ? 0 : guestsCount}
-          disabled={isSoldOut}
+          value={isSoldOut && !isShowcase ? 0 : guestsCount}
+          disabled={isSoldOut && !isShowcase}
           onChange={(e) => setGuestsCount(Number(e.target.value))}
           className="input-luxury bg-white font-semibold cursor-pointer disabled:bg-warm-100 disabled:text-charcoal-400 disabled:cursor-not-allowed"
         >
-          {isShowcase || isSoldOut ? (
+          {isShowcase ? (
+            Array.from({ length: 10 }).map((_, i) => (
+              <option key={i + 1} value={i + 1}>
+                {i + 1} {i + 1 === 1 ? "Guest" : "Guests"} (Estimated{" "}
+                {formatPriceFromUSD(pricePerGuestUSD * (i + 1)).primary})
+              </option>
+            ))
+          ) : isSoldOut ? (
             <option value={0}>Fully Booked (0 Seats Available)</option>
           ) : (
             Array.from({ length: Math.min(10, availableSlots) }).map((_, i) => (
@@ -475,7 +488,19 @@ export function BookingSidebar({ wedding }: BookingSidebarProps) {
             {errorMessage}
           </div>
         )}
-        {isShowcase || isSoldOut ? (
+        {isShowcase ? (
+          <div className="space-y-2">
+            <Link
+              href={`/contact?subject=${encodeURIComponent(`Enquiry for ${wedding.title}`)}&experience=${encodeURIComponent(wedding.slug)}`}
+              className="btn btn-primary w-full py-4 text-base shadow-lg justify-center font-bold text-center block transition-all"
+            >
+              Enquire for Custom Dates
+            </Link>
+            <p className="text-[0.6875rem] text-charcoal-500 text-center leading-normal px-1">
+              Curated Showcase Itinerary. Contact our team to request reservations or custom dates for this celebration.
+            </p>
+          </div>
+        ) : isSoldOut ? (
           <div className="space-y-2">
             <button
               disabled
@@ -484,13 +509,13 @@ export function BookingSidebar({ wedding }: BookingSidebarProps) {
               Fully Booked
             </button>
             <p className="text-[0.6875rem] text-charcoal-500 text-center leading-normal px-1">
-              This experience is not currently accepting reservations.
+              All guest spots have been reserved for this celebration.
             </p>
             <Link
               href="/contact"
               className="w-full py-2.5 px-4 text-xs font-bold text-center text-charcoal-700 bg-warm-50 hover:bg-warm-100 border border-warm-200 rounded-xl transition-all block mt-1"
             >
-              Enquire About Custom Dates
+              Join Waitlist / Enquire About New Dates
             </Link>
           </div>
         ) : (

@@ -188,8 +188,8 @@ export default proxy;
 
 export const config = {
   matcher: [
-    // Skip Next.js internals and all static files
-    "/((?!_next|[^?]*\\.(?:html|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
+    // Skip Next.js internals and all static files (including sitemaps, robots.txt, and metadata)
+    "/((?!_next|[^?]*\\.(?:html|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest|xml|txt)).*)",
     // Always run for API and dashboard routes
     "/(api|trpc|dashboard)(.*)",
   ],

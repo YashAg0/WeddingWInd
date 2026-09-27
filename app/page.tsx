@@ -22,7 +22,7 @@ import {
 export const revalidate = 60;
 
 export const metadata: Metadata = {
-  title: "Indian Weddings for International Guests",
+  title: "Indian Weddings for International Guests | WeddingWithIndia",
   description:
     "The premier platform to attend authentic Indian weddings. Join genuine cultural celebrations in Rajasthan, Goa, Punjab, and Kerala as an honoured guest.",
   alternates: {

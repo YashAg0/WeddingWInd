@@ -38,7 +38,7 @@ import { UserRole, WeddingStatus } from '@prisma/client';
 // Extend timeout for DB operations
 jest.setTimeout(300000);
 
-const isLiveDb = Boolean(process.env.DATABASE_URL && !process.env.DATABASE_URL.includes('localhost:5432'));
+const isLiveDb = Boolean(process.env.RUN_CONCURRENCY_TESTS === 'true' && process.env.DATABASE_URL && !process.env.DATABASE_URL.includes('localhost:5432'));
 const describeLive = isLiveDb ? describe : describe.skip;
 
 describeLive('SECTION 5: REAL BOOKING APPLICATION-PATH CONCURRENCY', () => {
@@ -80,27 +80,62 @@ describeLive('SECTION 5: REAL BOOKING APPLICATION-PATH CONCURRENCY', () => {
 
   afterAll(async () => {
     try {
-      if (coupleUser) {
+      if (wedding) {
         const bookings = await prisma.booking.findMany({ where: { weddingId: wedding.id }, select: { id: true } });
-        for (const b of bookings) {
-          await prisma.payment.deleteMany({ where: { bookingId: b.id } });
-          await prisma.bookingGuest.deleteMany({ where: { bookingId: b.id } });
+        const bookingIds = bookings.map(b => b.id);
+        if (bookingIds.length > 0) {
+          await prisma.commission.deleteMany({
+            where: {
+              OR: [
+                { bookingId: { in: bookingIds } },
+                { payment: { bookingId: { in: bookingIds } } },
+              ],
+            },
+          });
+          await prisma.transaction.deleteMany({ where: { payment: { bookingId: { in: bookingIds } } } });
+          await prisma.refund.deleteMany({ where: { payment: { bookingId: { in: bookingIds } } } });
+          await prisma.payout.deleteMany({ where: { payment: { bookingId: { in: bookingIds } } } });
+          await prisma.paymentIntent.deleteMany({ where: { payment: { bookingId: { in: bookingIds } } } });
+          await prisma.payment.deleteMany({ where: { bookingId: { in: bookingIds } } });
+          await prisma.guestPass.deleteMany({ where: { bookingId: { in: bookingIds } } });
+          await prisma.cancellationRequest.deleteMany({ where: { bookingId: { in: bookingIds } } });
+          await prisma.review.deleteMany({ where: { bookingId: { in: bookingIds } } });
+          await prisma.bookingGuest.deleteMany({ where: { bookingId: { in: bookingIds } } });
+          await prisma.emergencyContact.deleteMany({ where: { bookingId: { in: bookingIds } } });
+          await prisma.safetyCase.deleteMany({ where: { bookingId: { in: bookingIds } } });
+          await prisma.travelDetail.deleteMany({ where: { bookingId: { in: bookingIds } } });
+          await prisma.travelerPreparation.deleteMany({ where: { bookingId: { in: bookingIds } } });
+          await prisma.conversation.deleteMany({ where: { bookingId: { in: bookingIds } } });
+          await prisma.booking.deleteMany({ where: { id: { in: bookingIds } } });
         }
-        await prisma.notification.deleteMany({ where: { userId: coupleUser.id } });
-        await prisma.booking.deleteMany({ where: { weddingId: wedding.id } });
+
+        await prisma.weddingEvent.deleteMany({ where: { weddingId: wedding.id } });
+        await prisma.weddingTradition.deleteMany({ where: { weddingId: wedding.id } });
+        await prisma.weddingGallery.deleteMany({ where: { weddingId: wedding.id } });
+        await prisma.weddingItineraryItem.deleteMany({ where: { weddingId: wedding.id } });
+        await prisma.weddingQualityBadge.deleteMany({ where: { weddingId: wedding.id } });
+        await prisma.weddingAnnouncement.deleteMany({ where: { weddingId: wedding.id } });
+        await prisma.eventContact.deleteMany({ where: { weddingId: wedding.id } });
+        await prisma.recentlyViewed.deleteMany({ where: { weddingId: wedding.id } });
+        await prisma.wishlist.deleteMany({ where: { weddingId: wedding.id } });
+        await prisma.sponsorshipRequest.deleteMany({ where: { weddingId: wedding.id } });
+        await prisma.auditLog.deleteMany({ where: { entityId: wedding.id } });
         await prisma.wedding.delete({ where: { id: wedding.id } });
-        await prisma.coupleProfile.deleteMany({ where: { userId: coupleUser.id } });
-        await prisma.user.delete({ where: { id: coupleUser.id } });
       }
 
       const usersToDelete = await prisma.user.findMany({
         where: { email: { contains: runId } },
         select: { id: true },
       });
-      for (const u of usersToDelete) {
-        await prisma.travelerProfile.deleteMany({ where: { userId: u.id } });
-        await prisma.user.delete({ where: { id: u.id } });
+      const userIdsToDelete = usersToDelete.map(u => u.id);
+      if (userIdsToDelete.length > 0) {
+        await prisma.notification.deleteMany({ where: { userId: { in: userIdsToDelete } } });
+        await prisma.travelerProfile.deleteMany({ where: { userId: { in: userIdsToDelete } } });
+        await prisma.coupleProfile.deleteMany({ where: { userId: { in: userIdsToDelete } } });
+        await prisma.user.deleteMany({ where: { id: { in: userIdsToDelete } } });
       }
+    } catch (err) {
+      console.error('Error during booking concurrency cleanup:', err);
     } finally {
       await prisma.$disconnect();
     }

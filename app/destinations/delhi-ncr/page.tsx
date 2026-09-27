@@ -8,7 +8,7 @@ import { WeddingCard } from "@/components/wedding/WeddingCard";
 export const metadata: Metadata = {
   title: "Delhi NCR Indian Wedding Experiences: Grand Farmhouse Palaces & Regal Banquets",
   description:
-    "Attend opulent North Indian weddings in New Delhi and Gurugram. Experience multi-thousand guest celebrations, live gourmet food bazaars, and high-fashion couture with verified hosts.",
+    "Attend opulent North Indian weddings in New Delhi and Gurugram. Experience multi-thousand guest celebrations, live gourmet food bazaars, and high-fashion couture with welcoming host families.",
   keywords: [
     "Delhi wedding experience",
     "attend wedding in Delhi",
@@ -154,7 +154,7 @@ export default async function DelhiNCRDestinationPage() {
                 Delhi NCR Wedding Celebrations
               </h2>
               <p className="text-xs sm:text-sm text-charcoal-500">
-                Verified experiences open to international travelers in Delhi NCR.
+                Authentic cultural celebrations open to international travelers in Delhi NCR.
               </p>
             </div>
             <Link href="/weddings" className="text-xs font-bold text-[var(--color-brand-primary)] hover:underline inline-flex items-center gap-1">

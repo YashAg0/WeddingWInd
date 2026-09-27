@@ -21,37 +21,44 @@ import { LEGAL_CONFIG } from "@/lib/constants/legal";
 =============================================================== */
 
 const footerLinks = {
-  company: [
-    { label: "About Us", href: "/about" },
-    { label: "Founder: Tanishq Gupta", href: "/founder/tanishq-gupta" },
-    { label: "How It Works", href: "/how-it-works" },
-    { label: "For Travelers", href: "/for-travelers" },
-    { label: "Contact Support", href: "/contact" },
-    { label: "Accessibility", href: "/accessibility" },
+  destinations: [
+    { label: "Rajasthan Weddings", href: "/destinations/rajasthan" },
+    { label: "Goa Beach Weddings", href: "/destinations/goa" },
+    { label: "Punjab Sikh Weddings", href: "/destinations/punjab" },
+    { label: "Kerala Celebrations", href: "/destinations/kerala" },
+    { label: "Delhi NCR Celebrations", href: "/destinations/delhi-ncr" },
+    { label: "Mumbai & Maharashtra", href: "/destinations/mumbai" },
+    { label: "All Destinations", href: "/destinations" },
+  ],
+
+  guides: [
+    { label: "How to Attend Guide", href: "/learn/how-to-attend-an-indian-wedding" },
+    { label: "Guest Etiquette & Rules", href: "/learn/indian-wedding-etiquette-for-foreigners" },
+    { label: "What to Wear Guide", href: "/learn/what-to-wear-to-an-indian-wedding" },
+    { label: "Rituals & Ceremonies", href: "/learn/indian-wedding-rituals-explained" },
+    { label: "Food & Feasting Guide", href: "/learn/indian-wedding-food-guide" },
+    { label: "Cost & Pricing Breakdown", href: "/learn/indian-wedding-experience-cost" },
+    { label: "Can Foreigners Attend?", href: "/learn/can-foreigners-attend-indian-weddings" },
+    { label: "All Cultural Guides", href: "/learn" },
   ],
 
   explore: [
-    { label: "Browse Weddings", href: "/weddings" },
-    { label: "Become a Host Family", href: "/list-wedding" },
-    { label: "Become a Partner", href: "/for-agents" },
-    { label: "Become a Coordinator", href: "/coordinators" },
+    { label: "Browse All Weddings", href: "/weddings" },
+    { label: "List Your Celebration", href: "/list-wedding" },
+    { label: "How It Works", href: "/how-it-works" },
+    { label: "For Global Guests", href: "/for-travelers" },
+    { label: "For Host Couples", href: "/for-couples" },
+    { label: "Travel Agency Partners", href: "/for-agents" },
+    { label: "Local Coordinators", href: "/coordinators" },
+  ],
+
+  trustLegal: [
     { label: "Trust & Safety Portal", href: "/trust" },
-  ],
-
-  trustSafety: [
-    { label: "Trust & Safety Hub", href: "/trust?tab=safety" },
-    { label: "Host KYC Standards", href: "/trust?tab=safety#verification" },
-    { label: "Guest Cultural Guide", href: "/trust?tab=safety#guest-guide" },
-    { label: "Emergency Helplines", href: "/trust?tab=safety#emergency" },
-    { label: "Grievance Officer", href: "/trust?tab=safety#grievance" },
-    { label: "Travel & Visa Info", href: "/travel-visa" },
-  ],
-
-  legal: [
-    { label: "Terms of Service", href: "/trust?tab=terms" },
-    { label: "Privacy & Data Protection", href: "/trust?tab=privacy" },
-    { label: "Cancellation & Refund", href: "/trust?tab=terms#cancellation" },
-    { label: "Booking & Payment Terms", href: "/trust?tab=terms#booking-terms" },
+    { label: "About WeddingWithIndia", href: "/about" },
+    { label: "Founder: Tanishq Gupta", href: "/founder/tanishq-gupta" },
+    { label: "Travel & Visa Guide", href: "/travel-visa" },
+    { label: "Contact Support", href: "/contact" },
+    { label: "Accessibility Statement", href: "/accessibility" },
     { label: "Cookie Policy", href: "/cookies" },
   ],
 };
@@ -283,17 +290,17 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* COMPANY */}
-          <FooterColumn title="Company" links={footerLinks.company} />
+          {/* DESTINATIONS */}
+          <FooterColumn title="Destinations" links={footerLinks.destinations} />
+
+          {/* CULTURAL GUIDES */}
+          <FooterColumn title="Cultural Guides" links={footerLinks.guides} />
 
           {/* EXPLORE */}
           <FooterColumn title="Explore" links={footerLinks.explore} />
 
-          {/* TRUST & SAFETY */}
-          <FooterColumn title="Trust & Safety" links={footerLinks.trustSafety} />
-
-          {/* LEGAL */}
-          <FooterColumn title="Legal" links={footerLinks.legal} />
+          {/* TRUST & LEGAL */}
+          <FooterColumn title="Trust & Legal" links={footerLinks.trustLegal} />
         </div>
       </div>
 

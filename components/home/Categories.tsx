@@ -73,6 +73,7 @@ const EXPERIENCE_HIGHLIGHTS = [
     ),
     title: "Traditions & Rituals",
     short: "Discover ceremonies, blessings, vows & customs",
+    href: "/learn/indian-wedding-rituals-explained",
   },
   {
     icon: (
@@ -84,6 +85,7 @@ const EXPERIENCE_HIGHLIGHTS = [
     ),
     title: "Regional Food",
     short: "Taste local dishes, sweets & family favourites",
+    href: "/learn/indian-wedding-food-guide",
   },
   {
     icon: (
@@ -95,6 +97,7 @@ const EXPERIENCE_HIGHLIGHTS = [
     ),
     title: "Music & Dance",
     short: "From Dhol beats to Sangeet celebrations",
+    href: "/learn/indian-wedding-tourism",
   },
   {
     icon: (
@@ -106,6 +109,7 @@ const EXPERIENCE_HIGHLIGHTS = [
     ),
     title: "Attire Guidance",
     short: "Simple tips on dress, colours & etiquette",
+    href: "/learn/what-to-wear-to-an-indian-wedding",
   },
   {
     icon: (
@@ -117,6 +121,7 @@ const EXPERIENCE_HIGHLIGHTS = [
     ),
     title: "Meet the Family",
     short: "Share genuine moments with your host family",
+    href: "/learn/how-to-attend-an-indian-wedding",
   },
   {
     icon: (
@@ -128,6 +133,7 @@ const EXPERIENCE_HIGHLIGHTS = [
     ),
     title: "Guest Support",
     short: "Helpful guidance before and during your experience",
+    href: "/learn/indian-wedding-etiquette-for-foreigners",
   },
 ];
 
@@ -257,26 +263,27 @@ export function Categories({ categories: _categories }: CategoriesProps) {
             </div>
 
             <Link
-              href="/weddings"
+              href="/learn"
               className="btn btn-primary text-xs sm:text-sm font-bold py-2.5 px-5 rounded-xl inline-flex items-center gap-1.5 shadow-xs flex-shrink-0 self-start sm:self-end"
             >
-              <span>Explore Weddings</span>
+              <span>Explore Cultural Guides</span>
               <ArrowRight size={14} aria-hidden="true" />
             </Link>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             {EXPERIENCE_HIGHLIGHTS.map((highlight, i) => (
-              <div
+              <Link
                 key={i}
-                className="flex items-start gap-3 bg-warm-50/70 border border-warm-200/60 rounded-xl p-4 hover:border-warm-300 hover:bg-white transition-all duration-200"
+                href={highlight.href}
+                className="group flex items-start gap-3 bg-warm-50/70 border border-warm-200/60 rounded-xl p-4 hover:border-warm-300 hover:bg-white hover:shadow-xs transition-all duration-200"
               >
-                <div className="p-2 rounded-lg bg-white border border-warm-200/60 flex-shrink-0 shadow-xs">
+                <div className="p-2 rounded-lg bg-white border border-warm-200/60 flex-shrink-0 shadow-xs group-hover:scale-105 transition-transform">
                   {highlight.icon}
                 </div>
 
                 <div className="min-w-0">
-                  <h4 className="font-display font-bold text-sm text-charcoal-900 leading-snug">
+                  <h4 className="font-display font-bold text-sm text-charcoal-900 group-hover:text-[var(--color-brand-primary)] transition-colors leading-snug">
                     {highlight.title}
                   </h4>
 
@@ -284,7 +291,7 @@ export function Categories({ categories: _categories }: CategoriesProps) {
                     {highlight.short}
                   </p>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
 

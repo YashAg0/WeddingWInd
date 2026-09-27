@@ -14,6 +14,7 @@
     "type-check": "tsc --noEmit",
     "test": "jest",
     "test:smoke": "node scripts/smoke-test.js",
+    "test:seo": "node scripts/forensic-audit-validator.js",
     "e2e": "playwright test",
     "bootstrap": "node scripts/bootstrap.js",
     "setup": "node scripts/bootstrap.js",

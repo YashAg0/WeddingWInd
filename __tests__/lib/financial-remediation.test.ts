@@ -246,4 +246,18 @@ describe("WeddingWithIndia — Final Financial Remediation Test Suite", () => {
       expect(agentCalc.formattedTotalINR).toBe("₹50,220");
     });
   });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // 5. Host Application Customer USD Pricing Invariant (SEC-FIN-001)
+  // ─────────────────────────────────────────────────────────────────────────
+  describe("5. Host Application Customer USD Pricing Invariants", () => {
+    it("Host application draft wedding pricePerGuest must strictly be customer USD (never hardcoded INR like 16000)", async () => {
+      const { getCustomerPriceUSD } = await import("@/lib/services/pricing-engine");
+      const defaultStandardPriceUSD = getCustomerPriceUSD("STANDARD", 3);
+
+      expect(defaultStandardPriceUSD).toBe(249);
+      expect(defaultStandardPriceUSD).toBeLessThan(2000); // Standard USD pricing is well under 2000
+      expect(defaultStandardPriceUSD).not.toBe(16000); // Guard against ₹16,000 INR literal in USD column
+    });
+  });
 });

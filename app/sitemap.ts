@@ -315,7 +315,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   let weddingRoutes: MetadataRoute.Sitemap = [];
   try {
     const { prisma, withDbRetry } = await import("@/lib/prisma");
-    const { isWeddingIndexable } = await import("@/lib/seo/indexability");
+    const { isWeddingIndexable, isSyntheticTestSlug } = await import("@/lib/seo/indexability");
     const weddings = await withDbRetry(() =>
       prisma.wedding.findMany({
         where: {
@@ -323,7 +323,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           isDemo: false,
           suspended: false,
           deletedAt: null,
-          NOT: { slug: { startsWith: "wedding-test_" } },
+          NOT: [
+            { slug: { startsWith: "wedding-test_" } },
+            { slug: { startsWith: "e2e-" } },
+            { slug: { contains: "stage9_" } },
+            { slug: { startsWith: "test-" } },
+          ],
         },
         select: {
           slug: true,
@@ -337,7 +342,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       })
     );
 
-    const eligibleWeddings = weddings.filter(isWeddingIndexable);
+    const eligibleWeddings = weddings.filter(
+      (wedding) => isWeddingIndexable(wedding) && !isSyntheticTestSlug(wedding.slug)
+    );
 
     if (eligibleWeddings && eligibleWeddings.length > 0) {
       weddingRoutes = eligibleWeddings.map((wedding) => ({

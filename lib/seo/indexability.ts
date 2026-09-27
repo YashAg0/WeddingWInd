@@ -14,7 +14,16 @@ export const APP_CANONICAL_ORIGIN = "https://weddingwithindia.com";
 export function isSyntheticTestSlug(slug?: string | null): boolean {
   if (!slug) return false;
   const s = slug.toLowerCase().trim();
-  return s.startsWith("wedding-test_") || s.includes("test_pp_");
+  return (
+    s.startsWith("wedding-test_") ||
+    s.includes("test_pp_") ||
+    s.startsWith("e2e-") ||
+    s.includes("stage9_") ||
+    s.startsWith("test-") ||
+    s.includes("_test_") ||
+    /_\d{10,}$/.test(s) ||
+    /-\d{10,}$/.test(s)
+  );
 }
 
 export interface IndexableWeddingRecord {

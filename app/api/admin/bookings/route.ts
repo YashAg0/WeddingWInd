@@ -22,7 +22,8 @@ export async function GET() {
     return NextResponse.json({ bookings });
   } catch (error: any) {
     console.error("[API /admin/bookings GET]", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const statusCode = error.message?.startsWith("FORBIDDEN") ? 403 : error.message?.startsWith("UNAUTHORIZED") ? 401 : 500;
+    return NextResponse.json({ error: error.message }, { status: statusCode });
   }
 }
 
@@ -91,6 +92,7 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ booking: updated });
   } catch (error: any) {
     console.error("[API /admin/bookings PATCH]", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const statusCode = error.message?.startsWith("FORBIDDEN") ? 403 : error.message?.startsWith("UNAUTHORIZED") ? 401 : 500;
+    return NextResponse.json({ error: error.message }, { status: statusCode });
   }
 }

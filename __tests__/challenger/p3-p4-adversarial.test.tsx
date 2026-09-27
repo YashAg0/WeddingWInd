@@ -157,8 +157,8 @@ describe("Phase 3 & Phase 4 Adversarial Stress Test Suite", () => {
       expect(html).toContain("lg:grid-cols-4");
 
       // Verify all 4 pillar titles
-      expect(html).toContain("100% KYC Verified Hosts");
-      expect(html).toContain("Escrow &amp; 4-Tier Refund");
+      expect(html).toContain("Vetted Host Celebrations");
+      expect(html).toContain("Secure Payout Protection");
       expect(html).toContain("Dedicated Cultural Concierge");
       expect(html).toContain("All-Inclusive Guest Pass");
 

@@ -43,8 +43,8 @@ export function WeddingCard({ wedding, className, hidePrice = false }: WeddingCa
   const availableSlots = isUnlimitedCapacity
     ? 20
     : Math.max(0, guestsAllowed - (wedding.guestsBooked || 0));
+  const isShowcase = wedding.isDemo === true;
   const isSoldOut =
-    wedding.isDemo === true ||
     wedding.availabilityStatus === "FULLY_BOOKED" ||
     (!isUnlimitedCapacity && availableSlots <= 0);
 
@@ -211,7 +211,11 @@ export function WeddingCard({ wedding, className, hidePrice = false }: WeddingCa
               </span>
             </div>
             <div className="flex items-center gap-1.5 flex-shrink-0 pointer-events-none">
-              {isSoldOut && (
+              {isShowcase ? (
+                <span className="inline-flex items-center bg-black/75 backdrop-blur-md text-amber-200 text-[0.6125rem] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border border-amber-400/30 whitespace-nowrap">
+                  Curated Showcase
+                </span>
+              ) : isSoldOut && (
                 <span className="inline-flex items-center bg-black/75 backdrop-blur-md text-amber-200 text-[0.6125rem] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border border-amber-400/30 whitespace-nowrap">
                   Fully Booked
                 </span>

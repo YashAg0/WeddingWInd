@@ -2048,9 +2048,15 @@ export default function ListWeddingPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-[100dvh] bg-warm-50 pt-20 sm:pt-28 pb-20 flex items-center justify-center">
-          <div className="text-center space-y-3">
-            <div className="w-8 h-8 rounded-full border-4 border-maroon-100 border-t-maroon-800 animate-spin mx-auto" />
+        <div className="min-h-[100dvh] bg-warm-50 pt-20 sm:pt-28 pb-20 flex flex-col items-center justify-center">
+          <div className="text-center space-y-4 max-w-2xl mx-auto px-4">
+            <h1 className="font-display font-bold text-3xl sm:text-5xl text-charcoal-900 leading-tight">
+              List Your Celebration on <span className="text-gradient-brand">WeddingWithIndia</span>
+            </h1>
+            <p className="text-charcoal-600 text-xs sm:text-sm leading-relaxed max-w-xl mx-auto">
+              Tell us about your celebration. See your potential host earnings as you build it.
+            </p>
+            <div className="w-8 h-8 rounded-full border-4 border-maroon-100 border-t-maroon-800 animate-spin mx-auto mt-4" />
             <p className="text-xs font-bold text-charcoal-500 uppercase tracking-widest">
               Loading celebration intake form...
             </p>

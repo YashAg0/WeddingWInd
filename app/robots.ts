@@ -27,7 +27,6 @@ export default function robots(): MetadataRoute.Robots {
     "/api/",
     "/login",
     "/signup",
-    "/_next/",
   ];
 
   const searchAndAiBots = [
@@ -56,6 +55,6 @@ export default function robots(): MetadataRoute.Robots {
       })),
     ],
     sitemap: "https://weddingwithindia.com/sitemap.xml",
-    host: "https://weddingwithindia.com",
+    host: "weddingwithindia.com",
   };
 }

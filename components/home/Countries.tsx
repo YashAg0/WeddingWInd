@@ -11,6 +11,7 @@ const FEATURED_DESTINATIONS = [
   {
     code: "RJ",
     name: "Rajasthan",
+    slug: "rajasthan",
     weddingCount: 5,
     imageUrl: "https://images.unsplash.com/photo-1603262110263-fb0112e7cc33?q=80&w=1171&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
     description: "Palaces, grand havelis, and regal desert celebrations in Jodhpur, Jaipur & Udaipur.",
@@ -18,6 +19,7 @@ const FEATURED_DESTINATIONS = [
   {
     code: "GA",
     name: "Goa",
+    slug: "goa",
     weddingCount: 3,
     imageUrl: "https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?w=800&q=80",
     description: "Oceanfront sunset mandaps, coastal music, and tropical beach celebrations.",
@@ -25,23 +27,25 @@ const FEATURED_DESTINATIONS = [
   {
     code: "KL",
     name: "Kerala",
+    slug: "kerala",
     weddingCount: 3,
     imageUrl: "https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?w=800&q=80",
     description: "Backwater houseboats, palm-shaded rituals, and traditional banana leaf Sadya feasts.",
   },
   {
-    code: "HP",
-    name: "Himachal Pradesh",
-    weddingCount: 2,
-    imageUrl: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80",
-    description: "Pine forest mountain ceremonies, acoustic folk songs, and serene Himalayan vistas.",
+    code: "PB",
+    name: "Punjab",
+    slug: "punjab",
+    weddingCount: 3,
+    imageUrl: "https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=800&q=80",
+    description: "High-energy Bhangra beats, Anand Karaj Gurdwara ceremonies & generous feasts.",
   },
 ];
 
 function DestinationCard({ dest }: { dest: typeof FEATURED_DESTINATIONS[0] }) {
   return (
     <Link
-      href={`/weddings?destinations=${encodeURIComponent(dest.name.split(" ")[0])}`}
+      href={`/destinations/${dest.slug}`}
       className="group relative flex flex-col justify-end overflow-hidden rounded-2xl bg-warm-950 aspect-[4/3] sm:aspect-[3/4] lg:aspect-[4/5] p-5 sm:p-6 shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
       role="listitem"
       aria-label={`Weddings in ${dest.name} — ${dest.weddingCount} celebrations`}
@@ -114,7 +118,7 @@ export function Countries({ countries: _countries }: CountriesProps) {
           </div>
 
           <Link
-            href="/weddings"
+            href="/destinations"
             className="inline-flex items-center gap-1.5 text-sm sm:text-base font-bold text-[var(--color-brand-primary)] hover:text-maroon-700 transition-colors group flex-shrink-0 self-start md:self-end"
             aria-label="View all destination regions"
           >

@@ -8,7 +8,7 @@ import { WeddingCard } from "@/components/wedding/WeddingCard";
 export const metadata: Metadata = {
   title: "Punjab Indian Wedding Experiences: High-Energy Bhangra & Anand Karaj Celebrations",
   description:
-    "Attend authentic Punjabi weddings in Amritsar and Chandigarh. Experience live Dhol processions, Anand Karaj ceremonies, vibrant Sangeet dances, and tandoori feasts with verified hosts.",
+    "Attend authentic Punjabi weddings in Amritsar and Chandigarh. Experience live Dhol processions, Anand Karaj ceremonies, vibrant Sangeet dances, and tandoori feasts with welcoming host families.",
   keywords: [
     "Punjab wedding experience",
     "attend Punjabi wedding in India",
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Punjab Indian Wedding Experiences | WeddingWithIndia",
     description:
-      "Experience high-energy Punjabi weddings in Amritsar and Chandigarh with verified host families.",
+      "Experience high-energy Punjabi weddings in Amritsar and Chandigarh with welcoming host families.",
     url: "https://weddingwithindia.com/destinations/punjab",
     siteName: "WeddingWithIndia",
     type: "website",
@@ -190,7 +190,7 @@ export default async function PunjabDestinationPage() {
                 Punjab Wedding Celebrations
               </h2>
               <p className="text-xs sm:text-sm text-charcoal-500">
-                Verified experiences open to international travelers in Punjab.
+                Authentic cultural celebrations open to international travelers in Punjab.
               </p>
             </div>
             <Link href="/weddings" className="text-xs font-bold text-[var(--color-brand-primary)] hover:underline inline-flex items-center gap-1">

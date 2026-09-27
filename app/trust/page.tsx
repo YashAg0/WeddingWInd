@@ -4,7 +4,7 @@ import { TrustPortalClient } from "@/components/trust/TrustPortalClient";
 import { ShieldCheck } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Trust, Legal & Safety Portal | WeddingWithIndia",
+  title: "Trust, Legal & Safety Portal",
   description:
     "Comprehensive trust guarantees, terms of service, privacy compliance, DPDP & GDPR rights, guest safety protocols, and statutory grievance redressal.",
   alternates: {

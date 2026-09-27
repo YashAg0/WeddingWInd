@@ -174,7 +174,7 @@ export default async function WeddingsPage({ searchParams }: PageProps) {
     if (wedding.pricePerGuest > maxBudget) return false;
 
     // G. Availability
-    const isSoldOut = wedding.isDemo === true || wedding.availabilityStatus === "FULLY_BOOKED" || (wedding.guestsAllowed > 0 && (wedding.guestsAllowed - (wedding.guestsBooked || 0)) <= 0);
+    const isSoldOut = wedding.availabilityStatus === "FULLY_BOOKED" || (wedding.guestsAllowed > 0 && (wedding.guestsAllowed - (wedding.guestsBooked || 0)) <= 0);
     if (availability === "available" && isSoldOut) return false;
     if (availability === "fully_booked" && !isSoldOut) return false;
 

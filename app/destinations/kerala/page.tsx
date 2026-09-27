@@ -8,7 +8,7 @@ import { WeddingCard } from "@/components/wedding/WeddingCard";
 export const metadata: Metadata = {
   title: "Kerala Indian Wedding Experiences: Backwaters & Traditional Sadya Feasts",
   description:
-    "Attend authentic South Indian weddings in Kerala. Experience tranquil backwater ceremonies, traditional gold-bordered Kasavu attire, and 24-dish vegetarian Sadya feasts with verified hosts.",
+    "Attend authentic South Indian weddings in Kerala. Experience tranquil backwater ceremonies, traditional gold-bordered Kasavu attire, and 24-dish vegetarian Sadya feasts with welcoming host families.",
   keywords: [
     "Kerala wedding experience",
     "attend South Indian wedding in Kerala",
@@ -190,7 +190,7 @@ export default async function KeralaDestinationPage() {
                 Kerala Wedding Celebrations
               </h2>
               <p className="text-xs sm:text-sm text-charcoal-500">
-                Verified experiences open to international travelers in Kerala.
+                Authentic cultural celebrations open to international travelers in Kerala.
               </p>
             </div>
             <Link href="/weddings" className="text-xs font-bold text-[var(--color-brand-primary)] hover:underline inline-flex items-center gap-1">

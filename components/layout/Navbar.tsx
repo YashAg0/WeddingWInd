@@ -32,8 +32,9 @@ const navItems: NavItem[] = [
       { label: "Traditional Ceremonies", href: "/weddings?category=traditional", description: "Generations of timeless rituals" },
     ],
   },
-  { label: "How It Works?", href: "/#how-it-works" },
-  { label: "Destinations", href: "/#countries" },
+  { label: "Destinations", href: "/destinations" },
+  { label: "Cultural Guides", href: "/learn" },
+  { label: "How It Works", href: "/how-it-works" },
   { label: "List Your Wedding", href: "/list-wedding" },
 ];
 

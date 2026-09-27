@@ -37,6 +37,8 @@ describe("SEO Indexability & Canonical Policy (Sprint 1)", () => {
       expect(isSyntheticTestSlug("wedding-test_pp_1787346172967")).toBe(true);
       expect(isSyntheticTestSlug("wedding-test_concurrency_123")).toBe(true);
       expect(isSyntheticTestSlug("test_pp_slug")).toBe(true);
+      expect(isSyntheticTestSlug("e2e-jaipur-palace-1788526180820")).toBe(true);
+      expect(isSyntheticTestSlug("capacity-1-wedding-stage9_1789357018852")).toBe(true);
     });
 
     it("returns false for legitimate production wedding slugs", () => {

@@ -8,7 +8,7 @@ import { WeddingCard } from "@/components/wedding/WeddingCard";
 export const metadata: Metadata = {
   title: "Mumbai & Maharashtra Indian Wedding Experiences: Coastal Glamour & Heritage Lagna",
   description:
-    "Attend authentic Maharashtrian and luxury coastal weddings in Mumbai and Pune. Experience traditional Lagna rituals, Bollywood-inspired Sangeet nights, and coastal feasts with verified hosts.",
+    "Attend authentic Maharashtrian and luxury coastal weddings in Mumbai and Pune. Experience traditional Lagna rituals, Bollywood-inspired Sangeet nights, and coastal feasts with welcoming host families.",
   keywords: [
     "Mumbai wedding experience",
     "attend wedding in Mumbai",
@@ -153,7 +153,7 @@ export default async function MumbaiDestinationPage() {
                 Mumbai &amp; Maharashtra Wedding Celebrations
               </h2>
               <p className="text-xs sm:text-sm text-charcoal-500">
-                Verified experiences open to international travelers in Maharashtra.
+                Authentic cultural celebrations open to international travelers in Maharashtra.
               </p>
             </div>
             <Link href="/weddings" className="text-xs font-bold text-[var(--color-brand-primary)] hover:underline inline-flex items-center gap-1">

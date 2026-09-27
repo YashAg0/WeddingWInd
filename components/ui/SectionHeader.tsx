@@ -10,6 +10,7 @@ interface SectionHeaderProps {
   className?: string;
   titleClassName?: string;
   theme?: "light" | "dark";
+  as?: "h1" | "h2" | "h3";
 }
 
 export function SectionHeader({
@@ -22,8 +23,10 @@ export function SectionHeader({
   className,
   titleClassName,
   theme = "light",
+  as = "h2",
 }: SectionHeaderProps) {
   const isDark = theme === "dark";
+  const HeadingTag = as;
 
   const renderTitle = () => {
     if (!highlightedWord) return <>{title}</>;
@@ -74,7 +77,7 @@ export function SectionHeader({
         </div>
       )}
 
-      <h2
+      <HeadingTag
         id={id}
         className={cn(
           "font-display font-bold leading-[1.1] tracking-tight mb-5",
@@ -84,7 +87,7 @@ export function SectionHeader({
         )}
       >
         {renderTitle()}
-      </h2>
+      </HeadingTag>
 
       {description && (
         <p

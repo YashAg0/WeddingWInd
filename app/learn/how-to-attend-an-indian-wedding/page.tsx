@@ -137,7 +137,7 @@ export default function HowToAttendPage() {
         item: "https://weddingwithindia.com",
       },
       {
-        "@type": "Learn",
+        "@type": "ListItem",
         position: 2,
         name: "Learn",
         item: "https://weddingwithindia.com/learn",

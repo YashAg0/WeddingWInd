@@ -7,6 +7,7 @@ import {
   saveHostApplicationDraftAction,
   submitHostApplicationAction,
 } from "@/lib/actions/host-application";
+import { getCustomerPriceUSD } from "@/lib/services/pricing-engine";
 
 /**
  * GET /api/host-application
@@ -249,7 +250,9 @@ export async function POST(req: NextRequest) {
           guestRules: cultDefaults.guestRules,
           etiquetteNotes: cultDefaults.etiquetteNotes,
           date: new Date(resolvedDate),
-          pricePerGuest: 16000,
+          tier: "STANDARD",
+          durationDays: 3,
+          pricePerGuest: getCustomerPriceUSD("STANDARD", 3),
           capacity: expectedInternationalGuests || intlGuestCapacity || 10,
           mainImageUrl: photoUrl || "https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=800&q=80",
           status: "DRAFT",

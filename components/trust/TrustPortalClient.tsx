@@ -127,7 +127,7 @@ export function TrustPortalClient() {
                 </h2>
                 <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 w-fit">
                   <ShieldCheck size={13} />
-                  Escrow Protected
+                  Payment Protection
                 </span>
               </div>
               <p className="text-xs sm:text-sm text-charcoal-600">

@@ -64,12 +64,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const isIndexable = isWeddingIndexable(wedding as any);
   if (!isIndexable) {
     return {
-      title: `${wedding.title} | WeddingWithIndia`,
+      title: wedding.title,
       robots: { index: false, follow: false },
     };
   }
 
-  const pageTitle = `${wedding.title} — Authentic Indian Wedding Experience in ${wedding.location}`;
+  const pageTitle = `${wedding.title} — Authentic Indian Wedding in ${wedding.location}`;
   const pageDescription = `Join ${wedding.title} in ${wedding.location}. Authentic ${wedding.category} Indian wedding celebration. Explore ceremonial schedule, traditional dining, dress expectations, and guest invitation details.`;
   const canonicalUrl = `https://weddingwithindia.com/weddings/${resolvedParams.slug}`;
   const weddingImg = wedding.imageUrl || wedding.coupleImage;
@@ -79,7 +79,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     description: pageDescription,
     alternates: { canonical: canonicalUrl },
     openGraph: {
-      title: `${pageTitle} | WeddingWithIndia`,
+      title: pageTitle,
       description: pageDescription,
       url: canonicalUrl,
       siteName: "WeddingWithIndia",
@@ -88,7 +88,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     },
     twitter: {
       card: "summary_large_image",
-      title: `${pageTitle} | WeddingWithIndia`,
+      title: pageTitle,
       description: pageDescription,
       images: weddingImg ? [weddingImg] : [],
     },
@@ -124,30 +124,54 @@ export default async function WeddingDetailPage({ params }: PageProps) {
   const userIsAdmin = await checkIsAdmin().catch(() => false);
   const userId = null;
 
+  const eventStartDate = (() => {
+    if (wedding.date) {
+      const d = new Date(wedding.date);
+      if (!isNaN(d.getTime())) return d.toISOString();
+    }
+    return new Date("2026-11-15T10:00:00.000Z").toISOString();
+  })();
+
+  const eventEndDate = (() => {
+    if (wedding.date) {
+      const d = new Date(wedding.date);
+      if (!isNaN(d.getTime())) {
+        const duration = typeof wedding.durationDays === "number" ? wedding.durationDays : 3;
+        d.setDate(d.getDate() + Math.max(1, duration));
+        return d.toISOString();
+      }
+    }
+    return new Date("2026-11-18T22:00:00.000Z").toISOString();
+  })();
+
   const eventJsonLd = {
     "@context": "https://schema.org",
     "@type": "Event",
     name: wedding.title,
     description: wedding.story || `Authentic ${wedding.category} Indian wedding celebration in ${wedding.location}.`,
-    startDate: wedding.date ? new Date(wedding.date).toISOString() : undefined,
+    startDate: eventStartDate,
+    endDate: eventEndDate,
     eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
     eventStatus: "https://schema.org/EventScheduled",
     location: {
       "@type": "Place",
-      name: wedding.location,
+      name: wedding.location || "Heritage Celebration Venue",
       address: {
         "@type": "PostalAddress",
-        addressLocality: wedding.city,
+        streetAddress: wedding.location || "Heritage Celebration Venue",
+        addressLocality: wedding.city || "Jaipur",
+        addressRegion: wedding.state || "Rajasthan",
         addressCountry: "IN",
       },
     },
-    image: wedding.coupleImage || wedding.imageUrl ? [wedding.coupleImage || wedding.imageUrl] : [],
+    image: wedding.coupleImage || wedding.imageUrl ? [wedding.coupleImage || wedding.imageUrl] : ["https://weddingwithindia.com/og-image.jpg"],
     offers: {
       "@type": "Offer",
-      price: wedding.pricePerGuest,
+      price: wedding.pricePerGuest || 1199,
       priceCurrency: wedding.currency || "USD",
       availability: (wedding.guestsAllowed - wedding.guestsBooked) > 0 ? "https://schema.org/InStock" : "https://schema.org/SoldOut",
       url: `https://weddingwithindia.com/weddings/${wedding.slug}`,
+      validFrom: new Date("2026-01-01T00:00:00.000Z").toISOString(),
     },
     organizer: {
       "@type": "Organization",
