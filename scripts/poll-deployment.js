@@ -3,8 +3,7 @@
  * the expected target SHA or until timeout.
  */
 
-const TARGET_SHA = process.argv[2] || "62ca504";
-const TARGET_FULL_SHA = "62ca50404e0828ab95b1146ded39b764d1db44e4";
+const TARGET_SHA = process.argv[2] || "5f81f1d";
 const URL = "https://weddingwithindia.com/api/version";
 const TIMEOUT_MS = 10 * 60 * 1000; // 10 minutes
 const INTERVAL_MS = 10 * 1000; // 10 seconds
@@ -34,7 +33,7 @@ async function main() {
 
       console.log(`[Attempt ${attempt} | +${elapsed}s] Commit: ${currentCommit} (${currentSha}) | Time: ${data.timestamp}`);
 
-      if (currentCommit.startsWith(TARGET_SHA) || currentSha === TARGET_FULL_SHA) {
+      if (currentCommit.startsWith(TARGET_SHA) || currentSha.startsWith(TARGET_SHA)) {
         console.log(`\n======================================================`);
         console.log(`SUCCESS! Live production is serving target commit ${currentCommit}!`);
         console.log(`Timestamp: ${data.timestamp}`);

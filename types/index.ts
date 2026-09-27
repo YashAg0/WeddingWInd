@@ -85,6 +85,9 @@ export interface DemoWedding {
   sponsorshipStart?: string | null;
   sponsorshipEnd?: string | null;
   isDemo: boolean;
+  status?: string;
+  suspended?: boolean;
+  deletedAt?: Date | string | null;
   availabilityStatus?: WeddingAvailabilityStatus;
   tags: string[];
   date: string;

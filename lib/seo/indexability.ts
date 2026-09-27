@@ -47,7 +47,7 @@ export interface IndexableWeddingRecord {
  */
 export function isWeddingIndexable(wedding?: IndexableWeddingRecord | null): boolean {
   if (!wedding) return false;
-  if (wedding.status !== "PUBLISHED") return false;
+  if (wedding.status && wedding.status !== "PUBLISHED") return false;
   if (wedding.isDemo === true) return false;
   if (wedding.suspended === true) return false;
   if (wedding.deletedAt !== null && wedding.deletedAt !== undefined) return false;

@@ -223,6 +223,9 @@ export function toWeddingDTO(rawWedding: any): Wedding {
       return !isNaN(d.getTime()) ? d.toISOString() : null;
     })(),
     isDemo: !!rawWedding.isDemo,
+    status: rawWedding.status || "PUBLISHED",
+    suspended: Boolean(rawWedding.suspended),
+    deletedAt: rawWedding.deletedAt || null,
     availabilityStatus: (() => {
       if (rawWedding.availabilityStatus) return rawWedding.availabilityStatus;
       if (rawWedding.isDemo || (guestsAllowed - guestsBooked) <= 0) return "FULLY_BOOKED";
