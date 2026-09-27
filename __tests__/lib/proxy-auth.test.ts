@@ -125,4 +125,30 @@ describe("Proxy Authentication & Routing (RC-01)", () => {
     // When clerkHandler returns nothing for authenticated users, proxy returns NextResponse.next()
     expect(res.status).toBe(200);
   });
+
+  it("allows Googlebot to crawl public routes without triggering auth redirects", async () => {
+    const req = new NextRequest("http://localhost:3000/destinations", {
+      method: "GET",
+      headers: {
+        "user-agent": "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
+        accept: "text/html,application/xhtml+xml",
+      },
+    });
+
+    const res = await proxy(req, {} as any);
+    expect(res.status).toBe(200);
+  });
+
+  it("allows unauthenticated visitors to view public marketing routes without triggering auth redirects", async () => {
+    const req = new NextRequest("http://localhost:3000/weddings/grand-maharaja-wedding", {
+      method: "GET",
+      headers: {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        accept: "text/html",
+      },
+    });
+
+    const res = await proxy(req, {} as any);
+    expect(res.status).toBe(200);
+  });
 });

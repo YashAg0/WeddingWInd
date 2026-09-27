@@ -103,16 +103,31 @@ export async function proxy(req: NextRequest, event: NextFetchEvent) {
     }
   }
 
-  // 2. Invoke Clerk Middleware to establish session context for all routes and Server Actions
+  // 2. Invoke Clerk Middleware to establish session context for protected routes or authenticated requests.
+  // CRITICAL SEO INVARIANT: Public routes accessed by search engine crawlers or unauthenticated visitors
+  // MUST NOT trigger Clerk's development-mode handshake (dev-browser-missing 307 redirect loops).
+  const userAgent = req.headers.get("user-agent") || "";
+  const isCrawler = /bot|googlebot|bingbot|crawler|spider|slurp|duckduckbot|baiduspider|yandex|crawling|lighthouse|headlesschrome|facebookexternalhit|twitterbot|linkedinbot|whatsapp|pinterest|perplexity|gptbot|claudebot|applebot/i.test(
+    userAgent
+  );
+  const isProtected = isProtectedRoute(req) || isAdminRoute(req);
+  const hasSession =
+    req.cookies.has("__session") ||
+    req.cookies.has("__client_uat") ||
+    Boolean(req.headers.get("authorization"));
+
   let response = NextResponse.next();
-  try {
-    const clerkRes = await clerkHandler(req, event);
-    response = clerkRes instanceof NextResponse
-      ? clerkRes
-      : clerkRes
-      ? new NextResponse(clerkRes.body, clerkRes)
-      : NextResponse.next();
-  } catch (err: any) {
+
+  // Only invoke clerkHandler if the route requires authentication or the client has an active session
+  if (isProtected || (!isCrawler && hasSession)) {
+    try {
+      const clerkRes = await clerkHandler(req, event);
+      response = clerkRes instanceof NextResponse
+        ? clerkRes
+        : clerkRes
+        ? new NextResponse(clerkRes.body, clerkRes)
+        : NextResponse.next();
+    } catch (err: any) {
     const pathname = req.nextUrl?.pathname || new URL(req.url).pathname;
 
     const isUnauthenticated =
@@ -151,6 +166,7 @@ export async function proxy(req: NextRequest, event: NextFetchEvent) {
     }
 
     throw err;
+  }
   }
 
   // Ingest affiliate referral tracking for authenticated routes too
