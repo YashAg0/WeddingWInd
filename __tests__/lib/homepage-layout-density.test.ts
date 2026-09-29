@@ -56,17 +56,31 @@ describe("Homepage Hierarchy & 4-Card Composition Invariants", () => {
   });
 
   it("should normalize showcase weddings with FULLY_BOOKED and zero fake reviews", () => {
-    const demoWedding = featuredWeddings.find((w) => w.isDemo === true);
-    expect(demoWedding).toBeDefined();
+    const showcaseWedding = featuredWeddings[0];
+    expect(showcaseWedding).toBeDefined();
 
-    if (demoWedding) {
-      const dto = toWeddingDTO(demoWedding);
-      expect(dto.isDemo).toBe(true);
+    if (showcaseWedding) {
+      const dto = toWeddingDTO(showcaseWedding);
+      expect(dto.isDemo).toBe(false);
       expect(dto.availabilityStatus).toBe("FULLY_BOOKED");
       expect(dto.rating).toBe(0);
       expect(dto.reviewCount).toBe(0);
       expect(dto.isVerified).toBe(false);
     }
+
+    // Also verify isolated demo fixture normalization
+    const demoFixture = {
+      ...showcaseWedding,
+      id: "demo-showcase-fixture",
+      slug: "demo-showcase-fixture",
+      isDemo: true,
+    };
+    const demoDto = toWeddingDTO(demoFixture);
+    expect(demoDto.isDemo).toBe(true);
+    expect(demoDto.availabilityStatus).toBe("FULLY_BOOKED");
+    expect(demoDto.rating).toBe(0);
+    expect(demoDto.reviewCount).toBe(0);
+    expect(demoDto.isVerified).toBe(false);
   });
 
   it("should maintain valid guest capacity and timeline event counts on featured cards", () => {

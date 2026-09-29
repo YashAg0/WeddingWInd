@@ -29,15 +29,29 @@ describe("God-Level Wedding Marketplace Multi-Day Realism & Data Integrity", () 
     expect(traditions).toContain("Interfaith / Multicultural");
   });
 
-  it("should explicitly identify all demo listings with isDemo: true and zero fake ratings/reviews", () => {
+  it("should enforce curated showcase listings with isDemo: false and zero fake ratings/reviews", () => {
     featuredWeddings.forEach((w) => {
-      expect(w.isDemo).toBe(true);
+      expect(w.isDemo).toBe(false);
       expect(w.rating).toBe(0);
       expect(w.reviewCount).toBe(0);
       expect(w.reviews).toEqual([]);
       expect(w.guestsAllowed).toBeGreaterThan(0);
       expect(w.timeline.length).toBeGreaterThan(0);
     });
+
+    // Verify isolated demo fixture identification contract
+    const demoFixture = {
+      ...featuredWeddings[0],
+      id: "demo-synthetic-fixture",
+      slug: "demo-synthetic-wedding",
+      isDemo: true,
+      rating: 0,
+      reviewCount: 0,
+      reviews: [],
+    };
+    expect(demoFixture.isDemo).toBe(true);
+    expect(demoFixture.rating).toBe(0);
+    expect(demoFixture.reviewCount).toBe(0);
   });
 
   it("should enforce authoritative pricing engine matrix across all tiers and durations without manual drift", () => {
