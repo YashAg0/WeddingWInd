@@ -372,11 +372,11 @@ export default function Navbar() {
         )}
         role="banner"
       >
-        <div className="w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full max-w-[1440px] 2xl:max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-6 xl:px-8">
           {/* Floating glass capsule */}
           <div
             className={cn(
-              "flex items-center justify-between w-full min-w-0 h-16 px-4 sm:px-6 lg:px-6 xl:px-8 rounded-full transition-all duration-300 gap-4",
+              "flex items-center justify-between w-full min-w-0 h-16 px-4 sm:px-5 lg:px-5 xl:px-6 2xl:px-8 rounded-full transition-all duration-300 gap-2.5 xl:gap-3 2xl:gap-4",
               isTransparent
                 ? "bg-transparent"
                 : "bg-white/95 backdrop-blur-xl border border-warm-200/80 shadow-[0_8px_32px_0_rgba(122,31,43,0.12)]"
@@ -386,7 +386,7 @@ export default function Navbar() {
             <div className="flex items-center justify-start flex-shrink-0">
               <Link
                 href="/"
-                className={cn("flex items-center gap-3 group rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-secondary)]", FOCUS_RING)}
+                className={cn("flex items-center gap-2.5 xl:gap-3 group rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-secondary)]", FOCUS_RING)}
                 aria-label="WeddingWithIndia — Home"
               >
                 <div className="relative w-10 h-10 flex-shrink-0">
@@ -435,7 +435,7 @@ export default function Navbar() {
 
             {/* Center Column: Desktop Navigation */}
             <nav
-              className="hidden xl:flex items-center justify-center gap-1 2xl:gap-1.5 flex-shrink-0"
+              className="hidden xl:flex items-center justify-center gap-0.5 xl:gap-1 2xl:gap-1.5 flex-shrink-0 relative"
               aria-label="Primary navigation"
               onMouseLeave={() => setHoveredKey(null)}
             >
@@ -473,7 +473,7 @@ export default function Navbar() {
                       type="button"
                       onClick={() => toggleDropdown(item.label)}
                       className={cn(
-                        "relative z-10 flex items-center justify-center h-10 gap-1.5 px-3.5 rounded-full font-medium text-sm whitespace-nowrap transition-colors duration-200 cursor-pointer",
+                        "relative z-10 flex items-center justify-center h-10 gap-1 xl:gap-1.5 px-2.5 xl:px-3 2xl:px-3.5 rounded-full font-medium text-[0.8125rem] xl:text-[0.84rem] 2xl:text-sm whitespace-nowrap transition-colors duration-200 cursor-pointer",
                         FOCUS_RING,
                         isTransparent
                           ? "text-white/90 hover:text-white"
@@ -548,7 +548,7 @@ export default function Navbar() {
                     onMouseEnter={() => setHoveredKey(item.label)}
                     aria-current={isActiveHref(pathname, item.href) ? "page" : undefined}
                     className={cn(
-                      "relative z-10 flex items-center justify-center h-10 px-3.5 rounded-full font-medium text-sm whitespace-nowrap transition-colors duration-200 cursor-pointer",
+                      "relative z-10 flex items-center justify-center h-10 px-2.5 xl:px-3 2xl:px-3.5 rounded-full font-medium text-[0.8125rem] xl:text-[0.84rem] 2xl:text-sm whitespace-nowrap transition-colors duration-200 cursor-pointer",
                       FOCUS_RING,
                       isTransparent
                         ? "text-white/90 hover:text-white"
@@ -564,7 +564,7 @@ export default function Navbar() {
             </nav>
 
             {/* Right Column: Desktop Action Controls */}
-            <div className="hidden xl:flex items-center justify-end gap-2.5 2xl:gap-3 flex-shrink-0">
+            <div className="hidden xl:flex items-center justify-end gap-1.5 xl:gap-2.5 2xl:gap-3 flex-shrink-0">
               <div className="relative flex-shrink-0" ref={currencyPickerRef}>
                 <button
                   type="button"
@@ -608,7 +608,7 @@ export default function Navbar() {
               </div>
 
               {/* PWA App Install Quick CTA - visible on screens where space is abundant */}
-              <InstallButton variant="navbar" isTransparent={isTransparent} className="hidden min-[1380px]:inline-flex flex-shrink-0" />
+              <InstallButton variant="navbar" isTransparent={isTransparent} className="hidden 2xl:inline-flex flex-shrink-0" />
 
               {authPending ? (
                 /* Loading skeleton — prevents layout shift */
@@ -674,7 +674,7 @@ export default function Navbar() {
                     href="/login"
                     prefetch={true}
                     className={cn(
-                      "flex items-center justify-center h-10 px-4 text-sm font-semibold rounded-full whitespace-nowrap transition-colors duration-200 cursor-pointer flex-shrink-0",
+                      "flex items-center justify-center h-10 px-3 xl:px-3.5 2xl:px-4 text-xs xl:text-sm font-semibold rounded-full whitespace-nowrap transition-colors duration-200 cursor-pointer flex-shrink-0",
                       FOCUS_RING,
                       isTransparent
                         ? "text-white/90 hover:text-white hover:bg-white/10"
@@ -687,7 +687,7 @@ export default function Navbar() {
                     href="/weddings"
                     prefetch={true}
                     className={cn(
-                      "flex items-center justify-center gap-1.5 h-10 px-5 text-sm font-semibold rounded-full whitespace-nowrap transition-all duration-200 cursor-pointer shadow-sm flex-shrink-0",
+                      "flex items-center justify-center gap-1.5 h-10 px-3.5 xl:px-4 2xl:px-5 text-xs xl:text-sm font-semibold rounded-full whitespace-nowrap transition-all duration-200 cursor-pointer shadow-sm flex-shrink-0",
                       FOCUS_RING,
                       "text-white bg-[var(--color-brand-primary)] hover:bg-[var(--color-brand-primary)]/90"
                     )}
